@@ -70,26 +70,39 @@ def fetch_compute_workers():
         messages_unacked = cw_queue.get("messages_unacknowledged", 0) if cw_queue else 0
         cw_consumers = cw_queue.get("consumers", 0) if cw_queue else 0
 
+        vhost_workers = []
         for pidbox_q in queues:
             name = pidbox_q["name"]
-            if not (name.endswith(PIDBOX_SUFFIX) and name.startswith("compute-worker@")):
+            if not (
+                name.endswith(PIDBOX_SUFFIX) and name.startswith("compute-worker@")
+            ):
                 continue
-
             hostname = name[: -len(PIDBOX_SUFFIX)]
             if not is_compute_worker(hostname):
                 continue
+            vhost_workers.append(
+                {
+                    "hostname": hostname,
+                    "pidbox_alive": pidbox_q.get("consumers", 0) > 0,
+                }
+            )
 
-            pidbox_alive = pidbox_q.get("consumers", 0) > 0
+        jobs_to_distribute = messages_unacked
 
-            if not pidbox_alive or cw_consumers == 0:
-                status, running_jobs = "unavailable", 0
-            elif messages_unacked > 0:
-                status, running_jobs = "busy", messages_unacked
+        for w in vhost_workers:
+            if not w["pidbox_alive"] or cw_consumers == 0:
+                status = "unavailable"
+                running_jobs = 0
+            elif jobs_to_distribute > 0:
+                status = "busy"
+                running_jobs = 1
+                jobs_to_distribute -= 1
             else:
-                status, running_jobs = "available", 0
+                status = "available"
+                running_jobs = 0
 
             worker = {
-                "hostname": hostname,
+                "hostname": w["hostname"],
                 "status": status,
                 "running_jobs": running_jobs,
                 "last_seen": now,
