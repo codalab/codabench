@@ -24,19 +24,19 @@
                 </div>
             </div>
             <div class="workers-stats">
-                <div class="stat-card">
+                <div class="stat-card stat-card-total">
                     <div class="stat-value">{ totalCount() }</div>
                     <div class="stat-label">Total</div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card stat-card-available">
                     <div class="stat-value stat-green">{ availableCount() }</div>
                     <div class="stat-label">Available</div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card stat-card-busy">
                     <div class="stat-value stat-yellow">{ busyCount() }</div>
                     <div class="stat-label">Busy</div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card stat-card-down">
                     <div class="stat-value stat-red">{ unavailableCount() }</div>
                     <div class="stat-label">Down</div>
                 </div>
@@ -166,19 +166,19 @@
             </div>
 
             <div class="workers-stats">
-                <div class="stat-card">
+                <div class="stat-card stat-card-total">
                     <div class="stat-value">{ totalCount() }</div>
                     <div class="stat-label">Total</div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card stat-card-available">
                     <div class="stat-value stat-green">{ availableCount() }</div>
                     <div class="stat-label">Available</div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card stat-card-busy">
                     <div class="stat-value stat-yellow">{ busyCount() }</div>
                     <div class="stat-label">Busy</div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card stat-card-down">
                     <div class="stat-value stat-red">{ unavailableCount() }</div>
                     <div class="stat-label">Down</div>
                 </div>
@@ -632,6 +632,22 @@
             border-radius 10px
             padding 10px 8px
             text-align center
+
+        .stat-card.stat-card-total
+            background rgba(44, 63, 76, .06)
+            border-color rgba(44, 63, 76, .12)
+
+        .stat-card.stat-card-available
+            background rgba(33, 186, 69, .08)
+            border-color rgba(33, 186, 69, .18)
+
+        .stat-card.stat-card-busy
+            background rgba(181, 129, 5, .08)
+            border-color rgba(181, 129, 5, .18)
+
+        .stat-card.stat-card-down
+            background rgba(219, 40, 40, .07)
+            border-color rgba(219, 40, 40, .16)
 
         .stat-value
             font-size 20px
