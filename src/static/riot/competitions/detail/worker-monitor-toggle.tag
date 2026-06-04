@@ -3,11 +3,9 @@
         if="{ canViewWorkersPanel && !inlineMode && !allWorkers }"
         class="ui small button workers-toggle-btn"
         onclick="{ toggleWorkersPanel }">
-        <i class="server icon"></i>
         { showWorkersPanel ? 'Hide workers' : 'Show workers' }
     </button>
 
-    <!-- Inline mode: monitor queues page -->
     <div if="{ canViewWorkersPanel && inlineMode }" class="workers-inline">
         <div class="workers-card">
             <div class="workers-header">
@@ -163,7 +161,6 @@
         </div>
     </div>
 
-    <!-- Floating panel: competition page -->
     <aside
         if="{ canViewWorkersPanel && !inlineMode && showWorkersPanel }"
         class="workers-panel"
@@ -338,8 +335,7 @@
         self.wsState = 'disconnected'
         self.lastSyncAt = null
 
-        self.canViewWorkersPanel =
-            String(self.opts.can_view_workers_panel || 'false') === 'true'
+        self.canViewWorkersPanel = String(self.opts.can_view_workers_panel || 'false') === 'true'
         self.allWorkers = String(self.opts.all_workers || 'false') === 'true'
         self.inlineMode = String(self.opts.inline_mode || 'false') === 'true'
 
@@ -348,11 +344,12 @@
         self.panelLeft = 24
         self.panelTop = 24
         self.panelWidth = 480
-        self.panelStorageKey = 'codabench_workers_panel_position'
+        self.panelStorageKey = 'codabench_workers_panel_state'
         self.draggingPanel = false
         self.dragOffsetX = 0
         self.dragOffsetY = 0
         self.publicWorkersCollapsed = false
+        self.panelResizeObserver = null
 
         self.queueKey = function (worker) {
             var queue = worker && worker.queue_source ? String(worker.queue_source) : ''
@@ -397,6 +394,10 @@
             if (self.showWorkersPanel) {
                 self.loadPanelPosition()
                 self.connect_workers_socket()
+
+                setTimeout(function () {
+                    self.observePanelResize()
+                }, 0)
             } else {
                 self.close_workers_socket(false)
             }
@@ -546,7 +547,14 @@
 
             var minLeft = 8
             var minTop = 8
-            var maxLeft = Math.max(minLeft, window.innerWidth - self.panelWidth - 8)
+            var panel = self.root.querySelector('.workers-panel')
+            var currentWidth = panel
+                ? panel.getBoundingClientRect().width
+                : self.panelWidth
+            var maxLeft = Math.max(
+                minLeft,
+                window.innerWidth - currentWidth - 8
+            )
             var maxTop = Math.max(minTop, window.innerHeight - 80)
 
             var newLeft = event.clientX - self.dragOffsetX
@@ -577,13 +585,23 @@
                 var raw = localStorage.getItem(self.panelStorageKey)
                 if (!raw) return
 
-                var pos = JSON.parse(raw)
-                if (typeof pos.left === 'number') self.panelLeft = pos.left
-                if (typeof pos.top === 'number') self.panelTop = pos.top
+                var state = JSON.parse(raw)
+
+                if (typeof state.left === 'number') {
+                    self.panelLeft = state.left
+                }
+
+                if (typeof state.top === 'number') {
+                    self.panelTop = state.top
+                }
+
+                if (typeof state.width === 'number') {
+                    self.panelWidth = Math.max(340, state.width)
+                }
 
                 self.clampPanelPosition()
             } catch (e) {
-                console.warn('Could not load panel position', e)
+                console.warn('Could not load panel state', e)
             }
         }
 
@@ -596,6 +614,7 @@
                     JSON.stringify({
                         left: self.panelLeft,
                         top: self.panelTop,
+                        width: self.panelWidth,
                     })
                 )
             } catch (e) {
@@ -603,12 +622,45 @@
             }
         }
 
+        self.observePanelResize = function () {
+            if (self.inlineMode) return
+
+            var panel = self.root.querySelector('.workers-panel')
+
+            if (!panel) return
+
+            if (self.panelResizeObserver) {
+                self.panelResizeObserver.disconnect()
+            }
+
+            self.panelResizeObserver = new ResizeObserver(function (entries) {
+                if (!entries.length) return
+
+                var rect = entries[0].contentRect
+
+                self.panelWidth = Math.round(rect.width)
+
+                self.clampPanelPosition()
+                self.savePanelPosition()
+            })
+
+            self.panelResizeObserver.observe(panel)
+        }
+
         self.clampPanelPosition = function () {
             if (self.inlineMode) return
 
             var minLeft = 8
             var minTop = 8
-            var maxLeft = Math.max(minLeft, window.innerWidth - self.panelWidth - 8)
+            var panel = self.root.querySelector('.workers-panel')
+            var currentWidth = panel
+                ? panel.getBoundingClientRect().width
+                : self.panelWidth
+
+            var maxLeft = Math.max(
+                minLeft,
+                window.innerWidth - currentWidth - 8
+            )
             var maxTop = Math.max(minTop, window.innerHeight - 80)
 
             self.panelLeft = Math.min(Math.max(minLeft, self.panelLeft), maxLeft)
@@ -752,6 +804,11 @@
             window.removeEventListener('mousemove', self.onPanelDragMove)
             window.removeEventListener('mouseup', self.stopPanelDrag)
             window.removeEventListener('resize', self.onWindowResize)
+
+            if (self.panelResizeObserver) {
+                self.panelResizeObserver.disconnect()
+                self.panelResizeObserver = null
+            }
             self.close_workers_socket(false)
             document.body.classList.remove('workers-panel-dragging')
         })
@@ -762,7 +819,6 @@
         $yellow = #b58105
         $red = #db2828
         $border = rgba(15, 23, 42, .08)
-        $border-strong = rgba(15, 23, 42, .12)
         $text = #0f172a
         $muted = #64748b
         $subtle = #94a3b8
@@ -1065,6 +1121,7 @@
             overflow hidden
             text-overflow ellipsis
             text-align left
+
         .workers-table tbody tr
             border-bottom 1px solid rgba(0, 0, 0, .04)
             transition background .1s
@@ -1124,6 +1181,7 @@
             white-space nowrap
             line-height 1
             border 1px solid transparent
+
         .worker-status-badge .icon
             margin 0 !important
             font-size 11px !important
