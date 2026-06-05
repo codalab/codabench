@@ -14,6 +14,7 @@ def _get_competition_queue_name(competition_id):
         return None
     try:
         from competitions.models import Competition
+
         competition = Competition.objects.select_related("queue").get(pk=competition_id)
         if competition.queue and competition.queue.name:
             return competition.queue.name
@@ -23,19 +24,27 @@ def _get_competition_queue_name(competition_id):
 
 
 def _load_snapshot(competition_queue_name=None, show_all=False):
-    workers, private_workers = fetch_compute_workers()
+    workers, private_workers, queue_stats = fetch_compute_workers()
 
     if show_all:
-        pass  # tous les workers privés visibles
+        pass
     elif competition_queue_name:
         private_workers = [
-            w for w in private_workers
+            w
+            for w in private_workers
             if w.get("queue_source") == competition_queue_name
+        ]
+        queue_stats = [
+            q
+            for q in queue_stats
+            if q.get("source_name") == competition_queue_name
+            or q.get("source_name") == "default"
         ]
     else:
         private_workers = []
+        queue_stats = [q for q in queue_stats if q.get("source_name") == "default"]
 
-    return workers, private_workers
+    return workers, private_workers, queue_stats
 
 
 class ComputeWorkersConsumer(AsyncJsonWebsocketConsumer):
@@ -83,18 +92,21 @@ class ComputeWorkersConsumer(AsyncJsonWebsocketConsumer):
                 logger.warning("WebSocket subscribe timeout, proceeding without filter")
 
             while self._running:
-                workers, private_workers = await sync_to_async(_load_snapshot)(
+                workers, private_workers, queue_stats = await sync_to_async(_load_snapshot)(
                     competition_queue_name=self._competition_queue_name,
                     show_all=self._show_all,
                 )
                 if not self._running:
                     break
                 try:
-                    await self.send_json({
-                        "type": "workers.snapshot",
-                        "workers": workers,
-                        "private_workers": private_workers,
-                    })
+                    await self.send_json(
+                        {
+                            "type": "workers.snapshot",
+                            "workers": workers,
+                            "private_workers": private_workers,
+                            "queue_stats": queue_stats,
+                        }
+                    )
                 except RuntimeError:
                     break
                 await asyncio.sleep(3)

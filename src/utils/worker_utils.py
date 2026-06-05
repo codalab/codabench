@@ -45,13 +45,13 @@ def fetch_compute_workers():
         all_queues = _fetch_all_queues()
     except Exception:
         logger.exception("Failed to fetch queues from RabbitMQ Management API")
-        return [], []
+        return [], [], []
 
     try:
         vhost_to_source = _build_vhost_to_source_map()
     except Exception:
         logger.exception("Failed to build vhost→source map")
-        return [], []
+        return [], [], []
 
     by_vhost: dict[str, list] = {}
     for q in all_queues:
@@ -59,6 +59,7 @@ def fetch_compute_workers():
 
     workers = []
     private_workers = []
+    queue_stats = []
     now = time.time()
 
     for vhost, queues in by_vhost.items():
@@ -67,10 +68,19 @@ def fetch_compute_workers():
             continue
 
         cw_queue = next((q for q in queues if q["name"] == "compute-worker"), None)
+        messages_ready = cw_queue.get("messages_ready", 0) if cw_queue else 0
         messages_unacked = cw_queue.get("messages_unacknowledged", 0) if cw_queue else 0
         cw_consumers = cw_queue.get("consumers", 0) if cw_queue else 0
 
-        vhost_workers = []
+        queue_stats.append(
+            {
+                "source_name": source_name,
+                "jobs_pending": messages_ready,
+                "jobs_running": messages_unacked,
+                "workers_count": cw_consumers,
+            }
+        )
+
         for pidbox_q in queues:
             name = pidbox_q["name"]
             if not (
@@ -80,31 +90,19 @@ def fetch_compute_workers():
             hostname = name[: -len(PIDBOX_SUFFIX)]
             if not is_compute_worker(hostname):
                 continue
-            vhost_workers.append(
-                {
-                    "hostname": hostname,
-                    "pidbox_alive": pidbox_q.get("consumers", 0) > 0,
-                }
-            )
 
-        jobs_to_distribute = messages_unacked
+            pidbox_alive = pidbox_q.get("consumers", 0) > 0
 
-        for w in vhost_workers:
-            if not w["pidbox_alive"] or cw_consumers == 0:
+            if not pidbox_alive or cw_consumers == 0:
                 status = "unavailable"
-                running_jobs = 0
-            elif jobs_to_distribute > 0:
+            elif messages_unacked > 0:
                 status = "busy"
-                running_jobs = 1
-                jobs_to_distribute -= 1
             else:
                 status = "available"
-                running_jobs = 0
 
             worker = {
-                "hostname": w["hostname"],
+                "hostname": hostname,
                 "status": status,
-                "running_jobs": running_jobs,
                 "last_seen": now,
                 "queue_source": source_name,
                 "queue_names": ["compute-worker"],
@@ -117,4 +115,5 @@ def fetch_compute_workers():
 
     workers.sort(key=lambda x: x["hostname"])
     private_workers.sort(key=lambda x: (x["queue_source"], x["hostname"]))
-    return workers, private_workers
+    queue_stats.sort(key=lambda x: x["source_name"])
+    return workers, private_workers, queue_stats

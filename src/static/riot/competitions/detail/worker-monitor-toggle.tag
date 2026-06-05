@@ -62,7 +62,6 @@
                         <colgroup>
                             <col class="col-worker">
                             <col class="col-status">
-                            <col class="col-jobs">
                             <col class="col-lastseen">
                         </colgroup>
                         <thead>
@@ -118,7 +117,6 @@
                             <col class="col-worker">
                             <col class="col-queue">
                             <col class="col-status">
-                            <col class="col-jobs">
                             <col class="col-lastseen">
                         </colgroup>
                         <thead>
@@ -156,6 +154,46 @@
                             </tr>
                         </tbody>
                     </table>
+                </div>
+                <div class="workers-section" if="{ queueStats.length }">
+                    <div class="workers-section-header">
+                        <div class="workers-section-title">
+                            Queue stats
+                        </div>
+                    </div>
+                    <div class="workers-table-wrap">
+                        <table class="workers-table">
+                            <colgroup>
+                                <col class="col-worker">
+                                <col class="col-jobs">
+                                <col class="col-jobs">
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th>Queue</th>
+                                    <th class="cell-center">Pending</th>
+                                    <th class="cell-center">Running</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr each="{ qs in queueStats }">
+                                    <td class="cell-worker">
+                                        <span class="worker-hostname">{ qs.source_name }</span>
+                                    </td>
+                                    <td class="cell-center">
+                                        <span class="queue-stat-badge { qs.jobs_pending > 0 ? 'pending' : 'idle' }">
+                                            { qs.jobs_pending }
+                                        </span>
+                                    </td>
+                                    <td class="cell-center">
+                                        <span class="queue-stat-badge { qs.jobs_running > 0 ? 'running' : 'idle' }">
+                                            { qs.jobs_running }
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -224,7 +262,6 @@
                         <colgroup>
                             <col class="col-worker">
                             <col class="col-status">
-                            <col class="col-jobs">
                             <col class="col-lastseen">
                         </colgroup>
                         <thead>
@@ -246,7 +283,6 @@
                                         { getStatusText(worker) }
                                     </span>
                                 </td>
-                                <td class="cell-center cell-jobs">{ worker.running_jobs || 0 }</td>
                                 <td class="cell-muted cell-nowrap">{ formatLastSeen(getLastSeenValue(worker)) }</td>
                             </tr>
 
@@ -261,7 +297,46 @@
                         </tbody>
                     </table>
                 </div>
-
+                <div class="workers-section" if="{ queueStats.length }">
+                    <div class="workers-section-header">
+                        <div class="workers-section-title">
+                            Queue stats
+                        </div>
+                    </div>
+                    <div class="workers-table-wrap">
+                        <table class="workers-table">
+                            <colgroup>
+                                <col class="col-worker">
+                                <col class="col-jobs">
+                                <col class="col-jobs">
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th>Queue</th>
+                                    <th class="cell-center">Pending</th>
+                                    <th class="cell-center">Running</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr each="{ qs in queueStats }">
+                                    <td class="cell-worker">
+                                        <span class="worker-hostname">{ qs.source_name }</span>
+                                    </td>
+                                    <td class="cell-center">
+                                        <span class="queue-stat-badge { qs.jobs_pending > 0 ? 'pending' : 'idle' }">
+                                            { qs.jobs_pending }
+                                        </span>
+                                    </td>
+                                    <td class="cell-center">
+                                        <span class="queue-stat-badge { qs.jobs_running > 0 ? 'running' : 'idle' }">
+                                            { qs.jobs_running }
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
                 <div if="{ publicWorkersCollapsed }" class="workers-collapsed">
                     <i class="compress icon"></i>
                     Public workers list collapsed.
@@ -282,7 +357,6 @@
                             <col class="col-worker">
                             <col class="col-queue">
                             <col class="col-status">
-                            <col class="col-jobs">
                             <col class="col-lastseen">
                         </colgroup>
                         <thead>
@@ -334,6 +408,7 @@
         self.wsReconnectTimer = null
         self.wsState = 'disconnected'
         self.lastSyncAt = null
+        self.queueStats = []
 
         self.canViewWorkersPanel = String(self.opts.can_view_workers_panel || 'false') === 'true'
         self.allWorkers = String(self.opts.all_workers || 'false') === 'true'
@@ -504,6 +579,7 @@
                 if (message.type === 'workers.snapshot') {
                     self.workers = message.workers || []
                     self.privateWorkers = message.private_workers || []
+                    self.queueStats = message.queue_stats || []
                     self.lastSyncAt = Date.now()
                     self.update()
                 }
@@ -1142,6 +1218,29 @@
         .cell-worker
             font-weight 600
             color $text
+
+        .queue-stat-badge
+            display inline-flex
+            align-items center
+            justify-content center
+            min-width 28px
+            height 22px
+            padding 0 8px
+            border-radius 999px
+            font-size 12px
+            font-weight 700
+
+        .queue-stat-badge.idle
+            background rgba(0,0,0,.05)
+            color $muted
+
+        .queue-stat-badge.pending
+            background rgba(181,129,5,.12)
+            color $yellow
+
+        .queue-stat-badge.running
+            background rgba(33,186,69,.12)
+            color $green
 
         .worker-hostname
             font-family 'SFMono-Regular', 'Consolas', 'Liberation Mono', monospace
