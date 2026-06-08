@@ -68,7 +68,6 @@
                             <tr>
                                 <th>Worker</th>
                                 <th>Status</th>
-                                <th class="cell-center">Jobs</th>
                                 <th>Last seen</th>
                             </tr>
                         </thead>
@@ -83,7 +82,6 @@
                                         { getStatusText(worker) }
                                     </span>
                                 </td>
-                                <td class="cell-center cell-jobs">{ worker.running_jobs || 0 }</td>
                                 <td class="cell-muted cell-nowrap">{ formatLastSeen(getLastSeenValue(worker)) }</td>
                             </tr>
 
@@ -124,7 +122,6 @@
                                 <th>Worker</th>
                                 <th>Queue</th>
                                 <th>Status</th>
-                                <th class="cell-center">Jobs</th>
                                 <th>Last seen</th>
                             </tr>
                         </thead>
@@ -140,7 +137,6 @@
                                         { getStatusText(worker) }
                                     </span>
                                 </td>
-                                <td class="cell-center cell-jobs">{ worker.running_jobs || 0 }</td>
                                 <td class="cell-muted cell-nowrap">{ formatLastSeen(getLastSeenValue(worker)) }</td>
                             </tr>
 
@@ -162,7 +158,7 @@
                         </div>
                     </div>
                     <div class="workers-table-wrap">
-                        <table class="workers-table">
+                        <table class="workers-table workers-table--stats">
                             <colgroup>
                                 <col class="col-worker">
                                 <col class="col-jobs">
@@ -180,12 +176,12 @@
                                     <td class="cell-worker">
                                         <span class="worker-hostname">{ qs.source_name }</span>
                                     </td>
-                                    <td class="cell-center">
+                                    <td class="cell-right">
                                         <span class="queue-stat-badge { qs.jobs_pending > 0 ? 'pending' : 'idle' }">
                                             { qs.jobs_pending }
                                         </span>
                                     </td>
-                                    <td class="cell-center">
+                                    <td class="cell-right">
                                         <span class="queue-stat-badge { qs.jobs_running > 0 ? 'running' : 'idle' }">
                                             { qs.jobs_running }
                                         </span>
@@ -304,11 +300,11 @@
                         </div>
                     </div>
                     <div class="workers-table-wrap">
-                        <table class="workers-table">
+                        <table class="workers-table workers-table--stats">
                             <colgroup>
                                 <col class="col-worker">
-                                <col class="col-jobs">
-                                <col class="col-jobs">
+                                <col class="col-stat">
+                                <col class="col-stat">
                             </colgroup>
                             <thead>
                                 <tr>
@@ -322,12 +318,12 @@
                                     <td class="cell-worker">
                                         <span class="worker-hostname">{ qs.source_name }</span>
                                     </td>
-                                    <td class="cell-center">
+                                    <td class="cell-right">
                                         <span class="queue-stat-badge { qs.jobs_pending > 0 ? 'pending' : 'idle' }">
                                             { qs.jobs_pending }
                                         </span>
                                     </td>
-                                    <td class="cell-center">
+                                    <td class="cell-right">
                                         <span class="queue-stat-badge { qs.jobs_running > 0 ? 'running' : 'idle' }">
                                             { qs.jobs_running }
                                         </span>
@@ -380,7 +376,6 @@
                                         { getStatusText(worker) }
                                     </span>
                                 </td>
-                                <td class="cell-center cell-jobs">{ worker.running_jobs || 0 }</td>
                                 <td class="cell-muted cell-nowrap">{ formatLastSeen(getLastSeenValue(worker)) }</td>
                             </tr>
 
@@ -1176,15 +1171,30 @@
         .workers-table .col-status
             width 108px
 
-        .workers-table .col-jobs
-            width 56px
+        .workers-table .col-stat
+            width 82px
+
+        .workers-table thead th.cell-center
+            text-align right
+
+        .cell-right
+            text-align right
+
+        .workers-table--stats
+            width 100%
+
+        .workers-table--stats .col-worker
+            width auto
 
         .workers-table .col-lastseen
-            width 88px
+            width 94px
 
         .workers-table thead tr
             background $bg-alt
             border-bottom 1px solid $border
+
+        .workers-table--stats .col-stat
+            width 82px  
 
         .workers-table thead th
             padding 7px 10px
@@ -1261,6 +1271,7 @@
 
         .cell-center
             text-align center
+            width 80px
 
         .cell-jobs
             font-weight 700
