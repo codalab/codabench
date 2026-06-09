@@ -175,6 +175,9 @@
                                 <tr each="{ qs in queueStats }">
                                     <td class="cell-worker">
                                         <span class="worker-hostname">{ qs.source_name }</span>
+                                        <span class="queue-worker-count">
+                                            <i class="server icon"></i>{ qs.workers_count || 0 }
+                                        </span>
                                     </td>
                                     <td class="cell-right">
                                         <span class="queue-stat-badge { qs.jobs_pending > 0 ? 'pending' : 'idle' }">
@@ -1193,7 +1196,13 @@
             border-bottom 1px solid $border
 
         .workers-table--stats .col-stat
-            width 82px  
+            width 82px
+
+        .workers-table--stats .cell-worker
+            display flex
+            align-items center
+            gap 0
+            overflow hidden
 
         .workers-table thead th
             padding 7px 10px
@@ -1228,6 +1237,26 @@
             font-weight 600
             color $text
 
+        .queue-worker-count
+            display inline-flex
+            align-items center
+            gap 3px
+            margin-left 8px
+            padding 1px 7px
+            border-radius 999px
+            font-size 10px
+            font-weight 700
+            background rgba(0,0,0,.06)
+            color $muted
+            font-family sans-serif
+            line-height 1  
+
+        .queue-worker-count .icon
+            font-size 9px !important
+            margin 0 !important
+            line-height 1 !important
+            vertical-align middle !important
+
         .queue-stat-badge
             display inline-flex
             align-items center
@@ -1257,13 +1286,13 @@
 
         .queue-stat-badge.running
             background rgba(37, 99, 235, .12)
-            color #1d4ed8
+            color #426076
             animation running-pulse 1.6s ease-out infinite
 
         .worker-hostname
             font-family 'SFMono-Regular', 'Consolas', 'Liberation Mono', monospace
             font-size 11.5px
-            display block
+            display inline
             overflow hidden
             text-overflow ellipsis
             white-space nowrap
