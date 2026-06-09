@@ -53,7 +53,7 @@ def fetch_compute_workers():
         logger.exception("Failed to build vhost→source map")
         return [], [], []
 
-    by_vhost: dict[str, list] = {}
+    by_vhost = {}
     for q in all_queues:
         by_vhost.setdefault(q["vhost"], []).append(q)
 
@@ -87,22 +87,24 @@ def fetch_compute_workers():
                 name.endswith(PIDBOX_SUFFIX) and name.startswith("compute-worker@")
             ):
                 continue
+
             hostname = name[: -len(PIDBOX_SUFFIX)]
             if not is_compute_worker(hostname):
                 continue
 
             pidbox_alive = pidbox_q.get("consumers", 0) > 0
 
-            if not pidbox_alive or cw_consumers == 0:
+            if not pidbox_alive:
                 status = "unavailable"
-            elif messages_unacked > 0:
-                status = "busy"
+                running_jobs = 0
             else:
                 status = "available"
+                running_jobs = 0
 
             worker = {
                 "hostname": hostname,
                 "status": status,
+                "running_jobs": running_jobs,
                 "last_seen": now,
                 "queue_source": source_name,
                 "queue_names": ["compute-worker"],
@@ -116,4 +118,5 @@ def fetch_compute_workers():
     workers.sort(key=lambda x: x["hostname"])
     private_workers.sort(key=lambda x: (x["queue_source"], x["hostname"]))
     queue_stats.sort(key=lambda x: x["source_name"])
+
     return workers, private_workers, queue_stats
