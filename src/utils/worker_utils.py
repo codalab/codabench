@@ -124,14 +124,16 @@ def fetch_compute_workers():
             continue
 
         cw_queue = next((q for q in queues if q["name"] == "compute-worker"), None)
+
         messages_ready = cw_queue.get("messages_ready", 0) if cw_queue else 0
         messages_unacked = cw_queue.get("messages_unacknowledged", 0) if cw_queue else 0
+        messages_total = cw_queue.get("messages", messages_ready + messages_unacked) if cw_queue else 0
         cw_consumers = cw_queue.get("consumers", 0) if cw_queue else 0
 
         queue_stats.append(
             {
                 "source_name": source_name,
-                "jobs_pending": messages_ready,
+                "jobs_pending": messages_total,
                 "jobs_running": messages_unacked,
                 "workers_count": cw_consumers,
             }
