@@ -72,7 +72,12 @@ if __name__ == "__main__":
         "errorlog": "-",
         "worker_class": "uvicorn.workers.UvicornWorker",
         "logger_class": StubbedGunicornLogger,
-        "capture_output": 'true'
+        "capture_output": 'true',
+        # Recycle workers periodically to release DB connections and avoid leaks
+        "max_requests": int(os.environ.get("GUNICORN_MAX_REQUESTS", "2000")),
+        "max_requests_jitter": int(os.environ.get("GUNICORN_MAX_REQUESTS_JITTER", "200")),
+        "timeout": int(os.environ.get("GUNICORN_TIMEOUT", "120")),
+        "keepalive": int(os.environ.get("GUNICORN_KEEPALIVE", "5"))
     }
 
     StandaloneApplication(app, options).run()

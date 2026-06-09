@@ -137,6 +137,35 @@ services:
         max-file: "5"
 
   #----------------------------------------------------------------------------------------------------
+  #   pgbouncer for connection pooling to Postgres, configured to use SCRAM-SHA-256 authentication and ignore the
+  #----------------------------------------------------------------------------------------------------
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    container_name: pgbouncer
+    env_file: .env
+    environment:
+      - DB_USER=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME}
+      - POOL_MODE=transaction
+      - MAX_CLIENT_CONN=2000
+      - DEFAULT_POOL_SIZE=80
+      - RESERVE_POOL_SIZE=20
+      - AUTH_TYPE=scram-sha-256
+      - IGNORE_STARTUP_PARAMETERS=extra_float_digits
+    depends_on:
+      - db
+    restart: unless-stopped
+    ports:
+      - 6432:5432
+    logging:
+      options:
+        max-size: "20m"
+        max-file: "5"
+     
+  #----------------------------------------------------------------------------------------------------
   #   Rabbitmq & Flower monitoring tool
   #----------------------------------------------------------------------------------------------------
   rabbit:
