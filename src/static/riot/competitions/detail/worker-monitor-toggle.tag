@@ -1078,8 +1078,7 @@
             margin-top 14px
 
         .workers-section + .workers-section
-            border-top 1px solid $border
-            padding-top 14px
+            padding-top 9px
 
         .workers-section-header
             display flex
@@ -1248,9 +1247,18 @@
             background rgba(181,129,5,.12)
             color $yellow
 
+        @keyframes running-pulse
+            0%
+                box-shadow 0 0 0 0 rgba(37, 99, 235, .4)
+            70%
+                box-shadow 0 0 0 6px rgba(37, 99, 235, 0)
+            100%
+                box-shadow 0 0 0 0 rgba(37, 99, 235, 0)
+
         .queue-stat-badge.running
-            background rgba(33,186,69,.12)
-            color $green
+            background rgba(37, 99, 235, .12)
+            color #1d4ed8
+            animation running-pulse 1.6s ease-out infinite
 
         .worker-hostname
             font-family 'SFMono-Regular', 'Consolas', 'Liberation Mono', monospace
