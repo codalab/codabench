@@ -320,6 +320,9 @@
                                 <tr each="{ qs in queueStats }">
                                     <td class="cell-worker">
                                         <span class="worker-hostname">{ qs.source_name }</span>
+                                        <span class="queue-worker-count">
+                                            <i class="server icon"></i>{ qs.workers_count || 0 }
+                                        </span>
                                     </td>
                                     <td class="cell-right">
                                         <span class="queue-stat-badge { qs.jobs_pending > 0 ? 'pending' : 'idle' }">
@@ -1291,7 +1294,7 @@
 
         .worker-hostname
             font-family 'SFMono-Regular', 'Consolas', 'Liberation Mono', monospace
-            font-size 11.5px
+            font-size 13px
             display inline
             overflow hidden
             text-overflow ellipsis
