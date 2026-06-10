@@ -212,6 +212,10 @@ else:
         }
     }
 
+# With ASGI workers and PgBouncer, keep Django DB connections short-lived.
+DATABASES['default']['CONN_MAX_AGE'] = int(os.environ.get('DB_CONN_MAX_AGE', '0'))
+DATABASES['default']['CONN_HEALTH_CHECKS'] = os.environ.get('DB_CONN_HEALTH_CHECKS', 'True').lower() == 'true'
+
 # TODO: Pull this, leaving in case django-oauth-toolkit problems
 # # =============================================================================
 # # SSL
