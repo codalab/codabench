@@ -366,7 +366,7 @@ def unpack_competition(status_pk):
             try:
                 with NamedTemporaryFile(mode="w+b") as temp_file:
                     logger.info(f"Download competition bundle: {competition_dataset.data_file.name}")
-                    competition_bundle_url = make_url_sassy(competition_dataset.data_file.url)
+                    competition_bundle_url = make_url_sassy(competition_dataset.data_file.name)
                     try:
                         with requests.get(competition_bundle_url, stream=True) as r:
                             r.raise_for_status()
