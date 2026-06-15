@@ -276,9 +276,22 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'profiles.tasks.clean_non_activated_users',
         'schedule': timedelta(days=1),  # Run every 24 hours
     },
-    "refresh_compute_worker_health": {
-        "task": "competitions.tasks.refresh_compute_worker_health",
-        "schedule": 60,
+    # F2: disabled — task 'competitions.tasks.refresh_compute_worker_health'
+    # does not exist anywhere in the codebase. Sending it every 60 s caused
+    # a KeyError in the prefork consumer that silently broke the channel and
+    # blocked run_submission dispatch.
+    # "refresh_compute_worker_health": {
+    #     "task": "competitions.tasks.refresh_compute_worker_health",
+    #     "schedule": 60,
+    # },
+    # M1.A: Django-side watchdog. Re-dispatches submissions stuck in
+    # Scoring/Running past `threshold_minutes` (default 30) of inactivity.
+    # Complements M1.B (compute_worker side) so even if a worker dies
+    # mid-scoring, the submission is recovered within ~`schedule` minutes.
+    'reaper_stuck_scoring': {
+        'task': 'competitions.tasks.reaper_stuck_scoring',
+        'schedule': timedelta(minutes=5),
+        'kwargs': {'threshold_minutes': 30},
     },
 }
 CELERY_TIMEZONE = 'UTC'

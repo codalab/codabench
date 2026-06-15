@@ -499,12 +499,19 @@ class Run:
         websocket_scheme = "ws" if submission_api_url_parsed.scheme == "http" else "wss"
         self.websocket_url = f"{websocket_scheme}://{websocket_host}/submission_input/{self.user_pk}/{self.submission_id}/{self.secret}/"
 
-        # Nice requests adapter with generous retries/etc.
+        # M1.B: urllib3.Retry skips PATCH by default. The submission status
+        # callback uses PATCH, so without explicitly allowing it any 5xx /
+        # transient timeout on the final PATCH status=Finished was lost,
+        # leaving the submission stuck in Scoring forever.
         self.requests_session = requests.Session()
         adapter = requests.adapters.HTTPAdapter(
             max_retries=Retry(
-                total=3,
-                backoff_factor=1,
+                total=5,
+                backoff_factor=2,
+                status_forcelist=(500, 502, 503, 504),
+                allowed_methods=frozenset(
+                    ("GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "PATCH")
+                ),
             )
         )
         self.requests_session.mount("http://", adapter)
@@ -639,8 +646,15 @@ class Run:
         try:
             self._update_submission(data)
         except Exception as e:
-            # Always catch exception and never raise error
             logger.exception(f"Failed to update submission status to {status}: {e}")
+            # M1.B: when transitioning to the terminal Finished state, raise
+            # so Celery (task_acks_late=True) requeues the job instead of
+            # silently leaving the submission stuck in Scoring. Intermediate
+            # states (Running, Scoring) stay best-effort to avoid killing a
+            # scoring run for a transient network glitch. Failed already has
+            # a raise in every caller, so the requeue path is covered.
+            if status == SubmissionStatus.FINISHED:
+                raise
 
     def _get_container_image(self, image_name):
         logger.info("Running pull for image: {}".format(image_name))

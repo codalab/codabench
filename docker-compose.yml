@@ -200,7 +200,7 @@ services:
   #----------------------------------------------------------------------------------------------------
   site_worker:
     # This auto-reloads
-    command: ["watchmedo auto-restart -p '*.py' --recursive -- celery -A celery_config worker -B -Q site-worker -l info -n site-worker@%n --concurrency=2"]
+    command: ["celery -A celery_config worker -B -Q site-worker,celery -l info -n site-worker@%n --concurrency=2"]
     working_dir: /app/src
     container_name: site_worker
     image: django_site-worker
@@ -219,9 +219,11 @@ services:
     deploy:
       resources:
         limits:
-          # Limit memory substantially here so we see any problems that may
-          # appear on Heroku ahead of time
-          memory: 256M
+          # Bumped from 256M: with --concurrency=2 prefork the two ForkPoolWorker
+          # processes plus master + beat exceed 256M and get SIGKILLed by the
+          # cgroup, silently losing run_submission tasks (orphan Submitting,
+          # celery_task_id=None). See incident finding F3.
+          memory: 1G
 
   compute_worker:
     command: ["celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@%n"]
