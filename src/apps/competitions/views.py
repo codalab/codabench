@@ -3,7 +3,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import Http404, JsonResponse, HttpResponseForbidden, HttpResponseBadRequest, HttpResponseRedirect
 from django.views.generic import TemplateView, DetailView
 from django.core.serializers.json import DjangoJSONEncoder
-
+from django.db.models import Q
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404
@@ -38,15 +38,14 @@ class CompetitionUpdateForm(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         comp = self.object
+        user = self.request.user
 
-        groups_qs = comp.participant_groups.select_related('queue').prefetch_related('user_set')
-
-        participant_user_ids = list(
+        participant_user_ids = set(
             CompetitionParticipant.objects.filter(competition=comp)
             .values_list('user_id', flat=True)
         )
 
-        participant_user_ids_set = set(participant_user_ids)
+        groups_qs = comp.participant_groups.select_related('queue').prefetch_related('user_set')
 
         ctx['available_groups_json'] = json.dumps([
             {
@@ -54,7 +53,7 @@ class CompetitionUpdateForm(LoginRequiredMixin, DetailView):
                 'name': _group_display_name(g.name, comp.pk),
                 'queue': g.queue.name if g.queue else None,
                 'queue_id': g.queue.pk if g.queue else None,
-                'members': [u.username for u in g.user_set.all() if u.pk in participant_user_ids_set],
+                'members': [u.username for u in g.user_set.all() if u.pk in participant_user_ids],
             }
             for g in groups_qs
         ], cls=DjangoJSONEncoder)
@@ -65,7 +64,11 @@ class CompetitionUpdateForm(LoginRequiredMixin, DetailView):
         )
 
         ctx['available_queues_json'] = json.dumps(
-            list(Queue.objects.all().values('id', 'name')),
+            list(
+                Queue.objects.filter(
+                    Q(owner=user) | Q(organizers=user) | Q(is_public=True)
+                ).distinct().values('id', 'name')
+            ),
             cls=DjangoJSONEncoder
         )
 
