@@ -6,7 +6,7 @@ from io import StringIO
 from django.http import HttpResponse
 from tempfile import SpooledTemporaryFile
 from django.db import IntegrityError
-from django.db.models import Prefetch, Subquery, OuterRef, Q
+from django.db.models import Subquery, OuterRef, Q
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
@@ -31,7 +31,7 @@ from competitions.models import Competition, Phase, CompetitionCreationTaskStatu
 from datasets.models import Data
 from competitions.tasks import batch_send_email, manual_migration, create_competition_dump
 from competitions.utils import get_popular_competitions, get_recent_competitions
-from leaderboards.models import Leaderboard, SubmissionScore
+from leaderboards.models import Leaderboard
 from utils.data import make_url_sassy
 from api.permissions import IsOrganizerOrCollaborator
 from django.db import transaction
@@ -701,37 +701,6 @@ class PhaseViewSet(ModelViewSet):
 
     def get_queryset(self):
         qs = Phase.objects.all()
-
-        if getattr(self, "action", None) == "get_leaderboard":
-            qs = qs.select_related(
-                "competition",
-                "competition__queue",
-                "leaderboard",
-            ).prefetch_related(
-                "competition__participant_groups__user_set",
-                Prefetch(
-                    "submissions",
-                    queryset=Submission.objects.select_related(
-                        "owner",
-                        "organization",
-                        "queue",
-                        "parent",
-                        "phase",
-                        "phase__competition",
-                        "phase__competition__queue",
-                    ).prefetch_related(
-                        Prefetch(
-                            "scores",
-                            queryset=SubmissionScore.objects.select_related(
-                                "column",
-                                "column__leaderboard",
-                            ),
-                        )
-                    ),
-                ),
-                "leaderboard__columns",
-            )
-
         return qs
 
     def list(self, request, *args, **kwargs):
