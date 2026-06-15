@@ -366,7 +366,7 @@ def unpack_competition(status_pk):
             try:
                 with NamedTemporaryFile(mode="w+b") as temp_file:
                     logger.info(f"Download competition bundle: {competition_dataset.data_file.name}")
-                    competition_bundle_url = make_url_sassy(competition_dataset.data_file.name)
+                    competition_bundle_url = make_url_sassy(competition_dataset.data_file.url)
                     try:
                         with requests.get(competition_bundle_url, stream=True) as r:
                             r.raise_for_status()
@@ -804,6 +804,76 @@ def submission_status_cleanup():
                 sub.parent.cancel(status=Submission.FAILED)
             else:
                 sub.cancel(status=Submission.FAILED)
+
+
+@app.task(queue='site-worker', soft_time_limit=60 * 5)
+def reaper_stuck_scoring(threshold_minutes=None):
+    """M1 watchdog — re-dispatch submissions that have been stuck in a
+    pipeline state (Scoring/Running) past a reasonable threshold.
+
+    A submission is considered stuck when:
+      * status is Scoring or Running
+      * started_when (or created_when as fallback) is older than
+        ``execution_time_limit + threshold_minutes`` minutes ago
+
+    For each stuck submission we:
+      1) annotate ``status_details`` with a reaper marker so the trace is
+         visible in /admin and via the API,
+      2) call ``run_submission(pk)`` to ask Celery to dispatch a fresh
+         attempt. The worker is responsible for idempotent handling.
+
+    Intended to be wired into ``CELERY_BEAT_SCHEDULE`` every 5-10 minutes
+    once the team is confident in the reaping policy. Until then it can be
+    invoked manually from the Django shell:
+
+        from competitions.tasks import reaper_stuck_scoring
+        reaper_stuck_scoring.delay(threshold_minutes=30)
+    """
+    threshold_minutes = int(threshold_minutes or 30)
+    threshold = timedelta(minutes=threshold_minutes)
+    cutoff = now() - threshold
+
+    candidates = (
+        Submission.objects
+        .filter(status__in=(Submission.SCORING, Submission.RUNNING))
+        .filter(has_children=False)
+        .select_related('phase', 'parent')
+    )
+
+    reaped = 0
+    for sub in candidates:
+        anchor = sub.started_when or sub.created_when
+        if anchor is None or anchor > cutoff:
+            continue
+        # Phase execution_time_limit is in milliseconds; allow it as headroom.
+        exec_limit_ms = getattr(sub.phase, 'execution_time_limit', 0) or 0
+        anchor_with_headroom = anchor + timedelta(milliseconds=exec_limit_ms)
+        if anchor_with_headroom > cutoff:
+            continue
+
+        marker = (
+            f'[reaper_stuck_scoring] re-dispatched at {now().isoformat()} '
+            f'(stuck in {sub.status} since {anchor.isoformat()}, '
+            f'threshold={threshold_minutes}m)'
+        )
+        sub.status_details = ((sub.status_details or '') + '\n' + marker).strip()
+        sub.save(update_fields=['status_details'])
+
+        try:
+            run_submission(sub.pk, is_scoring=(sub.status == Submission.SCORING))
+            reaped += 1
+            logger.warning(
+                'reaper_stuck_scoring: re-dispatched submission pk=%s status=%s '
+                'anchor=%s', sub.pk, sub.status, anchor.isoformat(),
+            )
+        except Exception:
+            logger.exception(
+                'reaper_stuck_scoring: failed to re-dispatch pk=%s', sub.pk,
+            )
+
+    if reaped:
+        logger.warning('reaper_stuck_scoring: re-dispatched %s submission(s)', reaped)
+    return reaped
 
 
 # -------------------------------------------------
