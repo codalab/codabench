@@ -31,6 +31,17 @@ class CompetitionCreateForm(LoginRequiredMixin, TemplateView):
     template_name = 'competitions/form.html'
 
 
+def _allowed_queues_for_user(user):
+    if user.is_superuser:
+        return Queue.objects.all()
+
+    return Queue.objects.filter(
+        Q(owner=user) |
+        Q(organizers=user) |
+        Q(is_public=True)
+    ).distinct()
+
+
 class CompetitionUpdateForm(LoginRequiredMixin, DetailView):
     template_name = 'competitions/form.html'
     queryset = Competition.objects.all()
@@ -63,12 +74,10 @@ class CompetitionUpdateForm(LoginRequiredMixin, DetailView):
             cls=DjangoJSONEncoder
         )
 
+        allowed_queues_qs = _allowed_queues_for_user(user)
+
         ctx['available_queues_json'] = json.dumps(
-            list(
-                Queue.objects.filter(
-                    Q(owner=user) | Q(organizers=user) | Q(is_public=True)
-                ).distinct().values('id', 'name')
-            ),
+            list(allowed_queues_qs.values('id', 'name')),
             cls=DjangoJSONEncoder
         )
 
@@ -202,18 +211,27 @@ def competition_create_group(request, pk):
         .values_list('user_id', flat=True)
     )
 
+    allowed_queue_ids = set(
+        _allowed_queues_for_user(user).values_list('id', flat=True)
+    )
+
     try:
         with transaction.atomic():
             group = CustomGroup(name=stored_name)
+
             if queue_id:
                 try:
-                    queue = Queue.objects.get(pk=queue_id)
-                    group.queue = queue
-                except Queue.DoesNotExist:
-                    group.queue = None
+                    queue_id_int = int(queue_id)
+                except (TypeError, ValueError):
+                    return HttpResponseBadRequest("Invalid queue_id")
+
+                if queue_id_int not in allowed_queue_ids:
+                    return HttpResponseForbidden("You are not allowed to use this queue")
+
+                group.queue = get_object_or_404(Queue, pk=queue_id_int)
+
             group.save()
 
-            user_ids_int = []
             try:
                 user_ids_int = [int(u) for u in user_ids]
             except Exception:
@@ -254,7 +272,6 @@ def competition_create_group(request, pk):
     messages.success(request, "Groupe créé")
     return HttpResponseRedirect(reverse('competitions:edit', kwargs={'pk': competition.pk}))
 
-
 @login_required
 @require_POST
 def competition_update_group(request, pk, group_id):
@@ -280,6 +297,8 @@ def competition_update_group(request, pk, group_id):
         name = (request.POST.get('name') or '').strip()
         queue_id = request.POST.get('queue_id') or None
         user_ids = request.POST.getlist('user_ids[]') or []
+        if not user_ids and request.POST.get('user_ids'):
+            user_ids = [u.strip() for u in request.POST.get('user_ids').split(',') if u.strip()]
 
     if not name:
         return HttpResponseBadRequest("Missing name")
@@ -291,13 +310,27 @@ def competition_update_group(request, pk, group_id):
         .values_list('user_id', flat=True)
     )
 
+    allowed_queue_ids = set(
+        _allowed_queues_for_user(user).values_list('id', flat=True)
+    )
+
     try:
         with transaction.atomic():
             group.name = stored_name
+
             if queue_id:
-                group.queue = Queue.objects.filter(pk=queue_id).first()
+                try:
+                    queue_id_int = int(queue_id)
+                except (TypeError, ValueError):
+                    return HttpResponseBadRequest("Invalid queue_id")
+
+                if queue_id_int not in allowed_queue_ids:
+                    return HttpResponseForbidden("You are not allowed to use this queue")
+
+                group.queue = get_object_or_404(Queue, pk=queue_id_int)
             else:
                 group.queue = None
+
             group.save()
 
             try:
@@ -311,6 +344,7 @@ def competition_update_group(request, pk, group_id):
                     raise ValueError(f"Some users are not participants of this competition: {invalid}")
 
             group.user_set.set(User.objects.filter(pk__in=user_ids_int))
+
     except ValueError as e:
         return HttpResponseBadRequest(str(e))
     except Exception as e:
@@ -322,7 +356,7 @@ def competition_update_group(request, pk, group_id):
             'id': group.id,
             'name': name,
             'queue': group.queue.name if group.queue else None,
-            'queue_id': group.queue.pk if group.queue else None,  # manquant
+            'queue_id': group.queue.pk if group.queue else None,
             'members': list(group.user_set.values_list('username', flat=True)),
         }
     }
