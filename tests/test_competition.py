@@ -123,11 +123,12 @@ def test_manual_competition_creation(page: Page):
     page.locator(
         ".CodeMirror.cm-s-easymde.CodeMirror-wrap.CodeMirror-focused > div > textarea"
     ).fill("This is a phase Test")
-    page.locator(".ui.search.selection.dropdown.multiple:visible").click()
-    page.locator(".ui.search.selection.dropdown.multiple > .search").first.fill(
-        str(titleNum) + "Playwright Task"
-    )
-    page.get_by_text(str(titleNum) + "Playwright Task").nth(1).click()
+    tasks_dropdown = page.locator("#tasks_select_container .ui.dropdown")
+    tasks_dropdown.click()
+    page.keyboard.type(f"{titleNum}Playwright Task")
+    tasks_dropdown.locator(".visible.menu .item").filter(
+        has_text=f"{titleNum}Playwright Task"
+    ).click()
     page.locator(".title > .dropdown").click()
     page.locator('input[name="execution_time_limit"]').click()
     page.locator('input[name="execution_time_limit"]').fill("100")
