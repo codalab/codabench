@@ -272,6 +272,7 @@ def competition_create_group(request, pk):
     messages.success(request, "Groupe créé")
     return HttpResponseRedirect(reverse('competitions:edit', kwargs={'pk': competition.pk}))
 
+
 @login_required
 @require_POST
 def competition_update_group(request, pk, group_id):
