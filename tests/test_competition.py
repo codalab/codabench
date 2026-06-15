@@ -123,7 +123,7 @@ def test_manual_competition_creation(page: Page):
     page.locator(
         ".CodeMirror.cm-s-easymde.CodeMirror-wrap.CodeMirror-focused > div > textarea"
     ).fill("This is a phase Test")
-    page.locator(".ui.search.selection.dropdown.multiple").first.click()
+    page.locator(".ui.search.selection.dropdown.multiple:visible").click()
     page.locator(".ui.search.selection.dropdown.multiple > .search").first.fill(
         str(titleNum) + "Playwright Task"
     )
