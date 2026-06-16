@@ -41,6 +41,50 @@
                 </div>
             </div>
 
+            <div class="workers-section" if="{ queueStats.length }">
+                <div class="workers-section-header">
+                    <div class="workers-section-title">
+                        Queues stats
+                    </div>
+                </div>
+                <div class="workers-table-wrap">
+                    <table class="workers-table workers-table--stats">
+                        <colgroup>
+                            <col class="col-worker">
+                            <col class="col-jobs">
+                            <col class="col-jobs">
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th>Queues</th>
+                                <th class="cell-center">Pending</th>
+                                <th class="cell-center">Running</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr each="{ qs in queueStats }">
+                                <td class="cell-worker">
+                                    <span class="worker-hostname">{ qs.source_name }</span>
+                                    <span class="queue-worker-count">
+                                        <i class="server icon"></i>{ qs.workers_count || 0 }
+                                    </span>
+                                </td>
+                                <td class="cell-right">
+                                    <span class="queue-stat-badge { qs.jobs_pending > 0 ? 'pending' : 'idle' }">
+                                        { qs.jobs_pending }
+                                    </span>
+                                </td>
+                                <td class="cell-right">
+                                    <span class="queue-stat-badge { qs.jobs_running > 0 ? 'running' : 'idle' }">
+                                        { qs.jobs_running }
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <div class="workers-section">
                 <div class="workers-section-header">
                     <div class="workers-section-title">
@@ -151,49 +195,6 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="workers-section" if="{ queueStats.length }">
-                    <div class="workers-section-header">
-                        <div class="workers-section-title">
-                            Queues stats
-                        </div>
-                    </div>
-                    <div class="workers-table-wrap">
-                        <table class="workers-table workers-table--stats">
-                            <colgroup>
-                                <col class="col-worker">
-                                <col class="col-jobs">
-                                <col class="col-jobs">
-                            </colgroup>
-                            <thead>
-                                <tr>
-                                    <th>Queues</th>
-                                    <th class="cell-center">Pending</th>
-                                    <th class="cell-center">Running</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr each="{ qs in queueStats }">
-                                    <td class="cell-worker">
-                                        <span class="worker-hostname">{ qs.source_name }</span>
-                                        <span class="queue-worker-count">
-                                            <i class="server icon"></i>{ qs.workers_count || 0 }
-                                        </span>
-                                    </td>
-                                    <td class="cell-right">
-                                        <span class="queue-stat-badge { qs.jobs_pending > 0 ? 'pending' : 'idle' }">
-                                            { qs.jobs_pending }
-                                        </span>
-                                    </td>
-                                    <td class="cell-right">
-                                        <span class="queue-stat-badge { qs.jobs_running > 0 ? 'running' : 'idle' }">
-                                            { qs.jobs_running }
-                                        </span>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -237,6 +238,50 @@
                 <div class="stat-card stat-card-down">
                     <div class="stat-value stat-red">{ unavailableCount() }</div>
                     <div class="stat-label">Down</div>
+                </div>
+            </div>
+
+            <div class="workers-section" if="{ queueStats.length }">
+                <div class="workers-section-header">
+                    <div class="workers-section-title">
+                        Queues stats
+                    </div>
+                </div>
+                <div class="workers-table-wrap">
+                    <table class="workers-table workers-table--stats">
+                        <colgroup>
+                            <col class="col-worker">
+                            <col class="col-stat">
+                            <col class="col-stat">
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th>Queues</th>
+                                <th class="cell-center">Pending</th>
+                                <th class="cell-center">Running</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr each="{ qs in queueStats }">
+                                <td class="cell-worker">
+                                    <span class="worker-hostname">{ qs.source_name }</span>
+                                    <span class="queue-worker-count">
+                                        <i class="server icon"></i>{ qs.workers_count || 0 }
+                                    </span>
+                                </td>
+                                <td class="cell-right">
+                                    <span class="queue-stat-badge { qs.jobs_pending > 0 ? 'pending' : 'idle' }">
+                                        { qs.jobs_pending }
+                                    </span>
+                                </td>
+                                <td class="cell-right">
+                                    <span class="queue-stat-badge { qs.jobs_running > 0 ? 'running' : 'idle' }">
+                                        { qs.jobs_running }
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -350,49 +395,6 @@
                             </tr>
                         </tbody>
                     </table>
-                </div>
-                <div class="workers-section" if="{ queueStats.length }">
-                    <div class="workers-section-header">
-                        <div class="workers-section-title">
-                            Queues stats
-                        </div>
-                    </div>
-                    <div class="workers-table-wrap">
-                        <table class="workers-table workers-table--stats">
-                            <colgroup>
-                                <col class="col-worker">
-                                <col class="col-stat">
-                                <col class="col-stat">
-                            </colgroup>
-                            <thead>
-                                <tr>
-                                    <th>Queues</th>
-                                    <th class="cell-center">Pending</th>
-                                    <th class="cell-center">Running</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr each="{ qs in queueStats }">
-                                    <td class="cell-worker">
-                                        <span class="worker-hostname">{ qs.source_name }</span>
-                                        <span class="queue-worker-count">
-                                            <i class="server icon"></i>{ qs.workers_count || 0 }
-                                        </span>
-                                    </td>
-                                    <td class="cell-right">
-                                        <span class="queue-stat-badge { qs.jobs_pending > 0 ? 'pending' : 'idle' }">
-                                            { qs.jobs_pending }
-                                        </span>
-                                    </td>
-                                    <td class="cell-right">
-                                        <span class="queue-stat-badge { qs.jobs_running > 0 ? 'running' : 'idle' }">
-                                            { qs.jobs_running }
-                                        </span>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
                 </div>
             </div>
         </div>
