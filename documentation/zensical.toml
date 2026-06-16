@@ -47,7 +47,7 @@ nav = [
         {"Manual Validation" = "Developers_and_Administrators/Manual-validation.md"},
 
     ]},
-    {"Administrators" = [
+    {"Site Administrators (Self-Hosters)" = [
         {"Codabench Basic Installation Guide" = "Developers_and_Administrators/Codabench-Installation.md"},
         {"How to Deploy a Server" = "Developers_and_Administrators/How-to-deploy-Codabench-on-your-server.md"},
         {"Administrative Procedures" = "Developers_and_Administrators/Administrator-procedures.md"},
