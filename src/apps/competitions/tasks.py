@@ -6,16 +6,11 @@ import zipfile
 from datetime import timedelta, datetime
 from django.conf import settings
 from io import BytesIO
-<<<<<<< HEAD
 from tempfile import NamedTemporaryFile, TemporaryDirectory
-=======
-from tempfile import TemporaryDirectory, NamedTemporaryFile
->>>>>>> ff231817 (Feature group routing for submissions (#2393))
 
 import oyaml as yaml
 import requests
 from celery._state import app_or_default
-<<<<<<< HEAD
 from competitions.models import (
     Competition,
     CompetitionCreationTaskStatus,
@@ -24,20 +19,6 @@ from competitions.models import (
     Submission,
     SubmissionDetails,
 )
-=======
-from django.conf import settings
-from django.core.exceptions import ObjectDoesNotExist
-from django.core.files.base import ContentFile
-from django.db.models import Subquery, OuterRef, Count, Case, When, Value, F
-from django.db import transaction
-from django.utils.text import slugify
-from django.utils.timezone import now
-from rest_framework.exceptions import ValidationError
-
-from celery_config import app
-from competitions.models import Submission, CompetitionCreationTaskStatus, SubmissionDetails, Competition, \
-    CompetitionDump, Phase
->>>>>>> ff231817 (Feature group routing for submissions (#2393))
 from competitions.unpackers.utils import CompetitionUnpackingException
 from competitions.unpackers.v1 import V15Unpacker
 from competitions.unpackers.v2 import V2Unpacker
@@ -142,40 +123,6 @@ MAX_EXECUTION_TIME_LIMIT = int(
 )  # time limit of the default queue
 
 
-def _get_user_group_queues(user, competition):
-    all_user_groups = list(
-        competition.participant_groups
-        .filter(user__pk=user.pk)
-        .select_related('queue')
-        .distinct()
-    )
-
-    if not all_user_groups:
-        return []
-
-    groups_with_queue = [g for g in all_user_groups if g.queue_id is not None]
-    has_groups_without_queue = any(g.queue_id is None for g in all_user_groups)
-
-    if not groups_with_queue:
-        return []
-
-    seen_ids = set()
-    queues = []
-    for group in groups_with_queue:
-        if group.queue_id not in seen_ids:
-            seen_ids.add(group.queue_id)
-            queues.append(group.queue)
-
-    if has_groups_without_queue:
-        competition_queue = competition.queue
-        if competition_queue is None:
-            queues.append(None)
-        elif competition_queue.id not in seen_ids:
-            queues.append(competition_queue)
-
-    return queues
-
-
 def _send_to_compute_worker(submission, is_scoring):
     run_args = {
         "user_pk": submission.owner.pk,
@@ -265,19 +212,6 @@ def _send_to_compute_worker(submission, is_scoring):
     time_padding = 60 * 20  # 20 minutes
     time_limit = submission.phase.execution_time_limit + time_padding
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-    effective_queue = submission.queue or submission.phase.competition.queue
-
-    if effective_queue:
-        run_args['execution_time_limit'] = submission.phase.execution_time_limit
-        if submission.queue != effective_queue:
-            submission.queue = effective_queue
-            submission.save(update_fields=["queue"])
-
-=======
-=======
->>>>>>> ccef98f3 (Feature group routing for submissions (#2393))
     if (
         submission.phase.competition.queue
     ):  # if the competition is running on a custom queue, not the default queue
@@ -286,45 +220,22 @@ def _send_to_compute_worker(submission, is_scoring):
             submission.phase.execution_time_limit
         )  # use the competition time limit
         submission.save(update_fields=["queue"])
-<<<<<<< HEAD
->>>>>>> 4958f28d (files blacked for fixing the formatting issues)
-=======
-=======
-    effective_queue = submission.queue or submission.phase.competition.queue
-
-    if effective_queue:
-        run_args['execution_time_limit'] = submission.phase.execution_time_limit
-        if submission.queue != effective_queue:
-            submission.queue = effective_queue
-            submission.save(update_fields=["queue"])
-
->>>>>>> ff231817 (Feature group routing for submissions (#2393))
->>>>>>> ccef98f3 (Feature group routing for submissions (#2393))
     if submission.status == Submission.SUBMITTING:
+        # Don't want to mark an already-prepared submission as "submitted" again, so
+        # only do this if we were previously "SUBMITTING"
         submission.status = Submission.SUBMITTED
         submission.save(update_fields=["status"])
 
     def _enqueue_after_commit():
+        # priority of scoring tasks is higher, we don't want to wait around for
+        # many submissions to be scored while we're waiting for results
         priority = 10 if is_scoring else 0
-        if effective_queue:
+        if submission.phase.competition.queue:
             celery_app = app_or_default()
             with celery_app.connection() as new_connection:
-<<<<<<< HEAD
-<<<<<<< HEAD
-                new_connection.virtual_host = str(effective_queue.vhost)
-=======
                 new_connection.virtual_host = str(
                     submission.phase.competition.queue.vhost
                 )
->>>>>>> 4958f28d (files blacked for fixing the formatting issues)
-=======
-                new_connection.virtual_host = str(
-                    submission.phase.competition.queue.vhost
-                )
-=======
-                new_connection.virtual_host = str(effective_queue.vhost)
->>>>>>> ff231817 (Feature group routing for submissions (#2393))
->>>>>>> ccef98f3 (Feature group routing for submissions (#2393))
                 task = celery_app.send_task(
                     "compute_worker_run",
                     args=(run_args,),
@@ -392,25 +303,12 @@ def send_child_id(submission, child_id):
 
 @app.task(queue="site-worker", soft_time_limit=60)
 def _run_submission(submission_pk, task_pks=None, is_scoring=False):
-<<<<<<< HEAD
-<<<<<<< HEAD
-    select_models = ('phase', 'phase__competition')
-=======
-=======
->>>>>>> ccef98f3 (Feature group routing for submissions (#2393))
     """This function is wrapped so that when we run tests we can run this function not
     via celery"""
     select_models = (
         "phase",
         "phase__competition",
     )
-<<<<<<< HEAD
->>>>>>> 4958f28d (files blacked for fixing the formatting issues)
-=======
-=======
-    select_models = ('phase', 'phase__competition')
->>>>>>> ff231817 (Feature group routing for submissions (#2393))
->>>>>>> ccef98f3 (Feature group routing for submissions (#2393))
     prefetch_models = (
         "details",
         "phase__tasks__input_data",
@@ -424,61 +322,24 @@ def _run_submission(submission_pk, task_pks=None, is_scoring=False):
     submission = qs.get(pk=submission_pk)
 
     if submission.is_specific_task_re_run:
+        # Should only be one task for a specified task submission
         tasks = Task.objects.filter(pk__in=task_pks)
     elif task_pks is None:
         tasks = submission.phase.tasks.all()
     else:
         tasks = submission.phase.tasks.filter(pk__in=task_pks)
-    tasks = list(tasks.order_by('pk'))
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-    if submission.parent is None and not is_scoring:
-        group_queues = _get_user_group_queues(submission.owner, submission.phase.competition)
-    else:
-        group_queues = []
-
-    is_multi_task = len(tasks) > 1
-    is_multi_queue = len(group_queues) > 1
-
-    if is_multi_task or is_multi_queue:
-        if is_multi_task and is_multi_queue:
-            combos = [(task, queue) for task in tasks for queue in group_queues]
-        elif is_multi_task:
-            override = group_queues[0] if group_queues else None
-            combos = [(task, override) for task in tasks]
-        else:
-            combos = [(tasks[0], queue) for queue in group_queues]
-=======
     tasks = tasks.order_by("pk")
->>>>>>> 4958f28d (files blacked for fixing the formatting issues)
-=======
-    tasks = tasks.order_by("pk")
-=======
-    if submission.parent is None and not is_scoring:
-        group_queues = _get_user_group_queues(submission.owner, submission.phase.competition)
-    else:
-        group_queues = []
 
-    is_multi_task = len(tasks) > 1
-    is_multi_queue = len(group_queues) > 1
-
-    if is_multi_task or is_multi_queue:
-        if is_multi_task and is_multi_queue:
-            combos = [(task, queue) for task in tasks for queue in group_queues]
-        elif is_multi_task:
-            override = group_queues[0] if group_queues else None
-            combos = [(task, override) for task in tasks]
-        else:
-            combos = [(tasks[0], queue) for queue in group_queues]
->>>>>>> ff231817 (Feature group routing for submissions (#2393))
->>>>>>> ccef98f3 (Feature group routing for submissions (#2393))
-
+    if len(tasks) > 1:
+        # The initial submission object becomes the parent submission and we create children for each task
         submission.has_children = True
         submission.save()
+
         send_parent_status(submission)
 
-        for task, queue in combos:
+        for task in tasks:
+            # TODO: make a duplicate submission method and use it here
             child_sub = Submission(
                 owner=submission.owner,
                 phase=submission.phase,
@@ -487,30 +348,15 @@ def _run_submission(submission_pk, task_pks=None, is_scoring=False):
                 parent=submission,
                 task=task,
                 fact_sheet_answers=submission.fact_sheet_answers,
-<<<<<<< HEAD
-<<<<<<< HEAD
-                queue=queue,
-=======
->>>>>>> 4958f28d (files blacked for fixing the formatting issues)
-=======
-=======
-                queue=queue,
->>>>>>> ff231817 (Feature group routing for submissions (#2393))
->>>>>>> ccef98f3 (Feature group routing for submissions (#2393))
             )
             child_sub.save(ignore_submission_limit=True)
             _send_to_compute_worker(child_sub, is_scoring=False)
             send_child_id(submission, child_sub.id)
-
     else:
+        # The initial submission object is the only submission
         if not submission.task:
             submission.task = tasks[0]
             submission.save()
-
-        if group_queues and submission.queue != group_queues[0]:
-            submission.queue = group_queues[0]
-            submission.save(update_fields=['queue'])
-
         _send_to_compute_worker(submission, is_scoring)
 
 
