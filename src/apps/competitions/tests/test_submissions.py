@@ -427,6 +427,51 @@ class TestSubmissionTasks(SubmissionTestCase):
         assert self.submission_pass.status == Submission.RUNNING
         assert self.submission_fail.status == Submission.FAILED
 
+    def test_cleanup_recovers_stuck_submitted_submissions(self):
+        """Submissions stuck in Submitted should be recovered by cleanup."""
+        sub = self.make_submission()
+        sub.status = Submission.SUBMITTED
+        sub.created_when = timezone.now() - timedelta(hours=48)
+        sub.save(ignore_submission_limit=True)
+
+        submission_status_cleanup()
+        sub.refresh_from_db()
+        assert sub.status == Submission.FAILED
+
+    def test_cleanup_recovers_stuck_preparing_submissions(self):
+        """Submissions stuck in Preparing should be recovered by cleanup."""
+        sub = self.make_submission()
+        sub.status = Submission.PREPARING
+        sub.created_when = timezone.now() - timedelta(hours=48)
+        sub.save(ignore_submission_limit=True)
+
+        submission_status_cleanup()
+        sub.refresh_from_db()
+        assert sub.status == Submission.FAILED
+
+    def test_cleanup_recovers_stuck_scoring_submissions(self):
+        """Submissions stuck in Scoring should be recovered by cleanup."""
+        sub = self.make_submission()
+        sub.status = Submission.SCORING
+        sub.created_when = timezone.now() - timedelta(hours=48)
+        sub.save(ignore_submission_limit=True)
+
+        submission_status_cleanup()
+        sub.refresh_from_db()
+        assert sub.status == Submission.FAILED
+
+    def test_cleanup_does_not_touch_recent_non_terminal_submissions(self):
+        """Recent submissions in non-terminal states should NOT be cleaned up."""
+        for status in [Submission.SUBMITTED, Submission.PREPARING, Submission.SCORING]:
+            sub = self.make_submission()
+            sub.status = status
+            sub.created_when = timezone.now()
+            sub.save(ignore_submission_limit=True)
+
+            submission_status_cleanup()
+            sub.refresh_from_db()
+            assert sub.status == status, f"Recent {status} submission should not be cleaned up"
+
     def test_cancelling_parent_submission_cancels_all_children(self):
         self.parent_submission = self.make_submission()
         self.parent_submission.has_children = True

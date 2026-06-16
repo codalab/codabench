@@ -923,14 +923,21 @@ def update_phase_statuses():
 
 @app.task(queue="site-worker")
 def submission_status_cleanup():
+    # Recover submissions stuck in any non-terminal state
+    non_terminal_statuses = [
+        Submission.SUBMITTED,
+        Submission.PREPARING,
+        Submission.RUNNING,
+        Submission.SCORING,
+    ]
     submissions = Submission.objects.filter(
-        status=Submission.RUNNING, has_children=False
-    ).select_related("phase", "parent")
+        status__in=non_terminal_statuses,
+        has_children=False,
+    ).select_related('phase', 'parent')
 
     for sub in submissions:
-        if sub.started_when < now() - timedelta(
-            milliseconds=(3600000 * 24) + sub.phase.execution_time_limit
-        ):
+        # Check if the submission has been running for 24 hours longer than execution_time_limit
+        if sub.started_when < now() - timedelta(milliseconds=(3600000 * 24) + sub.phase.execution_time_limit):
             if sub.parent is not None:
                 sub.parent.cancel(status=Submission.FAILED)
             else:
