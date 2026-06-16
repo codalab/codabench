@@ -141,12 +141,12 @@ class LeaderboardEntriesSerializer(serializers.ModelSerializer):
                 if column.sorting == 'desc'
                 else F(col_name).asc(nulls_last=True)
             )
-            submissions_qs = submissions_qs.annotate(**{
+            submissions = submissions.annotate(**{
                 col_name: Sum('scores__score', filter=Q(scores__column__index=column.index))
             })
 
-        submissions_qs = submissions_qs.order_by(*ordering, 'created_when')
-        return SubmissionLeaderBoardSerializer(submissions_qs, many=True).data
+        submissions = submissions.order_by(*ordering, 'created_when')
+        return SubmissionLeaderBoardSerializer(submissions, many=True).data
 
 
 class LeaderboardPhaseSerializer(serializers.ModelSerializer):
