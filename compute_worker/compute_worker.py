@@ -8,6 +8,7 @@ import shutil
 import signal
 import socket
 import tempfile
+import random
 import time
 import uuid
 import requests
@@ -503,8 +504,10 @@ class Run:
         self.requests_session = requests.Session()
         adapter = requests.adapters.HTTPAdapter(
             max_retries=Retry(
-                total=3,
-                backoff_factor=1,
+                total=5,
+                backoff_factor=2,
+                status_forcelist=[502, 503, 504],
+                allowed_methods=["PATCH", "GET", "PUT", "POST"],
             )
         )
         self.requests_session.mount("http://", adapter)
@@ -614,20 +617,36 @@ class Run:
             ]
         return [run_args[name] for name in DETAILED_OUTPUT_NAMES]
 
-    def _update_submission(self, data):
+    def _update_submission(self, data, max_retries=5, backoff_base=2):
         url = f"{self.submissions_api_url}/submissions/{self.submission_id}/"
         data["secret"] = self.secret
 
-        logger.info(f"Updating submission @ {url} with data = {data}")
+        for attempt in range(1, max_retries + 1):
+            logger.info(f"Updating submission @ {url} (attempt {attempt}/{max_retries}) with data = {data}")
+            try:
+                resp = self.requests_session.patch(url, data=data, timeout=150)
+            except requests.exceptions.RequestException as exc:
+                logger.warning(f"Submission patch request failed (attempt {attempt}/{max_retries}): {exc}")
+                if attempt == max_retries:
+                    raise SubmissionException(f"Failure updating submission data after {max_retries} attempts.")
+                sleep_s = backoff_base ** attempt + random.uniform(0, 1)
+                logger.info(f"Retrying in {sleep_s:.1f}s...")
+                time.sleep(sleep_s)
+                continue
 
-        resp = self.requests_session.patch(url, data=data, timeout=150)
-        if resp.status_code == 200:
-            logger.info("Submission updated successfully!")
-        else:
-            logger.error(
-                f"Submission patch failed with status = {resp.status_code}, and response = \n{resp.content}"
-            )
-            raise SubmissionException("Failure updating submission data.")
+            if resp.status_code == 200:
+                logger.info("Submission updated successfully!")
+                return
+            else:
+                logger.warning(
+                    f"Submission patch failed (attempt {attempt}/{max_retries}) "
+                    f"with status = {resp.status_code}, and response = \n{resp.content}"
+                )
+                if attempt == max_retries:
+                    raise SubmissionException(f"Failure updating submission data after {max_retries} attempts.")
+                sleep_s = backoff_base ** attempt + random.uniform(0, 1)
+                logger.info(f"Retrying in {sleep_s:.1f}s...")
+                time.sleep(sleep_s)
 
     def _update_status(self, status, extra_information=None):
         # Update submission status
@@ -639,8 +658,9 @@ class Run:
         try:
             self._update_submission(data)
         except Exception as e:
-            # Always catch exception and never raise error
             logger.exception(f"Failed to update submission status to {status}: {e}")
+            if status in ("Finished", "Failed"):
+                raise
 
     def _get_container_image(self, image_name):
         logger.info("Running pull for image: {}".format(image_name))
