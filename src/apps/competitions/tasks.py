@@ -795,11 +795,26 @@ def update_phase_statuses():
 
 @app.task(queue='site-worker')
 def submission_status_cleanup():
-    submissions = Submission.objects.filter(status=Submission.RUNNING, has_children=False).select_related('phase', 'parent')
+    # Recover submissions stuck in any non-terminal state
+    non_terminal_statuses = [
+        Submission.SUBMITTED,
+        Submission.PREPARING,
+        Submission.RUNNING,
+        Submission.SCORING,
+    ]
+    submissions = Submission.objects.filter(
+        status__in=non_terminal_statuses,
+        has_children=False,
+    ).select_related('phase', 'parent')
 
     for sub in submissions:
-        # Check if the submission has been running for 24 hours longer than execution_time_limit
-        if sub.started_when < now() - timedelta(milliseconds=(3600000 * 24) + sub.phase.execution_time_limit):
+        # Use started_when for Running submissions, created_when as fallback for others
+        reference_time = sub.started_when if sub.started_when else sub.created_when
+        deadline = reference_time + timedelta(
+            milliseconds=(3600000 * 24) + sub.phase.execution_time_limit
+        )
+
+        if now() > deadline:
             if sub.parent is not None:
                 sub.parent.cancel(status=Submission.FAILED)
             else:
