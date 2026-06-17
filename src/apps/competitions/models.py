@@ -492,6 +492,9 @@ class Submission(models.Model):
     ingestion_worker_hostname = models.CharField(max_length=255, blank=True, null=True)
     # Scoring hostname
     scoring_worker_hostname = models.CharField(max_length=255, blank=True, null=True)
+    # Incremented every time a worker claims this submission from the broker.
+    # Used to detect redeliveries (M6) and provide an audit trail.
+    worker_attempt_count = models.PositiveIntegerField(default=0)
     queue = models.ForeignKey('queues.Queue', on_delete=models.SET_NULL, null=True, blank=True,
                               related_name='submissions')
     is_migrated = models.BooleanField(default=False)
@@ -809,3 +812,37 @@ class CompetitionWhiteListEmail(models.Model):
 
     def __str__(self):
         return f"{self.email} - Competition: {self.competition.title}"
+
+
+class IdempotencyRecord(models.Model):
+    """Tracks one client-attempted POST keyed by (owner, endpoint, key).
+
+    Used to make submission creation replay-safe: a client retrying the same
+    request with the same Idempotency-Key header receives the original response
+    instead of producing a duplicate row.
+    """
+    PENDING = 0
+    key = models.CharField(max_length=128)
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    endpoint = models.CharField(max_length=64)
+    request_fingerprint = models.CharField(max_length=64)
+    response_status = models.PositiveSmallIntegerField(default=PENDING)
+    response_body = models.JSONField(default=dict, blank=True)
+    submission = models.ForeignKey(
+        'Submission', null=True, blank=True,
+        on_delete=models.SET_NULL, related_name='+',
+    )
+    created_when = models.DateTimeField(auto_now_add=True)
+    updated_when = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['owner', 'endpoint', 'key'],
+                name='unique_idempotency_owner_endpoint_key',
+            ),
+        ]
+        indexes = [models.Index(fields=['created_when'])]
+
+    def __str__(self):
+        return f"IdempotencyRecord({self.endpoint}, {self.key}, status={self.response_status})"
