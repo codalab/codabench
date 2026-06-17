@@ -313,9 +313,13 @@ def run_wrapper(run_args):
     try:
         run.prepare()
         run.start()
+        # Upload scores and outputs before marking as finished
         if run.is_scoring:
             run.push_scores()
         run.push_output()
+        # Mark as finished only after successful upload
+        if run.is_scoring:
+            run._update_status(SubmissionStatus.FINISHED)
     except DockerImagePullException as e:
         msg = str(e).strip()
         if msg:
@@ -1445,7 +1449,7 @@ class Run:
                 )
                 # Raise so upstream marks failed immediately
                 raise SubmissionException("Child task failed or non-zero return code")
-            self._update_status(SubmissionStatus.FINISHED)
+            # Status will be set to FINISHED after successful upload
 
         else:
             self._update_status(SubmissionStatus.SCORING)
@@ -1483,9 +1487,29 @@ class Run:
             "scores": scores,
         }
         logger.info(f"Submitting these scores to {url}: {scores} with data = {data}")
-        resp = self.requests_session.post(url, json=data)
-        logger.info(resp)
-        logger.info(str(resp.content))
+        
+        # Retry score upload with exponential backoff
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                resp = self.requests_session.post(url, json=data, timeout=30)
+                resp.raise_for_status()
+                logger.info(f"Scores uploaded successfully: {resp.status_code}")
+                logger.info(str(resp.content))
+                return
+            except Exception as e:
+                wait_time = 2 ** attempt
+                if attempt < max_retries - 1:
+                    logger.warning(
+                        f"Score upload attempt {attempt + 1}/{max_retries} failed: {e}. "
+                        f"Retrying in {wait_time}s..."
+                    )
+                    time.sleep(wait_time)
+                else:
+                    logger.error(f"All {max_retries} score upload attempts failed")
+                    raise SubmissionException(
+                        f"Failed to upload scores after {max_retries} attempts: {e}"
+                    )
 
     def push_output(self):
         """Output is pushed at the end of both prediction and scoring steps."""
