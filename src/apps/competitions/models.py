@@ -536,9 +536,10 @@ class Submission(models.Model):
             detail.delete()  # Remove record from DB
 
         # Clear the data field if no other submissions are using it
-        other_submissions_using_data = Submission.objects.filter(data=self.data).exclude(pk=self.pk).exists()
-        if not other_submissions_using_data:
-            self.data.delete()
+        if self.data:
+            other_submissions_using_data = Submission.objects.filter(data=self.data).exclude(pk=self.pk).exists()
+            if not other_submissions_using_data:
+                self.data.delete()
 
         # Clear the data field for this submission
         self.data = None
@@ -554,11 +555,12 @@ class Submission(models.Model):
     def delete(self, **kwargs):
 
         # Check if any other submissions are using the same data
-        other_submissions_using_data = Submission.objects.filter(data=self.data).exclude(pk=self.pk).exists()
+        if self.data:
+            other_submissions_using_data = Submission.objects.filter(data=self.data).exclude(pk=self.pk).exists()
 
-        if not other_submissions_using_data:
-            # If no other submissions are using the same data, delete it
-            self.data.delete()
+            if not other_submissions_using_data:
+                # If no other submissions are using the same data, delete it
+                self.data.delete()
 
         # Also clean up details on delete
         self.details.all().delete()
