@@ -133,11 +133,17 @@
 
     const initUI = () => {
         try { $('.ui.checkbox', self.root).checkbox() } catch(e) {}
+
         try {
             if (self.refs && self.refs.group_queue) {
                 const $q = $(self.refs.group_queue)
                 if (!$q.data('dd-init')) {
-                    $q.dropdown({ clearable: true, placeholder: 'None' })
+                    $q.dropdown({
+                        clearable: true,
+                        placeholder: 'None',
+                        search: true,
+                        fullTextSearch: true,
+                    })
                     $q.data('dd-init', true)
                 }
             }
@@ -145,8 +151,10 @@
 
         try {
             let $rest = $('.ui.dropdown', self.root)
-            if (self.refs && self.refs.group_queue)       $rest = $rest.not(self.refs.group_queue)
-            if (self.refs && self.refs.group_user_select) $rest = $rest.not(self.refs.group_user_select)
+            if (self.refs && self.refs.group_queue)
+              $rest = $rest.not(self.refs.group_queue)
+            if (self.refs && self.refs.group_user_select)
+              $rest = $rest.not(self.refs.group_user_select)
             $rest.dropdown()
         } catch(e) {}
 
