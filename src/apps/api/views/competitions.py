@@ -1,7 +1,7 @@
 import zipfile
 import json
 import csv
-from collections import OrderedDict
+from collections import Counter, OrderedDict
 from io import StringIO
 from django.http import HttpResponse
 from tempfile import SpooledTemporaryFile
@@ -424,26 +424,43 @@ class CompetitionViewSet(ModelViewSet):
             phase_id = phases[0].id
 
         leaderboard = Leaderboard.objects.prefetch_related('columns').get(phases=phase_id)
-        leaderboard_titles = {phase['id']: f'{leaderboard.title} - {phase["name"]}({phase["id"]})' for phase in submission_query}
+        leaderboard_titles = {
+            phase['id']: f'{leaderboard.title} - {phase["name"]}({phase["id"]})'
+            for phase in submission_query
+        }
         leaderboard_data = {title: {} for title in leaderboard_titles.values()}
 
         for phase in submission_query:
             generated_columns = OrderedDict()
             for task in phase['tasks']:
                 for col in leaderboard.columns.all():
-                    generated_columns.update({f'{col.key}-{task["id"]}': f'{task["name"]}({task["id"]})-{col.title}'})
+                    generated_columns.update({
+                        f'{col.key}-{task["id"]}': f'{task["name"]}({task["id"]})-{col.title}'
+                    })
+
             for submission in phase['submissions']:
-                submission_key = f'{submission["owner"]}-{submission["parent"] or submission["id"]}'
-                if submission_key not in leaderboard_data[leaderboard_titles[phase['id']]].keys():
-                    leaderboard_data[leaderboard_titles[phase['id']]].update({submission_key: OrderedDict()})
-                    if 'fact_sheet_answers' in submission.keys() and submission['fact_sheet_answers']:
-                        leaderboard_data[leaderboard_titles[phase['id']]][submission_key]\
-                            .update({'fact_sheet_answers': submission['fact_sheet_answers']})
+                queue_name = submission.get('queue_name') or ''
+                submission_key = f'{submission["owner"]}-{submission["id"]}'
+                if queue_name:
+                    submission_key = f'{submission_key}-{queue_name}'
+
+                if submission_key not in leaderboard_data[leaderboard_titles[phase['id']]]:
+                    leaderboard_data[leaderboard_titles[phase['id']]][submission_key] = OrderedDict()
+
+                    if submission.get('fact_sheet_answers'):
+                        leaderboard_data[leaderboard_titles[phase['id']]][submission_key].update({
+                            'fact_sheet_answers': submission['fact_sheet_answers']
+                        })
+
                     for col_title in generated_columns.values():
                         leaderboard_data[leaderboard_titles[phase['id']]][submission_key].update({col_title: ""})
+
                 for score in submission['scores']:
                     score_column = generated_columns[f'{score["column_key"]}-{submission["task"]}']
-                    leaderboard_data[leaderboard_titles[phase['id']]][submission_key].update({score_column: score['score']})
+                    leaderboard_data[leaderboard_titles[phase['id']]][submission_key].update({
+                        score_column: score['score']
+                    })
+
         return leaderboard_data
 
     @action(detail=True, methods=['GET'], renderer_classes=[JSONRenderer, CSVRenderer, ZipRenderer])
@@ -773,6 +790,23 @@ class PhaseViewSet(ModelViewSet):
     @action(detail=True, methods=['GET'], permission_classes=[AllowAny])
     def get_leaderboard(self, request, pk):
         phase = self.get_object()
+
+        def _clean_group_label(raw_name, submission_parent_id=None):
+            if not raw_name:
+                return None
+
+            label = str(raw_name)
+
+            if submission_parent_id is not None:
+                prefix = f"{submission_parent_id}_"
+                if label.startswith(prefix):
+                    label = label[len(prefix):]
+
+            if "__" in label:
+                label = label.rsplit("__", 1)[1]
+
+            return label or None
+
         if phase.competition.fact_sheet:
             fact_sheet_keys = [
                 (
@@ -792,21 +826,73 @@ class PhaseViewSet(ModelViewSet):
             'submissions': [],
             'tasks': [],
             'fact_sheet_keys': fact_sheet_keys or None,
-            'primary_index': query['leaderboard']['primary_index']
+            'primary_index': query['leaderboard']['primary_index'],
+            'has_group_queues': False,
         }
 
-        columns = [col for col in query['columns']]
+        columns = list(query['columns'])
         submissions_keys = {}
         submission_detailed_results = {}
 
+        group_name_by_user_queue = {}
+        for group in phase.competition.participant_groups.filter(
+            queue__isnull=False
+        ).select_related('queue').prefetch_related('user_set'):
+            cleaned_group_name = _clean_group_label(group.name)
+            for user in group.user_set.all():
+                group_name_by_user_queue[(user.username, group.queue_id)] = cleaned_group_name
+
+        parent_ids = {
+            s['parent']
+            for s in query['submissions']
+            if s['parent'] is not None
+        }
+        parent_task_counts = Counter(
+            (s['parent'], s['task'])
+            for s in query['submissions']
+            if s['parent'] is not None
+        )
+
         for submission in query['submissions']:
-            submission_key = f"{submission['owner']}{submission['parent'] or submission['id']}"
+            if submission['id'] in parent_ids:
+                continue
+
+            submission_parent_id = submission.get('parent') or submission.get('id')
+            raw_queue_name = submission.get('queue_name') or ''
+            queue_id = submission.get('queue_id')
+
+            group_name = group_name_by_user_queue.get(
+                (submission['owner'], queue_id)
+            ) if queue_id else None
+
+            group_label = _clean_group_label(
+                group_name or raw_queue_name,
+                submission_parent_id=submission_parent_id
+            )
+
+            display_group = (
+                f"{submission_parent_id}_{group_label}"
+                if group_label
+                else None
+            )
+
+            parent_id = submission['parent']
+            task_id = submission.get('task')
+
+            # Cas particulier: plusieurs submissions d'un même parent sans queue explicite
+            is_multi_group_null_queue = (
+                parent_id is not None
+                and not queue_id
+                and parent_task_counts.get((parent_id, task_id), 0) > 1
+            )
+
+            if is_multi_group_null_queue:
+                submission_key = f"{submission['owner']}{parent_id}_{submission['id']}"
+            else:
+                submission_key = f"{submission['owner']}{submission_parent_id}_{group_label or ''}"
+
             # gather detailed result from submissions for each task
-            # detailed_results are gathered based on submission key
-            # `id` is used to fetch the right detailed result in detailed results page
-            # `detailed_result` url is not needed
             submission_detailed_results.setdefault(submission_key, []).append({
-                # 'detailed_result': submission['detailed_result'],
                 'task': submission['task'],
                 'id': submission['id']
             })
@@ -821,23 +907,18 @@ class PhaseViewSet(ModelViewSet):
                     'fact_sheet_answers': submission['fact_sheet_answers'],
                     'slug_url': submission['slug_url'],
                     'organization': submission['organization'],
-                    'created_when': submission['created_when']
+                    'created_when': submission['created_when'],
+                    'queue_name': display_group,
                 })
 
-            for score in submission['scores']:
+                if queue_id or is_multi_group_null_queue:
+                    response['has_group_queues'] = True
 
-                # to check if a column is found
-                # this is useful because of `hidden` field
-                # if a column is hidden it will not be shown here so
-                # we will not return that score to the front-end
+            for score in submission['scores']:
                 column_found = False
-                # default precision is set to 2
                 precision = 2
-                # default hidden is set to false
                 hidden = False
 
-                # loop over columns to find a column with the same index
-                # replace default precision with column precision
                 for col in columns:
                     if col["index"] == score["index"]:
                         precision = col["precision"]
@@ -847,13 +928,8 @@ class PhaseViewSet(ModelViewSet):
 
                 tempScore = score
                 tempScore['task_id'] = submission['task']
-                # round the score to 'precision' decimal points
                 tempScore['score'] = str(round(float(tempScore["score"]), precision))
 
-                # only add scores to the scores list
-                # if this column is found
-                # and
-                # column is not hidden
                 if column_found and not hidden:
                     response['submissions'][submissions_keys[submission_key]]['scores'].append(tempScore)
 
@@ -877,7 +953,6 @@ class PhaseViewSet(ModelViewSet):
         # --- end pagination addition ---
 
         for task in query['tasks']:
-            # This can be used to rendered variable columns on each task
             tempTask = {
                 'name': task['name'],
                 'id': task['id'],

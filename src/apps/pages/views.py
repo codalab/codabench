@@ -95,13 +95,7 @@ class ServerStatusView(TemplateView):
                 submission.file_size = pretty_bytes(0)
 
             # Get queue from each submission
-            queue_name = ""
-            # if submission has parent get queue from parent otherwise from the submission iteset
-            if submission.parent:
-                queue_name = "*" if submission.parent.queue is None else submission.parent.queue.name
-            else:
-                queue_name = "*" if submission.queue is None else submission.queue.name
-            submission.competition_queue = queue_name
+            submission.competition_queue = "*" if submission.queue is None else submission.queue.name
 
             # Add submission owner display name
             submission.owner_display_name = submission.owner.display_name if submission.owner.display_name else submission.owner.username

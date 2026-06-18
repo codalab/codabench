@@ -533,33 +533,39 @@
         })
 
         CODALAB.events.on('submissions_loaded', submissions => {
-            let latest_submission = _.head(_.filter(submissions, {parent: null}))
+            let latest_submission = _.head(_.filter(submissions, { parent: null }))
+
             if (latest_submission && !_.includes(['Finished', 'Cancelled', 'Failed', 'Unknown'], latest_submission.status)) {
                 self.selected_submission = latest_submission
                 self.children = _.sortBy(latest_submission.children)
+
                 if (self.children) {
                     self.update()
                     $('.menu .item', self.root).tab()
                 }
-                // Commented this out as it seems to hit a race condition some times with websocket
-                // not being connected yet. moved running after websocket open
-                // self.pull_logs()
             }
         })
 
         CODALAB.events.on('submission_selected', function (selected_submission) {
             self.selected_submission = selected_submission
-            self.autoscroll_output()
+            self.update()
+
+            setTimeout(function () {
+                self.autoscroll_output()
+            }, 0)
         })
 
         self.autoscroll_output = function () {
-            if (!self.refs.autoscroll_checkbox) {
+            if (!self.refs.autoscroll_checkbox || !self.autoscroll_selected) {
                 return
             }
-            if (self.autoscroll_selected) {
-                var output = self.refs.submission_output
-                output.scrollTop = output.scrollHeight
+
+            var output = self.refs.submission_output
+            if (!output) {
+                return
             }
+
+            output.scrollTop = output.scrollHeight
         }
     </script>
 
