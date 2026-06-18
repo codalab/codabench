@@ -492,6 +492,9 @@ class Submission(models.Model):
     ingestion_worker_hostname = models.CharField(max_length=255, blank=True, null=True)
     # Scoring hostname
     scoring_worker_hostname = models.CharField(max_length=255, blank=True, null=True)
+    # Incremented every time a worker claims this submission from the broker.
+    # Used to detect redeliveries (M6) and provide an audit trail.
+    worker_attempt_count = models.PositiveIntegerField(default=0)
     queue = models.ForeignKey('queues.Queue', on_delete=models.SET_NULL, null=True, blank=True,
                               related_name='submissions')
     is_migrated = models.BooleanField(default=False)

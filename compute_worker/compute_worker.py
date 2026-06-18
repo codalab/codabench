@@ -310,6 +310,16 @@ def run_wrapper(run_args):
     run_args.update(secret=str(run_args["secret"]))
     logger.info(f"Received run arguments: \n {colorize_run_args(json.dumps(run_args))}")
     run = Run(run_args)
+    
+    state = run._fetch_submission_state()
+    if state and state.get("is_terminal"):
+        logger.warning(
+            f"Submission {run.submission_id} is already in terminal state "
+            f"'{state.get('status')}' (worker_attempt_count={state.get('worker_attempt_count')}). "
+            f"Skipping redelivered task to avoid duplicate execution."
+        )
+        return {"skipped": True, "reason": "already_terminal", "state": state}
+
     try:
         run.prepare()
         run.start()
@@ -629,6 +639,33 @@ class Run:
             )
             raise SubmissionException("Failure updating submission data.")
 
+    def _fetch_submission_state(self):
+        """probe the API for the current submission state on entry.
+
+        Returns a dict with at least ``status`` and ``is_terminal`` when the
+        API is reachable. Returns ``None`` on any error: the caller falls
+        back to the legacy "just run it" behaviour so we never block a
+        legitimate execution because of a transient API blip.
+        """
+        url = f"{self.submissions_api_url}/submissions/{self.submission_id}/worker_state/"
+        try:
+            resp = self.requests_session.get(
+                url, params={"secret": self.secret}, timeout=30,
+            )
+        except Exception:
+            logger.exception("worker_state fetch failed; proceeding with run anyway")
+            return None
+        if resp.status_code != 200:
+            logger.warning(
+                f"worker_state fetch returned {resp.status_code}; proceeding with run anyway"
+            )
+            return None
+        try:
+            return resp.json()
+        except Exception:
+            logger.exception("worker_state response was not JSON; proceeding with run anyway")
+            return None
+    
     def _update_status(self, status, extra_information=None):
         # Update submission status
         if status not in SubmissionStatus.AVAILABLE_STATUSES:
