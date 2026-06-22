@@ -71,11 +71,13 @@ def export_as_json(modeladmin, request, queryset):
         email_list.update({obj.username: obj.email})
     return HttpResponse(json.dumps(email_list), content_type="application/json")
 
+
 @admin.display(description="Ban User(s)")
 def ban_users(modeladmin, request, queryset):
     for obj in queryset:
         obj.is_banned = True
         obj.save()
+
 
 @admin.display(description="Unban User(s)")
 def unban_users(modeladmin, request, queryset):
@@ -83,11 +85,13 @@ def unban_users(modeladmin, request, queryset):
         obj.is_banned = False
         obj.save()
 
+
 @admin.display(description="Activate User(s)")
 def activate_users(modeladmin, request, queryset):
     for obj in queryset:
         obj.is_active = True
         obj.save()
+
 
 class UserExpansion(UserAdmin):
     # The following two lines are needed for Django-su:
