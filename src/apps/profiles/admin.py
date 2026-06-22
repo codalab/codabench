@@ -71,6 +71,23 @@ def export_as_json(modeladmin, request, queryset):
         email_list.update({obj.username: obj.email})
     return HttpResponse(json.dumps(email_list), content_type="application/json")
 
+@admin.display(description="Ban User(s)")
+def ban_users(modeladmin, request, queryset):
+    for obj in queryset:
+        obj.is_banned = True
+        obj.save()
+
+@admin.display(description="Unban User(s)")
+def unban_users(modeladmin, request, queryset):
+    for obj in queryset:
+        obj.is_banned = False
+        obj.save()
+
+@admin.display(description="Activate User(s)")
+def activate_users(modeladmin, request, queryset):
+    for obj in queryset:
+        obj.is_active = True
+        obj.save()
 
 class UserExpansion(UserAdmin):
     # The following two lines are needed for Django-su:
@@ -83,6 +100,7 @@ class UserExpansion(UserAdmin):
         "is_superuser",
         "is_deleted",
         "is_bot",
+        "is_active",
         "is_banned",
         QuotaFilter,
     ]
@@ -91,13 +109,14 @@ class UserExpansion(UserAdmin):
         "username",
         "email",
         "quota",
+        "is_active",
         "is_staff",
         "is_superuser",
         "is_banned",
     ]
     list_display_links = ["id", "username"]
     raw_id_fields = ["oidc_organization", "groups"]
-    actions = [export_as_csv, export_as_json]
+    actions = [activate_users, ban_users, unban_users, export_as_csv, export_as_json]
     fieldsets = [
         (
             None,
