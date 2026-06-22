@@ -77,6 +77,7 @@ class UserExpansion(UserAdmin):
     change_form_template = "admin/auth/user/change_form.html"
     change_list_template = "admin/auth/user/change_list.html"
     search_fields = ["id", "username", "email"]
+    ordering = ('-id',)
     list_filter = [
         "is_staff",
         "is_superuser",
@@ -180,18 +181,21 @@ class DeletedUserExpansion(admin.ModelAdmin):
     list_display = ("user_id", "username", "email", "deleted_at")
     search_fields = ("id", "username", "email")
     list_filter = ("deleted_at",)
+    ordering = ('-id',)
 
 
 class MembershipExpansion(admin.ModelAdmin):
     raw_id_fields = ["organization", "user"]
     list_display = ["id", "organization", "user", "group"]
     search_fields = ["id", "user__username", "token"]
+    ordering = ('-id',)
 
 
 class OrganizationExpansion(admin.ModelAdmin):
     raw_id_fields = ["user_record"]
     list_display = ["id", "name", "email", "description"]
     search_fields = ["name", "email", "description"]
+    ordering = ('-id',)
 
 
 admin.site.register(User, UserExpansion)

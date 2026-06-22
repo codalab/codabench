@@ -11,6 +11,7 @@ class NewsPostExpansion(admin.ModelAdmin):
 class AnnouncementExpansion(admin.ModelAdmin):
     list_display = ["id", "text_limited"]
     list_display_links = ["id", "text_limited"]
+    ordering = ('-id',)
 
     @admin.display(description="text", ordering="text")
     def text_limited(self, obj):

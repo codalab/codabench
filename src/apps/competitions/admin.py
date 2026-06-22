@@ -188,6 +188,7 @@ class CompetitionExpansion(admin.ModelAdmin):
     list_display_links = ["id", "title"]
     actions = [CompetitionExport_as_json, CompetitionExport_as_csv]
     raw_id_fields = ["created_by", "collaborators", "queue"]
+    ordering = ('-id',)
     list_filter = [
         "published",
         "is_featured",
@@ -268,6 +269,7 @@ class SubmissionExpansion(admin.ModelAdmin):
         "scores",
     ]
     search_fields = ["id", "owner__username", "phase__competition__title", "task__name"]
+    ordering = ('-id',)
     actions = [SubmissionsExport_as_csv]
     list_display = [
         "id",
@@ -351,6 +353,7 @@ class CompetitionCreationTaskStatusExpansion(admin.ModelAdmin):
     list_display = ["id", "created_by", "resulting_competition", "status"]
     search_fields = ["id", "created_by__username"]
     list_filter = ["status"]
+    ordering = ('-id',)
 
 
 class CompetitionParticipantExpansion(admin.ModelAdmin):
@@ -358,18 +361,21 @@ class CompetitionParticipantExpansion(admin.ModelAdmin):
     list_display = ["id", "user", "competition", "status"]
     list_filter = ["status"]
     search_fields = ["id", "user__username", "competition"]
+    ordering = ('-id',)
 
 
 class PageExpansion(admin.ModelAdmin):
     raw_id_fields = ["competition"]
     list_display = ["id", "competition"]
     search_fields = ["id", "competition", "content"]
+    ordering = ('-id',)
 
 
 class PhaseExpansion(admin.ModelAdmin):
     raw_id_fields = ["competition", "leaderboard", "public_data", "starting_kit"]
     list_display = ["id", "competition", "name"]
     search_fields = ["id", "competition", "name"]
+    ordering = ('-id',)
     fieldsets = [
         (
             None,
