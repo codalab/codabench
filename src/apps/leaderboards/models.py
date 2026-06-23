@@ -36,11 +36,13 @@ class Column(models.Model):
     SUM = 'sum'
     MIN = 'min'
     MAX = 'max'
+    AVERAGE_RANK = 'avg_rank'
     COMPUTATION_CHOICES = (
         (AVERAGE, 'Average'),
         (SUM, 'Sum'),
         (MIN, 'Min'),
         (MAX, 'Max'),
+        (AVERAGE_RANK, 'Average Rank'),
     )
     SORTING = (
         ('desc', 'Descending'),

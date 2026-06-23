@@ -259,7 +259,7 @@ fact_sheet: {
   - Ascending: smaller scores are better
   - Descending: larger scores are better
 - **computation:** computation to be applied *must be accompanied by computation indexes*
-  - computation options: sum, avg, min, max
+  - computation options: sum, avg, min, max, avg_rank
 - **computation_indexes:** an array of indexes of the columns the computation should be applied to
 - **precision:** (*integer, default=2*) to round the score to *precision* number of digits
 - **hidden:** (*boolean, default=False*) to hide/unhide a column on leaderboard

@@ -62,5 +62,21 @@
             </div>
         </div>
     {% endif %}
+
+    {% if user.is_superuser %}
+    <div class="ui container">
+
+        <div class="ui segment">
+            <worker-monitor-toggle
+                can_view_workers_panel="true"
+                all_workers="true"
+                inline_mode="true">
+            </worker-monitor-toggle>
+        </div>
+
+        <div id="external_monitors" class="ui two column grid">
+        </div>
+    </div>
+    {% endif %}
     
 {% endblock %}

@@ -7,6 +7,7 @@ class LeaderboardExpansion(admin.ModelAdmin):
     list_display = ["id", "title", "submission_rule", "hidden"]
     search_fields = ["id", "title"]
     list_filter = ["hidden"]
+    ordering = ('-id',)
 
 
 class ColumExpansion(admin.ModelAdmin):
@@ -14,12 +15,14 @@ class ColumExpansion(admin.ModelAdmin):
     list_display = ["id", "title", "hidden"]
     search_fields = ["id", "title"]
     list_filter = ["hidden"]
+    ordering = ('-id',)
 
 
 class SubmissionScoreExpansion(admin.ModelAdmin):
     raw_id_fields = ["column"]
     list_display = ["id", "column", "score"]
     search_fields = ["id", "column"]
+    ordering = ('-id',)
 
 
 admin.site.register(models.Leaderboard, LeaderboardExpansion)

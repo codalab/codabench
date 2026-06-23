@@ -12,7 +12,7 @@ from django.utils.timezone import now
 from decimal import Decimal
 
 from celery_config import app, app_for_vhost
-from leaderboards.models import SubmissionScore
+from leaderboards.models import SubmissionScore, Column
 from profiles.models import CustomGroup, User, Organization
 from utils.data import PathWrapper
 from utils.storage import BundleStorage
@@ -697,7 +697,7 @@ class Submission(models.Model):
     def calculate_scores(self):
         # leaderboards = self.phase.competition.leaderboards.all()
         # for leaderboard in leaderboards:
-        columns = self.phase.leaderboard.columns.exclude(computation__isnull=True)
+        columns = self.phase.leaderboard.columns.exclude(computation__isnull=True).exclude(computation=Column.AVERAGE_RANK)
         for column in columns:
             scores = self.scores.filter(column__index__in=column.computation_indexes.split(',')).values_list('score',
                                                                                                              flat=True)

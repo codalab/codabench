@@ -968,7 +968,7 @@ class Run:
                     await websocket.wait_closed()
                 except Exception as e:
                     logger.error(e)
-            client.remove_container(container, force=True)
+            client.remove_container(container, v=True, force=True)
 
             logger.debug(f"Container {container.get('Id')} exited with status code : {str(return_Code['StatusCode'])}")
 
@@ -983,7 +983,7 @@ class Run:
         finally:
             try:
                 # Last chance of removing container
-                client.remove_container(container.get("Id"), force=True)
+                client.remove_container(container.get("Id"), v=True, force=True)
             except Exception:
                 pass
 
@@ -1347,7 +1347,7 @@ class Run:
 
             for container in containers_to_kill:
                 try:
-                    client.remove_container(str(container), force=True)
+                    client.remove_container(str(container), v=True, force=True)
                 except docker.errors.APIError as e:
                     logger.error(e)
                 except Exception as e:
@@ -1398,7 +1398,7 @@ class Run:
                         containers_to_kill = self.scoring_program_container_name
                     try:
                         client.kill(containers_to_kill)
-                        client.remove_container(containers_to_kill, force=True)
+                        client.remove_container(containers_to_kill, v=True, force=True)
                     except docker.errors.APIError as e:
                         logger.error(e)
                     except Exception as e:

@@ -31,7 +31,8 @@ from competitions.models import Competition, Phase, CompetitionCreationTaskStatu
 from datasets.models import Data
 from competitions.tasks import batch_send_email, manual_migration, create_competition_dump
 from competitions.utils import get_popular_competitions, get_recent_competitions
-from leaderboards.models import Leaderboard
+from leaderboards.models import Leaderboard, Column
+from leaderboards.ranking import inject_average_ranks
 from utils.data import make_url_sassy
 from api.permissions import IsOrganizerOrCollaborator
 from django.db import transaction
@@ -936,6 +937,12 @@ class PhaseViewSet(ModelViewSet):
         # put detailed results in its submission
         for k, v in submissions_keys.items():
             response['submissions'][v]['detailed_results'] = submission_detailed_results[k]
+
+        # Compute average rank for any AVERAGE_RANK columns and inject into response.
+        col_by_index = {col['index']: col for col in columns}
+        avg_rank_cols = [col for col in columns if col.get('computation') == Column.AVERAGE_RANK]
+        if avg_rank_cols:
+            inject_average_ranks(response['submissions'], avg_rank_cols, col_by_index, response['primary_index'])
 
         # --- pagination addition ---
         total_count = len(response['submissions'])
