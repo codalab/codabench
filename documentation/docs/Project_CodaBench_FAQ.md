@@ -5,8 +5,8 @@
 Codabench benchmarks are aimed at researchers, scientists and other professionals who want to track algorithm performance via benchmarks or have participants participate in a competition to find the best solution to a problem. We run a free public instance at [https://www.codabench.org/](https://www.codabench.org/) and the raw code is on [Github](https://github.com/codalab/codabench).
 
 
-### Can CodaLab competitions be privately hosted?
-Yes, you can host your own CodaLab instance on a private or hosted server (e.g. Azure, GCP or AWS). For more information, see [how to deploy Codabench on your server](Developers_and_Administrators/How-to-deploy-Codabench-on-your-server.md) and [local installation](Developers_and_Administrators/Codabench-Installation.md) guide. However, most benchmark organizers do NOT need to run their own instance. If you run a computationally demanding competition, you can hook up your own [compute workers](Organizers/Running_a_benchmark/Compute-Worker-Management---Setup.md) in the backend very easily. 
+### Can Codabench be privately hosted?
+Yes, you can host your own Codabench instance on a private or hosted server (e.g. Azure, GCP or AWS). For more information, see [how to deploy Codabench on your server](Developers_and_Administrators/How-to-deploy-Codabench-on-your-server.md) and [local installation](Developers_and_Administrators/Codabench-Installation.md) guide. However, most benchmark organizers do NOT need to run their own instance. If you run a computationally demanding competition, you can hook up your own [compute workers](Organizers/Running_a_benchmark/Compute-Worker-Management---Setup.md) in the backend very easily. 
 
 
 ### How to change my username?
