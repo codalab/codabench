@@ -907,7 +907,6 @@
             display inline-flex !important
             align-items center
             gap 8px
-            border-radius 999px !important
             padding 0.8em 1.1em !important
             box-shadow 0 1px 2px rgba(15, 23, 42, .06) !important
             margin-bottom 14px !important
