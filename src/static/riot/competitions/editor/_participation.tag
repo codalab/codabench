@@ -91,10 +91,7 @@
         </div>
         <div class="field">
           <label>Queue (optional)</label>
-          <select ref="group_queue" class="ui dropdown">
-            <option value="">None</option>
-            <option each="{ q in available_queues }" value="{ q.id }">{ q.name }</option>
-          </select>
+          <select ref="group_queue" class="ui fluid search selection dropdown"></select>
         </div>
         <div class="field">
           <label>Select group members</label>
@@ -137,7 +134,24 @@
             if (self.refs && self.refs.group_queue) {
                 const $q = $(self.refs.group_queue)
                 if (!$q.data('dd-init')) {
-                    $q.dropdown({ clearable: true, placeholder: 'None' })
+                    ;(self.available_queues || []).forEach(q => {
+                        $q.append(new Option(q.name, q.id))
+                    })
+                    $q.dropdown({
+                        apiSettings: {
+                            url: `${URLS.API}queues/?search={query}&public=true`,
+                            cache: false,
+                        },
+                        clearable: true,
+                        minCharacters: 2,
+                        fields: {
+                            remoteValues: 'results',
+                            value: 'id',
+                            name: 'name',
+                        },
+                        maxResults: 5,
+                        onChange: () => {}
+                    })
                     $q.data('dd-init', true)
                 }
             }
@@ -145,8 +159,10 @@
 
         try {
             let $rest = $('.ui.dropdown', self.root)
-            if (self.refs && self.refs.group_queue)       $rest = $rest.not(self.refs.group_queue)
-            if (self.refs && self.refs.group_user_select) $rest = $rest.not(self.refs.group_user_select)
+            if (self.refs && self.refs.group_queue)
+              $rest = $rest.not(self.refs.group_queue)
+            if (self.refs && self.refs.group_user_select)
+              $rest = $rest.not(self.refs.group_user_select)
             $rest.dropdown()
         } catch(e) {}
 
@@ -299,8 +315,12 @@
           const qFound = (self.available_queues || []).find(x => x.name === group.queue)
           if (qFound) queueId = qFound.id
         }
-        if (queueId) $(self.refs.group_queue).dropdown('set selected', String(queueId))
-        else $(self.refs.group_queue).dropdown('clear')
+        if (queueId && group.queue) {
+            $(self.refs.group_queue).dropdown('set text', String(group.queue))
+            $(self.refs.group_queue).dropdown('set value', String(queueId))
+        } else {
+            $(self.refs.group_queue).dropdown('clear')
+        }
       } catch(e) {}
 
       try {
