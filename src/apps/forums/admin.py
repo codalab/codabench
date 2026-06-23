@@ -25,6 +25,7 @@ class ForumsExpansion(admin.ModelAdmin):
     raw_id_fields = ["competition"]
     list_display = ["id", "competition"]
     search_fields = ["id", "competition"]
+    ordering = ('-id',)
 
 
 class ThreadExpansion(admin.ModelAdmin):
@@ -32,6 +33,7 @@ class ThreadExpansion(admin.ModelAdmin):
     list_display = ["id", "title", "started_by"]
     search_fields = ["id", "title", "started_by__username"]
     actions = [DeactivateAccountThread]
+    ordering = ('-id',)
 
 
 class PostExpansion(admin.ModelAdmin):
@@ -39,6 +41,7 @@ class PostExpansion(admin.ModelAdmin):
     list_display = ["id", "content_limited", "posted_by"]
     search_fields = ["id", "content", "posted_by__username"]
     actions = [DeactivateAccountPost]
+    ordering = ('-id',)
 
     @admin.display(description="Content", ordering="content")
     def content_limited(self, obj):
