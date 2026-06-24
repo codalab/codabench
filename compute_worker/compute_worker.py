@@ -314,6 +314,9 @@ def run_wrapper(run_args):
         run.prepare()
         run.start()
         if run.is_scoring:
+            if run.human_in_the_loop:
+                run.wait_for_human_validation()
+                run._update_status(SubmissionStatus.FINISHED)
             run.push_scores()
         run.push_output()
     except DockerImagePullException as e:
@@ -470,6 +473,7 @@ class Run:
         self.prediction_result = run_args["prediction_result"]
         self.scoring_result = run_args.get("scoring_result")
         self.execution_time_limit = run_args["execution_time_limit"]
+        self.human_in_the_loop = run_args.get("human_in_the_loop", False)
         # stdout and stderr
         self.stdout, self.stderr, self.ingestion_stdout, self.ingestion_stderr = (
             self._get_stdout_stderr_file_names(run_args)
@@ -1445,10 +1449,54 @@ class Run:
                 )
                 # Raise so upstream marks failed immediately
                 raise SubmissionException("Child task failed or non-zero return code")
-            self._update_status(SubmissionStatus.FINISHED)
+
+            if not self.human_in_the_loop:
+                self._update_status(SubmissionStatus.FINISHED)
 
         else:
             self._update_status(SubmissionStatus.SCORING)
+
+    def wait_for_human_validation(self):
+        container_output_dir = self.output_dir
+        host_output_dir = self._get_host_path(self.output_dir)
+
+        scores_path = os.path.join(host_output_dir, "scores.json")
+        if not os.path.exists(os.path.join(container_output_dir, "scores.json")):
+            scores_path = os.path.join(host_output_dir, "scores.txt")
+
+        approved_container = os.path.join(container_output_dir, "hitl_approved")
+        rejected_container = os.path.join(container_output_dir, "hitl_rejected")
+        approved_host = os.path.join(host_output_dir, "hitl_approved")
+        rejected_host = os.path.join(host_output_dir, "hitl_rejected")
+
+        logger.info("=" * 60)
+        logger.info(f"HUMAN IN THE LOOP — submission {self.submission_id}")
+        logger.info("Inspect the scores file:")
+        logger.info(f"  cat {scores_path}")
+        logger.info(f"To approve : touch {approved_host}")
+        logger.info(f"To reject  : touch {rejected_host}")
+        logger.info("=" * 60)
+
+        poll_interval = 3
+        max_wait = 60 * 60 * 24
+
+        elapsed = 0
+        while elapsed < max_wait:
+            if os.path.exists(approved_container):  # ← poll le chemin conteneur
+                logger.info(f"HITL: submission {self.submission_id} approved, sending scores.")
+                return
+            if os.path.exists(rejected_container):  # ← poll le chemin conteneur
+                raise SubmissionException(
+                    f"HITL: scores rejected by the compute node operator "
+                    f"(submission {self.submission_id})"
+                )
+            time.sleep(poll_interval)
+            elapsed += poll_interval
+
+        raise SubmissionException(
+            f"HITL: 24h timeout reached without validation "
+            f"(submission {self.submission_id})"
+        )
 
     def push_scores(self):
         """This is only ran at the end of the scoring step"""

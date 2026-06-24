@@ -211,6 +211,22 @@
             </sup>
         </div>
 
+        <!--  Human in the Loop  -->
+        <div class="field">
+            <label>Human in the Loop</label>
+            <div class="ui checkbox">
+                <label>Enable Human in the Loop validation</label>
+                <input type="checkbox" ref="enable_human_in_the_loop" onchange="{form_updated}">
+            </div>
+            <sup>
+                <span data-tooltip="If checked, the compute worker will pause after scoring and wait for a manual validation before sending scores to the platform"
+                        data-inverted=""
+                        data-position="bottom center">
+                    <i class="help icon circle"></i>
+                </span>
+            </sup>
+        </div>
+
         <!--  Public submissions  -->
         <div class="field">
             <label>Public Submissions</label>
@@ -314,6 +330,7 @@
             self.data["auto_run_submissions"] = self.refs.auto_run_submissions.checked
             self.data["can_participants_make_submissions_public"] = self.refs.can_participants_make_submissions_public.checked
             self.data["forum_enabled"] = self.refs.forum_enabled.checked
+            self.data["enable_human_in_the_loop"] = self.refs.enable_human_in_the_loop.checked
             self.data["make_programs_available"] = self.refs.make_programs_available.checked
             self.data["make_input_data_available"] = self.refs.make_input_data_available.checked
             self.data["docker_image"] = $(self.refs.docker_image).val()
@@ -452,6 +469,7 @@
             self.refs.auto_run_submissions.checked = competition.auto_run_submissions
             self.refs.can_participants_make_submissions_public.checked = competition.can_participants_make_submissions_public
             self.refs.forum_enabled.checked = competition.forum_enabled
+            self.refs.enable_human_in_the_loop.checked = competition.enable_human_in_the_loop
             self.refs.make_programs_available.checked = competition.make_programs_available
             self.refs.make_input_data_available.checked = competition.make_input_data_available
             $(self.refs.docker_image).val(competition.docker_image)

@@ -58,6 +58,7 @@ COMPETITION_FIELDS = [
     "contact_email",
     "fact_sheet",
     "forum_enabled",
+    "enable_human_in_the_loop"
 ]
 
 TASK_FIELDS = [
@@ -166,6 +167,7 @@ def _send_to_compute_worker(submission, is_scoring):
         ),
         "id": submission.pk,
         "is_scoring": is_scoring,
+        "human_in_the_loop": submission.phase.competition.enable_human_in_the_loop,
     }
 
     if (
@@ -260,6 +262,17 @@ def _send_to_compute_worker(submission, is_scoring):
             submission.queue = effective_queue
             submission.save(update_fields=["queue"])
 
+    if is_scoring and submission.phase.competition.enable_human_in_the_loop:
+        time_limit = 60 * 60 * 25
+
+    if (
+        submission.phase.competition.queue
+    ):  # if the competition is running on a custom queue, not the default queue
+        submission.queue = submission.phase.competition.queue
+        run_args["execution_time_limit"] = (
+            submission.phase.execution_time_limit
+        )  # use the competition time limit
+        submission.save(update_fields=["queue"])
     if submission.status == Submission.SUBMITTING:
         submission.status = Submission.SUBMITTED
         submission.save(update_fields=["status"])
