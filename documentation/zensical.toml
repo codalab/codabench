@@ -39,6 +39,7 @@ nav = [
         ]}
     ]},
     {"Developers" = [
+        {"Codabench Basic Installation Guide" = "Developers_and_Administrators/Codabench-Installation.md"},
         {"Codabench Docker Architecture" = "Developers_and_Administrators/Codabench-Architecture.md"},
         {"Submission Docker Container Layout" = "Developers_and_Administrators/Submission-Docker-Container-Layout.md"},
         {"Submission Process Overview" = "Developers_and_Administrators/Submission-Process-Overview.md"},
@@ -49,7 +50,6 @@ nav = [
 
     ]},
     {"Self-Hosters" = [
-        {"Codabench Basic Installation Guide" = "Developers_and_Administrators/Codabench-Installation.md"},
         {"How to Deploy a Server" = "Developers_and_Administrators/How-to-deploy-Codabench-on-your-server.md"},
         {"Administrative Procedures" = "Developers_and_Administrators/Administrator-procedures.md"},
         {"Backups - Automating Creation and Restoring" = "Developers_and_Administrators/Creating-and-Restoring-from-Backup.md"},
