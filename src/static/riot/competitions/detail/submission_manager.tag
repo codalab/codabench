@@ -123,8 +123,15 @@
                     </a>
                 </td>
                 <!--  Show Action buttons when submission is not soft deleted  -->
-                <!--  Otherwise show empty <td>  -->
-                <td if="{ submission.is_soft_deleted }"></td>
+                <!--  For soft-deleted submissions, organizers can still hard-delete  -->
+                <td if="{ submission.is_soft_deleted }">
+                    <virtual if="{ opts.admin }">
+                        <span data-tooltip="Delete Submission" data-inverted=""
+                            onclick="{ delete_submission.bind(this, submission) }">
+                            <i class="icon red trash alternate"></i>
+                        </span>
+                    </virtual>
+                </td>
                 <td class="center aligned" if="{ !submission.is_soft_deleted }">
                     <virtual if="{ opts.admin}">
                         <!-- run/rerun submission -->
