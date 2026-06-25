@@ -10,8 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@0.33.1
-        with:
+        uses: aquasecurity/trivy-action@v0.36.0
+	with:
           image-ref: 'codalab/codabench-compute-worker:latest'
           format: 'table'
           exit-code: '1'
