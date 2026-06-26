@@ -9,8 +9,6 @@ from django.db import transaction
 from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied
 
-logger = logging.getLogger(__name__)
-
 from api.mixins import DefaultUserCreateMixin
 from api.serializers import leaderboards
 from api.serializers.tasks import TaskSerializer
@@ -22,6 +20,8 @@ from utils.data import make_url_sassy
 
 from tasks.models import Task
 from queues.models import Queue
+
+logger = logging.getLogger(__name__)
 
 
 class SubmissionSerializer(serializers.ModelSerializer):
