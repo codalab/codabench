@@ -8,8 +8,6 @@ from django.db import transaction
 from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied
 
-logger = logging.getLogger(__name__)
-
 from api.mixins import DefaultUserCreateMixin
 from api.serializers import leaderboards
 from api.serializers.tasks import TaskSerializer
@@ -21,6 +19,8 @@ from channels.layers import get_channel_layer
 from tasks.models import Task
 from queues.models import Queue
 from competitions.tasks import run_submission
+
+logger = logging.getLogger(__name__)
 
 
 class SubmissionSerializer(serializers.ModelSerializer):
@@ -182,7 +182,6 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
         # Update status if it is there in validated data
         if "status" in validated_data:
             # Received a status update, let the frontend know
-            
             channel_layer = get_channel_layer()
 
             try:
@@ -207,7 +206,6 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
             # Re-enqueue scoring AFTER the new status is committed: otherwise the
             # site-worker may pick the task up before the row reflects SCORING,
             # and a broker error here would leave the row stuck in SCORING forever.
-            
             submission_pk = submission.pk
             scoring_task = submission.task
 
