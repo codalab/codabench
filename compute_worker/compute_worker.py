@@ -1482,10 +1482,10 @@ class Run:
 
         elapsed = 0
         while elapsed < max_wait:
-            if os.path.exists(approved_container):  # ← poll le chemin conteneur
+            if os.path.exists(approved_container):
                 logger.info(f"HITL: submission {self.submission_id} approved, sending scores.")
                 return
-            if os.path.exists(rejected_container):  # ← poll le chemin conteneur
+            if os.path.exists(rejected_container):
                 raise SubmissionException(
                     f"HITL: scores rejected by the compute node operator "
                     f"(submission {self.submission_id})"

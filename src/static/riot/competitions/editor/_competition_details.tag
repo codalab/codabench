@@ -219,12 +219,17 @@
                 <input type="checkbox" ref="enable_human_in_the_loop" onchange="{form_updated}">
             </div>
             <sup>
-                <span data-tooltip="If checked, the compute worker will pause after scoring and wait for a manual validation before sending scores to the platform"
+                <span data-tooltip="If checked, the compute worker will pause after scoring and wait for a manual validation before sending scores to the platform. Only active on private queues."
                         data-inverted=""
                         data-position="bottom center">
                     <i class="help icon circle"></i>
                 </span>
             </sup>
+            <div ref="hitl_warning" class="ui yellow message" style="display:none; margin-top: 0.5em;">
+                <i class="exclamation triangle icon"></i>
+                Human in the Loop is only active on <strong>private queues</strong>.
+                It will have no effect until a private queue is selected for this competition or its participant groups.
+            </div>
         </div>
 
         <!--  Public submissions  -->
@@ -331,6 +336,11 @@
             self.data["can_participants_make_submissions_public"] = self.refs.can_participants_make_submissions_public.checked
             self.data["forum_enabled"] = self.refs.forum_enabled.checked
             self.data["enable_human_in_the_loop"] = self.refs.enable_human_in_the_loop.checked
+            const hitlChecked = self.refs.enable_human_in_the_loop.checked
+            const hasPrivateQueue = !!(self.data["queue"] && self.data["queue"] !== "")
+            if (self.refs.hitl_warning) {
+                self.refs.hitl_warning.style.display = (hitlChecked && !hasPrivateQueue) ? 'block' : 'none'
+            }
             self.data["make_programs_available"] = self.refs.make_programs_available.checked
             self.data["make_input_data_available"] = self.refs.make_input_data_available.checked
             self.data["docker_image"] = $(self.refs.docker_image).val()

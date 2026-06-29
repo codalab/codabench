@@ -157,6 +157,11 @@ def _get_user_group_queues(user, competition):
 
 
 def _send_to_compute_worker(submission, is_scoring):
+    hitl_active = (
+        submission.phase.competition.enable_human_in_the_loop
+        and submission.queue is not None
+    )
+
     run_args = {
         "user_pk": submission.owner.pk,
         "submissions_api_url": settings.SUBMISSIONS_API_URL,
@@ -167,7 +172,7 @@ def _send_to_compute_worker(submission, is_scoring):
         ),
         "id": submission.pk,
         "is_scoring": is_scoring,
-        "human_in_the_loop": submission.phase.competition.enable_human_in_the_loop,
+        "human_in_the_loop": hitl_active,
     }
 
     if (
@@ -251,7 +256,7 @@ def _send_to_compute_worker(submission, is_scoring):
     logger.info(run_args)
 
     # Pad timelimit so worker has time to cleanup
-    time_padding = 60 * 20  # 20 minutes
+    time_padding = 60 * 20
     time_limit = submission.phase.execution_time_limit + time_padding
 
     effective_queue = submission.queue or submission.phase.competition.queue
@@ -262,7 +267,7 @@ def _send_to_compute_worker(submission, is_scoring):
             submission.queue = effective_queue
             submission.save(update_fields=["queue"])
 
-    if is_scoring and submission.phase.competition.enable_human_in_the_loop:
+    if is_scoring and hitl_active:
         time_limit = 60 * 60 * 25
 
     if (
