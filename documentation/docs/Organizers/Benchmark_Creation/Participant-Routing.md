@@ -54,27 +54,13 @@ Existing submissions are **not** modified after a group is deleted.
 
 ---
 
-# Queue Visibility Rules
-
-!!! Info
-    Organizers can only assign queues they are allowed to use.
-
-    | Queue visibility               | Condition                                      |
-    | ------------------------------ | ---------------------------------------------- |
-    | ✅ Own queues                  | Organizer is the queue owner                   |
-    | ✅ Shared queues               | Organizer is listed among the queue organizers |
-    | ✅ Public queues               | `is_public = True`                             |
-    | ❌ Other users' private queues | Organizer has no relationship with the queue   |
-
----
-
 # Submission Routing Rules
 
 ## Queue Priority
 
 Routing follows the following priority:
 !!! Tip
-    ```
+    ```title="Queue priority"
     Group Queue
         ↓
     Competition Queue
@@ -90,7 +76,8 @@ Participant routing is enabled **only if the participant belongs to at least one
 
 A group **without a queue** means:
 
-> Use the competition's default queue.
+!!! Tip
+    Use the competition's default queue.
 
 ## Queue Deduplication
 
@@ -123,7 +110,7 @@ For a given root submission:
 One participant belongs to two groups routed to different queues.
 Two competition tasks are defined.
 
-```
+```title="Leaderboard"
 Task:               Task 1               Task 2
 ---------------------------------------------------------
 #  Participant   ID   Group    Score     Score
@@ -149,35 +136,6 @@ Task:               Task 1               Task 2
 | Two groups with different queues, multi-task      | Q1 + Q2      | Q0                | 2 × N child submissions           | 2                | ✅           |
 | Two groups using the same queue                   | Q1 + Q1      | Q0                | 1 child submission (deduplicated) | 1                | ✅           |
 | K groups with distinct queues                     | Q1...QK      | Q0                | K × N child submissions           | K                | ✅           |
-
----
-
-# Routing Flow
-
-!!! Tip
-    ```
-    Participant submits
-            │
-            ▼
-    Retrieve participant groups
-            │
-            ▼
-    At least one group?
-            │
-    ┌───────┴───────────┐
-    │                   │
-    No                  Yes
-    │                   │
-    ▼                   ▼
-    Competition   Resolve queue for each group
-    Queue               │
-                        │
-                        ▼
-        Create one child submission per queue
-                        │
-                        ▼
-            Execute on compute workers
-    ```
 
 ---
 
