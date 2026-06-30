@@ -17,15 +17,15 @@ This feature enables organizers to:
 
 1. Open the competition edit form.
 
-![image (1)](../Benchmark_Creation/_attachments/participant_routing1.png)
+![image (1)](_attachments/participant_routing1.png)
 
 2. Navigate to the **Participation** tab.
 
-![image (2)](../Benchmark_Creation/_attachments/participant_routing2.png)
+![image (2)](_attachments/participant_routing2.png)
 
 3. Scroll down to the **Groups** section.
 
-![image (3)](../Benchmark_Creation/_attachments/participant_routing3.png)
+![image (3)](_attachments/participant_routing3.png)
 
 ---
 
