@@ -1085,7 +1085,7 @@ class Run:
                 logger.warning("Failed to parse RESOURCE_LIMITS or NODE_SELECTOR, ignoring GPU config")
 
         try:
-            labels = json.loads(os.getenv("COMPUTE_WORKER_LABELS", "{}"))
+            labels = json.loads(os.getenv("COMPUTE_WORKER_LABELS", "{}")) or {}
         except json.JSONDecodeError:
             labels = {}
         labels["submission_id"] = str(self.submission_id)
