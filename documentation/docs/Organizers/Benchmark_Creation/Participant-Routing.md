@@ -47,6 +47,7 @@ Click **Create**.
 
 ## Deleting a Group
 
+!!! Warning
     Deleting a participant group is **permanent**.
 
 Existing submissions are **not** modified after a group is deleted.
@@ -55,14 +56,15 @@ Existing submissions are **not** modified after a group is deleted.
 
 # Queue Visibility Rules
 
-Organizers can only assign queues they are allowed to use.
+!!! Info
+    Organizers can only assign queues they are allowed to use.
 
-| Queue visibility               | Condition                                      |
-| ------------------------------ | ---------------------------------------------- |
-| ✅ Own queues                  | Organizer is the queue owner                   |
-| ✅ Shared queues               | Organizer is listed among the queue organizers |
-| ✅ Public queues               | `is_public = True`                             |
-| ❌ Other users' private queues | Organizer has no relationship with the queue   |
+    | Queue visibility               | Condition                                      |
+    | ------------------------------ | ---------------------------------------------- |
+    | ✅ Own queues                  | Organizer is the queue owner                   |
+    | ✅ Shared queues               | Organizer is listed among the queue organizers |
+    | ✅ Public queues               | `is_public = True`                             |
+    | ❌ Other users' private queues | Organizer has no relationship with the queue   |
 
 ---
 
@@ -71,14 +73,14 @@ Organizers can only assign queues they are allowed to use.
 ## Queue Priority
 
 Routing follows the following priority:
-
-```
-Group Queue
-      ↓
-Competition Queue
-      ↓
-Default Celery Queue
-```
+!!! Tip
+    ```
+    Group Queue
+        ↓
+    Competition Queue
+        ↓
+    Default Celery Queue
+    ```
 
 ---
 
@@ -122,9 +124,9 @@ One participant belongs to two groups routed to different queues.
 Two competition tasks are defined.
 
 ```
-Task:               Task 1    Task 2
+Task:               Task 1               Task 2
 ---------------------------------------------------------
-#  Participant   ID   Group    Score     Accuracy
+#  Participant   ID   Group    Score     Score
 1  alice         201  GPU      0.92      0.81
 2  alice         203  CPU      0.76      0.70
 ```
@@ -152,45 +154,49 @@ Task:               Task 1    Task 2
 
 # Routing Flow
 
-```
-Participant submits
-        │
-        ▼
-Retrieve participant groups
-        │
-        ▼
-At least one group?
-        │
-   ┌────┴────┐
-   │         │
- No         Yes
-   │         │
-   ▼         ▼
-Competition   Resolve queue for each group
-Queue               │
-                    │
-                    ▼
-      Create one child submission per queue
-                    │
-                    ▼
-          Execute on compute workers
-```
+!!! Tip
+    ```
+    Participant submits
+            │
+            ▼
+    Retrieve participant groups
+            │
+            ▼
+    At least one group?
+            │
+    ┌───────┴───────────┐
+    │                   │
+    No                  Yes
+    │                   │
+    ▼                   ▼
+    Competition   Resolve queue for each group
+    Queue               │
+                        │
+                        ▼
+        Create one child submission per queue
+                        │
+                        ▼
+            Execute on compute workers
+    ```
 
 ---
 
 # Important Notes
 
+!!! Notes
     Removing a participant from a group **after** a submission has been created does **not** modify existing submissions.
     If the queue associated with a group is deleted after submissions have been created, the leaderboard displays **"—"** in the **Group** column for those entries.
 
 ---
 
+!!! Notes
     Re-running a submission recomputes participant routing using the participant's **current group memberships**.
 
 If group assignments have changed since the original submission, the rerun may produce different child submissions.
 
 ---
 
+!!! Info
     Group names are unique **within a competition**.
 
 Different competitions may use identical group names without conflict.
