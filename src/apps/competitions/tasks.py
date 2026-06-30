@@ -375,6 +375,23 @@ def _run_submission(submission_pk, task_pks=None, is_scoring=False):
     )
     submission = qs.get(pk=submission_pk)
 
+    # ── HUMAN IN THE LOOP SECURE (private CW only)
+    if is_scoring and submission.phase.competition.enable_human_in_the_loop:
+        if submission.queue is None:
+            logger.error(
+                f"HITL: submission {submission_pk} rejected — "
+                f"Human in the Loop is enabled but no private queue is configured "
+                f"(competition or participant group)."
+            )
+            submission.status = Submission.FAILED
+            submission.status_details = (
+                "This competition requires Human in the Loop validation, but no "
+                "private compute queue is configured. Contact the organizer."
+            )
+            submission.save(update_fields=["status", "status_details"])
+            return
+    # ── HITL SECURE (private CW only)
+
     if submission.is_specific_task_re_run:
         # Should only be one task for a specified task submission
         tasks = Task.objects.filter(pk__in=task_pks)

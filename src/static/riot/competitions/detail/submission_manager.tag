@@ -107,7 +107,8 @@
                 <td class="right aligned collapsing">
                     { submission.status }
                     <sup data-tooltip="{submission.status_details}">
-                        <i if="{submission.status === 'Failed'}" class="failed question circle icon"></i>
+                        <i if="{submission.status === 'Failed' && !is_hitl_failure(submission)}" class="failed question circle icon"></i>
+                        <i if="{submission.status === 'Failed' && is_hitl_failure(submission)}" class="orange lock icon"></i>
                     </sup>
                     <sup data-tooltip="An organizer will run your submission soon">
                         <i if="{submission.status === 'Submitting' && !submission.auto_run}"
@@ -311,7 +312,10 @@
             self.update()
         }
 
-        
+        self.is_hitl_failure = function (submission) {
+            return !!(submission.status_details && submission.status_details.indexOf('Human in the Loop') !== -1)
+        }
+
         self.update_submissions = function (filters) {
             self.loading = true
             self.update()
