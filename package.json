@@ -3,12 +3,12 @@
   "version": "0.0.1",
   "dependencies": {
     "jquery": "^4.0.0",
+    "js-beautify": "^1.15.4",
     "npm-watch": "^0.13.0",
     "riot": "^3.13.2",
     "stylus": "^0.64.0",
     "uglify-js": "^3.19.3"
   },
-  "devDependencies": {},
   "watch": {
     "build-stylus": {
       "patterns": [

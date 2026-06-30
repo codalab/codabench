@@ -12,8 +12,8 @@ from django.utils.timezone import now
 from decimal import Decimal
 
 from celery_config import app, app_for_vhost
-from leaderboards.models import SubmissionScore
-from profiles.models import User, Organization
+from leaderboards.models import SubmissionScore, Column
+from profiles.models import CustomGroup, User, Organization
 from utils.data import PathWrapper
 from utils.storage import BundleStorage
 from PIL import Image
@@ -54,6 +54,9 @@ class Competition(models.Model):
     show_detailed_results_in_leaderboard = models.BooleanField(default=True)
     make_programs_available = models.BooleanField(default=False)
     make_input_data_available = models.BooleanField(default=False)
+
+    participant_groups = models.ManyToManyField(CustomGroup, blank=True, related_name='competitions', verbose_name="group of participants",
+                                                help_text="Competition owner being able to create groups of users.")
 
     queue = models.ForeignKey('queues.Queue', on_delete=models.SET_NULL, null=True, blank=True,
                               related_name='competitions')
@@ -533,9 +536,10 @@ class Submission(models.Model):
             detail.delete()  # Remove record from DB
 
         # Clear the data field if no other submissions are using it
-        other_submissions_using_data = Submission.objects.filter(data=self.data).exclude(pk=self.pk).exists()
-        if not other_submissions_using_data:
-            self.data.delete()
+        if self.data:
+            other_submissions_using_data = Submission.objects.filter(data=self.data).exclude(pk=self.pk).exists()
+            if not other_submissions_using_data:
+                self.data.delete()
 
         # Clear the data field for this submission
         self.data = None
@@ -551,11 +555,12 @@ class Submission(models.Model):
     def delete(self, **kwargs):
 
         # Check if any other submissions are using the same data
-        other_submissions_using_data = Submission.objects.filter(data=self.data).exclude(pk=self.pk).exists()
+        if self.data:
+            other_submissions_using_data = Submission.objects.filter(data=self.data).exclude(pk=self.pk).exists()
 
-        if not other_submissions_using_data:
-            # If no other submissions are using the same data, delete it
-            self.data.delete()
+            if not other_submissions_using_data:
+                # If no other submissions are using the same data, delete it
+                self.data.delete()
 
         # Also clean up details on delete
         self.details.all().delete()
@@ -694,7 +699,7 @@ class Submission(models.Model):
     def calculate_scores(self):
         # leaderboards = self.phase.competition.leaderboards.all()
         # for leaderboard in leaderboards:
-        columns = self.phase.leaderboard.columns.exclude(computation__isnull=True)
+        columns = self.phase.leaderboard.columns.exclude(computation__isnull=True).exclude(computation=Column.AVERAGE_RANK)
         for column in columns:
             scores = self.scores.filter(column__index__in=column.computation_indexes.split(',')).values_list('score',
                                                                                                              flat=True)

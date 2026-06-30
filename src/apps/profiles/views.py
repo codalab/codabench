@@ -290,7 +290,7 @@ def log_in(request):
             try:
                 user = User.objects.get((Q(username=username) | Q(email=username)) & Q(is_deleted=False))
             except User.DoesNotExist:
-                messages.error(request, "User does not exist!")
+                messages.error(request, "Invalid login/password")
             else:
                 # Authenticate user with credentials
                 user = authenticate(username=username, password=password)
@@ -307,7 +307,7 @@ def log_in(request):
                     else:
                         context['activation_error'] = "Your account is not activated. Please check your email for the activation link"
                 else:
-                    messages.error(request, "Wrong Credentials!")
+                    messages.error(request, "Invalid login/password")
         else:
             context['form'] = form
 
