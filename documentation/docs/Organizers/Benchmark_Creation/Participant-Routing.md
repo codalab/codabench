@@ -63,11 +63,7 @@ Existing submissions are **not** modified after a group is deleted.
 Routing follows the following priority:
 !!! Tip
     ```title="Queue priority"
-    Group Queue
-        ↓
-    Competition Queue
-        ↓
-    Default Celery Queue
+    Group Queue > Competition Queue > Default Queue
     ```
 
 ---
@@ -143,7 +139,7 @@ Task:               Task 1               Task 2
 
 # Important Notes
 
-!!! Notes
+!!! Danger
     Removing a participant from a group **after** a submission has been created does **not** modify existing submissions.
     If the queue associated with a group is deleted after submissions have been created, the leaderboard displays **"—"** in the **Group** column for those entries.
 
