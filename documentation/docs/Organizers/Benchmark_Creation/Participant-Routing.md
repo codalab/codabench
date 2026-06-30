@@ -31,9 +31,11 @@ This feature enables organizers to:
 
 ## Creating a Group
 
-Click **New Participant Group**.
+Click **New Routing Group**.
 
 Fill in the following fields:
+
+![image (4)](_attachments/participant_routing4.png)
 
 | Field                  | Description                                                                                                                                                |
 | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
