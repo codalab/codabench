@@ -38,14 +38,26 @@
       <textarea class="markdown-editor" ref="whitelist_emails" name="whitelist_emails"></textarea>
       <div class="error-message" style="color: red;"></div>
     </div>
+
     <!-- Group routing -->
     <div class="field">
-      <label>Participant routing</label>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <label style="font-size:1.15rem; font-weight:600; margin:0;">
+          Participant routing
+        </label>
+
+        <a href="https://docs.codabench.org/latest/Organizers/Benchmark_Creation/Participant-Routing/"
+          target="_blank"
+          style="font-size:0.9rem;">
+          Codabench feature documentation
+        </a>
+      </div>
       <div style="margin-bottom:8px;">
         <button type="button" class="ui tiny primary button" onclick="{ open_create_group }">
           <i class="plus icon"></i> New routing group
         </button>
       </div>
+
       <div class="ui cards">
         <div class="card" each="{ group in available_groups }">
           <div class="content">
