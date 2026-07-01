@@ -23,7 +23,7 @@ This feature enables organizers to:
 
 ![image (2)](_attachments/participant_routing2.png)
 
-3. Scroll down to the **Groups** section.
+3. Scroll down to the **Participant routing** section.
 
 ![image (3)](_attachments/participant_routing3.png)
 
@@ -72,10 +72,9 @@ Routing follows the following priority:
 
 Participant routing is enabled **only if the participant belongs to at least one group**.
 
-A group **without a queue** means:
-
 !!! Tip
-    Use the competition's default queue.
+    A group **without a queue** means:
+    Use the competition's **default** queue.
 
 ## Queue Deduplication
 
@@ -120,20 +119,20 @@ Task:               Task 1               Task 2
 
 # Routing Scenarios
 
-| Participant configuration                         | Group queues | Competition queue | Child submissions created         | Leaderboard rows | Group column |
-| ------------------------------------------------- | ------------ | ----------------- | --------------------------------- | ---------------- | ------------ |
-| No group, single-task competition                 | —            | Q0                | 1 root submission executed on Q0  | 1                | ❌           |
-| No group, multi-task competition                  | —            | Q0                | N child submissions on Q0         | 1                | ❌           |
-| One group without queue, single-task              | Default      | Q0                | 1 root submission on Q0           | 1                | ❌           |
-| One group without queue, multi-task               | Default      | Q0                | N child submissions on Q0         | 1                | ❌           |
-| One group with queue, single-task                 | Q1           | Q0                | 1 child submission on Q1          | 1                | ✅           |
-| One group with queue, multi-task                  | Q1           | Q0                | N child submissions on Q1         | 1                | ✅           |
-| One routed group + one default group, single-task | Q1 + Default | Q0                | 2 child submissions (Q1 + Q0)     | 2                | ✅           |
-| One routed group + one default group, multi-task  | Q1 + Default | Q0                | 2 × N child submissions           | 2                | ✅           |
-| Two groups with different queues, single-task     | Q1 + Q2      | Q0                | 2 child submissions               | 2                | ✅           |
-| Two groups with different queues, multi-task      | Q1 + Q2      | Q0                | 2 × N child submissions           | 2                | ✅           |
-| Two groups using the same queue                   | Q1 + Q1      | Q0                | 1 child submission (deduplicated) | 1                | ✅           |
-| K groups with distinct queues                     | Q1...QK      | Q0                | K × N child submissions           | K                | ✅           |
+| Participant configuration                         | Group queues | Child submissions created         | Leaderboard rows | Group column |
+| ------------------------------------------------- | ------------ | ----------------- | --------------------------------- | ------------ |
+| No group, single-task competition                 | —            | 1 root submission executed on Q0  | 1                | ❌           |
+| No group, multi-task competition                  | —            | N child submissions on Q0         | 1                | ❌           |
+| One group without queue, single-task              | Default      | 1 root submission on Q0           | 1                | ❌           |
+| One group without queue, multi-task               | Default      | N child submissions on Q0         | 1                | ❌           |
+| One group with queue, single-task                 | Q1           | 1 child submission on Q1          | 1                | ✅           |
+| One group with queue, multi-task                  | Q1           | N child submissions on Q1         | 1                | ✅           |
+| One routed group + one default group, single-task | Q1 + Default | 2 child submissions (Q1 + Q0)     | 2                | ✅           |
+| One routed group + one default group, multi-task  | Q1 + Default | 2 × N child submissions           | 2                | ✅           |
+| Two groups with different queues, single-task     | Q1 + Q2      | 2 child submissions               | 2                | ✅           |
+| Two groups with different queues, multi-task      | Q1 + Q2      | 2 × N child submissions           | 2                | ✅           |
+| Two groups using the same queue                   | Q1 + Q1      | 1 child submission (deduplicated) | 1                | ✅           |
+| K groups with distinct queues                     | Q1...QK      | K × N child submissions           | K                | ✅           |
 
 ---
 
