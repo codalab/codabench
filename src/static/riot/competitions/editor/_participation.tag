@@ -54,7 +54,7 @@
             </div>
             <div class="meta group-meta" style="margin-top:0.4em;">
               <div class="group-labels">
-                <span class="ui grey label">Queue: { group.queue || "Aucune" }</span>
+                <span class="ui grey label">Queue: { group.queue || "None" }</span>
                 <span class="ui grey label">Membres: { group.members && group.members.length > 0 ? group.members.length : 0 }</span>
               </div>
               <div class="members-chips" if="{ group.members && group.members.length }">
