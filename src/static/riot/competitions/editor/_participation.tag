@@ -38,12 +38,12 @@
       <textarea class="markdown-editor" ref="whitelist_emails" name="whitelist_emails"></textarea>
       <div class="error-message" style="color: red;"></div>
     </div>
-    <!-- Participant Groups -->
+    <!-- Group routing -->
     <div class="field">
-      <label>Groups</label>
+      <label>Participant group routing</label>
       <div style="margin-bottom:8px;">
         <button type="button" class="ui tiny primary button" onclick="{ open_create_group }">
-          <i class="plus icon"></i> New participant group
+          <i class="plus icon"></i> New group routing
         </button>
       </div>
       <div class="ui cards">
@@ -81,7 +81,7 @@
   <div ref="group_modal" class="ui small modal" style="display:none;">
     <i class="close icon" onclick="{ close_group_modal }"></i>
     <div class="header">
-     { editing_group ? 'Edit participant group' : 'Create participant group' }
+     { editing_group ? 'Edit participant group' : 'Create routing group' }
     </div>
     <div class="content">
       <div class="ui form">
@@ -114,7 +114,7 @@
     </div>
     <div class="actions">
       <div class="ui cancel button" onclick="{ close_group_modal }">Cancel</div>
-      <div class="ui primary button" onclick="{ submit_group }">{ editing_group ? 'Edit' : 'Create' }</div>
+      <div class="ui primary button" onclick="{ submit_group }">{ editing_group ? 'Save' : 'Create' }</div>
     </div>
   </div>
 
