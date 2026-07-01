@@ -1,9 +1,9 @@
 name: scan_image_for_CVE
 on:
   push:
-    # Every week on Monday at 00:00
+    # Every day at  00:00
     schedule:
-     - cron: "0 0 * * 1"
+     - cron: "0 0 * * *"
 jobs:
   build_push_image:
     name: Build Docker Image then Push it to Docker.io
