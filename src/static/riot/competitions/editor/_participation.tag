@@ -40,10 +40,10 @@
     </div>
     <!-- Group routing -->
     <div class="field">
-      <label>Participant group routing</label>
+      <label>Participant routing</label>
       <div style="margin-bottom:8px;">
         <button type="button" class="ui tiny primary button" onclick="{ open_create_group }">
-          <i class="plus icon"></i> New group routing
+          <i class="plus icon"></i> New routing group
         </button>
       </div>
       <div class="ui cards">
@@ -63,10 +63,10 @@
                 </span>
               </div>
               <div class="group-actions">
-                <button class="ui mini icon basic button edit-btn" title="Modifier" onclick="{ open_edit_group.bind(this, group) }">
+                <button class="ui mini icon basic button edit-btn" title="Edit" onclick="{ open_edit_group.bind(this, group) }">
                   <i class="edit icon"></i>
                 </button>
-                <button class="ui mini icon basic red button delete-btn" title="Supprimer" onclick="{ delete_group.bind(this, group) }">
+                <button class="ui mini icon basic red button delete-btn" title="Delete" onclick="{ delete_group.bind(this, group) }">
                   <i class="trash icon"></i>
                 </button>
               </div>
