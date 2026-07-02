@@ -1,0 +1,19 @@
+name: scan_image_for_CVE
+on:
+  # Every day at  00:00
+  schedule:
+   - cron: "0 0 * * *"
+jobs:
+  scan_image:
+    name: Scan compute worker image with Trivy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: 'codalab/codabench-compute-worker:latest'
+          format: 'table'
+          exit-code: '1'
+          pkg-types: 'os,library'
+          severity: 'CRITICAL,HIGH'
+          scanners: 'vuln'
