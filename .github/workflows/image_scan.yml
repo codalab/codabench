@@ -17,3 +17,4 @@ jobs:
           ignore-unfixed: true
           pk-types: 'os,library'
           severity: 'CRITICAL,HIGH'
+	  scanners: 'vuln'
