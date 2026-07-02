@@ -105,7 +105,7 @@ For a given root submission:
 User Obada is inside of three groups (GPU_group, CPU_group and VIP_group),
 The leaderboard shows three lines, one for each group.
 
-User Cidir is inside of two groups so two lines only are displayed.
+User Cidir is inside of two groups so only two lines are displayed.
 
 Group column shows the group name and the main user submission ID like: ID_GroupName
 
