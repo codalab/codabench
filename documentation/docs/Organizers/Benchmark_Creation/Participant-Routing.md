@@ -50,9 +50,8 @@ Click **Create**.
 ## Deleting a Group
 
 !!! Warning
-Deleting a participant group is **permanent**.
-
-Existing submissions are **not** modified after a group is deleted.
+    Deleting a participant group is **permanent**.
+    Existing submissions are **not** modified after a group is deleted.
 
 ---
 
@@ -62,10 +61,9 @@ Existing submissions are **not** modified after a group is deleted.
 
 Routing follows the following priority:
 !!! Tip
-`title="Queue priority"
+    `title="Queue priority"
     Group Queue > Competition Queue > Default Queue
     `
-
 ---
 
 ## Routing Trigger
@@ -73,8 +71,8 @@ Routing follows the following priority:
 Participant routing is enabled **only if the participant belongs to at least one group**.
 
 !!! Tip
-A group **without a queue** means:
-Use the competition's **default** queue.
+    A group **without a queue** means:
+    Use the competition's **default** queue.
 
 ## Queue Deduplication
 
