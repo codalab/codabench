@@ -103,7 +103,9 @@ For a given root submission:
 ![image (5)](_attachments/participant_routing5.png)
 
 User Obada is inside of three groups (GPU_group, CPU_group and VIP_group),
-submited and added his submission to leaderboard, the leaderboard displays three lines.
+The leaderboard shows three lines, one for each group.
+
+User Cidir is inside of two groups so two lines only are displayed.
 
 Group column shows the group name and the main user submission ID like: ID_GroupName
 
@@ -131,15 +133,15 @@ Group column shows the group name and the main user submission ID like: ID_Group
 # Important Notes
 
 !!! Danger
-Removing a participant from a group **after** a submission has been created does **not** modify existing submissions.
-If the queue associated with a group is deleted after submissions have been created, the leaderboard displays **"—"** in the **Group** column for those entries.
+    Removing a participant from a group **after** a submission has been created does **not** modify existing submissions.
+    If the queue associated with a group is deleted after submissions have been created, the leaderboard displays **"—"** in the **Group** column for those entries.
 
 ---
 
 !!! Notes
-Re-running a submission recomputes participant routing using the participant's **current group memberships**.
+    Re-running a submission recomputes participant routing using the participant's **current group memberships**.
 
-If group assignments have changed since the original submission, the rerun may produce different child submissions.
+    If group assignments have changed since the original submission, the rerun may produce different child submissions.
 
 ---
 
