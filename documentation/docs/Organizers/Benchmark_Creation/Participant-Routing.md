@@ -50,7 +50,7 @@ Click **Create**.
 ## Deleting a Group
 
 !!! Warning
-    Deleting a participant group is **permanent**.
+Deleting a participant group is **permanent**.
 
 Existing submissions are **not** modified after a group is deleted.
 
@@ -62,9 +62,9 @@ Existing submissions are **not** modified after a group is deleted.
 
 Routing follows the following priority:
 !!! Tip
-    ```title="Queue priority"
+`title="Queue priority"
     Group Queue > Competition Queue > Default Queue
-    ```
+    `
 
 ---
 
@@ -73,17 +73,13 @@ Routing follows the following priority:
 Participant routing is enabled **only if the participant belongs to at least one group**.
 
 !!! Tip
-    A group **without a queue** means:
-    Use the competition's **default** queue.
+A group **without a queue** means:
+Use the competition's **default** queue.
 
 ## Queue Deduplication
 
 If multiple groups reference the **same compute queue**, only **one child submission** is created.
 Duplicate submissions are never generated for the same queue.
-
-# Leaderboard Behavior
-
-When participant groups affect routing, the leaderboard adapts automatically.
 
 ## Group Column
 
@@ -102,25 +98,21 @@ For a given root submission:
 
 ---
 
-## Example
+## Leaderboard exemple
 
-One participant belongs to two groups routed to different queues.
-Two competition tasks are defined.
+![image (5)](_attachments/participant_routing5.png)
 
-```title="Leaderboard"
-Task:               Task 1               Task 2
----------------------------------------------------------
-#  Participant   ID   Group    Score     Score
-1  alice         201  GPU      0.92      0.81
-2  alice         203  CPU      0.76      0.70
-```
+User Obada is inside of three groups (GPU_group, CPU_group and VIP_group),
+submited and added his submission to leaderboard, the leaderboard displays three lines.
+
+Group column shows the group name and the main user submission ID like: ID_GroupName
 
 ---
 
 # Routing Scenarios
 
 | Participant configuration                         | Group queues | Child submissions created         | Leaderboard rows | Group column |
-| ------------------------------------------------- | ------------ | ----------------- | --------------------------------- | ------------ |
+| ------------------------------------------------- | ------------ | --------------------------------- | ---------------- | ------------ |
 | No group, single-task competition                 | —            | 1 root submission executed on Q0  | 1                | ❌           |
 | No group, multi-task competition                  | —            | N child submissions on Q0         | 1                | ❌           |
 | One group without queue, single-task              | Default      | 1 root submission on Q0           | 1                | ❌           |
@@ -139,13 +131,13 @@ Task:               Task 1               Task 2
 # Important Notes
 
 !!! Danger
-    Removing a participant from a group **after** a submission has been created does **not** modify existing submissions.
-    If the queue associated with a group is deleted after submissions have been created, the leaderboard displays **"—"** in the **Group** column for those entries.
+Removing a participant from a group **after** a submission has been created does **not** modify existing submissions.
+If the queue associated with a group is deleted after submissions have been created, the leaderboard displays **"—"** in the **Group** column for those entries.
 
 ---
 
 !!! Notes
-    Re-running a submission recomputes participant routing using the participant's **current group memberships**.
+Re-running a submission recomputes participant routing using the participant's **current group memberships**.
 
 If group assignments have changed since the original submission, the rerun may produce different child submissions.
 
@@ -154,4 +146,6 @@ If group assignments have changed since the original submission, the rerun may p
 !!! Info
     Group names are unique **within a competition**.
 
-Different competitions may use identical group names without conflict.
+    Different competitions may use identical group names without conflict.
+
+    When participant groups affect routing, the leaderboard adapts automatically.
