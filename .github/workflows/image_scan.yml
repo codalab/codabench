@@ -5,8 +5,8 @@ on:
     schedule:
      - cron: "0 0 * * *"
 jobs:
-  build_push_image:
-    name: Build Docker Image then Push it to Docker.io
+  scan_image:
+    name: Scan compute worker image with Trivy
     runs-on: ubuntu-latest
     steps:
       - name: Run Trivy vulnerability scanner
