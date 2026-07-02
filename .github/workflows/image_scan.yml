@@ -14,7 +14,6 @@ jobs:
           image-ref: 'codalab/codabench-compute-worker:latest'
           format: 'table'
           exit-code: '1'
-          ignore-unfixed: true
-          pk-types: 'os,library'
+          pkg-types: 'os,library'
           severity: 'CRITICAL,HIGH'
           scanners: 'vuln'
