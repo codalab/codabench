@@ -3198,26 +3198,26 @@
 <h2 id="deleting-a-group">Deleting a Group</h2>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
+<p>Deleting a participant group is <strong>permanent</strong>.
+Existing submissions are <strong>not</strong> modified after a group is deleted.</p>
 </div>
-<p>Deleting a participant group is <strong>permanent</strong>.</p>
-<p>Existing submissions are <strong>not</strong> modified after a group is deleted.</p>
 <hr />
 <h1 id="submission-routing-rules">Submission Routing Rules</h1>
 <h2 id="queue-priority">Queue Priority</h2>
 <p>Routing follows the following priority:</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-</div>
 <p><code>title="Queue priority"
-    Group Queue &gt; Competition Queue &gt; Default Queue</code></p>
+Group Queue &gt; Competition Queue &gt; Default Queue</code></p>
+</div>
 <hr />
 <h2 id="routing-trigger">Routing Trigger</h2>
 <p>Participant routing is enabled <strong>only if the participant belongs to at least one group</strong>.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-</div>
 <p>A group <strong>without a queue</strong> means:
 Use the competition's <strong>default</strong> queue.</p>
+</div>
 <h2 id="queue-deduplication">Queue Deduplication</h2>
 <p>If multiple groups reference the <strong>same compute queue</strong>, only <strong>one child submission</strong> is created.
 Duplicate submissions are never generated for the same queue.</p>
