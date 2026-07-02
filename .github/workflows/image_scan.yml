@@ -10,11 +10,11 @@ jobs:
     steps:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@v0.36.0
-	with:
+        with:
           image-ref: 'codalab/codabench-compute-worker:latest'
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
           pk-types: 'os,library'
           severity: 'CRITICAL,HIGH'
-	  scanners: 'vuln'
+          scanners: 'vuln'
