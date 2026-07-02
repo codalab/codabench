@@ -17,6 +17,7 @@ nav = [
             {"How to Transition from Codalab to Codabench?" = "Organizers/Benchmark_Creation/How-to-transition-from-CodaLab-to-Codabench.md"},
             {"Competition Creation" = "Organizers/Benchmark_Creation/Competition-Creation.md"},
             {"Competition Creation Form" = "Organizers/Benchmark_Creation/Competition-Creation-Form.md"},
+            {"Participant Routing" = "Organizers/Benchmark_Creation/Participant-Routing.md"},
             {"Competition Creation Bundle" = "Organizers/Benchmark_Creation/Competition-Creation-Bundle.md"},
             {"Competition YAML Structure" = "Organizers/Benchmark_Creation/Competition-Bundle-Structure.md"},
             {"YAML Structure" = "Organizers/Benchmark_Creation/Yaml-Structure.md"},
@@ -39,6 +40,7 @@ nav = [
         ]}
     ]},
     {"Developers" = [
+        {"Codabench Basic Installation Guide" = "Developers_and_Administrators/Codabench-Installation.md"},
         {"Codabench Docker Architecture" = "Developers_and_Administrators/Codabench-Architecture.md"},
         {"Submission Docker Container Layout" = "Developers_and_Administrators/Submission-Docker-Container-Layout.md"},
         {"Submission Process Overview" = "Developers_and_Administrators/Submission-Process-Overview.md"},
@@ -49,7 +51,6 @@ nav = [
 
     ]},
     {"Self-Hosters" = [
-        {"Codabench Basic Installation Guide" = "Developers_and_Administrators/Codabench-Installation.md"},
         {"How to Deploy a Server" = "Developers_and_Administrators/How-to-deploy-Codabench-on-your-server.md"},
         {"Administrative Procedures" = "Developers_and_Administrators/Administrator-procedures.md"},
         {"Backups - Automating Creation and Restoring" = "Developers_and_Administrators/Creating-and-Restoring-from-Backup.md"},

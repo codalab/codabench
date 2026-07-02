@@ -1,10 +1,10 @@
 import asyncio
+import logging
 import os
 import re
 import traceback
 import zipfile
-from datetime import timedelta, datetime
-from django.conf import settings
+from datetime import datetime, timedelta
 from io import BytesIO
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 
@@ -23,6 +23,7 @@ from competitions.unpackers.utils import CompetitionUnpackingException
 from competitions.unpackers.v1 import V15Unpacker
 from competitions.unpackers.v2 import V2Unpacker
 from datasets.models import Data
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.db import transaction
@@ -36,8 +37,6 @@ from tasks.models import Task
 from celery_config import app
 from utils.data import make_url_sassy
 from utils.email import codalab_send_markdown_email
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -123,6 +122,39 @@ MAX_EXECUTION_TIME_LIMIT = int(
 )  # time limit of the default queue
 
 
+def _get_user_group_queues(user, competition):
+    all_user_groups = list(
+        competition.participant_groups.filter(user__pk=user.pk)
+        .select_related("queue")
+        .distinct()
+    )
+
+    if not all_user_groups:
+        return []
+
+    groups_with_queue = [g for g in all_user_groups if g.queue_id is not None]
+    has_groups_without_queue = any(g.queue_id is None for g in all_user_groups)
+
+    if not groups_with_queue:
+        return []
+
+    seen_ids = set()
+    queues = []
+    for group in groups_with_queue:
+        if group.queue_id not in seen_ids:
+            seen_ids.add(group.queue_id)
+            queues.append(group.queue)
+
+    if has_groups_without_queue:
+        competition_queue = competition.queue
+        if competition_queue is None:
+            queues.append(None)
+        elif competition_queue.id not in seen_ids:
+            queues.append(competition_queue)
+
+    return queues
+
+
 def _send_to_compute_worker(submission, is_scoring):
     run_args = {
         "user_pk": submission.owner.pk,
@@ -177,8 +209,12 @@ def _send_to_compute_worker(submission, is_scoring):
         )
 
     if task.ingestion_program:
-        if (task.ingestion_only_during_scoring and is_scoring) or (not task.ingestion_only_during_scoring and not is_scoring):
-            run_args['ingestion_program_data'] = make_url_sassy(task.ingestion_program.data_file.name)
+        if (task.ingestion_only_during_scoring and is_scoring) or (
+            not task.ingestion_only_during_scoring and not is_scoring
+        ):
+            run_args["ingestion_program_data"] = make_url_sassy(
+                task.ingestion_program.data_file.name
+            )
 
     if task.input_data and (not is_scoring or task.ingestion_only_during_scoring):
         run_args["input_data"] = make_url_sassy(task.input_data.data_file.name)
@@ -189,13 +225,17 @@ def _send_to_compute_worker(submission, is_scoring):
     run_args["ingestion_only_during_scoring"] = task.ingestion_only_during_scoring
 
     if is_scoring:
-        run_args['scoring_program_data'] = make_url_sassy(path=task.scoring_program.data_file.name)
+        run_args["scoring_program_data"] = make_url_sassy(
+            path=task.scoring_program.data_file.name
+        )
 
     if not submission.data:
-        logger.error("Submission %s has no data file; marking as failed.", submission.pk)
+        logger.error(
+            "Submission %s has no data file; marking as failed.", submission.pk
+        )
         submission.cancel(status=Submission.FAILED)
         return
-    run_args['submission_data'] = make_url_sassy(path=submission.data.data_file.name)
+    run_args["submission_data"] = make_url_sassy(path=submission.data.data_file.name)
 
     if not is_scoring:
         detail_names = SubmissionDetails.DETAILED_OUTPUT_NAMES_PREDICTION
@@ -212,17 +252,15 @@ def _send_to_compute_worker(submission, is_scoring):
     time_padding = 60 * 20  # 20 minutes
     time_limit = submission.phase.execution_time_limit + time_padding
 
-    if (
-        submission.phase.competition.queue
-    ):  # if the competition is running on a custom queue, not the default queue
-        submission.queue = submission.phase.competition.queue
-        run_args["execution_time_limit"] = (
-            submission.phase.execution_time_limit
-        )  # use the competition time limit
-        submission.save(update_fields=["queue"])
+    effective_queue = submission.queue or submission.phase.competition.queue
+
+    if effective_queue:
+        run_args["execution_time_limit"] = submission.phase.execution_time_limit
+        if submission.queue != effective_queue:
+            submission.queue = effective_queue
+            submission.save(update_fields=["queue"])
+
     if submission.status == Submission.SUBMITTING:
-        # Don't want to mark an already-prepared submission as "submitted" again, so
-        # only do this if we were previously "SUBMITTING"
         submission.status = Submission.SUBMITTED
         submission.save(update_fields=["status"])
 
@@ -230,12 +268,10 @@ def _send_to_compute_worker(submission, is_scoring):
         # priority of scoring tasks is higher, we don't want to wait around for
         # many submissions to be scored while we're waiting for results
         priority = 10 if is_scoring else 0
-        if submission.phase.competition.queue:
+        if effective_queue:
             celery_app = app_or_default()
             with celery_app.connection() as new_connection:
-                new_connection.virtual_host = str(
-                    submission.phase.competition.queue.vhost
-                )
+                new_connection.virtual_host = str(effective_queue.vhost)
                 task = celery_app.send_task(
                     "compute_worker_run",
                     args=(run_args,),
@@ -329,17 +365,32 @@ def _run_submission(submission_pk, task_pks=None, is_scoring=False):
     else:
         tasks = submission.phase.tasks.filter(pk__in=task_pks)
 
-    tasks = tasks.order_by("pk")
+    tasks = list(tasks.order_by("pk"))
 
-    if len(tasks) > 1:
-        # The initial submission object becomes the parent submission and we create children for each task
+    if submission.parent is None and not is_scoring:
+        group_queues = _get_user_group_queues(
+            submission.owner, submission.phase.competition
+        )
+    else:
+        group_queues = []
+
+    is_multi_task = len(tasks) > 1
+    is_multi_queue = len(group_queues) > 1
+
+    if is_multi_task or is_multi_queue:
+        if is_multi_task and is_multi_queue:
+            combos = [(task, queue) for task in tasks for queue in group_queues]
+        elif is_multi_task:
+            override = group_queues[0] if group_queues else None
+            combos = [(task, override) for task in tasks]
+        else:
+            combos = [(tasks[0], queue) for queue in group_queues]
+
         submission.has_children = True
         submission.save()
-
         send_parent_status(submission)
 
-        for task in tasks:
-            # TODO: make a duplicate submission method and use it here
+        for task, queue in combos:
             child_sub = Submission(
                 owner=submission.owner,
                 phase=submission.phase,
@@ -348,15 +399,21 @@ def _run_submission(submission_pk, task_pks=None, is_scoring=False):
                 parent=submission,
                 task=task,
                 fact_sheet_answers=submission.fact_sheet_answers,
+                queue=queue,
             )
             child_sub.save(ignore_submission_limit=True)
             _send_to_compute_worker(child_sub, is_scoring=False)
             send_child_id(submission, child_sub.id)
+
     else:
-        # The initial submission object is the only submission
         if not submission.task:
             submission.task = tasks[0]
             submission.save()
+
+        if group_queues and submission.queue != group_queues[0]:
+            submission.queue = group_queues[0]
+            submission.save(update_fields=['queue'])
+
         _send_to_compute_worker(submission, is_scoring)
 
 

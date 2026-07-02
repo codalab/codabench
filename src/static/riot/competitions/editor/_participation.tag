@@ -38,14 +38,26 @@
       <textarea class="markdown-editor" ref="whitelist_emails" name="whitelist_emails"></textarea>
       <div class="error-message" style="color: red;"></div>
     </div>
-    <!-- Participant Groups -->
+
+    <!-- Group routing -->
     <div class="field">
-      <label>Groups</label>
+      <div style="display:flex; justify-content:flex-start; align-items:center; margin-bottom:8px;">
+        <label style="font-size:1.15rem; font-weight:600; margin: 5px;;">
+          Participant routing
+        </label>
+        <div style="display:flex; align-items:center;">
+          <help_button href="https://docs.codabench.org/latest/Organizers/Benchmark_Creation/Participant-Routing/"
+                        tooltip_position="left"
+                        target="_blank">
+          </help_button>
+        </div>
+      </div>
       <div style="margin-bottom:8px;">
         <button type="button" class="ui tiny primary button" onclick="{ open_create_group }">
-          <i class="plus icon"></i> New participant group
+          <i class="plus icon"></i> New routing group
         </button>
       </div>
+
       <div class="ui cards">
         <div class="card" each="{ group in available_groups }">
           <div class="content">
@@ -54,7 +66,7 @@
             </div>
             <div class="meta group-meta" style="margin-top:0.4em;">
               <div class="group-labels">
-                <span class="ui grey label">Queue: { group.queue || "Aucune" }</span>
+                <span class="ui grey label">Queue: { group.queue || "None" }</span>
                 <span class="ui grey label">Membres: { group.members && group.members.length > 0 ? group.members.length : 0 }</span>
               </div>
               <div class="members-chips" if="{ group.members && group.members.length }">
@@ -63,10 +75,10 @@
                 </span>
               </div>
               <div class="group-actions">
-                <button class="ui mini icon basic button edit-btn" title="Modifier" onclick="{ open_edit_group.bind(this, group) }">
+                <button class="ui mini icon basic button edit-btn" title="Edit" onclick="{ open_edit_group.bind(this, group) }">
                   <i class="edit icon"></i>
                 </button>
-                <button class="ui mini icon basic red button delete-btn" title="Supprimer" onclick="{ delete_group.bind(this, group) }">
+                <button class="ui mini icon basic red button delete-btn" title="Delete" onclick="{ delete_group.bind(this, group) }">
                   <i class="trash icon"></i>
                 </button>
               </div>
@@ -81,7 +93,7 @@
   <div ref="group_modal" class="ui small modal" style="display:none;">
     <i class="close icon" onclick="{ close_group_modal }"></i>
     <div class="header">
-     { editing_group ? 'Edit participant group' : 'Create participant group' }
+     { editing_group ? 'Edit participant group' : 'Create routing group' }
     </div>
     <div class="content">
       <div class="ui form">
@@ -91,7 +103,10 @@
         </div>
         <div class="field">
           <label>Queue (optional)</label>
-          <select ref="group_queue" class="ui fluid search selection dropdown"></select>
+          <div class="clearable-select-wrapper" ref="group_queue_wrapper">
+            <select ref="group_queue" class="ui fluid search selection dropdown"></select>
+            <i class="remove icon queue-clear-icon" onclick="{ clear_group_queue }" show="{ group_queue_has_value }"></i>
+          </div>
         </div>
         <div class="field">
           <label>Select group members</label>
@@ -114,7 +129,7 @@
     </div>
     <div class="actions">
       <div class="ui cancel button" onclick="{ close_group_modal }">Cancel</div>
-      <div class="ui primary button" onclick="{ submit_group }">{ editing_group ? 'Edit' : 'Create' }</div>
+      <div class="ui primary button" onclick="{ submit_group }">{ editing_group ? 'Save' : 'Create' }</div>
     </div>
   </div>
 
@@ -127,34 +142,74 @@
     self.available_queues = []
     self.available_users = []
     self.editing_group = null
+    self.group_queue_has_value = false
 
     const initUI = () => {
         try { $('.ui.checkbox', self.root).checkbox() } catch(e) {}
         try {
-            if (self.refs && self.refs.group_queue) {
-                const $q = $(self.refs.group_queue)
-                if (!$q.data('dd-init')) {
-                    ;(self.available_queues || []).forEach(q => {
-                        $q.append(new Option(q.name, q.id))
-                    })
-                    $q.dropdown({
-                        apiSettings: {
-                            url: `${URLS.API}queues/?search={query}&public=true`,
-                            cache: false,
-                        },
-                        clearable: true,
-                        minCharacters: 2,
-                        fields: {
-                            remoteValues: 'results',
-                            value: 'id',
-                            name: 'name',
-                        },
-                        maxResults: 5,
-                        onChange: () => {}
-                    })
-                    $q.data('dd-init', true)
-                }
-            }
+          if (self.refs && self.refs.group_queue) {
+              const $q = $(self.refs.group_queue)
+              if (!$q.data('dd-init')) {
+                  $q.append(new Option('', ''));
+                  (self.available_queues || []).forEach(q => {
+                      $q.append(new Option(q.name, q.id))
+                  })
+                  $q.dropdown({
+                      apiSettings: {
+                          url: `${URLS.API}queues/?search={query}&public=true`,
+                          cache: false,
+                      },
+                      minCharacters: 2,
+                      fields: {
+                          remoteValues: 'results',
+                          value: 'id',
+                          name: 'name',
+                      },
+                      maxResults: 5,
+                      onChange: (value) => {
+                          self.group_queue_has_value = !!value
+                          self.update()
+                      }
+                  })
+                  $q.data('dd-init', true)
+                  try {
+                    const wrapper = self.refs.group_queue_wrapper
+                    const clearIcon = wrapper && wrapper.querySelector('.queue-clear-icon')
+                    const generatedDropdown = wrapper && wrapper.querySelector('.ui.selection.dropdown')
+
+                    if (wrapper) {
+                        wrapper.style.position = 'relative'
+                        wrapper.style.display = 'block'
+                    }
+                    if (self.refs.group_queue) {
+                        self.refs.group_queue.style.display = 'none'
+                    }
+                    if (generatedDropdown) {
+                        generatedDropdown.style.paddingRight = '3.2em'
+                        generatedDropdown.style.boxSizing = 'border-box'
+                        generatedDropdown.style.width = '100%'
+                    }
+                    if (clearIcon && !clearIcon.dataset.styled) {
+                        clearIcon.style.position = 'absolute'
+                        clearIcon.style.top = '50%'
+                        clearIcon.style.right = '2.2em'
+                        clearIcon.style.left = 'auto'
+                        clearIcon.style.bottom = 'auto'
+                        clearIcon.style.transform = 'translateY(-50%)'
+                        clearIcon.style.margin = '0'
+                        clearIcon.style.cursor = 'pointer'
+                        clearIcon.style.zIndex = '20'
+                        clearIcon.style.color = 'rgba(0,0,0,0.4)'
+                        clearIcon.style.fontSize = '1em'
+                        clearIcon.style.lineHeight = '1'
+                        clearIcon.addEventListener('mouseenter', () => { clearIcon.style.color = 'rgba(0,0,0,0.8)' })
+                        clearIcon.addEventListener('mouseleave', () => { clearIcon.style.color = 'rgba(0,0,0,0.4)' })
+                        clearIcon.dataset.styled = 'true'
+                        wrapper.appendChild(clearIcon) // garantit qu'il reste le dernier enfant du wrapper
+                    }
+                } catch(e) {}
+              }
+          }
         } catch(e) {}
 
         try {
@@ -299,6 +354,8 @@
       try { $(self.refs.group_queue).dropdown('clear') } catch(e) {}
       try { $(self.refs.group_user_select).dropdown('clear') } catch(e) {}
       try { self.refs.selected_count.textContent = '0' } catch(e) {}
+      self.group_queue_has_value = false
+      self.update()
       try { $(self.refs.group_modal).modal({ closable: true }).modal('show') } catch(e) { self.refs.group_modal.style.display = 'block' }
     }
 
@@ -318,8 +375,10 @@
         if (queueId && group.queue) {
             $(self.refs.group_queue).dropdown('set text', String(group.queue))
             $(self.refs.group_queue).dropdown('set value', String(queueId))
+            self.group_queue_has_value = true
         } else {
             $(self.refs.group_queue).dropdown('clear')
+            self.group_queue_has_value = false   // NOUVEAU
         }
       } catch(e) {}
 
@@ -333,8 +392,7 @@
           try { self.refs.selected_count.textContent = '0' } catch(e) {}
         }
       } catch(e) { console.warn('prefill members failed', e) }
-
-      // Dropdowns are already initialised from mount — no re-init needed here
+      self.update()
       try { $(self.refs.group_modal).modal({ closable: true }).modal('show') } catch(e) { self.refs.group_modal.style.display = 'block' }
     }
 
@@ -476,6 +534,17 @@
       } catch(e) { console.warn('clear selection failed', e) }
     }
 
+    self.clear_group_queue = (e) => {
+      if (e) { e.preventDefault(); e.stopPropagation() }
+      try {
+        $(self.refs.group_queue).dropdown('clear')
+      } catch(e2) {
+        try { self.refs.group_queue.value = '' } catch(e3) {}
+      }
+      self.group_queue_has_value = false
+      self.update()
+    }
+
     self.form_updated = () => {
       self.data.registration_auto_approve = $(self.refs.registration_auto_approve).prop('checked')
       self.data.allow_robot_submissions   = $(self.refs.allow_robot_submissions).prop('checked')
@@ -571,5 +640,37 @@
     .group-actions .ui.mini.icon.button:focus { outline: 2px solid rgba(43,111,158,.18); outline-offset: 2px; }
     .ui.dropdown.multiple { width: 100% !important; }
     .ui.modal { z-index: 10000; }
+    .clearable-select-wrapper {
+      position: relative;
+      display: block;
+    }
+    .clearable-select-wrapper > select {
+      display: none !important;
+    }
+    .clearable-select-wrapper .ui.dropdown {
+      padding-right: 3.2em !important;
+      width: 100% !important;
+      box-sizing: border-box;
+    }
+    .clearable-select-wrapper .queue-clear-icon {
+      position: absolute !important;
+      top: 50% !important;
+      right: 2.2em !important;
+      left: auto !important;
+      bottom: auto !important;
+      transform: translateY(-50%) !important;
+      cursor: pointer;
+      color: rgba(0, 0, 0, 0.4);
+      z-index: 20;
+      font-size: 1em;
+      line-height: 1;
+      margin: 0 !important;
+    }
+    .clearable-select-wrapper .queue-clear-icon:hover {
+      color: rgba(0, 0, 0, 0.8);
+    }
+    .field help_button, .field help_button * {
+      vertical-align: middle;
+    }
   </style>
 </competition-participation>
