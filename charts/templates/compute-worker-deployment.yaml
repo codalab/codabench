@@ -68,15 +68,9 @@ spec:
           resources:
             {{- toYaml $.Values.compute_worker.resources | nindent 12 }}
           volumeMounts:
-            - name: docker-socket
-              mountPath: /var/run/docker.sock
             - name: codabench-storage
               mountPath: /codabench
       volumes:
-        - name: docker-socket
-          hostPath:
-            path: /var/run/docker.sock
-            type: Socket
         - name: codabench-storage
           persistentVolumeClaim:
             claimName: {{ $.Values.compute_worker.volumes.pvcName }}
