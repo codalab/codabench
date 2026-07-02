@@ -1576,7 +1576,7 @@ class Run:
                 logger.debug("Trying to kill and remove container " + str(containers_to_kill))
                 for container in containers_to_kill:
                     try:
-                        client.remove_container(str(container), force=True)
+                        client.remove_container(str(container), v=True, force=True)
                     except docker.errors.APIError as e:
                         logger.error(e)
                     except Exception as e:
@@ -1628,7 +1628,7 @@ class Run:
                             containers_to_kill = self.scoring_program_container_name
                         try:
                             client.kill(containers_to_kill)
-                            client.remove_container(containers_to_kill, force=True)
+                            client.remove_container(containers_to_kill, v=True, force=True)
                         except docker.errors.APIError as e:
                             logger.error(e)
                         except Exception as e:
