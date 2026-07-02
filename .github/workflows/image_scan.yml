@@ -1,9 +1,8 @@
 name: scan_image_for_CVE
 on:
-  push:
-    # Every day at  00:00
-    schedule:
-     - cron: "0 0 * * *"
+  # Every day at  00:00
+  schedule:
+   - cron: "0 0 * * *"
 jobs:
   scan_image:
     name: Scan compute worker image with Trivy
