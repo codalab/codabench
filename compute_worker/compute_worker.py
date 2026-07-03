@@ -113,7 +113,7 @@ class Settings:
     COMPETITION_CONTAINER_HTTP_PROXY = get("COMPETITION_CONTAINER_HTTP_PROXY", "")
     COMPETITION_CONTAINER_HTTPS_PROXY = get("COMPETITION_CONTAINER_HTTPS_PROXY", "")
 
-    CODALAB_IGNORE_CLEANUP_STEP = to_bool(get("CODALAB_IGNORE_CLEANUP_STEP"))
+    COMPUTE_WORKER_NO_CLEANUP = to_bool(get("COMPUTE_WORKER_NO_CLEANUP"))
 
     WORKER_BUNDLE_URL_REWRITE = get("WORKER_BUNDLE_URL_REWRITE", "").strip()
     HUMAN_IN_THE_LOOP = (
@@ -1779,9 +1779,9 @@ class Run:
 
     def clean_up(self):
         self.stop_hitl_http_server()
-        if Settings.CODALAB_IGNORE_CLEANUP_STEP:
+        if Settings.COMPUTE_WORKER_NO_CLEANUP:
             logger.warning(
-                f"CODALAB_IGNORE_CLEANUP_STEP mode enabled, ignoring clean up of: {self.root_dir}"
+                f"COMPUTE_WORKER_NO_CLEANUP mode enabled, ignoring clean up of: {self.root_dir}"
             )
             return
 
