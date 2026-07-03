@@ -121,6 +121,9 @@ class Settings:
     )
     COMPETITION_ALLOW_IMAGE_PULL = to_bool(get("COMPETITION_ALLOW_IMAGE_PULL", "True"))
 
+    SILENT_COMPUTE_WORKER = get("SILENT_COMPUTE_WORKER", "false").lower()
+
+
 
 # -----------------------------------------------
 # Program Kind
@@ -373,10 +376,15 @@ def run_wrapper(run_args):
     except SubmissionException as e:
         msg = str(e).strip()
         if msg:
-            msg = f"Submission failed: {msg}. See logs for more details."
+            if Settings.SILENT_COMPUTE_WORKER == "true":
+                msg = f"Submission failed: {msg}. Contact the Organizer for more details."
+            else:
+                msg = f"Submission failed: {msg}. See logs for more details."
         else:
-            msg = "Submission failed. See logs for more details."
-
+            if Settings.SILENT_COMPUTE_WORKER == "true":
+                msg = "Submission failed. Contact the Organizer for more details."
+            else:
+                msg = "Submission failed. See logs for more details."
         run._update_status(SubmissionStatus.FAILED, extra_information=msg)
         raise
 
@@ -602,18 +610,36 @@ class Run:
     def push_logs(self):
         """Upload any collected logs, even in case of crash.
         """
-        try:
-            for kind, logs in (self.logs or {}).items():
-                for stream_key in ("stdout", "stderr"):
-                    entry = logs.get(stream_key) if isinstance(logs, dict) else None
-                    if not entry:
-                        continue
-                    location = entry.get("location")
-                    data = entry.get("data") or b""
-                    if location:
-                        self._put_file(location, raw_data=data)
-        except Exception as e:
-            logger.exception(f"Failed best-effort log upload: {e}")
+        if Settings.SILENT_COMPUTE_WORKER == "false":
+            try:
+                for kind, logs in (self.logs or {}).items():
+                    for stream_key in ("stdout", "stderr"):
+                        entry = logs.get(stream_key) if isinstance(logs, dict) else None
+                        if not entry:
+                            continue
+                        location = entry.get("location")
+                        data = entry.get("data") or b""
+                        if location:
+                            self._put_file(location, raw_data=data)
+            except Exception as e:
+                logger.exception(f"Failed best-effort log upload: {e}")
+
+        else:
+            try:
+                logs_path = os.path.join(self.root_dir, "logs")
+                with open(logs_path, "w") as f:
+                    for kind, logs in (self.logs or {}).items():
+                        for stream_key in ("stdout", "stderr"):
+                            entry = logs.get(stream_key) if isinstance(logs, dict) else None
+                            if not entry:
+                                continue
+                            location = entry.get("location")
+                            data = entry.get("data") or b""
+                            if location:
+                                f.write(str(data))
+            except Exception as e:
+                logger.exception(f"Failed best-effort log file creation: {e}")
+
 
     def get_detailed_results_file_path(self):
         default_detailed_results_path = os.path.join(
@@ -769,12 +795,17 @@ class Run:
                         self._update_submission(docker_pull_fail_data)
                         # Send error through web socket to the frontend
                         asyncio.run(self._send_data_through_socket(str(pull_error)))
-                        raise DockerImagePullException(
-                            f"Pull for {image_name} failed! Check the logs for more information"
-                        )
+                        if Settings.SILENT_COMPUTE_WORKER == "true":
+                            raise DockerImagePullException(
+                                f"Pull for {image_name} failed! Contact the Organizer for more details."
+                            )
+                        else:
+                            raise DockerImagePullException(
+                                    f"Pull for {image_name} failed! Check the logs for more information"
+                                )
                     else:
                         logger.warning("Failed. Retrying in 5 seconds...")
-                        time.sleep(5)  # Wait 5 seconds before retrying
+                        time.sleep(5) # Wait 5 seconds before retrying
         else:
             logger.info("COMPETITION_ALLOW_IMAGE_PULL is set to False, using local image if it exists")
             try:
@@ -1004,21 +1035,24 @@ class Run:
         # Create a websocket to send the logs in real time to the codabench instance
         # We need to set a timeout for the websocket connection otherwise the program will get stuck if he websocket does not connect.
         websocket = None
-        try:
-            websocket_url = f"{self.websocket_url}?kind={kind}"
-            logger.debug(f"Connecting to {websocket_url} for container {str(container.get('Id'))}")
-            websocket = await asyncio.wait_for(
-                websockets.connect(websocket_url), timeout=10.0
-            )
-            logger.debug(f"connected to {websocket_url} for container {str(container.get('Id'))}")
 
-        except Exception as e:
-            logger.error(
-                f"There was an error trying to connect to the websocket on the codabench instance: {e}"
-            )
+        # Do not create a websocket if the real time logs are not wanted (Silent Compute Worker)
+        if Settings.SILENT_COMPUTE_WORKER == "false":
+            try:
+                websocket_url = f"{self.websocket_url}?kind={kind}"
+                logger.debug(f"Connecting to {websocket_url} for container {str(container.get('Id'))}")
+                websocket = await asyncio.wait_for(
+                    websockets.connect(websocket_url), timeout=10.0
+                )
+                logger.debug(f"connected to {websocket_url} for container {str(container.get('Id'))}")
 
-            if Settings.LOG_LEVEL == Settings.LOG_LEVEL_DEBUG:
-                logger.exception(e)
+            except Exception as e:
+                logger.error(
+                    f"There was an error trying to connect to the websocket on the codabench instance: {e}"
+                )
+
+                if Settings.LOG_LEVEL == Settings.LOG_LEVEL_DEBUG:
+                    logger.exception(e)
 
         start = time.time()
 
@@ -1034,6 +1068,7 @@ class Run:
             )
 
             # If we enter the for loop after the container exited, the program will get stuck
+            # Do not send the real time logs if they are not wanted (Silent Compute Worker)
             if client.inspect_container(container)["State"]["Status"].lower() == "running":
                 logger.debug(
                     "Show the logs and stream them to codabench " + container.get("Id")
@@ -1043,25 +1078,27 @@ class Run:
                     if log[0] is not None:
                         stdout_chunks.append(log[0])
                         logger.info(log[0].decode())
-                        try:
-                            if websocket is not None:
-                                await websocket.send(
-                                    json.dumps({"kind": kind, "message": log[0].decode()})
-                                )
-                        except Exception as e:
-                            logger.error(e)
+                        if Settings.SILENT_COMPUTE_WORKER == "false":
+                            try:
+                                if websocket is not None:
+                                    await websocket.send(
+                                        json.dumps({"kind": kind, "message": log[0].decode()})
+                                    )
+                            except Exception as e:
+                                logger.error(e)
 
                     # Errors
                     elif log[1] is not None:
                         stderr_chunks.append(log[1])
                         logger.error(log[1].decode())
-                        try:
-                            if websocket is not None:
-                                await websocket.send(
-                                    json.dumps({"kind": kind, "message": log[1].decode()})
-                                )
-                        except Exception as e:
-                            logger.error(e)
+                        if Settings.SILENT_COMPUTE_WORKER == "false":
+                            try:
+                                if websocket is not None:
+                                    await websocket.send(
+                                        json.dumps({"kind": kind, "message": log[1].decode()})
+                                    )
+                            except Exception as e:
+                                logger.error(e)
 
         except (docker.errors.NotFound, docker.errors.APIError) as e:
             logger.error(e)
@@ -1077,15 +1114,17 @@ class Run:
             # Gets the logs of the container, sperating stdout and stderr (first and second position) thanks for demux=True
             return_Code = client.wait(container)
             logs_Unified = (b"".join(stdout_chunks), b"".join(stderr_chunks))
-            logger.debug(
-                f"WORKER_MARKER: Disconnecting from {websocket_url}, program counter = {self.completed_program_counter}"
-            )
-            if websocket is not None:
-                try:
-                    await websocket.close()
-                    await websocket.wait_closed()
-                except Exception as e:
-                    logger.error(e)
+
+            if Settings.SILENT_COMPUTE_WORKER == "false":
+                logger.debug(
+                    f"WORKER_MARKER: Disconnecting from {websocket_url}, program counter = {self.completed_program_counter}"
+                )
+                if websocket is not None:
+                    try:
+                        await websocket.close()
+                        await websocket.wait_closed()
+                    except Exception as e:
+                        logger.error(e)
             client.remove_container(container, v=True, force=True)
 
             logger.debug(f"Container {container.get('Id')} exited with status code : {str(return_Code['StatusCode'])}")
@@ -1542,12 +1581,14 @@ class Run:
                     self.ingestion_program_exit_code = return_code
                     self.ingestion_program_elapsed_time = elapsed_time
                 logger.info(f"[exited with {logs['returncode']}]")
-                for key, value in logs.items():
-                    if key not in ["stdout", "stderr"]:
-                        continue
-                    if value["data"]:
-                        logger.info(f"[{key}]\n{value['data']}")
-                        self._put_file(value["location"], raw_data=value["data"])
+                if Settings.SILENT_COMPUTE_WORKER == "false":
+                    for key, value in logs.items():
+                        if key not in ["stdout", "stderr"]:
+                            continue
+                        if value["data"]:
+                            logger.info(f"[{key}]\n{value['data']}")
+                            self._put_file(value["location"], raw_data=value["data"])
+
 
                 # set logs of this kind to None, since we handled them already
                 logger.info("Program finished")
