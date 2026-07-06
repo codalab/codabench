@@ -113,7 +113,7 @@ class Settings:
     COMPETITION_CONTAINER_HTTP_PROXY = get("COMPETITION_CONTAINER_HTTP_PROXY", "")
     COMPETITION_CONTAINER_HTTPS_PROXY = get("COMPETITION_CONTAINER_HTTPS_PROXY", "")
 
-    COMPUTE_WORKER_NO_CLEANUP = to_bool(get("COMPUTE_WORKER_NO_CLEANUP"))
+    COMPUTE_WORKER_NO_CLEANUP = to_bool(get("COMPUTE_WORKER_NO_CLEANUP", "False"))
 
     WORKER_BUNDLE_URL_REWRITE = get("WORKER_BUNDLE_URL_REWRITE", "").strip()
     HUMAN_IN_THE_LOOP = (
@@ -121,7 +121,7 @@ class Settings:
     )
     COMPETITION_ALLOW_IMAGE_PULL = to_bool(get("COMPETITION_ALLOW_IMAGE_PULL", "True"))
 
-    SILENT_COMPUTE_WORKER = get("SILENT_COMPUTE_WORKER", "false").lower()
+    SILENT_COMPUTE_WORKER = to_bool(get("SILENT_COMPUTE_WORKER", "False"))
 
 
 
@@ -376,12 +376,12 @@ def run_wrapper(run_args):
     except SubmissionException as e:
         msg = str(e).strip()
         if msg:
-            if Settings.SILENT_COMPUTE_WORKER == "true":
+            if Settings.SILENT_COMPUTE_WORKER:
                 msg = f"Submission failed: {msg}. Contact the Organizer for more details."
             else:
                 msg = f"Submission failed: {msg}. See logs for more details."
         else:
-            if Settings.SILENT_COMPUTE_WORKER == "true":
+            if Settings.SILENT_COMPUTE_WORKER:
                 msg = "Submission failed. Contact the Organizer for more details."
             else:
                 msg = "Submission failed. See logs for more details."
@@ -610,7 +610,7 @@ class Run:
     def push_logs(self):
         """Upload any collected logs, even in case of crash.
         """
-        if Settings.SILENT_COMPUTE_WORKER == "false":
+        if Settings.SILENT_COMPUTE_WORKER == False:
             try:
                 for kind, logs in (self.logs or {}).items():
                     for stream_key in ("stdout", "stderr"):
@@ -795,7 +795,7 @@ class Run:
                         self._update_submission(docker_pull_fail_data)
                         # Send error through web socket to the frontend
                         asyncio.run(self._send_data_through_socket(str(pull_error)))
-                        if Settings.SILENT_COMPUTE_WORKER == "true":
+                        if Settings.SILENT_COMPUTE_WORKER:
                             raise DockerImagePullException(
                                 f"Pull for {image_name} failed! Contact the Organizer for more details."
                             )
@@ -1037,7 +1037,7 @@ class Run:
         websocket = None
 
         # Do not create a websocket if the real time logs are not wanted (Silent Compute Worker)
-        if Settings.SILENT_COMPUTE_WORKER == "false":
+        if Settings.SILENT_COMPUTE_WORKER == False:
             try:
                 websocket_url = f"{self.websocket_url}?kind={kind}"
                 logger.debug(f"Connecting to {websocket_url} for container {str(container.get('Id'))}")
@@ -1078,7 +1078,7 @@ class Run:
                     if log[0] is not None:
                         stdout_chunks.append(log[0])
                         logger.info(log[0].decode())
-                        if Settings.SILENT_COMPUTE_WORKER == "false":
+                        if Settings.SILENT_COMPUTE_WORKER == False:
                             try:
                                 if websocket is not None:
                                     await websocket.send(
@@ -1091,7 +1091,7 @@ class Run:
                     elif log[1] is not None:
                         stderr_chunks.append(log[1])
                         logger.error(log[1].decode())
-                        if Settings.SILENT_COMPUTE_WORKER == "false":
+                        if Settings.SILENT_COMPUTE_WORKER == False:
                             try:
                                 if websocket is not None:
                                     await websocket.send(
@@ -1115,7 +1115,7 @@ class Run:
             return_Code = client.wait(container)
             logs_Unified = (b"".join(stdout_chunks), b"".join(stderr_chunks))
 
-            if Settings.SILENT_COMPUTE_WORKER == "false":
+            if Settings.SILENT_COMPUTE_WORKER == False:
                 logger.debug(
                     f"WORKER_MARKER: Disconnecting from {websocket_url}, program counter = {self.completed_program_counter}"
                 )
@@ -1484,6 +1484,7 @@ class Run:
                 self._run_program_directory(kind=ProgramKind.INGESTION_PROGRAM, program_dir=ingestion_program_dir),
             ])
 
+        logger.info(tasks)
         gathered_tasks = asyncio.gather(*tasks, return_exceptions=True)
 
         task_results = []  # will store results/exceptions from gather
@@ -1581,7 +1582,7 @@ class Run:
                     self.ingestion_program_exit_code = return_code
                     self.ingestion_program_elapsed_time = elapsed_time
                 logger.info(f"[exited with {logs['returncode']}]")
-                if Settings.SILENT_COMPUTE_WORKER == "false":
+                if Settings.SILENT_COMPUTE_WORKER == False:
                     for key, value in logs.items():
                         if key not in ["stdout", "stderr"]:
                             continue
