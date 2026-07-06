@@ -937,7 +937,7 @@ def submission_status_cleanup():
 
     for sub in submissions:
         # Use started_when for Running submissions, created_when as fallback for others
-	    # The deadline waits for 10 minutes after the phase execution time limit before failing submissions
+        # The deadline waits for 10 minutes after the phase execution time limit before failing submissions
         reference_time = sub.started_when if sub.started_when else sub.created_when
         deadline = reference_time + timedelta(
             milliseconds=(60000 * 10) + sub.phase.execution_time_limit
