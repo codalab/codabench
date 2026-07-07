@@ -1,6 +1,6 @@
 FROM almalinux:10-minimal
 
-RUN microdnf install -y tar gzip
+RUN microdnf update -y && microdnf install -y tar gzip
 
 # This makes output not buffer and return immediately, nice for seeing results in stdout
 ENV PYTHONUNBUFFERED=1
