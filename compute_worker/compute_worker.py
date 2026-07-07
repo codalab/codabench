@@ -377,12 +377,12 @@ def run_wrapper(run_args):
         msg = str(e).strip()
         if msg:
             if Settings.SILENT_COMPUTE_WORKER:
-                msg = f"Submission failed: {msg}. Contact the Organizer for more details."
+                msg = f"Submission failed: {msg}. Contact the Organizer(s) for more details."
             else:
                 msg = f"Submission failed: {msg}. See logs for more details."
         else:
             if Settings.SILENT_COMPUTE_WORKER:
-                msg = "Submission failed. Contact the Organizer for more details."
+                msg = "Submission failed. Contact the Organizer(s) for more details."
             else:
                 msg = "Submission failed. See logs for more details."
         run._update_status(SubmissionStatus.FAILED, extra_information=msg)
@@ -797,7 +797,7 @@ class Run:
                         asyncio.run(self._send_data_through_socket(str(pull_error)))
                         if Settings.SILENT_COMPUTE_WORKER:
                             raise DockerImagePullException(
-                                f"Pull for {image_name} failed! Contact the Organizer for more details."
+                                f"Pull for {image_name} failed! Contact the Organizer(s) for more details."
                             )
                         else:
                             raise DockerImagePullException(
@@ -957,7 +957,8 @@ class Run:
             "SYS_CHROOT",
         ]
 
-        # Configure whether or not we use the GPU. Also setting auto_remove to False because
+        # Configure whether or not we use the GPU. Also setting auto_remove to False because removing too fast 
+        # can bug out the worker (can't get the logs fast enough)
         if Settings.CONTAINER_ENGINE_EXECUTABLE == Settings.DOCKER:
             security_options = ["no-new-privileges"]
         else:
