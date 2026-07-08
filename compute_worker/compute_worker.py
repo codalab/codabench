@@ -112,6 +112,9 @@ class Settings:
     CODALAB_IGNORE_CLEANUP_STEP = to_bool(get("CODALAB_IGNORE_CLEANUP_STEP"))
 
     WORKER_BUNDLE_URL_REWRITE = get("WORKER_BUNDLE_URL_REWRITE", "").strip()
+    HUMAN_IN_THE_LOOP = (
+        get("HUMAN_IN_THE_LOOP", "false").lower() == "true"
+    )
 
 
 # -----------------------------------------------
@@ -313,12 +316,20 @@ def run_wrapper(run_args):
     try:
         run.prepare()
         run.start()
+
         if run.is_scoring:
             if run.human_in_the_loop:
                 run.wait_for_human_validation()
-                run._update_status(SubmissionStatus.FINISHED)
-            run.push_scores()
-        run.push_output()
+                run.send_final_detailed_results()
+                run.push_scores()
+                run.push_output()
+            else:
+                run.push_scores()
+                run.push_output()
+        else:
+            run.push_output()
+
+        run._update_status(SubmissionStatus.FINISHED)
     except DockerImagePullException as e:
         msg = str(e).strip()
         if msg:
@@ -473,7 +484,17 @@ class Run:
         self.prediction_result = run_args["prediction_result"]
         self.scoring_result = run_args.get("scoring_result")
         self.execution_time_limit = run_args["execution_time_limit"]
+        # ----- HITL ------
         self.human_in_the_loop = run_args.get("human_in_the_loop", False)
+        compute_hitl = Settings.HUMAN_IN_THE_LOOP
+        if self.human_in_the_loop != compute_hitl:
+            raise SubmissionException(
+                "Task rejected because the Site Worker and Compute Worker "
+                "do not have the same HUMAN_IN_THE_LOOP configuration "
+                f"(task={self.human_in_the_loop}, "
+                f"compute_worker={Settings.HUMAN_IN_THE_LOOP})."
+            )
+
         # stdout and stderr
         self.stdout, self.stderr, self.ingestion_stdout, self.ingestion_stderr = (
             self._get_stdout_stderr_file_names(run_args)
@@ -517,6 +538,13 @@ class Run:
     async def watch_detailed_results(self):
         """Watches files alongside scoring + program containers, currently only used
         for detailed_results.html"""
+
+        if self.human_in_the_loop:
+            logger.info(
+                "HITL enabled: skipping detailed_results streaming"
+            )
+            return
+
         if not self.detailed_results_url:
             return
         file_path = self.get_detailed_results_file_path()
@@ -599,6 +627,49 @@ class Run:
         except Exception as e:
             logger.exception(e)
             return
+
+    def send_final_detailed_results(self):
+        if not self.detailed_results_url:
+            return
+
+        file_path = self.get_detailed_results_file_path()
+
+        if not file_path:
+            logger.info("No detailed_results.html found")
+            return
+
+        logger.info(
+            f"Uploading final detailed results {file_path} - {self.detailed_results_url}"
+        )
+
+        self._put_file(
+            self.detailed_results_url,
+            file=file_path,
+            content_type="text/html",
+        )
+
+        websocket_url = f"{self.websocket_url}?kind=detailed_results"
+
+        try:
+            websocket = asyncio.run(
+                asyncio.wait_for(
+                    websockets.connect(websocket_url),
+                    timeout=30.0,
+                )
+            )
+
+            asyncio.run(
+                websocket.send(
+                    json.dumps(
+                        {
+                            "kind": "detailed_result_update",
+                        }
+                    )
+                )
+            )
+
+        except Exception as e:
+            logger.exception(e)
 
     def _get_stdout_stderr_file_names(self, run_args):
         # run_args should be the run_args argument passed to __init__ from the run_wrapper.
@@ -1312,9 +1383,10 @@ class Run:
                 )
 
             # During scoring we watch for detailed results
-            tasks.append(
-                self.watch_detailed_results()
-            )
+            if not self.human_in_the_loop:
+                tasks.append(
+                    self.watch_detailed_results()
+                )
         else:
             # During ingestion we run ingestion program directory and submission directory
             tasks.extend([
