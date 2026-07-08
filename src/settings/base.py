@@ -257,7 +257,7 @@ CELERY_BEAT_SCHEDULE = {
     },
     'submission_status_cleanup': {
         'task': 'competitions.tasks.submission_status_cleanup',
-        'schedule': timedelta(seconds=3600)
+        'schedule': timedelta(seconds=7200)
     },
     'create_storage_analytics_snapshot': {
         'task': 'analytics.tasks.create_storage_analytics_snapshot',
