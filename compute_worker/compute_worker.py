@@ -311,10 +311,19 @@ def rewrite_bundle_url_if_needed(url):
 def run_wrapper(run_args):
     # We need to convert the UUID given by celery into a byte like object otherwise things will break
     run_args.update(secret=str(run_args["secret"]))
+
     logger.info(f"Received run arguments: \n {colorize_run_args(json.dumps(run_args))}")
+    logger.info(
+        "HITL configuration : "
+        f"task={run_args.get('human_in_the_loop', False)} "
+        f"compute_worker={Settings.HUMAN_IN_THE_LOOP}"
+    )
+
     run = Run(run_args)
+
     try:
         run.prepare()
+        run.validate_hitl_configuration()
         run.start()
 
         if run.is_scoring:
@@ -486,15 +495,6 @@ class Run:
         self.execution_time_limit = run_args["execution_time_limit"]
         # ----- HITL ------
         self.human_in_the_loop = run_args.get("human_in_the_loop", False)
-        compute_hitl = Settings.HUMAN_IN_THE_LOOP
-        if self.human_in_the_loop != compute_hitl:
-            raise SubmissionException(
-                "Task rejected because the Site Worker and Compute Worker "
-                "do not have the same HUMAN_IN_THE_LOOP configuration "
-                f"(task={self.human_in_the_loop}, "
-                f"compute_worker={Settings.HUMAN_IN_THE_LOOP})."
-            )
-
         # stdout and stderr
         self.stdout, self.stderr, self.ingestion_stdout, self.ingestion_stderr = (
             self._get_stdout_stderr_file_names(run_args)
@@ -627,6 +627,13 @@ class Run:
         except Exception as e:
             logger.exception(e)
             return
+
+        finally:
+            if websocket is not None:
+                try:
+                    await websocket.close()
+                except Exception as e:
+                    logger.exception(e)
 
     def send_final_detailed_results(self):
         if not self.detailed_results_url:
@@ -1357,6 +1364,15 @@ class Run:
         self._get_container_image(self.container_image)
         self._update_status(SubmissionStatus.RUNNING)
 
+    def validate_hitl_configuration(self):
+        if self.human_in_the_loop != Settings.HUMAN_IN_THE_LOOP:
+            raise SubmissionException(
+                "Task rejected because the Site Worker and Compute Worker "
+                "do not have the same HUMAN_IN_THE_LOOP configuration "
+                f"(task={self.human_in_the_loop}, "
+                f"compute_worker={Settings.HUMAN_IN_THE_LOOP})."
+            )
+
     def start(self):
 
         logger.info(f"Preparing to run: {ProgramKind.SCORING_PROGRAM if self.is_scoring else ProgramKind.INGESTION_PROGRAM}")
@@ -1505,9 +1521,15 @@ class Run:
             # Check if scoring program failed
             # We have can have 2 or 3 gathered tasks: 3 gathered tasks in case when `ingestion_only_during_scoring` is True, 2 otherwise
             if self.ingestion_only_during_scoring:
-                program_results, _, _ = task_results
+                if self.human_in_the_loop:
+                    program_results, _ = task_results
+                else:
+                    program_results, _, _ = task_results
             else:
-                program_results, _ = task_results
+                if self.human_in_the_loop:
+                    (program_results,) = task_results
+                else:
+                    program_results, _ = task_results
             # Gather returns either normal values or exception instances when return_exceptions=True
             had_async_exc = isinstance(
                 program_results, BaseException
@@ -1553,6 +1575,10 @@ class Run:
         max_wait = 60 * 60 * 24
 
         elapsed = 0
+
+        logger.info(
+            "Waiting for human validation..."
+        )
         while elapsed < max_wait:
             if os.path.exists(approved_container):
                 logger.info(f"HITL: submission {self.submission_id} approved, sending scores.")
