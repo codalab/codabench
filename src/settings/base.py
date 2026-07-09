@@ -584,3 +584,6 @@ RERUN_SUBMISSION_LIMIT = os.environ.get('RERUN_SUBMISSION_LIMIT', 30)
 # =============================================================================
 ENABLE_SIGN_UP = os.environ.get('ENABLE_SIGN_UP', 'True').lower() == 'true'
 ENABLE_SIGN_IN = os.environ.get('ENABLE_SIGN_IN', 'True').lower() == 'true'
+
+# Data Upload limit (used in django admin when selecing multiple items, or when adding multiple participants in the Participant Routing feature)
+DATA_UPLOAD_MAX_NUMBER_FIELDS = int(os.environ.get('DJANGO_DATA_UPLOAD_MAX_NUMBER_FIELDS', 2000))
