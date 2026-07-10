@@ -438,6 +438,7 @@ class Submission(models.Model):
     PREPARING = "Preparing"
     RUNNING = "Running"
     SCORING = "Scoring"
+    AWAITING_VALIDATION = "Awaiting validation"
     CANCELLED = "Cancelled"
     FINISHED = "Finished"
     FAILED = "Failed"
@@ -449,6 +450,7 @@ class Submission(models.Model):
         (PREPARING, "Preparing"),
         (RUNNING, "Running"),
         (SCORING, "Scoring"),
+        (AWAITING_VALIDATION, "Awaiting validation"),
         (CANCELLED, "Cancelled"),
         (FINISHED, "Finished"),
         (FAILED, "Failed"),

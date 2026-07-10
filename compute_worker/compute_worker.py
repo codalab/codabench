@@ -134,6 +134,7 @@ class SubmissionStatus:
     SUBMITTED = "Submitted"
     PREPARING = "Preparing"
     RUNNING = "Running"
+    AWAITING_VALIDATION = "Awaiting validation"
     SCORING = "Scoring"
     FINISHED = "Finished"
     FAILED = "Failed"
@@ -144,6 +145,7 @@ class SubmissionStatus:
         SUBMITTED,
         PREPARING,
         RUNNING,
+        AWAITING_VALIDATION,
         SCORING,
         FINISHED,
         FAILED,
@@ -328,6 +330,7 @@ def run_wrapper(run_args):
 
         if run.is_scoring:
             if run.human_in_the_loop:
+                run._update_status(SubmissionStatus.AWAITING_VALIDATION)
                 run.wait_for_human_validation()
                 run.send_final_detailed_results()
                 run.push_scores()
