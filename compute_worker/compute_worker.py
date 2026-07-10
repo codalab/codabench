@@ -521,6 +521,9 @@ class Run:
         self.scoring_program_exit_code = None
         self.scoring_program_elapsed_time = None
 
+        # On Kubernetes the execution-time alarm is armed by the first pod
+        self._alarm_armed = False
+
         # Socket connection to stream output of submission
         submission_api_url_parsed = urlparse(self.submissions_api_url)
         websocket_host = submission_api_url_parsed.netloc
@@ -1159,6 +1162,10 @@ class Run:
                 f"Pod {pod_name} did not start within {Settings.TOTAL_TIME_TO_WAIT_FOR_POD}s"
             )
 
+        if not self._alarm_armed:
+            self._alarm_armed = True
+            signal.alarm(self.execution_time_limit)
+
         # Stream logs (K8s merges stdout/stderr; all output goes to stdout)
         stdout = b""
         try:
@@ -1548,7 +1555,8 @@ class Run:
 
         task_results = []  # will store results/exceptions from gather
         signal.signal(signal.SIGALRM, alarm_handler)
-        signal.alarm(self.execution_time_limit)
+        if Settings.CONTAINER_ENGINE_EXECUTABLE != Settings.KUBERNETES:
+            signal.alarm(self.execution_time_limit)
 
         try:
             # run tasks
