@@ -19,10 +19,10 @@ This mechanism is intended for competitions where the scoring results must be re
 
 The HITL feature guarantees:
 
-* the submission is fully executed before any result is published;
-* no score appears on the leaderboard before validation;
-* no detailed results are available before validation;
-* no output archive is sent back to the Site Worker before validation;
+* the submission is fully executed before any result is published.
+* no score appears on the leaderboard before validation.
+* no detailed results are available before validation.
+* no output archive is sent back to instance.
 * the operator can approve or reject the submission directly from the Compute Worker.
 
 ---
@@ -31,8 +31,6 @@ The HITL feature guarantees:
 
 The HITL feature applies **only to private Compute Workers**.
 
-Public Compute Workers **must never execute HITL jobs**, as waiting for manual validation would permanently block shared workers.
-
 ---
 
 ## Activation
@@ -40,10 +38,6 @@ Public Compute Workers **must never execute HITL jobs**, as waiting for manual v
 ### Competition configuration
 
 Each competition exposes the following option:
-
-```
-Enable Human-in-the-Loop
-```
 
 When enabled, every submission routed to a private Compute Worker is executed in HITL mode.
 ![image1](_attachments/doc_HITL_1.png)
@@ -163,9 +157,9 @@ This needs to be done inside of the compute worker host machine (not inside of t
 The Compute Worker immediately resumes execution.
 The following artifacts are published:
 
-* detailed results;
-* scores;
-* output archive;
+* detailed results.
+* scores.
+* output archive.
 * logs.
 
 The submission status becomes "Finished"
@@ -186,27 +180,7 @@ No scoring results are published.
 
 If no decision is received within 24 hours, the submission automatically fails.
 The Compute Worker reports a timeout error.
-
----
-
-## Publication policy
-
-The fundamental principle of HITL is:
-
-> **Nothing leaves the Compute Worker before validation.**
-
-When HITL is enabled:
-
-| Artifact                                | Before validation | After approval |
-| --------------------------------------- | ----------------- | -------------- |
-| scores.json                             | ❌                 | ✅              |
-| leaderboard score                       | ❌                 | ✅              |
-| detailed_results.html                   | ❌                 | ✅              |
-| detailed results websocket notification | ❌                 | ✅              |
-| output archive                          | ❌                 | ✅              |
-| execution logs                          | Local only        | ✅              |
-
-The Compute Worker keeps every generated artifact locally until approval.
+The compute worker is enable to run another submission while waiting for HITL approval.
 
 ---
 
@@ -234,14 +208,6 @@ flowchart TD
 
 ---
 
-## Output behaviour
-
-Prediction files, scoring outputs and logs are generated normally.
-However, publication is postponed until validation succeeds.
-This guarantees that no evaluation result becomes visible before manual approval.
-
----
-
 ## Error handling
 
 The following situations are handled explicitly.
@@ -254,27 +220,3 @@ The following situations are handled explicitly.
 | Operator rejects submission                          | Submission fails                |
 | Validation timeout                                   | Submission fails                |
 | Approval received                                    | Results are published normally  |
-
----
-
-## Design principles
-
-The HITL implementation follows four principles:
-
-1. **Backward compatibility**
-
-   * Existing deployments require no configuration changes.
-
-2. **Safety**
-
-   * Configuration mismatches are detected before execution.
-
-3. **Isolation**
-
-   * HITL is supported only on private Compute Workers.
-
-4. **Atomic publication**
-
-   * No artifact is published before manual approval.
-
-These principles ensure that sensitive competitions can safely introduce manual validation without impacting the standard Codabench execution workflow.
