@@ -178,7 +178,6 @@ def _send_to_compute_worker(submission, is_scoring):
             "Submission %s rejected: HITL requires a private compute worker.",
             submission.id,
         )
-
         return
 
     run_args = {

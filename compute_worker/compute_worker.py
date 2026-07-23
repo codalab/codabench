@@ -332,7 +332,12 @@ def run_wrapper(run_args):
             if run.human_in_the_loop:
                 run._update_status(SubmissionStatus.AWAITING_VALIDATION)
                 run.wait_for_human_validation()
-                run.send_final_detailed_results()
+                if run.pending_detailed_results:
+                    asyncio.run(
+                        run.send_detailed_results(
+                            run.pending_detailed_results
+                        )
+                    )
                 run.push_scores()
                 run.push_output()
             else:
@@ -515,6 +520,7 @@ class Run:
         self.reference_data = run_args.get("reference_data")
         self.ingestion_only_during_scoring = run_args.get("ingestion_only_during_scoring")
         self.detailed_results_url = run_args.get("detailed_results_url")
+        self.pending_detailed_results = None
 
         self.ingestion_program_exit_code = None
         self.ingestion_program_elapsed_time = None
@@ -563,7 +569,10 @@ class Run:
                 new_time = os.path.getmtime(file_path)
                 if new_time != last_modified_time:
                     last_modified_time = new_time
-                    await self.send_detailed_results(file_path)
+                    if self.human_in_the_loop:
+                        self.pending_detailed_results = file_path
+                    else:
+                        await self.send_detailed_results(file_path)
             else:
                 logger.info(time.time() - start)
                 if time.time() - start > expiration_seconds:
@@ -576,7 +585,10 @@ class Run:
         else:
             # make sure we always send the final version of the file
             if file_path:
-                await self.send_detailed_results(file_path)
+                if self.human_in_the_loop:
+                    self.pending_detailed_results = file_path
+                else:
+                    await self.send_detailed_results(file_path)
 
     def push_logs(self):
         """Upload any collected logs, even in case of crash.
@@ -637,49 +649,6 @@ class Run:
                     await websocket.close()
                 except Exception as e:
                     logger.exception(e)
-
-    def send_final_detailed_results(self):
-        if not self.detailed_results_url:
-            return
-
-        file_path = self.get_detailed_results_file_path()
-
-        if not file_path:
-            logger.info("No detailed_results.html found")
-            return
-
-        logger.info(
-            f"Uploading final detailed results {file_path} - {self.detailed_results_url}"
-        )
-
-        self._put_file(
-            self.detailed_results_url,
-            file=file_path,
-            content_type="text/html",
-        )
-
-        websocket_url = f"{self.websocket_url}?kind=detailed_results"
-
-        try:
-            websocket = asyncio.run(
-                asyncio.wait_for(
-                    websockets.connect(websocket_url),
-                    timeout=30.0,
-                )
-            )
-
-            asyncio.run(
-                websocket.send(
-                    json.dumps(
-                        {
-                            "kind": "detailed_result_update",
-                        }
-                    )
-                )
-            )
-
-        except Exception as e:
-            logger.exception(e)
 
     def _get_stdout_stderr_file_names(self, run_args):
         # run_args should be the run_args argument passed to __init__ from the run_wrapper.
@@ -1569,7 +1538,17 @@ class Run:
         logger.info("=" * 60)
         logger.info(f"HUMAN IN THE LOOP — submission {self.submission_id}")
         logger.info("Inspect the scores file:")
-        logger.info(f"  cat {scores_path}")
+        logger.info(f"cat {scores_path}")
+
+        if self.detailed_results_url:
+            detailed_results = self.get_detailed_results_file_path()
+
+            if detailed_results and os.path.exists(detailed_results):
+                logger.info("")
+                logger.info("Detailed results")
+                logger.info(f"  {detailed_results}")
+                logger.info("  (Open this file in your browser to review the HTML report)")
+
         logger.info(f"To approve : touch {approved_host}")
         logger.info(f"To reject  : touch {rejected_host}")
         logger.info("=" * 60)
