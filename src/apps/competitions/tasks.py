@@ -162,6 +162,25 @@ def _send_to_compute_worker(submission, is_scoring):
         and submission.queue is not None
     )
 
+    if (
+        submission.phase.competition.enable_human_in_the_loop
+        and submission.queue is None
+    ):
+        submission.status = Submission.FAILED
+        submission.status_details = (
+            "This competition requires Human-in-the-Loop (HITL), "
+            "but the submission was routed to a public compute worker. "
+            "HITL is only supported on private compute workers."
+        )
+        submission.save(update_fields=["status", "status_details"])
+
+        logger.error(
+            "Submission %s rejected: HITL requires a private compute worker.",
+            submission.id,
+        )
+
+        return
+
     run_args = {
         "user_pk": submission.owner.pk,
         "submissions_api_url": settings.SUBMISSIONS_API_URL,
