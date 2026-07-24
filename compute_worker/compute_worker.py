@@ -3,6 +3,10 @@ import glob
 import hashlib
 import json
 import os
+import functools
+import http.server
+import socketserver
+import threading
 import traceback
 import shutil
 import signal
@@ -521,6 +525,8 @@ class Run:
         self.ingestion_only_during_scoring = run_args.get("ingestion_only_during_scoring")
         self.detailed_results_url = run_args.get("detailed_results_url")
         self.pending_detailed_results = None
+        self.hitl_http_server = None
+        self.hitl_http_thread = None
 
         self.ingestion_program_exit_code = None
         self.ingestion_program_elapsed_time = None
@@ -547,12 +553,6 @@ class Run:
     async def watch_detailed_results(self):
         """Watches files alongside scoring + program containers, currently only used
         for detailed_results.html"""
-
-        if self.human_in_the_loop:
-            logger.info(
-                "HITL enabled: skipping detailed_results streaming"
-            )
-            return
 
         if not self.detailed_results_url:
             return
@@ -617,6 +617,40 @@ class Run:
             html_files = glob.glob(os.path.join(self.output_dir, "*.html"))
             if html_files:
                 return html_files[0]
+
+    def start_hitl_http_server(self):
+        if not self.pending_detailed_results:
+            return
+        root = os.path.dirname(self.pending_detailed_results)
+        logger.info(
+            "Starting temporary HTTP server for HITL review (%s)",
+            root,
+        )
+        handler = functools.partial(
+            http.server.SimpleHTTPRequestHandler,
+            directory=root,
+        )
+        self.hitl_http_server = socketserver.TCPServer(
+            ("127.0.0.1", 8765),
+            handler,
+        )
+        self.hitl_http_thread = threading.Thread(
+            target=self.hitl_http_server.serve_forever,
+            daemon=True,
+        )
+        self.hitl_http_thread.start()
+
+    def stop_hitl_http_server(self):
+        if self.hitl_http_server is None:
+            return
+
+        logger.info("Stopping HITL HTTP server")
+
+        self.hitl_http_server.shutdown()
+        self.hitl_http_server.server_close()
+
+        self.hitl_http_server = None
+        self.hitl_http_thread = None
 
     async def send_detailed_results(self, file_path):
         logger.info(
@@ -1535,44 +1569,59 @@ class Run:
         approved_host = os.path.join(host_output_dir, "hitl_approved")
         rejected_host = os.path.join(host_output_dir, "hitl_rejected")
 
+        detailed_results = None
+        if self.detailed_results_url:
+            detailed_results = self.get_detailed_results_file_path()
+            if detailed_results:
+                self.pending_detailed_results = detailed_results
+                self.start_hitl_http_server()
+
         logger.info("=" * 60)
         logger.info(f"HUMAN IN THE LOOP — submission {self.submission_id}")
         logger.info("Inspect the scores file:")
         logger.info(f"cat {scores_path}")
 
-        if self.detailed_results_url:
-            detailed_results = self.get_detailed_results_file_path()
+        if detailed_results and os.path.exists(detailed_results):
+            logger.info("")
+            logger.info("Inspect the detailed results:")
+            logger.info("")
+            logger.info("Create an SSH tunnel from your workstation:")
+            logger.info("ssh -L 8765:127.0.0.1:8765 operator@<compute-worker>")
+            logger.info("")
+            logger.info("Then open in your browser:")
+            logger.info(
+                "http://127.0.0.1:8765/%s",
+                os.path.basename(detailed_results),
+            )
 
-            if detailed_results and os.path.exists(detailed_results):
-                logger.info("")
-                logger.info("Detailed results")
-                logger.info(f"  {detailed_results}")
-                logger.info("  (Open this file in your browser to review the HTML report)")
-
+        logger.info("")
         logger.info(f"To approve : touch {approved_host}")
         logger.info(f"To reject  : touch {rejected_host}")
         logger.info("=" * 60)
+        logger.info("Waiting for human validation...")
 
         poll_interval = 3
         max_wait = 60 * 60 * 24
-
         elapsed = 0
 
-        logger.info(
-            "Waiting for human validation..."
-        )
         while elapsed < max_wait:
             if os.path.exists(approved_container):
-                logger.info(f"HITL: submission {self.submission_id} approved, sending scores.")
-                return
-            if os.path.exists(rejected_container):
-                raise SubmissionException(
-                    f"HITL: scores rejected by the compute node operator "
-                    f"(submission {self.submission_id})"
+                logger.info(
+                    f"HITL: submission {self.submission_id} approved, sending results."
                 )
+                self.stop_hitl_http_server()
+                return
+
+            if os.path.exists(rejected_container):
+                self.stop_hitl_http_server()
+                raise SubmissionException(
+                    f"HITL: submission {self.submission_id} rejected by the compute node operator."
+                )
+
             time.sleep(poll_interval)
             elapsed += poll_interval
 
+        self.stop_hitl_http_server()
         raise SubmissionException(
             f"HITL: 24h timeout reached without validation "
             f"(submission {self.submission_id})"
@@ -1650,6 +1699,7 @@ class Run:
             self._put_dir(self.scoring_result, self.output_dir)
 
     def clean_up(self):
+        self.stop_hitl_http_server()
         if Settings.CODALAB_IGNORE_CLEANUP_STEP:
             logger.warning(
                 f"CODALAB_IGNORE_CLEANUP_STEP mode enabled, ignoring clean up of: {self.root_dir}"
