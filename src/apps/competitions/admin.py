@@ -212,7 +212,6 @@ class CompetitionExpansion(admin.ModelAdmin):
                     "submissions_count",
                     "participants_count",
                     "created_when",
-                    "enable_human_in_the_loop"
                 ]
             },
         ),
@@ -234,6 +233,7 @@ class CompetitionExpansion(admin.ModelAdmin):
                     "can_participants_make_submissions_public",
                     "is_featured",
                     "forum_enabled",
+                    "enable_human_in_the_loop"
                 ]
             },
         ),
