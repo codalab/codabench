@@ -335,13 +335,18 @@ def run_wrapper(run_args):
         if run.is_scoring:
             if run.human_in_the_loop:
                 run._update_status(SubmissionStatus.AWAITING_VALIDATION)
-                run.wait_for_human_validation()
+                if not run.wait_for_human_validation():
+                    raise SubmissionException(
+                        f"HITL: submission {run.submission_id} rejected by the compute node operator."
+                    )
+
                 if run.pending_detailed_results:
                     asyncio.run(
                         run.send_detailed_results(
                             run.pending_detailed_results
                         )
                     )
+
                 run.push_scores()
                 run.push_output()
             else:
@@ -1582,16 +1587,25 @@ class Run:
         logger.info(f"cat {scores_path}")
 
         if detailed_results and os.path.exists(detailed_results):
-            logger.info("")
             logger.info("Inspect the detailed results:")
-            logger.info("")
+            logger.info("HTML report location:")
+            logger.info(f"{detailed_results}")
+            logger.info("Option 1 (recommended): Preview without copying the file")
             logger.info("Create an SSH tunnel from your workstation:")
             logger.info("ssh -L 8765:127.0.0.1:8765 operator@<compute-worker>")
-            logger.info("")
             logger.info("Then open in your browser:")
             logger.info(
                 "http://127.0.0.1:8765/%s",
                 os.path.basename(detailed_results),
+            )
+            host_detailed_results = self._get_host_path(detailed_results)
+            logger.info("HTML report location:")
+            logger.info("%s", host_detailed_results)
+            logger.info("")
+            logger.info("Option 2: Copy the HTML report")
+            logger.info(
+                "cat %s",
+                host_detailed_results,
             )
 
         logger.info("")
@@ -1610,20 +1624,18 @@ class Run:
                     f"HITL: submission {self.submission_id} approved, sending results."
                 )
                 self.stop_hitl_http_server()
-                return
+                return True
 
             if os.path.exists(rejected_container):
                 self.stop_hitl_http_server()
-                raise SubmissionException(
-                    f"HITL: submission {self.submission_id} rejected by the compute node operator."
-                )
+                return False
 
             time.sleep(poll_interval)
             elapsed += poll_interval
 
         self.stop_hitl_http_server()
         raise SubmissionException(
-            f"HITL: 24h timeout reached without validation "
+            f"HITL: 24h timeout reached without validation"
             f"(submission {self.submission_id})"
         )
 
