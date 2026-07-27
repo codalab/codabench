@@ -212,6 +212,7 @@ class CompetitionExpansion(admin.ModelAdmin):
                     "submissions_count",
                     "participants_count",
                     "created_when",
+                    "enable_human_in_the_loop"
                 ]
             },
         ),
