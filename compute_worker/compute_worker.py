@@ -34,10 +34,40 @@ from celery import Celery, shared_task, utils, signals
 from billiard.exceptions import SoftTimeLimitExceeded
 
 from logs_loguru import configure_logging, colorize_run_args
-
 logger = logging.getLogger(__name__)
 
 sys.path.append("/app/src/settings/")
+
+# Colors for logs (method below)
+RESET = "\033[0m"
+BOLD = "\033[1m"
+
+RED = "\033[31m"
+GREEN = "\033[32m"
+YELLOW = "\033[33m"
+CYAN = "\033[36m"
+
+
+def colorize(text, color="", bold=False):
+    """
+    Colorize any log message using ANSI escape sequences.
+    Compatible with logging, Loguru, Docker and SSH terminals, public and private CWs.
+    """
+    prefix = ""
+
+    if bold:
+        prefix += BOLD
+
+    if color == "red":
+        prefix += RED
+    elif color == "green":
+        prefix += GREEN
+    elif color == "yellow":
+        prefix += YELLOW
+    elif color == "cyan":
+        prefix += CYAN
+
+    return f"{prefix}{text}{RESET}"
 
 
 # -----------------------------------------------
@@ -1581,38 +1611,59 @@ class Run:
                 self.pending_detailed_results = detailed_results
                 self.start_hitl_http_server()
 
-        logger.info("=" * 60)
-        logger.info(f"HUMAN IN THE LOOP — submission {self.submission_id}")
-        logger.info("Inspect the scores file:")
-        logger.info(f"cat {scores_path}")
+        logger.info(colorize("=" * 60, "cyan", bold=True))
+        logger.info(colorize(f"HUMAN IN THE LOOP — submission {self.submission_id}", "cyan", bold=True))
+
+        logger.info(colorize("Inspect the scores file:", bold=True))
+        logger.info(colorize(f"cat {scores_path}", "green"))
 
         if detailed_results and os.path.exists(detailed_results):
-            logger.info("Inspect the detailed results:")
-            logger.info("HTML report location:")
-            logger.info(f"{detailed_results}")
-            logger.info("Option 1 (recommended): Preview without copying the file")
-            logger.info("Create an SSH tunnel from your workstation:")
-            logger.info("ssh -L 8765:127.0.0.1:8765 operator@<compute-worker>")
-            logger.info("Then open in your browser:")
-            logger.info(
-                "http://127.0.0.1:8765/%s",
-                os.path.basename(detailed_results),
-            )
             host_detailed_results = self._get_host_path(detailed_results)
-            logger.info("HTML report location:")
-            logger.info("%s", host_detailed_results)
+
             logger.info("")
-            logger.info("Option 2: Copy the HTML report")
             logger.info(
-                "cat %s",
-                host_detailed_results,
+                colorize(
+                    "Option 1 (recommended): Preview without copying the file",
+                    "yellow",
+                )
             )
 
+            logger.info("Create an SSH tunnel from your workstation:")
+            logger.info(
+                colorize(
+                    "ssh -L 8765:127.0.0.1:8765 operator@<compute-worker>",
+                    "green",
+                )
+            )
+
+            logger.info("Then open in your browser:")
+            logger.info(
+                colorize(
+                    f"http://127.0.0.1:8765/{os.path.basename(detailed_results)}",
+                    "green",
+                )
+            )
+
+            logger.info("")
+            logger.info("HTML report location:")
+            logger.info(colorize(host_detailed_results, "green"))
+
+            logger.info("")
+            logger.info(
+                colorize(
+                    "Option 2: Display the HTML directly in the terminal",
+                    "yellow",
+                )
+            )
+            logger.info(colorize(f"cat {host_detailed_results}", "green"))
+
         logger.info("")
-        logger.info(f"To approve : touch {approved_host}")
-        logger.info(f"To reject  : touch {rejected_host}")
-        logger.info("=" * 60)
-        logger.info("Waiting for human validation...")
+        logger.info(colorize("Validation commands:", bold=True))
+        logger.info(colorize(f"Approve : touch {approved_host}", "green"))
+        logger.info(colorize(f"Reject  : touch {rejected_host}", "red"))
+
+        logger.info(colorize("=" * 60, "cyan", bold=True))
+        logger.info(colorize("Waiting for human validation...", "yellow"))
 
         poll_interval = 3
         max_wait = 60 * 60 * 24
@@ -1621,21 +1672,26 @@ class Run:
         while elapsed < max_wait:
             if os.path.exists(approved_container):
                 logger.info(
-                    f"HITL: submission {self.submission_id} approved, sending results."
+                    colorize(
+                        f"HITL: submission {self.submission_id} approved, sending results.",
+                        "green",
+                        bold=True,
+                    )
                 )
-                self.stop_hitl_http_server()
-                return True
 
-            if os.path.exists(rejected_container):
-                self.stop_hitl_http_server()
-                return False
-
+                logger.info(
+                    colorize(
+                        f"HITL: submission {self.submission_id} rejected by the compute node operator.",
+                        "red",
+                        bold=True,
+                    )
+                )
             time.sleep(poll_interval)
             elapsed += poll_interval
 
         self.stop_hitl_http_server()
         raise SubmissionException(
-            f"HITL: 24h timeout reached without validation"
+            f"HITL: 24h timeout reached without validation "
             f"(submission {self.submission_id})"
         )
 
