@@ -17,7 +17,9 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework_csv.renderers import CSVRenderer
+from api.throttling import AnonBurstRateThrottle, UserBurstRateThrottle
 from api.pagination import DynamicChoicePagination, LargePagination
 from api.renderers import ZipRenderer
 from rest_framework.viewsets import ModelViewSet
@@ -43,6 +45,10 @@ class CompetitionViewSet(ModelViewSet):
     queryset = Competition.objects.all()
     permission_classes = (AllowAny,)
     pagination_class = LargePagination
+    # Declared so the `public` action's @action(throttle_scope=...) kwarg passes
+    # ViewSetMixin.as_view()'s hasattr(cls, key) check; ScopedRateThrottle reads it
+    # via getattr(view, 'throttle_scope', None) regardless of this default.
+    throttle_scope = None
 
     def get_queryset(self):
 
@@ -575,7 +581,12 @@ class CompetitionViewSet(ModelViewSet):
         serializer = CompetitionCreationTaskStatusSerializer({"status": "Success. Competition dump is being created."})
         return Response(serializer.data, status=201)
 
-    @action(detail=False, methods=('GET',), pagination_class=LargePagination)
+    @action(
+        detail=False, methods=('GET',),
+        pagination_class=LargePagination,
+        throttle_classes=[ScopedRateThrottle, AnonBurstRateThrottle, UserBurstRateThrottle],
+        throttle_scope='competitions_public',
+    )
     def public(self, request):
         """
         Retrieve a public list of published competitions with optional filtering and ordering.
