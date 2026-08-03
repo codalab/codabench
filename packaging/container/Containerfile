@@ -1,6 +1,10 @@
-FROM almalinux:10-minimal
+FROM almalinux:10-minimal AS builder
 
-RUN microdnf install -y tar gzip
+RUN microdnf update -y --nodocs && microdnf install -y tar gzip &&  microdnf clean all
+
+FROM scratch
+
+COPY --from=builder / /
 
 ENV PYTHONUNBUFFERED=1
 
