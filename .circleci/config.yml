@@ -1,4 +1,4 @@
-version: 2
+version: 2.1
 
 jobs:
   test:
@@ -92,7 +92,6 @@ jobs:
           path: dockerLogs/
 
 workflows:
-  version: 2
   build_and_test:
     jobs:
       - test
