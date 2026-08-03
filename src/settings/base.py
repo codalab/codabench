@@ -321,8 +321,8 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'anon': '100/day',
         'user': '1000/day',
-        'anon_burst': '20/min',
-        'user_burst': '60/min',
+        'anon_burst': '60/min',
+        'user_burst': '300/min',
         'competitions_public': '300/day',
     },
     'DATETIME_INPUT_FORMATS': (
