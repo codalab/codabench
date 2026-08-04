@@ -124,7 +124,7 @@ class CompetitionViewSet(ModelViewSet):
                     # And competitions where you are admin
                     # And public competitions
                     # And competitions where you are approved participant
-                    # this filters out all private compettions from other users
+                    # this filters out all private competitions from other users
                     base_qs = qs.filter(
                         (Q(created_by=self.request.user)) |
                         (Q(collaborators__in=[self.request.user])) |
