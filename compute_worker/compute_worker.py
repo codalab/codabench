@@ -1559,6 +1559,21 @@ class Run:
         container_output_dir = self.output_dir
         host_output_dir = self._get_host_path(self.output_dir)
 
+        detailed_results = None
+        host_detailed_results = None
+
+        if self.detailed_results_url:
+            detailed_results = self.get_detailed_results_file_path()
+
+            if detailed_results:
+                self.pending_detailed_results = detailed_results
+                self.start_hitl_http_server()
+
+                host_detailed_results = os.path.join(
+                    host_output_dir,
+                    os.path.basename(detailed_results),
+                )
+
         scores_path = os.path.join(host_output_dir, "scores.json")
         if not os.path.exists(os.path.join(container_output_dir, "scores.json")):
             scores_path = os.path.join(host_output_dir, "scores.txt")
@@ -1593,10 +1608,7 @@ class Run:
             )
             host_detailed_results = self._get_host_path(detailed_results)
             logger.info("Option 2: Copy the HTML report")
-            logger.info(
-                "cat %s",
-                host_detailed_results,
-            )
+            logger.info("cat %s", host_detailed_results)
 
         logger.info("")
         logger.info(f"To approve : touch {approved_host}")
