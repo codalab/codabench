@@ -346,16 +346,10 @@ def run_wrapper(run_args):
                             run.pending_detailed_results
                         )
                     )
-
-                run.push_scores()
-                run.push_output()
-            else:
-                run.push_scores()
-                run.push_output()
-        else:
-            run.push_output()
-
+            run.push_scores()
+        run.push_output()
         run._update_status(SubmissionStatus.FINISHED)
+
     except DockerImagePullException as e:
         msg = str(e).strip()
         if msg:
