@@ -358,7 +358,7 @@ class Phase(models.Model):
     def is_active(self):
         """ Returns true when this phase of the competition is on-going. """
         if not self.end:
-            return True
+            return self.start < now()
         else:
             return self.start < now() < self.end
 

@@ -1,4 +1,5 @@
 import random
+from datetime import timedelta
 from unittest import mock
 
 from django.urls import reverse
@@ -731,3 +732,63 @@ class SubmissionSoftDeletionTest(APITestCase):
         self.organization_submission.refresh_from_db()
         assert self.organization_submission.is_soft_deleted is True
         assert self.organization_submission.organization is None
+
+
+class PhaseActiveSubmissionTests(APITestCase):
+    """a submission must only be creatable while its phase is active
+    (has started and, if it has an end date, has not ended)."""
+
+    def setUp(self):
+        self.creator = UserFactory()
+        self.comp = CompetitionFactory(created_by=self.creator)
+        self.participant = UserFactory()
+        CompetitionParticipantFactory(user=self.participant, competition=self.comp, status=CompetitionParticipant.APPROVED)
+        self.dataset = DataFactory(type='submission', created_by=self.participant)
+        self.url_submission = reverse('submission-list')
+
+    def post_submission(self, phase):
+        self.client.force_login(user=self.participant)
+        data = {'phase': phase.id, 'data': self.dataset.key}
+        # Mock _send_to_compute_worker so submissions don't actually run
+        with mock.patch('competitions.tasks._send_to_compute_worker'):
+            return self.client.post(self.url_submission, data=data)
+
+    def test_cannot_submit_before_phase_starts(self):
+        phase = PhaseFactory(competition=self.comp, start=now() + timedelta(days=1), end=None)
+        resp = self.post_submission(phase)
+        assert resp.status_code == 400
+        assert "This phase is not currently accepting submissions." in str(resp.data)
+
+    def test_cannot_submit_before_phase_starts_even_with_end_date_set(self):
+        phase = PhaseFactory(
+            competition=self.comp,
+            start=now() + timedelta(days=1),
+            end=now() + timedelta(days=2),
+        )
+        resp = self.post_submission(phase)
+        assert resp.status_code == 400
+        assert "This phase is not currently accepting submissions." in str(resp.data)
+
+    def test_cannot_submit_after_phase_ends(self):
+        phase = PhaseFactory(
+            competition=self.comp,
+            start=now() - timedelta(days=2),
+            end=now() - timedelta(days=1),
+        )
+        resp = self.post_submission(phase)
+        assert resp.status_code == 400
+        assert "This phase is not currently accepting submissions." in str(resp.data)
+
+    def test_can_submit_during_active_phase_with_no_end_date(self):
+        phase = PhaseFactory(competition=self.comp, start=now() - timedelta(days=1), end=None)
+        resp = self.post_submission(phase)
+        assert resp.status_code == 201
+
+    def test_can_submit_during_active_phase_with_future_end_date(self):
+        phase = PhaseFactory(
+            competition=self.comp,
+            start=now() - timedelta(days=1),
+            end=now() + timedelta(days=1),
+        )
+        resp = self.post_submission(phase)
+        assert resp.status_code == 201
