@@ -93,7 +93,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     allow_organization_invite_emails = models.BooleanField(default=True)
 
     # Queues
-    rabbitmq_queue_limit = models.PositiveIntegerField(default=5, blank=True)
+    rabbitmq_queue_limit = models.PositiveIntegerField(default=10, blank=True)
     rabbitmq_username = models.CharField(max_length=36, null=True, blank=True)
     rabbitmq_password = models.CharField(max_length=36, null=True, blank=True)
 
