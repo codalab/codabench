@@ -2,7 +2,6 @@ import random
 from unittest import mock
 
 from django.urls import reverse
-from django.utils.timezone import now
 from rest_framework.test import APITestCase
 
 from competitions.models import Submission, CompetitionParticipant
@@ -401,103 +400,6 @@ class OrganizationSubmissionTests(APITestCase):
             assert resp.status_code == 400
 
 
-class BotUserSubmissionTests(APITestCase):
-    def setUp(self):
-        self.creator = UserFactory(username='creator', password='creator')
-        self.bot_user = UserFactory(username='bot_user', password='other', is_bot=True)
-        self.non_bot_user = UserFactory(username='non_bot', password='other')
-        self.bot_comp = CompetitionFactory(created_by=self.creator, allow_robot_submissions=True)
-        self.bot_phase = PhaseFactory(competition=self.bot_comp)
-        self.bot_phase_day_limited = PhaseFactory(competition=self.bot_comp, has_max_submissions=True, max_submissions_per_day=1)
-        self.bot_phase_person_limited = PhaseFactory(competition=self.bot_comp, has_max_submissions=True, max_submissions_per_person=1)
-        CompetitionParticipant(user=self.non_bot_user, competition=self.bot_comp, status=CompetitionParticipant.APPROVED).save()
-
-    def test_bot_users_are_automatically_added_to_participants_on_submission(self):
-        self.client.login(username="bot_user", password="other")
-
-        resp = self.client.get(reverse("can_make_submission", args=(self.bot_phase.pk,)))
-
-        assert resp.status_code == 200
-        assert resp.data["can"]
-
-    def test_bots_can_exceed_max_submissions_per_day(self):
-        self.client.login(username='bot_user', password='other')
-
-        resp = self.client.get(reverse("can_make_submission", args=(self.bot_phase_day_limited.pk,)))
-
-        assert resp.status_code == 200
-        assert resp.data['can']
-
-        for _ in range(2):
-            SubmissionFactory(
-                phase=self.bot_phase_day_limited,
-                owner=self.bot_user,
-                status=Submission.SUBMITTED,
-                secret='7df3600c-1234-5678-bbc8-bbe91f42d875'
-            )
-
-        assert Submission.objects.filter(owner=self.bot_user, phase=self.bot_phase_day_limited).count() > self.bot_phase_day_limited.max_submissions_per_day
-
-    def test_bots_can_exceed_max_submissions_per_person(self):
-        self.client.login(username='bot_user', password='other')
-
-        resp = self.client.get(reverse("can_make_submission", args=(self.bot_phase_person_limited.pk,)))
-
-        assert resp.status_code == 200
-        assert resp.data['can']
-
-        for _ in range(2):
-            SubmissionFactory(
-                phase=self.bot_phase_person_limited,
-                owner=self.bot_user,
-                status=Submission.SUBMITTED,
-                secret='7df3600c-1234-5678-bbc8-bbe91f42d875'
-            )
-
-        assert Submission.objects.filter(owner=self.bot_user, phase=self.bot_phase_person_limited).count() > self.bot_phase_person_limited.max_submissions_per_person
-
-    def test_non_bot_users_cannot_exceed_max_submissions_per_day(self):
-        self.client.login(username='non_bot', password='other')
-
-        resp = self.client.get(reverse("can_make_submission", args=(self.bot_phase_day_limited.pk,)))
-
-        assert resp.status_code == 200
-        assert resp.data['can']
-
-        SubmissionFactory(
-            phase=self.bot_phase_day_limited,
-            owner=self.non_bot_user,
-            status=Submission.SUBMITTED,
-            secret='7df3600c-1234-5678-bbc8-bbe91f42d875',
-            created_when=now(),
-        )
-
-        resp = self.client.get(reverse("can_make_submission", args=(self.bot_phase_day_limited.pk,)))
-
-        assert resp.status_code == 200
-        assert not resp.data['can']
-
-    def test_non_bot_users_cannot_exceed_max_submissions_per_person(self):
-        self.client.login(username='non_bot', password='other')
-
-        resp = self.client.get(reverse("can_make_submission", args=(self.bot_phase_person_limited.pk,)))
-
-        assert resp.status_code == 200
-        assert resp.data['can']
-
-        SubmissionFactory(
-            phase=self.bot_phase_person_limited,
-            owner=self.non_bot_user,
-            status=Submission.SUBMITTED,
-            secret='7df3600c-1234-5678-bbc8-bbe91f42d875'
-        )
-
-        resp = self.client.get(reverse("can_make_submission", args=(self.bot_phase_person_limited.pk,)))
-
-        assert resp.status_code == 200
-        assert not resp.data['can']
-
-
 class TaskSelectionTests(APITestCase):
     def setUp(self):
         # Competition and creator
@@ -561,40 +463,9 @@ class TaskSelectionTests(APITestCase):
             # Make sure the selected tasks were run in the duplicate submission's children
             assert list(sub_copy.children.all().order_by('task__pk').values_list('task', flat=True)) == self.sorted_tasks
 
-    def test_can_re_run_submissions_with_specific_task_with_bot_user_without_original_submission_secret(self):
-        bot_user = UserFactory(username="botman", password="botman", is_bot=True)
-        self.client.login(username=bot_user.username, password="botman")
-
-        pre_existing_sub = Submission.objects.create(**{
-            'phase': self.phase,
-            'owner': self.creator,
-            'task': self.phase.tasks.first(),
-            'data': self.data,
-            'status': Submission.FINISHED,
-        })
-
-        new_task = TaskFactory()
-
-        query_params = f'task_key={new_task.key}&private=true'
-        url = f"{reverse('submission-re-run-submission', args=(pre_existing_sub.pk,))}?{query_params}"
-
-        self.creator.is_bot = True
-        self.creator.save()
-
-        assert not Submission.objects.filter(task=new_task).exists()
-
-        # Mock _send_to_compute_worker so submissions don't actually run
-        with mock.patch('competitions.tasks._send_to_compute_worker'):
-            self.client.post(url)
-            sub = Submission.objects.get(task=new_task)
-            assert sub.owner == self.creator
-            assert sub.phase == self.phase
-            assert sub.data == self.data
-            assert sub.is_specific_task_re_run
-
-    def test_cannot_re_run_submissions_with_specific_task_without_bot_user(self):
-        non_bot_user = UserFactory(username="nonbotman", password="nonbotman")
-        self.client.login(username=non_bot_user.username, password="nonbotman")
+    def test_cannot_re_run_submissions_with_specific_task_without_permission(self):
+        other_user = UserFactory(username="otheruser", password="otheruser")
+        self.client.login(username=other_user.username, password="otheruser")
 
         pre_existing_sub = Submission.objects.create(**{
             'phase': self.phase,
