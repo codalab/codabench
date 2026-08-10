@@ -328,8 +328,8 @@ def run_wrapper(run_args):
     run = Run(run_args)
 
     try:
-        run.prepare()
         run.validate_hitl_configuration()
+        run.prepare()
         run.start()
 
         if run.is_scoring:
