@@ -1,5 +1,6 @@
 import json
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
@@ -180,6 +181,8 @@ class OrganizationViewSet(mixins.CreateModelMixin,
                         'user': member.user,
                         'invite_url': f'{reverse("profiles:organization_accept_invite")}?token={member.token}',
                         'organization': org.name,
+                        'domain': settings.DOMAIN_NAME,
+                        'protocol': 'https' if self.request.is_secure() else 'http'
                     },
                     subject=f'You have been invited to join {org.name}',
                     html_file="profiles/emails/invite.html",
