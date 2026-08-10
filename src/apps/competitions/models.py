@@ -165,6 +165,7 @@ class Competition(models.Model):
                 phase=next_phase,
                 owner=submission.owner,
                 data=submission.data,
+                organization=submission.organization,
             )
             new_submission.save(ignore_submission_limit=True)
             new_submission.start()
@@ -656,7 +657,8 @@ class Submission(models.Model):
             'has_children': self.has_children,
             'is_specific_task_re_run': is_specific_task_re_run,
             'fact_sheet_answers': self.fact_sheet_answers,
-            'queue': self.phase.competition.queue
+            'queue': self.phase.competition.queue,
+            'organization': self.organization,
         }
         sub = Submission(**submission_arg_dict)
         sub.save(ignore_submission_limit=True)
