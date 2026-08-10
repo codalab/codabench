@@ -42,6 +42,8 @@ class SubmissionViewSet(ModelViewSet):
             return
         if self.request and self.request.method in ('POST', 'PUT', 'PATCH'):
             dir(self.request)
+            TERMINAL = (Submission.FINISHED, Submission.FAILED, Submission.CANCELLED)
+            obj_is_terminal = obj.status in TERMINAL
             # Set hostname of submission
             if "status_details" in self.request.data.keys():
                 # Check ingestion hostname
@@ -49,11 +51,17 @@ class SubmissionViewSet(ModelViewSet):
                     hostname = request.data['status_details'].replace('ingestion_hostname-', '')
                     obj.ingestion_worker_hostname = hostname
                     obj.save()
+                    if not obj_is_terminal:
+                        obj.ingestion_worker_hostname = hostname
+                        obj.save()
                 # Check socring hostname
                 if request.data['status_details'].find('scoring_hostname') != -1:
                     hostname = request.data['status_details'].replace('scoring_hostname-', '')
                     obj.scoring_worker_hostname = hostname
                     obj.save()
+                    if not obj_is_terminal:
+                        obj.scoring_worker_hostname = hostname
+                        obj.save()
 
             # check if type is in request data. type can have the following values
             # - Docker_Image_Pull_Fail
@@ -197,6 +205,38 @@ class SubmissionViewSet(ModelViewSet):
             if membership.group not in Membership.PARTICIPANT_GROUP:
                 raise ValidationError('You do not have participant permissions for this group')
         return super(SubmissionViewSet, self).create(request, *args, **kwargs)
+
+    @action(detail=True, methods=['get'], permission_classes=[AllowAny], url_path='worker_state')
+    def worker_state(self, request, pk=None):
+        """Lightweight state lookup for compute_workers.
+
+        Authenticated via the submission secret (query param). Returns whether
+        the submission is in a terminal state so a redelivered worker can
+        short-circuit instead of re-executing. Each call atomically bumps
+        ``worker_attempt_count`` to provide an audit trail of redeliveries.
+        """
+        from django.db.models import F
+        submission = get_object_or_404(Submission, pk=pk)
+        secret = request.query_params.get('secret')
+        try:
+            if not secret or uuid.UUID(secret) != submission.secret:
+                raise PermissionDenied('Submission secrets do not match')
+        except (TypeError, ValueError):
+            raise PermissionDenied('Invalid secret')
+        TERMINAL = (Submission.FINISHED, Submission.FAILED, Submission.CANCELLED)
+        is_terminal = submission.status in TERMINAL
+        Submission.objects.filter(pk=submission.pk).update(
+            worker_attempt_count=F('worker_attempt_count') + 1,
+        )
+        submission.refresh_from_db(fields=['worker_attempt_count'])
+        return Response({
+            'id': submission.id,
+            'status': submission.status,
+            'is_terminal': is_terminal,
+            'has_scoring_result': bool(submission.scoring_result),
+            'has_prediction_result': bool(submission.prediction_result),
+            'worker_attempt_count': submission.worker_attempt_count,
+        })
 
     def destroy(self, request, *args, **kwargs):
         """
@@ -593,20 +633,28 @@ def upload_submission_scores(request, submission_pk):
     for column_key, score in request.data.get("scores").items():
         if column_key not in competition_columns:
             continue
-        score = SubmissionScore.objects.create(
-            score=score,
-            column=Column.objects.get(leaderboard=submission.phase.leaderboard, key=column_key)
-        )
-        submission.scores.add(score)
+        column = Column.objects.get(leaderboard=submission.phase.leaderboard, key=column_key)
+        # idempotent score write. A redelivered worker would otherwise
+        # add a second SubmissionScore for the same (submission, column),
+        # which both inflates the leaderboard and crashes calculate_scores()
+        # on .get(column=column).
+        existing = submission.scores.filter(column=column).first()
+        if existing is not None:
+            existing.score = score
+            existing.save(update_fields=['score'])
+            score_obj = existing
+        else:
+            score_obj = SubmissionScore.objects.create(score=score, column=column)
+            submission.scores.add(score_obj)
         if submission.parent:
-            submission.parent.scores.add(score)
+            if not submission.parent.scores.filter(column=column).exists():
+                submission.parent.scores.add(score_obj)
             submission.parent.calculate_scores()
         else:
             submission.calculate_scores()
 
     put_on_leaderboard_by_submission_rule(request, submission_pk, submission_rule)
     return Response()
-
 
 @api_view(('GET',))
 def can_make_submission(request, phase_id):

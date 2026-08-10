@@ -172,6 +172,17 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
         # Task of a submission cannot be updated
         if "task" in validated_data:
             raise PermissionDenied("Task of a submission cannot be update")
+        
+        TERMINAL = (Submission.FINISHED, Submission.FAILED, Submission.CANCELLED)
+        if submission.status in TERMINAL:
+            incoming_status = validated_data.get('status')
+            if incoming_status and incoming_status != submission.status:
+                logger.warning(
+                    "Ignoring redelivered PATCH on terminal submission %s "
+                    "(current=%s, incoming=%s)",
+                    submission.pk, submission.status, incoming_status,
+                )
+                return submission
 
         # Update status if it is there in validated data
         if "status" in validated_data:
