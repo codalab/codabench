@@ -1583,13 +1583,6 @@ class Run:
         approved_host = os.path.join(host_output_dir, "hitl_approved")
         rejected_host = os.path.join(host_output_dir, "hitl_rejected")
 
-        detailed_results = None
-        if self.detailed_results_url:
-            detailed_results = self.get_detailed_results_file_path()
-            if detailed_results:
-                self.pending_detailed_results = detailed_results
-                self.start_hitl_http_server()
-
         logger.info("=" * 60)
         logger.info(f"HUMAN IN THE LOOP — submission {self.submission_id}")
         logger.info("Inspect scoring:")
@@ -1601,12 +1594,12 @@ class Run:
             logger.info("Option 1: Preview without copying the file")
             logger.info("Create an SSH tunnel from your workstation:")
             logger.info("ssh -L 8765:127.0.0.1:8765 operator@<compute-worker>")
-            logger.info("Then open in your browser:",)
+            logger.info("Then open in your browser:")
             logger.info(
                 "http://127.0.0.1:8765/%s",
                 os.path.basename(detailed_results),
             )
-            host_detailed_results = self._get_host_path(detailed_results)
+
             logger.info("Option 2: Copy the HTML report")
             logger.info("cat %s", host_detailed_results)
 
@@ -1637,7 +1630,7 @@ class Run:
 
         self.stop_hitl_http_server()
         raise SubmissionException(
-            f"HITL: 24h timeout reached without validation"
+            f"HITL: 24h timeout reached without validation "
             f"(submission {self.submission_id})"
         )
 
