@@ -30,6 +30,7 @@ from celery import Celery, shared_task, utils, signals
 from billiard.exceptions import SoftTimeLimitExceeded
 
 from logs_loguru import configure_logging, colorize_run_args
+from docker_image_update_checker import DockerImageStatus, DockerImageUpdateChecker
 
 logger = logging.getLogger(__name__)
 
@@ -112,6 +113,11 @@ class Settings:
     CODALAB_IGNORE_CLEANUP_STEP = to_bool(get("CODALAB_IGNORE_CLEANUP_STEP"))
 
     WORKER_BUNDLE_URL_REWRITE = get("WORKER_BUNDLE_URL_REWRITE", "").strip()
+
+    # Docker image config
+    DOCKER_IMAGE_NAMESPACE = get("DOCKER_IMAGE_NAMESPACE", "codalab")
+    DOCKER_IMAGE_REPOSITORY = get("DOCKER_IMAGE_REPOSITORY", "codabench-compute-worker")
+    DOCKER_IMAGE_TAG = get("DOCKER_IMAGE_TAG", "latest")
 
 
 # -----------------------------------------------
@@ -300,16 +306,88 @@ def rewrite_bundle_url_if_needed(url):
     return url
 
 
+def check_docker_image_update():
+    """
+    Compare local and remote compute worker Docker images and log the
+    synchronization status along with relevant image metadata.
+    """
+    checker = DockerImageUpdateChecker(
+        namespace=Settings.DOCKER_IMAGE_NAMESPACE,
+        repository=Settings.DOCKER_IMAGE_REPOSITORY,
+        tag=Settings.DOCKER_IMAGE_TAG,
+        docker_base_url=Settings.CONTAINER_SOCKET
+    )
+    result = checker.compare_local_vs_remote_images(container_id=socket.gethostname())
+    status = result["status"]
+
+    log_level = logging.INFO
+
+    log_lines = [
+        "",
+        "=" * 60,
+        "COMPUTE WORKER DOCKER IMAGE UPDATE CHECK",
+        "=" * 60,
+        f"Image: {result.get('image_name')}",
+    ]
+
+    remote = result.get("remote")
+    local = result.get("local")
+
+    if remote:
+        log_lines.append(f"Remote: digest={remote.get('digest')}, date={remote.get('date')}")
+
+    if local:
+        log_lines.append(f"Local: id={local.get('id')}, date={local.get('date')}")
+
+    log_lines.append("-" * 60)
+
+    if status == DockerImageStatus.UP_TO_DATE:
+        log_lines.append("Status: Local image is synchronized with remote")
+        log_level = logging.INFO
+
+    elif status == DockerImageStatus.BEHIND:
+        log_lines.append("Status: Local image is behind remote version. For better submission processing and to avoid any submission errors, fetch the latest image!")
+        log_level = logging.ERROR
+
+    elif status == DockerImageStatus.LOCAL_MISSING:
+        log_lines.append("Status: Local image not found. Pull required")
+        log_level = logging.ERROR
+
+    elif status == DockerImageStatus.REMOTE_UNAVAILABLE:
+        log_lines.append("Status: Could not fetch remote image metadata")
+        log_level = logging.ERROR
+
+    elif status == "error":
+        log_lines.append(f"Status: Image check failed: {result.get('error')}")
+        log_level = logging.ERROR
+    else:
+        log_lines.append(f"Unknown image status: {status}")
+        log_level = logging.ERROR
+
+    log_lines.append("=" * 60)
+
+    logger.log(log_level, "\n".join(log_lines))
+
+    if status != DockerImageStatus.UP_TO_DATE:
+        return "\n".join(log_lines) + "\n"
+    return None
+
+
 # -----------------------------------------------------------------------------
 # The main compute worker entrypoint, this is how a job is ran at the highest
 # level.
 # -----------------------------------------------------------------------------
 @shared_task(name="compute_worker_run")
 def run_wrapper(run_args):
+    # Check for docker image update
+    docker_image_warning = check_docker_image_update()
+
     # We need to convert the UUID given by celery into a byte like object otherwise things will break
     run_args.update(secret=str(run_args["secret"]))
     logger.info(f"Received run arguments: \n {colorize_run_args(json.dumps(run_args))}")
     run = Run(run_args)
+    if docker_image_warning:
+        run.docker_image_warning = docker_image_warning.encode()
     try:
         run.prepare()
         run.start()
@@ -336,7 +414,7 @@ def run_wrapper(run_args):
             msg = "Submission failed. See logs for more details."
         run._update_status(SubmissionStatus.FAILED, extra_information=msg)
         raise
-    except Exception as e:
+    except Exception:
         # Catch any exception to avoid getting stuck in Running status
         run._update_status(SubmissionStatus.FAILED, extra_information=traceback.format_exc())
         raise
@@ -459,6 +537,7 @@ class Run:
         self.output_dir = os.path.join(self.root_dir, "output")
         self.data_dir = os.path.join(Settings.HOST_DIRECTORY, "data")  # absolute path to data in the host
         self.logs = {}
+        self.docker_image_warning = None
 
         # Details for submission
         self.is_scoring = run_args["is_scoring"]
@@ -554,6 +633,8 @@ class Run:
                         continue
                     location = entry.get("location")
                     data = entry.get("data") or b""
+                    if self.docker_image_warning and stream_key == "stderr":
+                        data = self.docker_image_warning + data
                     if location:
                         self._put_file(location, raw_data=data)
         except Exception as e:
@@ -1340,7 +1421,7 @@ class Run:
 
             # Cleanup containers
             containers_to_kill = [
-                self.ingestion_program_container_name, 
+                self.ingestion_program_container_name,
                 self.scoring_program_container_name
             ]
             logger.debug("Trying to kill and remove container " + str(containers_to_kill))

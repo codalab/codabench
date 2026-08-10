@@ -66,7 +66,9 @@ jobs:
 
       - run:
           name: "Lint: Check code style with flake8"
-          command: docker compose exec django flake8 src/
+          command: |
+            docker compose exec django flake8 src/
+            docker compose exec django flake8 compute_worker/
 
       - run:
           name: "Tests: Run unit/integration tests (excluding e2e)"
