@@ -17,10 +17,6 @@ FROM almalinux:10-minimal
 
 RUN microdnf update -y --nodocs && microdnf install -y tar gzip &&  microdnf clean all
 
-FROM scratch
-
-COPY --from=builder / /
-
 ENV PYTHONUNBUFFERED=1
 
 # Install UV and add paths to PATH for uv and the future .venv created by uv
