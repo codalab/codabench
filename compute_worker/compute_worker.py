@@ -630,7 +630,7 @@ class Run:
             directory=root,
         )
         self.hitl_http_server = socketserver.TCPServer(
-            ("127.0.0.1", 8765),
+            ("0.0.0.0", 8765),
             handler,
         )
         self.hitl_http_thread = threading.Thread(
