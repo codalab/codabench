@@ -2970,6 +2970,13 @@
 <li>Title: The title of the page you are adding</li>
 <li>Content: The content of your page formatted as Markdown.</li>
 </ul>
+<div class="admonition tip">
+<p class="admonition-title">Linking to another page</p>
+<p>You can link from one page's content to another page (or to the Terms page) by adding an anchor tag that triggers a click on the target tab:</p>
+<div class="language-html highlight"><span class="filename">HTML</span><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">&lt;</span><span class="nt">a</span> <span class="na">onclick</span><span class="o">=</span><span class="s">&quot;javascript:$(&#39;.item[data-tab=_tab_page1]&#39;).trigger(&#39;click&#39;);&quot;</span><span class="p">&gt;</span>Go to Evaluation<span class="p">&lt;/</span><span class="nt">a</span><span class="p">&gt;</span>
+</span></code></pre></div>
+<p>Pages are numbered in the order they appear, starting from <code>_tab_page0</code>, <code>_tab_page1</code>, <code>_tab_page2</code>, and so on. The Terms page is the one exception and is always targeted with <code>_tab_page_term</code>, regardless of its position.</p>
+</div>
 <h2 id="phases">Phases</h2>
 <p>The phases section allows you to define your phases and their attached tasks.</p>
 <p><a class="glightbox" data-type="image" href="../../../_attachments/70937064-8ca20400-1ff8-11ea-8820-460c9cd88d5e_17528513122757797.png"><img alt="image" src="../../../_attachments/70937064-8ca20400-1ff8-11ea-8820-460c9cd88d5e_17528513122757797.png" /></a></p>
