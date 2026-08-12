@@ -58,6 +58,7 @@ COMPETITION_FIELDS = [
     "contact_email",
     "fact_sheet",
     "forum_enabled",
+    "enable_human_in_the_loop"
 ]
 
 TASK_FIELDS = [
@@ -156,6 +157,29 @@ def _get_user_group_queues(user, competition):
 
 
 def _send_to_compute_worker(submission, is_scoring):
+    hitl_active = (
+        submission.phase.competition.enable_human_in_the_loop
+        and submission.queue is not None
+    )
+
+    if (
+        submission.phase.competition.enable_human_in_the_loop
+        and submission.queue is None
+    ):
+        submission.status = Submission.FAILED
+        submission.status_details = (
+            "This competition requires Human-in-the-Loop (HITL), "
+            "but the submission was routed to a public compute worker. "
+            "HITL is only supported on private compute workers."
+        )
+        submission.save(update_fields=["status", "status_details"])
+
+        logger.error(
+            "Submission %s rejected: HITL requires a private compute worker.",
+            submission.id,
+        )
+        return
+
     run_args = {
         "user_pk": submission.owner.pk,
         "submissions_api_url": settings.SUBMISSIONS_API_URL,
@@ -166,6 +190,7 @@ def _send_to_compute_worker(submission, is_scoring):
         ),
         "id": submission.pk,
         "is_scoring": is_scoring,
+        "human_in_the_loop": hitl_active,
     }
 
     if (
@@ -249,7 +274,7 @@ def _send_to_compute_worker(submission, is_scoring):
     logger.info(run_args)
 
     # Pad timelimit so worker has time to cleanup
-    time_padding = 60 * 20  # 20 minutes
+    time_padding = 60 * 20
     time_limit = submission.phase.execution_time_limit + time_padding
 
     effective_queue = submission.queue or submission.phase.competition.queue
@@ -260,6 +285,17 @@ def _send_to_compute_worker(submission, is_scoring):
             submission.queue = effective_queue
             submission.save(update_fields=["queue"])
 
+    if is_scoring and hitl_active:
+        time_limit = 60 * 60 * 25
+
+    if (
+        submission.phase.competition.queue
+    ):  # if the competition is running on a custom queue, not the default queue
+        submission.queue = submission.phase.competition.queue
+        run_args["execution_time_limit"] = (
+            submission.phase.execution_time_limit
+        )  # use the competition time limit
+        submission.save(update_fields=["queue"])
     if submission.status == Submission.SUBMITTING:
         submission.status = Submission.SUBMITTED
         submission.save(update_fields=["status"])
@@ -356,6 +392,23 @@ def _run_submission(submission_pk, task_pks=None, is_scoring=False):
         *prefetch_models
     )
     submission = qs.get(pk=submission_pk)
+
+    # ── HUMAN IN THE LOOP SECURE (private CW only)
+    if is_scoring and submission.phase.competition.enable_human_in_the_loop:
+        if submission.queue is None:
+            logger.error(
+                f"HITL: submission {submission_pk} rejected — "
+                f"Human in the Loop is enabled but no private queue is configured "
+                f"(competition or participant group)."
+            )
+            submission.status = Submission.FAILED
+            submission.status_details = (
+                "This competition requires Human in the Loop validation, but no "
+                "private compute queue is configured. Contact the organizer."
+            )
+            submission.save(update_fields=["status", "status_details"])
+            return
+    # ── HITL SECURE (private CW only)
 
     if submission.is_specific_task_re_run:
         # Should only be one task for a specified task submission

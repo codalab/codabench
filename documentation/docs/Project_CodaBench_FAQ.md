@@ -24,6 +24,9 @@ Follow the detailed instruction [here](Organizers/Benchmark_Creation/Public-Task
 ### How to delete my account?
 Click on your account name on the top right of the website, then on `account`
 
+### How to link one competition page to another?
+Follow the detailed instructions [here](Organizers/Benchmark_Creation/Competition-Creation-Form.md#pages) to link from one page's content to another page (or the Terms page) on your competition.
+
 
 
 ***

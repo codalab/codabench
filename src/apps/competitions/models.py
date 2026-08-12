@@ -89,6 +89,7 @@ class Competition(models.Model):
 
     # If true, forum is enabled (default=True)
     forum_enabled = models.BooleanField(default=True)
+    enable_human_in_the_loop = models.BooleanField(default=False)
 
     def __str__(self):
         return f"competition-{self.title}-{self.pk}-{self.competition_type}"
@@ -437,6 +438,7 @@ class Submission(models.Model):
     PREPARING = "Preparing"
     RUNNING = "Running"
     SCORING = "Scoring"
+    AWAITING_VALIDATION = "Awaiting validation"
     CANCELLED = "Cancelled"
     FINISHED = "Finished"
     FAILED = "Failed"
@@ -448,6 +450,7 @@ class Submission(models.Model):
         (PREPARING, "Preparing"),
         (RUNNING, "Running"),
         (SCORING, "Scoring"),
+        (AWAITING_VALIDATION, "Awaiting validation"),
         (CANCELLED, "Cancelled"),
         (FINISHED, "Finished"),
         (FAILED, "Failed"),

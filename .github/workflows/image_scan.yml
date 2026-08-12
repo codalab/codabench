@@ -1,8 +1,10 @@
 name: scan_image_for_CVE
 on:
+  workflow_dispatch:
   # Every day at  00:00
   schedule:
-   - cron: "0 0 * * *"
+    - cron: "0 0 * * *"
+
 jobs:
   scan_image:
     name: Scan compute worker image with Trivy
@@ -14,6 +16,6 @@ jobs:
           image-ref: 'codalab/codabench-compute-worker:latest'
           format: 'table'
           exit-code: '1'
-          pkg-types: 'os,library'
+          vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
           scanners: 'vuln'

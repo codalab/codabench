@@ -233,6 +233,7 @@ class CompetitionExpansion(admin.ModelAdmin):
                     "can_participants_make_submissions_public",
                     "is_featured",
                     "forum_enabled",
+                    "enable_human_in_the_loop"
                 ]
             },
         ),
