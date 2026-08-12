@@ -1051,7 +1051,6 @@ class Run:
         import kubernetes
 
         core_v1 = kubernetes.client.CoreV1Api()
-        start = time.time()
 
         websocket = None
         websocket_url = f"{self.websocket_url}?kind={kind}"
@@ -1162,6 +1161,7 @@ class Run:
                 f"Pod {pod_name} did not start within {Settings.TOTAL_TIME_TO_WAIT_FOR_POD}s"
             )
 
+        start = time.time()
         if not self._alarm_armed:
             self._alarm_armed = True
             signal.alarm(self.execution_time_limit)
