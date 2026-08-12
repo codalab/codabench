@@ -315,10 +315,11 @@ def rewrite_bundle_url_if_needed(url):
 # -----------------------------------------------------------------------------
 @shared_task(name="compute_worker_run")
 def run_wrapper(run_args):
-    # We need to convert the UUID given by celery into a byte like object otherwise things will break
     run_args.update(secret=str(run_args["secret"]))
 
-    logger.info(f"Received run arguments: \n {colorize_run_args(json.dumps(run_args))}")
+    logger.info(
+        f"Received run arguments: \n {colorize_run_args(json.dumps(run_args))}"
+    )
     logger.info(
         "HITL configuration : "
         f"task={run_args.get('human_in_the_loop', False)} "
@@ -335,6 +336,7 @@ def run_wrapper(run_args):
         if run.is_scoring:
             if run.human_in_the_loop:
                 run._update_status(SubmissionStatus.AWAITING_VALIDATION)
+
                 if not run.wait_for_human_validation():
                     raise SubmissionException(
                         f"HITL: submission {run.submission_id} rejected by the compute node operator."
@@ -346,9 +348,12 @@ def run_wrapper(run_args):
                             run.pending_detailed_results
                         )
                     )
+
             run.push_scores()
         run.push_output()
-        run._update_status(SubmissionStatus.FINISHED)
+
+        if run.is_scoring and run.human_in_the_loop:
+            run._update_status(SubmissionStatus.FINISHED)
 
     except DockerImagePullException as e:
         msg = str(e).strip()
@@ -356,30 +361,46 @@ def run_wrapper(run_args):
             msg = f"Docker image pull failed: {msg}"
         else:
             msg = "Docker image pull failed."
-        run._update_status(SubmissionStatus.FAILED, extra_information=msg)
+
+        run._update_status(
+            SubmissionStatus.FAILED,
+            extra_information=msg,
+        )
         raise
+
     except SoftTimeLimitExceeded:
         run._update_status(
-            SubmissionStatus.FAILED, extra_information="Execution time limit exceeded.")
+            SubmissionStatus.FAILED,
+            extra_information="Execution time limit exceeded.",
+        )
         raise
+
     except SubmissionException as e:
         msg = str(e).strip()
         if msg:
             msg = f"Submission failed: {msg}. See logs for more details."
         else:
             msg = "Submission failed. See logs for more details."
-        run._update_status(SubmissionStatus.FAILED, extra_information=msg)
+
+        run._update_status(
+            SubmissionStatus.FAILED,
+            extra_information=msg,
+        )
         raise
-    except Exception as e:
-        # Catch any exception to avoid getting stuck in Running status
-        run._update_status(SubmissionStatus.FAILED, extra_information=traceback.format_exc())
+
+    except Exception:
+        run._update_status(
+            SubmissionStatus.FAILED,
+            extra_information=traceback.format_exc(),
+        )
         raise
+
     finally:
         try:
-            # Try to push logs before cleanup
             run.push_logs()
         except Exception:
             logger.exception("push_logs failed")
+
         run.clean_up()
 
 
