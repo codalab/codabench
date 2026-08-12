@@ -315,6 +315,7 @@ def rewrite_bundle_url_if_needed(url):
 # -----------------------------------------------------------------------------
 @shared_task(name="compute_worker_run")
 def run_wrapper(run_args):
+    # We need to convert the UUID given by celery into a byte like object otherwise things will break
     run_args.update(secret=str(run_args["secret"]))
 
     logger.info(
