@@ -1254,6 +1254,8 @@
       
         
       
+        
+      
     
     
     
@@ -1652,6 +1654,33 @@
     
   
   Server Status
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Competition-HITL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Human in the loop
 
     
   </span>
@@ -3079,7 +3108,7 @@ https://hub.docker.com/r/codalab/codabench-compute-worker/tags</p>
 </span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="na">CONTAINER_ENGINE_EXECUTABLE</span><span class="o">=</span><span class="s">docker</span>
 </span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="c1">#USE_GPU=True</span>
 </span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="c1">#GPU_DEVICE=nvidia.com/gpu=all</span>
-</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a>
+</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="c1">#HUMAN_IN_THE_LOOP=False</span>
 </span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="c1">#######################################################################</span>
 </span><span id="__span-2-22"><a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="c1">#                       Network                                       #</span>
 </span><span id="__span-2-23"><a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="c1">#######################################################################</span>
@@ -3090,6 +3119,7 @@ https://hub.docker.com/r/codalab/codabench-compute-worker/tags</p>
 </span></code></pre></div>
 By default, the competition container created by the compute worker has access to internet. If you want to remove this access, you can uncomment <code>COMPETITION_CONTAINER_NETWORK_DISABLED</code> and set it to <code>True</code></p>
 <p>If the VM hosting the compute worker is behind a proxy, and you want to allow the competition container to access internet, you will also need to set the proxy for the competition container to use, in which case you can use <code>COMPETITION_CONTAINER_HTTP_PROXY</code></p>
+<p>To control the scoring output before sending it to the instance, you can use the human in the loop feature the check the scoring file (json or txt) before sending anything to the instance, see: <a href="https://docs.codabench.org/latest/Organizers/Running_a_benchmark/Competition-HITL/">HITL documentation</a></p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <ul>
