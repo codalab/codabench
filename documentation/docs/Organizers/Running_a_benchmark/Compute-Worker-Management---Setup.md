@@ -59,7 +59,7 @@ HOST_DIRECTORY=/codabench
 CONTAINER_ENGINE_EXECUTABLE=docker
 #USE_GPU=True
 #GPU_DEVICE=nvidia.com/gpu=all
-
+#HUMAN_IN_THE_LOOP=False
 #######################################################################
 #                       Network                                       #
 #######################################################################
@@ -71,6 +71,8 @@ CONTAINER_ENGINE_EXECUTABLE=docker
 By default, the competition container created by the compute worker has access to internet. If you want to remove this access, you can uncomment `COMPETITION_CONTAINER_NETWORK_DISABLED` and set it to `True`
 
 If the VM hosting the compute worker is behind a proxy, and you want to allow the competition container to access internet, you will also need to set the proxy for the competition container to use, in which case you can use `COMPETITION_CONTAINER_HTTP_PROXY`
+
+To control the scoring output before sending it to the instance, you can use the human in the loop feature the check the scoring file (json or txt) before sending anything to the instance, see: [HITL documentation](https://docs.codabench.org/latest/Organizers/Running_a_benchmark/Competition-HITL/)
 
 !!! note
     - The broker URL is a unique identifier of the job queue that the worker should listen to. To create a queue or obtain the broker URL of an existing queue, you can refer to [Queue Management](Queue-Management.md) docs page.
@@ -204,6 +206,7 @@ The folder `$HOST_DIRECTORY/data`, usually `/codabench/data`, is shared between 
 
 
 !!! tip "If you simply wish to set up some compute workers to increase the computing power of your benchmark, you don't need to scroll this page any further."
+
 ---
 
 ## Building compute worker

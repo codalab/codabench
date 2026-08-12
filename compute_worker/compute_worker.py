@@ -3,6 +3,10 @@ import glob
 import hashlib
 import json
 import os
+import functools
+import http.server
+import socketserver
+import threading
 import traceback
 import shutil
 import signal
@@ -112,6 +116,9 @@ class Settings:
     CODALAB_IGNORE_CLEANUP_STEP = to_bool(get("CODALAB_IGNORE_CLEANUP_STEP"))
 
     WORKER_BUNDLE_URL_REWRITE = get("WORKER_BUNDLE_URL_REWRITE", "").strip()
+    HUMAN_IN_THE_LOOP = (
+        get("HUMAN_IN_THE_LOOP", "false").lower() == "true"
+    )
 
 
 # -----------------------------------------------
@@ -131,6 +138,7 @@ class SubmissionStatus:
     SUBMITTED = "Submitted"
     PREPARING = "Preparing"
     RUNNING = "Running"
+    AWAITING_VALIDATION = "Awaiting validation"
     SCORING = "Scoring"
     FINISHED = "Finished"
     FAILED = "Failed"
@@ -141,6 +149,7 @@ class SubmissionStatus:
         SUBMITTED,
         PREPARING,
         RUNNING,
+        AWAITING_VALIDATION,
         SCORING,
         FINISHED,
         FAILED,
@@ -308,14 +317,39 @@ def rewrite_bundle_url_if_needed(url):
 def run_wrapper(run_args):
     # We need to convert the UUID given by celery into a byte like object otherwise things will break
     run_args.update(secret=str(run_args["secret"]))
+
     logger.info(f"Received run arguments: \n {colorize_run_args(json.dumps(run_args))}")
+    logger.info(
+        "HITL configuration : "
+        f"task={run_args.get('human_in_the_loop', False)} "
+        f"compute_worker={Settings.HUMAN_IN_THE_LOOP}"
+    )
+
     run = Run(run_args)
+
     try:
+        run.validate_hitl_configuration()
         run.prepare()
         run.start()
+
         if run.is_scoring:
+            if run.human_in_the_loop:
+                run._update_status(SubmissionStatus.AWAITING_VALIDATION)
+                if not run.wait_for_human_validation():
+                    raise SubmissionException(
+                        f"HITL: submission {run.submission_id} rejected by the compute node operator."
+                    )
+
+                if run.pending_detailed_results:
+                    asyncio.run(
+                        run.send_detailed_results(
+                            run.pending_detailed_results
+                        )
+                    )
             run.push_scores()
         run.push_output()
+        run._update_status(SubmissionStatus.FINISHED)
+
     except DockerImagePullException as e:
         msg = str(e).strip()
         if msg:
@@ -470,6 +504,8 @@ class Run:
         self.prediction_result = run_args["prediction_result"]
         self.scoring_result = run_args.get("scoring_result")
         self.execution_time_limit = run_args["execution_time_limit"]
+        # ----- HITL ------
+        self.human_in_the_loop = run_args.get("human_in_the_loop", False)
         # stdout and stderr
         self.stdout, self.stderr, self.ingestion_stdout, self.ingestion_stderr = (
             self._get_stdout_stderr_file_names(run_args)
@@ -487,6 +523,9 @@ class Run:
         self.reference_data = run_args.get("reference_data")
         self.ingestion_only_during_scoring = run_args.get("ingestion_only_during_scoring")
         self.detailed_results_url = run_args.get("detailed_results_url")
+        self.pending_detailed_results = None
+        self.hitl_http_server = None
+        self.hitl_http_thread = None
 
         self.ingestion_program_exit_code = None
         self.ingestion_program_elapsed_time = None
@@ -513,6 +552,7 @@ class Run:
     async def watch_detailed_results(self):
         """Watches files alongside scoring + program containers, currently only used
         for detailed_results.html"""
+
         if not self.detailed_results_url:
             return
         file_path = self.get_detailed_results_file_path()
@@ -528,7 +568,10 @@ class Run:
                 new_time = os.path.getmtime(file_path)
                 if new_time != last_modified_time:
                     last_modified_time = new_time
-                    await self.send_detailed_results(file_path)
+                    if self.human_in_the_loop:
+                        self.pending_detailed_results = file_path
+                    else:
+                        await self.send_detailed_results(file_path)
             else:
                 logger.info(time.time() - start)
                 if time.time() - start > expiration_seconds:
@@ -541,7 +584,10 @@ class Run:
         else:
             # make sure we always send the final version of the file
             if file_path:
-                await self.send_detailed_results(file_path)
+                if self.human_in_the_loop:
+                    self.pending_detailed_results = file_path
+                else:
+                    await self.send_detailed_results(file_path)
 
     def push_logs(self):
         """Upload any collected logs, even in case of crash.
@@ -571,6 +617,40 @@ class Run:
             if html_files:
                 return html_files[0]
 
+    def start_hitl_http_server(self):
+        if not self.pending_detailed_results:
+            return
+        root = os.path.dirname(self.pending_detailed_results)
+        logger.info(
+            "Starting temporary HTTP server for HITL review (%s)",
+            root,
+        )
+        handler = functools.partial(
+            http.server.SimpleHTTPRequestHandler,
+            directory=root,
+        )
+        self.hitl_http_server = socketserver.TCPServer(
+            ("0.0.0.0", 8765),
+            handler,
+        )
+        self.hitl_http_thread = threading.Thread(
+            target=self.hitl_http_server.serve_forever,
+            daemon=True,
+        )
+        self.hitl_http_thread.start()
+
+    def stop_hitl_http_server(self):
+        if self.hitl_http_server is None:
+            return
+
+        logger.info("Stopping HITL HTTP server")
+
+        self.hitl_http_server.shutdown()
+        self.hitl_http_server.server_close()
+
+        self.hitl_http_server = None
+        self.hitl_http_thread = None
+
     async def send_detailed_results(self, file_path):
         logger.info(
             f"Updating detailed results {file_path} - {self.detailed_results_url}"
@@ -595,6 +675,13 @@ class Run:
         except Exception as e:
             logger.exception(e)
             return
+
+        finally:
+            if websocket is not None:
+                try:
+                    await websocket.close()
+                except Exception as e:
+                    logger.exception(e)
 
     def _get_stdout_stderr_file_names(self, run_args):
         # run_args should be the run_args argument passed to __init__ from the run_wrapper.
@@ -1282,6 +1369,15 @@ class Run:
         self._get_container_image(self.container_image)
         self._update_status(SubmissionStatus.RUNNING)
 
+    def validate_hitl_configuration(self):
+        if self.human_in_the_loop != Settings.HUMAN_IN_THE_LOOP:
+            raise SubmissionException(
+                "Task rejected because the Site Worker and Compute Worker "
+                "do not have the same HUMAN_IN_THE_LOOP configuration "
+                f"(task={self.human_in_the_loop}, "
+                f"compute_worker={Settings.HUMAN_IN_THE_LOOP})."
+            )
+
     def start(self):
 
         logger.info(f"Preparing to run: {ProgramKind.SCORING_PROGRAM if self.is_scoring else ProgramKind.INGESTION_PROGRAM}")
@@ -1308,9 +1404,10 @@ class Run:
                 )
 
             # During scoring we watch for detailed results
-            tasks.append(
-                self.watch_detailed_results()
-            )
+            if not self.human_in_the_loop:
+                tasks.append(
+                    self.watch_detailed_results()
+                )
         else:
             # During ingestion we run ingestion program directory and submission directory
             tasks.extend([
@@ -1429,9 +1526,15 @@ class Run:
             # Check if scoring program failed
             # We have can have 2 or 3 gathered tasks: 3 gathered tasks in case when `ingestion_only_during_scoring` is True, 2 otherwise
             if self.ingestion_only_during_scoring:
-                program_results, _, _ = task_results
+                if self.human_in_the_loop:
+                    program_results, _ = task_results
+                else:
+                    program_results, _, _ = task_results
             else:
-                program_results, _ = task_results
+                if self.human_in_the_loop:
+                    (program_results,) = task_results
+                else:
+                    program_results, _ = task_results
             # Gather returns either normal values or exception instances when return_exceptions=True
             had_async_exc = isinstance(
                 program_results, BaseException
@@ -1445,10 +1548,91 @@ class Run:
                 )
                 # Raise so upstream marks failed immediately
                 raise SubmissionException("Child task failed or non-zero return code")
-            self._update_status(SubmissionStatus.FINISHED)
+
+            if not self.human_in_the_loop:
+                self._update_status(SubmissionStatus.FINISHED)
 
         else:
             self._update_status(SubmissionStatus.SCORING)
+
+    def wait_for_human_validation(self):
+        container_output_dir = self.output_dir
+        host_output_dir = self._get_host_path(self.output_dir)
+
+        detailed_results = None
+        host_detailed_results = None
+
+        if self.detailed_results_url:
+            detailed_results = self.get_detailed_results_file_path()
+
+            if detailed_results:
+                self.pending_detailed_results = detailed_results
+                self.start_hitl_http_server()
+
+                host_detailed_results = os.path.join(
+                    host_output_dir,
+                    os.path.basename(detailed_results),
+                )
+
+        scores_path = os.path.join(host_output_dir, "scores.json")
+        if not os.path.exists(os.path.join(container_output_dir, "scores.json")):
+            scores_path = os.path.join(host_output_dir, "scores.txt")
+
+        approved_container = os.path.join(container_output_dir, "hitl_approved")
+        rejected_container = os.path.join(container_output_dir, "hitl_rejected")
+        approved_host = os.path.join(host_output_dir, "hitl_approved")
+        rejected_host = os.path.join(host_output_dir, "hitl_rejected")
+
+        logger.info("=" * 60)
+        logger.info(f"HUMAN IN THE LOOP — submission {self.submission_id}")
+        logger.info("Inspect scoring:")
+        logger.info(f"cat {scores_path}")
+        logger.info("")
+
+        if detailed_results and os.path.exists(detailed_results):
+            logger.info("Inspect detailed results:")
+            logger.info("Option 1: Preview without copying the file")
+            logger.info("Create an SSH tunnel from your workstation:")
+            logger.info("ssh -L 8765:127.0.0.1:8765 operator@<compute-worker>")
+            logger.info("Then open in your browser:")
+            logger.info(
+                "http://127.0.0.1:8765/%s",
+                os.path.basename(detailed_results),
+            )
+
+            logger.info("Option 2: Copy the HTML report")
+            logger.info("cat %s", host_detailed_results)
+
+        logger.info("")
+        logger.info(f"To approve : touch {approved_host}")
+        logger.info(f"To reject  : touch {rejected_host}")
+        logger.info("=" * 60)
+        logger.info("Waiting for human validation...")
+
+        poll_interval = 3
+        max_wait = 60 * 60 * 24
+        elapsed = 0
+
+        while elapsed < max_wait:
+            if os.path.exists(approved_container):
+                logger.info(
+                    f"HITL: submission {self.submission_id} approved, sending results."
+                )
+                self.stop_hitl_http_server()
+                return True
+
+            if os.path.exists(rejected_container):
+                self.stop_hitl_http_server()
+                return False
+
+            time.sleep(poll_interval)
+            elapsed += poll_interval
+
+        self.stop_hitl_http_server()
+        raise SubmissionException(
+            f"HITL: 24h timeout reached without validation "
+            f"(submission {self.submission_id})"
+        )
 
     def push_scores(self):
         """This is only ran at the end of the scoring step"""
@@ -1522,6 +1706,7 @@ class Run:
             self._put_dir(self.scoring_result, self.output_dir)
 
     def clean_up(self):
+        self.stop_hitl_http_server()
         if Settings.CODALAB_IGNORE_CLEANUP_STEP:
             logger.warning(
                 f"CODALAB_IGNORE_CLEANUP_STEP mode enabled, ignoring clean up of: {self.root_dir}"

@@ -36,7 +36,8 @@ nav = [
             {"Queue Management" = "Organizers/Running_a_benchmark/Queue-Management.md"},
             {"Compute Worker Management & Setup" = "Organizers/Running_a_benchmark/Compute-Worker-Management---Setup.md"},
             {"Compute Worker Management with Podman" = "Organizers/Running_a_benchmark/Compute-worker-installation-with-Podman.md"},
-            {"Server Status" = "Organizers/Running_a_benchmark/Server-status-page.md"}
+            {"Server Status" = "Organizers/Running_a_benchmark/Server-status-page.md"},
+            {"Human in the loop" = "Organizers/Running_a_benchmark/Competition-HITL.md"}
         ]}
     ]},
     {"Developers" = [

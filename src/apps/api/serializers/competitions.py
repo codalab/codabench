@@ -272,7 +272,8 @@ class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerialize
             'contact_email',
             'report',
             'whitelist_emails',
-            'forum_enabled'
+            'forum_enabled',
+            'enable_human_in_the_loop'
         )
 
     def validate_phases(self, phases):
@@ -417,7 +418,8 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
             'contact_email',
             'report',
             'whitelist_emails',
-            'forum_enabled'
+            'forum_enabled',
+            'enable_human_in_the_loop'
         )
 
     def get_leaderboards(self, instance):
