@@ -53,6 +53,7 @@ nav = [
     {"Self-Hosters" = [
         {"How to Deploy a Server" = "Developers_and_Administrators/How-to-deploy-Codabench-on-your-server.md"},
         {"Administrative Procedures" = "Developers_and_Administrators/Administrator-procedures.md"},
+        {"External Competitions" = "Developers_and_Administrators/External-Competitions.md"},
         {"Backups - Automating Creation and Restoring" = "Developers_and_Administrators/Creating-and-Restoring-from-Backup.md"},
         {" Upgrading Codabench" = [
             "Developers_and_Administrators/Upgrading_Codabench/index.md",

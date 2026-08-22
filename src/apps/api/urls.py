@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.conf.urls import include
 from django.urls import path
 
@@ -13,6 +14,7 @@ from .views import (
     analytics,
     competitions,
     datasets,
+    external_competitions,
     profiles,
     leaderboards,
     submissions,
@@ -76,3 +78,9 @@ urlpatterns = [
     # Include this at the end so our URLs above run first, like /datasets/completed/<pk>/ before /datasets/<pk>/
     path('', include(format_suffix_patterns(router.urls, allowed=['html', 'json', 'csv', 'zip']))),
 ]
+
+if settings.EXTERNAL_COMPETITIONS_ENABLED:
+    urlpatterns += [
+        path('external_competitions/', external_competitions.ExternalCompetitionListView.as_view(), name='external_competition_list'),
+        path('external_competitions/platforms/', external_competitions.ExternalPlatformListView.as_view(), name='external_platform_list'),
+    ]

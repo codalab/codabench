@@ -78,6 +78,7 @@ OUR_APPS = (
     'forums',
     'announcements',
     'oidc_configurations',
+    'external_competitions',
 )
 INSTALLED_APPS = THIRD_PARTY_APPS + OUR_APPS
 
@@ -597,3 +598,16 @@ RERUN_SUBMISSION_LIMIT = os.environ.get('RERUN_SUBMISSION_LIMIT', 30)
 # =============================================================================
 ENABLE_SIGN_UP = os.environ.get('ENABLE_SIGN_UP', 'True').lower() == 'true'
 ENABLE_SIGN_IN = os.environ.get('ENABLE_SIGN_IN', 'True').lower() == 'true'
+
+
+# =============================================================================
+# Enable or disable the External Competitions feature (button, page, API,
+# and the daily fetch task). Off by default - intended for the main instance only.
+# =============================================================================
+EXTERNAL_COMPETITIONS_ENABLED = os.environ.get('EXTERNAL_COMPETITIONS_ENABLED', 'False').lower() == 'true'
+
+if EXTERNAL_COMPETITIONS_ENABLED:
+    CELERY_BEAT_SCHEDULE['fetch_external_competitions'] = {
+        'task': 'external_competitions.fetch_sync.fetch_external_competitions',
+        'schedule': timedelta(days=1),
+    }

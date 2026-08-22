@@ -54,6 +54,7 @@ def common_settings(request):
         'FLOWER_URL': f"http://{settings.DOMAIN_NAME}:{settings.FLOWER_PUBLIC_PORT}",
         'ENABLE_SIGN_UP': settings.ENABLE_SIGN_UP,
         'ENABLE_SIGN_IN': settings.ENABLE_SIGN_IN,
+        'EXTERNAL_COMPETITIONS_ENABLED': settings.EXTERNAL_COMPETITIONS_ENABLED,
         'VERSION_INFO': version_info,
         'HOME_PAGE_COUNTERS_INFO': home_page_counters_info,
         'DOMAIN_NAME': settings.DOMAIN_NAME,

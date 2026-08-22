@@ -243,6 +243,8 @@ You can update these by:
 1. Replacing the logos in `src/static/img/` folder
 2. Updating the code in `src/templates/pages/home.html` to point to the right websites of your organizations
 
+!!! tip
+    Now that your instance is up and running, consider registering it with `codabench.org` as an [External Competitions](External-Competitions.md) platform. Once registered, your instance's public competitions are also listed on `codabench.org`'s own External Competitions page, giving them more visibility. See the [registration instructions](External-Competitions.md#registering-your-platform) for details.
 
 ## Frequently asked questions (FAQs)
 

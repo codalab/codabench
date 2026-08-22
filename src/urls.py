@@ -33,6 +33,11 @@ urlpatterns = [
 
 ]
 
+if settings.EXTERNAL_COMPETITIONS_ENABLED:
+    urlpatterns += [
+        path('competitions/external/', include('external_competitions.urls')),
+    ]
+
 if settings.DEBUG:
     # Static files for local dev, so we don't have to collectstatic and such
     urlpatterns += staticfiles_urlpatterns()
