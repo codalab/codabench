@@ -39,6 +39,6 @@ class ExternalPlatformListView(generics.ListAPIView):
         # NOTE
         # Not filtering by is_active: a deactivated platform's competitions still show
         # in the list above, so it must stay selectable as a filter option here too.
-        # If in the future you don't want to show non active platfroms, 
+        # If in the future you don't want to show non active platfroms,
         # Add a filter to the query below: `.filter(is_active=True)`
         return ExternalPlatform.objects.order_by('name')
