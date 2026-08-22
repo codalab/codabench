@@ -5,8 +5,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
 from django.db.models import Q
-from django.contrib.sites.shortcuts import get_current_site
-from django.core.mail import EmailMessage, EmailMultiAlternatives
+from django.core.mail import EmailMultiAlternatives
 from django.http import Http404
 from django.shortcuts import render, redirect
 from django.contrib.auth import views as auth_views
@@ -28,7 +27,7 @@ from competitions.models import Competition
 from datasets.models import Data
 from tasks.models import Task
 from forums.models import Post
-from utils.email import codalab_send_mail
+from utils.email import codalab_send_mail, get_link_context
 
 
 class LoginView(auth_views.LoginView):
@@ -108,29 +107,29 @@ def activate(request, uidb64, token):
 
 
 def activateEmail(request, user, to_email):
-    mail_subject = 'Activate your user account.'
-    message = render_to_string('profiles/emails/template_activate_account.html', {
-        'username': user.username,
-        'domain': settings.DOMAIN_NAME,
+    context = {
+        'user': user,
         'uid': urlsafe_base64_encode(force_bytes(user.pk)),
         'token': account_activation_token.make_token(user),
-        'protocol': 'https' if request.is_secure() else 'http'
-    })
-    email = EmailMessage(mail_subject, message, to=[to_email])
-    if email.send():
-        messages.success(request, f'Dear {user.username}, please go to your email {to_email} inbox and click on \
-            the activation link to confirm and complete the registration. *Note: Check your spam folder.')
-    else:
-        messages.error(request, f'Problem sending confirmation email to {to_email}, check if you typed it correctly.')
+        **get_link_context(request),
+    }
+    codalab_send_mail(
+        context_data=context,
+        subject='Activate your user account.',
+        html_file='profiles/emails/template_activate_account.html',
+        text_file='profiles/emails/template_activate_account.txt',
+        to_email=[to_email]
+    )
+    messages.success(request, f'Dear {user.username}, please go to your email {to_email} inbox and click on \
+        the activation link to confirm and complete the registration. *Note: Check your spam folder.')
 
 
 def send_delete_account_confirmation_mail(request, user):
     context = {
         'user': user,
-        'domain': get_current_site(request).domain,
         'uid': urlsafe_base64_encode(force_bytes(user.pk)),
         'token': account_deletion_token.make_token(user),
-        'protocol': 'https' if request.is_secure() else 'http'
+        **get_link_context(request),
     }
     codalab_send_mail(
         context_data=context,
@@ -167,7 +166,7 @@ def send_user_deletion_notice_to_admin(user):
         'tasks': tasks,
         'queues': queues,
         'posts': posts,
-        'domain': settings.DOMAIN_NAME
+        **get_link_context(),
     }
     codalab_send_mail(
         context_data=context,
