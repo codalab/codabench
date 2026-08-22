@@ -2,7 +2,7 @@
 
 {% block content %}
     You have been invited to join {{ organization }}.
-    Copy this URL into your web browser to accept. http://{{ site.domain }}{{ invite_url }}
+    Copy this URL into your web browser to accept. {{ protocol }}://{{ domain }}{{ invite_url }}
 
 
     {{ new_post.content }}

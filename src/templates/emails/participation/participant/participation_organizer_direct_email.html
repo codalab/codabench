@@ -3,7 +3,7 @@
 {% block title %}
     <p>
         This is a message from the organizer for the competition:
-        <a href="http://{{ site.domain }}{{ competition.get_absolute_url }}">{{ competition }}</a>
+        <a href="{{ protocol }}://{{ domain }}{{ competition.get_absolute_url }}">{{ competition }}</a>
     </p>
     <br><br>
 {% endblock %}

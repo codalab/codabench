@@ -6,12 +6,9 @@ Hello{% if user %} {{ user.username }}{% endif %},
 {% if not mass_email %}
 Thanks,
 
-CodaLab Team
+Codabench Team
 {% endif %}
 
-
-Unsubscribe or manage notification settings:
-http://{{ site.domain }}
 
 Privacy policy:
 https://github.com/codalab/codalab-competitions/wiki/Privacy

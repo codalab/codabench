@@ -362,16 +362,16 @@ class CompetitionViewSet(ModelViewSet):
             participant.status = 'approved'
         elif competition.registration_auto_approve:
             participant.status = 'approved'
-            send_participation_accepted_emails(participant)
+            send_participation_accepted_emails(participant, request)
         else:
             # check if user is in whitelist emails then approve directly
             # Using lower case because some users have used uppercased emails addresses
             if user.email.lower() in list(competition.whitelist_emails.values_list('email', flat=True)):
                 participant.status = 'approved'
-                send_participation_accepted_emails(participant)
+                send_participation_accepted_emails(participant, request)
             else:
                 participant.status = 'pending'
-                send_participation_requested_emails(participant)
+                send_participation_requested_emails(participant, request)
 
         participant.save()
         return Response({'participant_status': participant.status}, status=status.HTTP_201_CREATED)
@@ -1034,7 +1034,7 @@ class CompetitionParticipantViewSet(ModelViewSet):
                 'denied': send_participation_denied_emails,
             }
             if participation_status in emails:
-                emails[participation_status](participant)
+                emails[participation_status](participant, request)
 
         return super().update(request, *args, **kwargs)
 

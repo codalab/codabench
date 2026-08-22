@@ -21,6 +21,7 @@ from api.serializers.profiles import MyProfileSerializer, UserSerializer, \
 from profiles.helpers import send_mail
 from profiles.models import Organization, Membership
 from profiles.views import send_delete_account_confirmation_mail
+from utils.email import get_link_context
 
 User = get_user_model()
 
@@ -180,6 +181,7 @@ class OrganizationViewSet(mixins.CreateModelMixin,
                         'user': member.user,
                         'invite_url': f'{reverse("profiles:organization_accept_invite")}?token={member.token}',
                         'organization': org.name,
+                        **get_link_context(request),
                     },
                     subject=f'You have been invited to join {org.name}',
                     html_file="profiles/emails/invite.html",

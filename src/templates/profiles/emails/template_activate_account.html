@@ -1,10 +1,6 @@
-{% autoescape off %}
-Hi {{ username }},
+{% extends 'emails/base_email.html' %}
 
-Please click on the link below to confirm your registration:
-
-{{ protocol }}://{{ domain }}{% url 'profiles:activate' uidb64=uid token=token %}
-
-This is an automatic message delivered by Codabench.
-
-{% endautoescape %}
+{% block content %}
+    <p>Please click on the link below to confirm your registration:</p>
+    <p><a href="{{ protocol }}://{{ domain }}{% url 'profiles:activate' uidb64=uid token=token %}">{{ protocol }}://{{ domain }}{% url 'profiles:activate' uidb64=uid token=token %}</a></p>
+{% endblock %}
