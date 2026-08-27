@@ -37,6 +37,18 @@ HOST_DIRECTORY=/codabench
 CONTAINER_ENGINE_EXECUTABLE=podman
 #USE_GPU=True
 #GPU_DEVICE=nvidia.com/gpu=all
+#HUMAN_IN_THE_LOOP=False
+# This option removes the ability of the compute worker to send logs to
+# codabench, instead writing them locally on disk. Combine with
+# COMPUTE_WORKER_NO_CLEANUP=true to stop the worker's cleanup to keep
+# all the logs locally only
+#COMPUTE_WORKER_DISABLE_LOG_UPLOAD=False
+# Stop the predictions from being sent to Codabench.
+# This option requires only having one compute worker for ingestion
+# and scoring.
+#COMPUTE_WORKER_DISABLE_PREDICTION_UPLOAD=False
+
+#COMPUTE_WORKER_NO_CLEANUP=False
 
 #######################################################################
 #                       Network                                       #
