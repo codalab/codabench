@@ -121,7 +121,8 @@ class Settings:
     )
     COMPETITION_ALLOW_IMAGE_PULL = to_bool(get("COMPETITION_ALLOW_IMAGE_PULL", "True"))
 
-    SILENT_COMPUTE_WORKER = to_bool(get("SILENT_COMPUTE_WORKER", "False"))
+    COMPUTE_WORKER_DISABLE_LOG_UPLOAD = to_bool(get("COMPUTE_WORKER_DISABLE_LOG_UPLOAD", "False"))
+    COMPUTE_WORKER_DISABLE_PREDICTION_UPLOAD = to_bool(get("COMPUTE_WORKER_DISABLE_PREDICTION_UPLOAD", "False"))
 
 
 
@@ -175,6 +176,10 @@ logger.info(
     f"{'with GPU capabilities: ' + Settings.GPU_DEVICE if Settings.USE_GPU else 'without GPU capabilities'}. "
     f"Network disabled for the competition container is set to {Settings.COMPETITION_CONTAINER_NETWORK_DISABLED}"
 )
+if Settings.COMPUTE_WORKER_DISABLE_PREDICTION_UPLOAD:
+    logger.warning("COMPUTE_WORKER_DISABLE_PREDICTION_UPLOAD is set to True, setting COMPUTE_WORKER_NO_CLEANUP to True")
+    Settings.COMPUTE_WORKER_NO_CLEANUP = True
+
 
 # Intializing client
 # NOTE: CONTAINER_SOCKET is set in Settings based on CONTAINER_ENGINE_EXECUTABLE which must has either podman or docker
@@ -376,12 +381,12 @@ def run_wrapper(run_args):
     except SubmissionException as e:
         msg = str(e).strip()
         if msg:
-            if Settings.SILENT_COMPUTE_WORKER:
+            if Settings.COMPUTE_WORKER_DISABLE_LOG_UPLOAD:
                 msg = f"Submission failed: {msg}. Contact the Organizer(s) for more details."
             else:
                 msg = f"Submission failed: {msg}. See logs for more details."
         else:
-            if Settings.SILENT_COMPUTE_WORKER:
+            if Settings.COMPUTE_WORKER_DISABLE_LOG_UPLOAD:
                 msg = "Submission failed. Contact the Organizer(s) for more details."
             else:
                 msg = "Submission failed. See logs for more details."
@@ -502,10 +507,19 @@ class Run:
         self.run_related_name = (
             f"uPK-{run_args['user_pk']}_sID-{run_args['id']}"
         )
+        if run_args["is_scoring"]:
+            task_type = "scoring_program"
+        else:
+            task_type = "ingestion"
+
         # Directories for the run
         self.watch = True
         self.completed_program_counter = 0
-        self.root_dir = tempfile.mkdtemp(prefix=f'{self.run_related_name}__', dir=Settings.BASE_DIR)
+        # Create the folder then save the path to root_dir
+        self.submission_run_directory = Settings.BASE_DIR + f'{self.run_related_name}__'
+        os.mkdir(self.submission_run_directory + task_type, mode=0o700)
+        self.root_dir = self.submission_run_directory + task_type
+
         self.bundle_dir = os.path.join(self.root_dir, "bundles")
         self.input_dir = os.path.join(self.root_dir, "input")
         self.output_dir = os.path.join(self.root_dir, "output")
@@ -519,7 +533,10 @@ class Run:
         self.submissions_api_url = run_args["submissions_api_url"]
         self.container_image = run_args["docker_image"]
         self.secret = run_args["secret"]
-        self.prediction_result = run_args["prediction_result"]
+        if Settings.COMPUTE_WORKER_DISABLE_PREDICTION_UPLOAD:
+            self.prediction_result = "Prediction Upload Disabled."
+        else:
+            self.prediction_result = run_args["prediction_result"]
         self.scoring_result = run_args.get("scoring_result")
         self.execution_time_limit = run_args["execution_time_limit"]
         # ----- HITL ------
@@ -610,7 +627,7 @@ class Run:
     def push_logs(self):
         """Upload any collected logs, even in case of crash.
         """
-        if Settings.SILENT_COMPUTE_WORKER == False:
+        if not Settings.COMPUTE_WORKER_DISABLE_LOG_UPLOAD:
             try:
                 for kind, logs in (self.logs or {}).items():
                     for stream_key in ("stdout", "stderr"):
@@ -795,7 +812,7 @@ class Run:
                         self._update_submission(docker_pull_fail_data)
                         # Send error through web socket to the frontend
                         asyncio.run(self._send_data_through_socket(str(pull_error)))
-                        if Settings.SILENT_COMPUTE_WORKER:
+                        if Settings.COMPUTE_WORKER_DISABLE_LOG_UPLOAD:
                             raise DockerImagePullException(
                                 f"Pull for {image_name} failed! Contact the Organizer(s) for more details."
                             )
@@ -1038,7 +1055,7 @@ class Run:
         websocket = None
 
         # Do not create a websocket if the real time logs are not wanted (Silent Compute Worker)
-        if Settings.SILENT_COMPUTE_WORKER == False:
+        if not Settings.COMPUTE_WORKER_DISABLE_LOG_UPLOAD:
             try:
                 websocket_url = f"{self.websocket_url}?kind={kind}"
                 logger.debug(f"Connecting to {websocket_url} for container {str(container.get('Id'))}")
@@ -1079,7 +1096,7 @@ class Run:
                     if log[0] is not None:
                         stdout_chunks.append(log[0])
                         logger.info(log[0].decode())
-                        if Settings.SILENT_COMPUTE_WORKER == False:
+                        if not Settings.COMPUTE_WORKER_DISABLE_LOG_UPLOAD:
                             try:
                                 if websocket is not None:
                                     await websocket.send(
@@ -1092,7 +1109,7 @@ class Run:
                     elif log[1] is not None:
                         stderr_chunks.append(log[1])
                         logger.error(log[1].decode())
-                        if Settings.SILENT_COMPUTE_WORKER == False:
+                        if not Settings.COMPUTE_WORKER_DISABLE_LOG_UPLOAD:
                             try:
                                 if websocket is not None:
                                     await websocket.send(
@@ -1116,7 +1133,7 @@ class Run:
             return_Code = client.wait(container)
             logs_Unified = (b"".join(stdout_chunks), b"".join(stderr_chunks))
 
-            if Settings.SILENT_COMPUTE_WORKER == False:
+            if not Settings.COMPUTE_WORKER_DISABLE_LOG_UPLOAD:
                 logger.debug(
                     f"WORKER_MARKER: Disconnecting from {websocket_url}, program counter = {self.completed_program_counter}"
                 )
@@ -1407,15 +1424,22 @@ class Run:
             (self.input_data, "input_data"),
             (self.reference_data, "input/ref"),
         ]
-        if self.is_scoring:
+        if self.is_scoring and not Settings.COMPUTE_WORKER_DISABLE_PREDICTION_UPLOAD:
             # Send along submission result so scoring_program can get access
             bundles += [(self.prediction_result, "input/res")]
+        elif self.is_scoring:
+            bundles += [("local_prediction_results", "submission")]
 
         for url, path in bundles:
             if url is not None:
                 # At the moment let's just cache input & reference data
                 cache_this_bundle = path in ("input_data", "input/ref")
-                zip_file = self._get_bundle(url, path, cache=cache_this_bundle)
+                if url == "local_prediction_results" and self.is_scoring:
+                    submission_run_directory_ingestion = self.submission_run_directory + "ingestion/output/"
+                    submission_run_directory_scoring = self.submission_run_directory + "scoring_program/submission/"
+                    shutil.copytree(submission_run_directory_ingestion, submission_run_directory_scoring, dirs_exist_ok=True)
+                else:
+                    zip_file = self._get_bundle(url, path, cache=cache_this_bundle)
 
                 # Computing checksum of the submission file during ingestion run
                 if url == self.submission_data and not self.is_scoring:
@@ -1583,7 +1607,7 @@ class Run:
                     self.ingestion_program_exit_code = return_code
                     self.ingestion_program_elapsed_time = elapsed_time
                 logger.info(f"[exited with {logs['returncode']}]")
-                if Settings.SILENT_COMPUTE_WORKER == False:
+                if Settings.COMPUTE_WORKER_DISABLE_LOG_UPLOAD == False:
                     for key, value in logs.items():
                         if key not in ["stdout", "stderr"]:
                             continue
@@ -1775,7 +1799,8 @@ class Run:
             raise SubmissionException("Failed to write metadata file.")
 
         if not self.is_scoring:
-            self._put_dir(self.prediction_result, self.output_dir)
+            if not Settings.COMPUTE_WORKER_DISABLE_PREDICTION_UPLOAD:
+                self._put_dir(self.prediction_result, self.output_dir)
         else:
             self._put_dir(self.scoring_result, self.output_dir)
 
