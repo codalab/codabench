@@ -216,12 +216,6 @@ services:
       options:
         max-size: "20m"
         max-file: "5"
-    deploy:
-      resources:
-        limits:
-          # Limit memory substantially here so we see any problems that may
-          # appear on Heroku ahead of time
-          memory: 256M
 
   compute_worker:
     command: ["celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@%n"]
