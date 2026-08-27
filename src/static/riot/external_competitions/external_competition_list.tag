@@ -10,6 +10,11 @@
     click through to a competition to view or join it on its original platform.
   </p>
 
+  <div class="external-competitions-banner">
+    <span>Do you want to list competitions from your platform here? Here's how to get started.</span>
+    <a class="create-btn" href="https://docs.codabench.org/latest/Developers_and_Administrators/External-Competitions/" target="_blank" rel="noopener">View Docs</a>
+  </div>
+
   <!-- Two-column layout -->
   <div class="content-container">
 
@@ -258,6 +263,34 @@
       color #5c5c5c
       margin-bottom 20px
       max-width 900px
+
+    .external-competitions-banner
+      display flex
+      align-items center
+      justify-content space-between
+      padding 10px 15px
+      margin-bottom 20px
+      background #dce8f0
+      border 1px solid #a5b7c5
+      border-radius 4px
+      font-size 16px
+      color #2d3f4d
+
+    .create-btn
+      font-size 14px
+      padding 0.5em 1em
+      background-color #43637a
+      color #fff
+      text-decoration none
+      border-radius 4px
+      display inline-block
+      cursor pointer
+      transition background-color 0.2s ease
+
+      &:hover
+        background-color #2d3f4d
+        color #fff
+        text-decoration none
 
     .content-container
       display flex

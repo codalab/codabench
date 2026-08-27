@@ -14,7 +14,7 @@
 
   <!-- External Competitions banner - hidden when the feature is disabled (URLS.EXTERNAL_COMPETITIONS_PUBLIC is empty) -->
   <div class="external-competitions-banner" show="{ URLS.EXTERNAL_COMPETITIONS_PUBLIC }">
-    <span>Browse external competitions from other Codabench instances</span>
+    <span>Browse external competitions from other platforms like CodaLab and other Codabench instances</span>
     <a class="create-btn" href="{ URLS.EXTERNAL_COMPETITIONS_PUBLIC }">External Competitions</a>
   </div>
 
