@@ -19,9 +19,9 @@ class SignUpForm(UserCreationForm):
             raise forms.ValidationError("Username can only contain lowercase letters, numbers, hyphens, and underscores.")
 
         # Check username length
-        if (len(data) > 15) or (len(data) < 5):
+        if (len(data) > 50) or (len(data) < 5):
             raise forms.ValidationError(
-                "Username must have at least 5 characters and at most 15 characters"
+                "Username must have at least 5 characters and at most 50 characters"
             )
         return data
 
@@ -39,8 +39,8 @@ class SignUpForm(UserCreationForm):
 
 class LoginForm(forms.Form):
 
-    username = forms.CharField(max_length=150)
-    password = forms.CharField(max_length=150, widget=forms.PasswordInput)
+    username = forms.CharField(max_length=50)
+    password = forms.CharField(max_length=50, widget=forms.PasswordInput)
 
 
 class ActivationForm(forms.Form):
