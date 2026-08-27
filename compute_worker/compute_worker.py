@@ -502,6 +502,7 @@ class Run:
         self.input_dir = os.path.join(self.root_dir, "input")
         self.output_dir = os.path.join(self.root_dir, "output")
         self.data_dir = os.path.join(Settings.HOST_DIRECTORY, "data")  # absolute path to data in the host
+        self.reference_dir = os.path.join(Settings.HOST_DIRECTORY, "reference")
         self.logs = {}
 
         # Details for submission
@@ -1220,6 +1221,10 @@ class Run:
             # Input dir for scoring program
             volumes_host.extend([self._get_host_path(self.input_dir)])
             volumes_config.update({volumes_host[-1]: {"bind": "/app/input"}})
+
+            # Reference data, only for the scoring phase.
+            volumes_host.extend([self._get_host_path(self.reference_dir)])
+            volumes_config.update({volumes_host[-1]: {"bind": "/app/reference", "mode": "ro"}})
 
         # During Ingestion: Add `/app/input_data` to volumes_host and update volumes_config
         if kind == ProgramKind.INGESTION_PROGRAM:
