@@ -82,10 +82,6 @@ USE_GPU=True
 
 
 ## Compute worker installation 
-!!! note
-    Starting from `codalab/competitions-v2-compute-worker:v1.22` the images are now unifed for Podman and Docker CPU/GPU and has been renamed to `codalab/codabench-compute-worker:latest`
-
-
 Create a `run_podman.sh` file with the following content:
 
 ```bash title="run_podman.sh"
