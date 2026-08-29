@@ -1,6 +1,7 @@
 import json
 import os
 from django.conf import settings
+from api.permissions import user_can_create_competition
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Set the absolute path for the version file
@@ -19,10 +20,11 @@ def common_settings(request):
             "bio": request.user.bio,
             "is_staff": request.user.is_staff,
             "is_superuser": request.user.is_superuser,
+            "can_create_competition": user_can_create_competition(request.user),
             "logged_in": request.user.is_authenticated,
         }
     else:
-        user_json_data = {"logged_in": False}
+        user_json_data = {"logged_in": False, "can_create_competition": False}
 
     # Read version information from the version.json file
     version_info = {}
