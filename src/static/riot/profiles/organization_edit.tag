@@ -56,10 +56,8 @@
             </div>
         </div>
         <div class="ui error message"></div>
-        <div class="ui primary button" onclick="{save.bind(this)}" id="submit_button">Submit</div>
-        <a href="{self.organization.url}">
-            <button type="button" class="ui button">Back to Organization Page</button>
-        </a>
+        <div class="ui right floated primary button" onclick="{save.bind(this)}" id="submit_button">Submit</div>
+        <div class="ui button" onclick="{go_back}">Back to Organization Page</div>
     </form>
     </div>
     <script>
@@ -68,6 +66,10 @@
         self.original_org_photo_name = typeof self.organization.photo !== 'undefined' ? null : self.organization.photo.replace(/\\/g, '/').replace(/.*\//, '')
         self.original_org_photo = self.organization.photo
         delete self.organization.photo
+
+        self.go_back = () => {
+            window.location.href = '/profiles/organization/' + self.organization.id + '/'
+        }
 
 
         self.one("mount", function () {
