@@ -7,7 +7,7 @@ from rest_framework.test import APITestCase
 
 from competitions.models import Submission, CompetitionParticipant
 from factories import UserFactory, CompetitionFactory, PhaseFactory, CompetitionParticipantFactory, SubmissionFactory, \
-    TaskFactory, OrganizationFactory, DataFactory, LeaderboardFactory
+    TaskFactory, OrganizationFactory, DataFactory, LeaderboardFactory, ColumnFactory, SubmissionScoreFactory
 
 from datasets.models import Data
 from profiles.models import Membership
@@ -731,3 +731,128 @@ class SubmissionSoftDeletionTest(APITestCase):
         self.organization_submission.refresh_from_db()
         assert self.organization_submission.is_soft_deleted is True
         assert self.organization_submission.organization is None
+
+
+class HiddenColumnSubmissionScoreTests(APITestCase):
+    """
+    Column.hidden is meant to hide a score from everyone
+    (e.g. so participants can't tune submissions against it), so a hidden
+    column's score must never appear in the submission-list
+    (`/api/submissions/?phase=<id>`) or submission-detail
+    (`/api/submissions/<pk>/`) responses, for any viewer - anonymous, the
+    submission's own owner, or organizer/admin alike - consistent with how
+    hidden columns are already excluded from leaderboard column metadata.
+    (Previously SubmissionSerializer.scores serialized every SubmissionScore
+    row with no awareness of Column.hidden, so hidden-column values leaked
+    to anyone who could see the submission at all, including anonymous
+    requests to on-leaderboard, finished submissions.)
+    """
+
+    def setUp(self):
+        self.creator = UserFactory(username='hcss_creator', password='test')
+        self.superuser = UserFactory(username='hcss_admin', password='test', is_superuser=True, is_staff=True)
+        self.owner = UserFactory(username='hcss_owner', password='test')
+        self.comp = CompetitionFactory(created_by=self.creator)
+        self.leaderboard = LeaderboardFactory(primary_index=0)
+        self.phase = PhaseFactory(competition=self.comp, leaderboard=self.leaderboard)
+
+        CompetitionParticipantFactory(user=self.owner, competition=self.comp, status=CompetitionParticipant.APPROVED)
+
+        self.visible_column = ColumnFactory(leaderboard=self.leaderboard, index=0, key='visible_col', hidden=False)
+        self.hidden_column = ColumnFactory(leaderboard=self.leaderboard, index=1, key='hidden_col', hidden=True)
+
+        # SubmissionViewSet.get_queryset intentionally exposes on-leaderboard,
+        # FINISHED, non-soft-deleted submissions to anonymous requests (that's
+        # how the public leaderboard page works for logged-out visitors) - so
+        # status=FINISHED and leaderboard=self.leaderboard here are required
+        # for the anonymous tests below to even reach this submission, not
+        # part of the bug being tested. What must stay hidden is only the
+        # hidden column's score within it, not the submission itself.
+        self.submission = SubmissionFactory(
+            phase=self.phase,
+            owner=self.owner,
+            leaderboard=self.leaderboard,
+            status=Submission.FINISHED,
+        )
+        SubmissionScoreFactory(submissions=[self.submission], column=self.visible_column)
+        SubmissionScoreFactory(submissions=[self.submission], column=self.hidden_column)
+
+    def score_column_keys_from_list(self, resp):
+        body = resp.json()
+        submissions = body.get('results', body)
+        matching = [s for s in submissions if s['id'] == self.submission.id]
+        assert len(matching) == 1
+        return {score['column_key'] for score in matching[0]['scores']}
+
+    def score_column_keys_from_detail(self, resp):
+        return {score['column_key'] for score in resp.json()['scores']}
+
+    def test_anonymous_user_does_not_see_hidden_column_score_in_submission_list(self):
+        """
+        An anonymous GET on submission-list, filtered to the submission's
+        phase, must not include the hidden column's score. Expected: only the
+        visible column's score is present in the submission's scores array.
+        """
+        url = reverse('submission-list')
+        resp = self.client.get(url, {'phase': self.phase.id})
+        assert resp.status_code == 200
+        keys = self.score_column_keys_from_list(resp)
+        assert self.hidden_column.key not in keys
+        assert self.visible_column.key in keys
+
+    def test_anonymous_user_does_not_see_hidden_column_score_in_submission_detail(self):
+        """
+        An anonymous GET on submission-detail must not include the hidden
+        column's score. Expected: only the visible column's score is present
+        in the submission's scores array.
+        """
+        url = reverse('submission-detail', args=(self.submission.pk,))
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+        keys = self.score_column_keys_from_detail(resp)
+        assert self.hidden_column.key not in keys
+        assert self.visible_column.key in keys
+
+    def test_submission_owner_does_not_see_hidden_column_score(self):
+        """
+        The submission owner is exactly the kind of participant an organizer
+        wants to keep a hidden metric from, so even the owner viewing their
+        own submission must not see the hidden column's score. Expected: only
+        the visible column's score is present.
+        """
+        self.client.force_login(self.owner)
+        url = reverse('submission-detail', args=(self.submission.pk,))
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+        keys = self.score_column_keys_from_detail(resp)
+        assert self.hidden_column.key not in keys
+        assert self.visible_column.key in keys
+
+    def test_competition_creator_does_not_see_hidden_column_score(self):
+        """
+        For consistency with how hidden columns are excluded from leaderboard
+        column metadata for everyone, the competition creator must not see
+        the hidden column's score via submission-detail either. Expected:
+        only the visible column's score is present.
+        """
+        self.client.force_login(self.creator)
+        url = reverse('submission-detail', args=(self.submission.pk,))
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+        keys = self.score_column_keys_from_detail(resp)
+        assert self.hidden_column.key not in keys
+        assert self.visible_column.key in keys
+
+    def test_superuser_does_not_see_hidden_column_score(self):
+        """
+        Even a superuser/site-admin must not see the hidden column's score
+        via submission-detail, for the same consistency reason. Expected:
+        only the visible column's score is present.
+        """
+        self.client.force_login(self.superuser)
+        url = reverse('submission-detail', args=(self.submission.pk,))
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+        keys = self.score_column_keys_from_detail(resp)
+        assert self.hidden_column.key not in keys
+        assert self.visible_column.key in keys
