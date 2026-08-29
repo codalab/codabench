@@ -476,8 +476,17 @@ class SubmissionViewSet(ModelViewSet):
     @action(detail=True, methods=('GET',))
     def get_details(self, request, pk):
         submission = super().get_object()
-        if submission.phase.hide_output:
-            if not self.has_admin_permission(request.user, submission):
+
+        is_owner = request.user.is_authenticated and request.user == submission.owner
+        is_admin = self.has_admin_permission(request.user, submission)
+
+        # Admin (orgnaizer + super admin) can access details without any restriction
+        # Owner can only access details when phase.hide_ouptut is False
+        # Other users cannot access submission details
+        if not is_admin:
+            if not is_owner:
+                raise PermissionDenied("You do not have permission to view this submission's details.")
+            if submission.phase.hide_output:
                 raise PermissionDenied("Cannot access submission details while phase marked to hide output.")
 
         data = SubmissionFilesSerializer(submission, context=self.get_serializer_context()).data
