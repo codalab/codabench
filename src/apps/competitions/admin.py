@@ -2,7 +2,7 @@ from django.contrib import admin
 from django import forms
 from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.contrib.auth.models import Group
-
+from competitions.models import Submission
 from django.utils.translation import gettext_lazy as _
 import json
 import csv
@@ -166,6 +166,15 @@ def CompetitionExport_as_json(modeladmin, request, queryset):
     return HttpResponse(json.dumps(email_list), content_type="application/json")
 
 
+# This will export the email of all the selected competition creators, removing duplications and banned users
+@admin.display(description="Fail Submissions")
+def Fail_submissions(modeladmin, request, queryset):
+    for obj in queryset:
+        obj.cancel(status=Submission.FAILED)
+        obj.status_details = "Failed Manually by Site Admin action"
+        obj.save()
+
+
 class QueueFilter(InputFilter):
     # Human-readable title which will be displayed in the
     # right admin sidebar just above the filter options.
@@ -254,6 +263,19 @@ class CompetitionOrganizerFilter(InputFilter):
             return queryset.filter(phase__competition__created_by__username=value)
 
 
+class StatusDetailsFilter(InputFilter):
+    # Human-readable title which will be displayed in the
+    # right admin sidebar just above the filter options.
+    title = _("Status Details")
+    # Parameter for the filter that will be used in the URL query.
+    parameter_name = "status_details"
+
+    def queryset(self, request, queryset):
+        if self.value() is not None:
+            value = self.value()
+            return queryset.filter(status_details=value)
+
+
 class SubmissionExpansion(admin.ModelAdmin):
     # Raw Id Fields changes the field from displaying everything in a drop down menu into an id fields, which makes the page loads much faster (removes huge SELECT from the database)
     raw_id_fields = [
@@ -271,7 +293,7 @@ class SubmissionExpansion(admin.ModelAdmin):
     ]
     search_fields = ["id", "owner__username", "phase__competition__title", "task__name"]
     ordering = ('-id',)
-    actions = [SubmissionsExport_as_csv]
+    actions = [SubmissionsExport_as_csv, Fail_submissions]
     list_display = [
         "id",
         "owner",
@@ -288,6 +310,7 @@ class SubmissionExpansion(admin.ModelAdmin):
         "status",
         CompetitionOrganizerFilter,
         QueueFilter,
+        StatusDetailsFilter,
     ]
     fieldsets = [
         (

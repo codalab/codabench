@@ -976,15 +976,86 @@ def update_phase_statuses():
 
 @app.task(queue="site-worker")
 def submission_status_cleanup():
+    # Recover submissions stuck in any non-terminal state
+    # There are multiple special cases that we have to deal with:
+    # - Submission stuck in Submitted, Preparing, Running or Scoring because of a network error or a problem on the compute worker (simple case this code aims to fix)
+    # - RabbitMQ failure (usually means submissions are stuck in Submitting)
+    # - Competitions with Auto Run-Submissions disabled (submissions appear "stuck" in Submitted until an organizer runs them manually)
+    # - Submission that appear to be stuck in Submitted, Preparing, Running, Scoring but are not for multiple reasons :
+    #       - Lack of Compute workers in a queue, the submission is not stuck but waiting its turn
+    #       - Submission file is heavy and/or the compute worker has slow network speeds
+    #       - Combination of few compute workers + long submission execution time (allowed by a high execution time limit in the competition settings)
+    non_terminal_statuses = [
+        Submission.SUBMITTING,
+        Submission.SUBMITTED,
+        Submission.PREPARING,
+        Submission.RUNNING,
+        Submission.SCORING,
+    ]
     submissions = Submission.objects.filter(
-        status=Submission.RUNNING, has_children=False
-    ).select_related("phase", "parent")
+        status__in=non_terminal_statuses,
+        has_children=False,
+    ).select_related('phase', 'parent')
 
     for sub in submissions:
-        if sub.started_when < now() - timedelta(
-            milliseconds=(3600000 * 24) + sub.phase.execution_time_limit
-        ):
-            if sub.parent is not None:
-                sub.parent.cancel(status=Submission.FAILED)
+        # Use started_when for Running submissions, created_when as fallback for others
+        # The deadline waits for 30 minutes after the phase execution time limit before failing submissions (making sure big submissions have time to upload)
+        if sub.started_when is not None:
+            reference_time = sub.started_when
+            deadline = reference_time + timedelta(
+                milliseconds=(60000 * 30) + sub.phase.execution_time_limit
+            )
+
+            if now() > deadline:
+                if sub.parent is not None:
+                    sub.parent.cancel(status=Submission.FAILED)
+                    sub_edit = Submission.objects.get(id=sub.id)
+                    sub_edit.status_details = "Stuck submission was automatically failed"
+                    sub_edit.save()
+                else:
+                    sub.cancel(status=Submission.FAILED)
+                    sub_edit = Submission.objects.get(id=sub.id)
+                    sub_edit.status_details = "Stuck submission was automatically failed"
+                    sub_edit.save()
+        # The first if will filter out Preparing, Running and Scoring submissions. Only Submitting and Submitted are left to deal with
+        else:
+            # If a submission is stuck in SUBMITTING for 10 minutes after its creation
+            # then Rabbit might have failed, in which case the submission is unrecoverable
+            if sub.status == "SUBMITTING":
+                reference_time = sub.created_when
+                deadline = reference_time + timedelta(
+                    milliseconds=(60000 * 10)
+                )
+
+                if now() > deadline:
+                    if sub.parent is not None:
+                        sub.parent.cancel(status=Submission.FAILED)
+                        sub_edit = Submission.objects.get(id=sub.id)
+                        sub_edit.status_details = "Stuck submission was automatically failed (Check RabbitMQ health)"
+                        sub_edit.save()
+                    else:
+                        sub.cancel(status=Submission.FAILED)
+                        sub_edit = Submission.objects.get(id=sub.id)
+                        sub_edit.status_details = "Stuck submission was automatically failed (Check RabbitMQ health)"
+                        sub_edit.save()
             else:
-                sub.cancel(status=Submission.FAILED)
+                # Special case where the competition has Auto Run Submission set to True.
+                # Otherwise, we might fail submissions if the organizer is not fast enough to start the submission
+                # TODO: Better logic to not Fail submissions that are stuck because of low Queue capacity
+                if sub.phase.competition.auto_run_submissions:
+                    reference_time = sub.created_when
+                    deadline = reference_time + timedelta(
+                        milliseconds=(60000 * 30) + sub.phase.execution_time_limit
+                    )
+
+                    if now() > deadline:
+                        if sub.parent is not None:
+                            sub.parent.cancel(status=Submission.FAILED)
+                            sub_edit = Submission.objects.get(id=sub.id)
+                            sub_edit.status_details = "Stuck submission was automatically failed"
+                            sub_edit.save()
+                        else:
+                            sub.cancel(status=Submission.FAILED)
+                            sub_edit = Submission.objects.get(id=sub.id)
+                            sub_edit.status_details = "Stuck submission was automatically failed"
+                            sub_edit.save()
