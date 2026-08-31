@@ -1,3 +1,8 @@
+# Named tasks.py (not fetch_sync.py) on purpose: celery_config.py's
+# autodiscover_tasks() only auto-imports each app's `tasks.py` module, so a
+# differently-named module here would never get imported, its @app.task
+# would never register, and celery beat's scheduled calls would fail with
+# NotRegistered.
 import logging
 
 from django.conf import settings

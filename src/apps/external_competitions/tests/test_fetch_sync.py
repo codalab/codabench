@@ -2,7 +2,7 @@ from unittest import mock
 
 from django.test import TestCase, override_settings
 
-from external_competitions.fetch_sync import fetch_external_competitions, sync_platform
+from external_competitions.tasks import fetch_external_competitions, sync_platform
 from external_competitions.fetchers.exceptions import PartialFetchError
 from external_competitions.models import ExternalCompetition, ExternalFetchLog, ExternalPlatform
 from factories import ExternalCompetitionFactory, ExternalPlatformFactory
@@ -41,7 +41,7 @@ class SyncPlatformTests(TestCase):
         fetched_data, only for the duration of the `with` block.
         """
         fetcher = mock.Mock(return_value=fetched_data)
-        with mock.patch.dict('external_competitions.fetch_sync.FETCHERS', {self.platform.platform_type: fetcher}):
+        with mock.patch.dict('external_competitions.tasks.FETCHERS', {self.platform.platform_type: fetcher}):
             sync_platform(self.platform)
         return fetcher
 
@@ -130,7 +130,7 @@ class SyncPlatformTests(TestCase):
         count_before = ExternalCompetition.objects.filter(platform=self.platform).count()
 
         fetcher = mock.Mock(side_effect=ConnectionError('unreachable'))
-        with mock.patch.dict('external_competitions.fetch_sync.FETCHERS', {self.platform.platform_type: fetcher}):
+        with mock.patch.dict('external_competitions.tasks.FETCHERS', {self.platform.platform_type: fetcher}):
             sync_platform(self.platform)
 
         self.assertEqual(ExternalCompetition.objects.filter(platform=self.platform).count(), count_before)
@@ -152,7 +152,7 @@ class SyncPlatformTests(TestCase):
         # The fetcher's fetched data won't include `stale` above. On a full success
         # that would delete `stale` as no-longer-listed, but a partial one must not.
         fetcher = mock.Mock(side_effect=PartialFetchError([_competition_data(1)], ConnectionError('Connection refused')))
-        with mock.patch.dict('external_competitions.fetch_sync.FETCHERS', {self.platform.platform_type: fetcher}):
+        with mock.patch.dict('external_competitions.tasks.FETCHERS', {self.platform.platform_type: fetcher}):
             sync_platform(self.platform)
 
         self.assertTrue(ExternalCompetition.objects.filter(platform=self.platform, id=stale.id).exists())
@@ -169,7 +169,7 @@ class SyncPlatformTests(TestCase):
 
 class FetchExternalCompetitionsTests(TestCase):
     @override_settings(EXTERNAL_COMPETITIONS_ENABLED=False)
-    @mock.patch('external_competitions.fetch_sync.sync_platform')
+    @mock.patch('external_competitions.tasks.sync_platform')
     def test_does_nothing_when_disabled(self, mock_sync_platform):
         """
         Runs the task with the feature flag off and checks sync_platform is never
@@ -182,7 +182,7 @@ class FetchExternalCompetitionsTests(TestCase):
         mock_sync_platform.assert_not_called()
 
     @override_settings(EXTERNAL_COMPETITIONS_ENABLED=True)
-    @mock.patch('external_competitions.fetch_sync.sync_platform')
+    @mock.patch('external_competitions.tasks.sync_platform')
     def test_does_nothing_when_no_platforms(self, mock_sync_platform):
         """
         Runs the task with the flag on but no ExternalPlatform rows at all, and
@@ -193,7 +193,7 @@ class FetchExternalCompetitionsTests(TestCase):
         mock_sync_platform.assert_not_called()
 
     @override_settings(EXTERNAL_COMPETITIONS_ENABLED=True)
-    @mock.patch('external_competitions.fetch_sync.sync_platform')
+    @mock.patch('external_competitions.tasks.sync_platform')
     def test_only_fetches_active_platforms(self, mock_sync_platform):
         """
         Creates one active and one inactive platform and checks sync_platform is
@@ -221,7 +221,7 @@ class FetchExternalCompetitionsTests(TestCase):
             ExternalPlatform.PLATFORM_TYPE_CODABENCH: failing_fetcher,
             ExternalPlatform.PLATFORM_TYPE_CODALAB: healthy_fetcher,
         }
-        with mock.patch.dict('external_competitions.fetch_sync.FETCHERS', fetchers):
+        with mock.patch.dict('external_competitions.tasks.FETCHERS', fetchers):
             fetch_external_competitions()
 
         failing_log = ExternalFetchLog.objects.get(platform=failing_platform)
