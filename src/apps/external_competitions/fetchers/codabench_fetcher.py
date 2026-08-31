@@ -17,14 +17,18 @@ def fetch_codabench_competitions(platform):
     ExternalCompetition needs.
     """
     competitions = []
-    url = platform.competitions_fetch_url
+    page = 1
 
     for _ in range(MAX_PAGES):
-        if not url:
-            break
-
         try:
-            response = requests.get(url, timeout=REQUEST_TIMEOUT)
+            # We drive pagination ourselves with a `page` query param, rather than
+            # requesting the URL `next` points to - some platforms return a `next`
+            # link built for their own domain/scheme (e.g. behind a proxy), which
+            # isn't safe to follow as-is. We only use `next` below to tell whether
+            # another page exists.
+            response = requests.get(
+                platform.competitions_fetch_url, params={'page': page}, timeout=REQUEST_TIMEOUT
+            )
             # Raises HTTPError on a 4xx/5xx response, instead of silently continuing to
             # parse an error page's body as JSON below.
             response.raise_for_status()
@@ -50,8 +54,9 @@ def fetch_codabench_competitions(platform):
                 'competition_started_when': None,
             })
 
-        url = data.get('next')
-        if url:
-            time.sleep(PAGE_FETCH_DELAY)
+        if not data.get('next'):
+            break
+        page += 1
+        time.sleep(PAGE_FETCH_DELAY)
 
     return competitions

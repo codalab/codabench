@@ -608,6 +608,6 @@ EXTERNAL_COMPETITIONS_ENABLED = os.environ.get('EXTERNAL_COMPETITIONS_ENABLED', 
 
 if EXTERNAL_COMPETITIONS_ENABLED:
     CELERY_BEAT_SCHEDULE['fetch_external_competitions'] = {
-        'task': 'external_competitions.fetch_sync.fetch_external_competitions',
+        'task': 'external_competitions.tasks.fetch_external_competitions',
         'schedule': timedelta(days=1),
     }

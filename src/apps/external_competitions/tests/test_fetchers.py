@@ -61,9 +61,11 @@ class FetchCodabenchCompetitionsTests(TestCase):
             'competition_started_when': None,
         }])
         # Separately from checking the output above, confirm requests.get was actually
-        # called with the right URL, and only once. mock.ANY matches any value - we
-        # don't care about the exact timeout, just that one was passed.
-        mock_get.assert_called_once_with(self.platform.competitions_fetch_url, timeout=mock.ANY)
+        # called with the right URL and page=1, and only once. mock.ANY matches any
+        # value - we don't care about the exact timeout, just that one was passed.
+        mock_get.assert_called_once_with(
+            self.platform.competitions_fetch_url, params={'page': 1}, timeout=mock.ANY
+        )
 
     @mock.patch('external_competitions.fetchers.codabench_fetcher.requests.get')
     def test_strips_query_params_from_logo_url(self, mock_get):
@@ -96,14 +98,13 @@ class FetchCodabenchCompetitionsTests(TestCase):
         Fetches two pages linked by "next" and checks both pages' results are
         combined into one list, with exactly one sleep call between the requests.
         """
-        page_two_url = 'https://codabench.example.org/api/competitions/public/?page=2'
         # side_effect as a list makes the mock return a different value on each
         # successive call: the 1st call to requests.get(...) returns the page 1
         # response, the 2nd call returns page 2. (return_value can only ever give
         # back one fixed answer, which won't work once there's more than one call.)
         mock_get.side_effect = [
             _mock_response({
-                'next': page_two_url,
+                'next': 'https://codabench.example.org/api/competitions/public/?page=2',
                 'results': [{'id': 1, 'title': 'Comp 1'}],
             }),
             _mock_response({
@@ -118,11 +119,12 @@ class FetchCodabenchCompetitionsTests(TestCase):
         # 'Comp 1' (page 1) and 'Comp 2' (page 2) here proves they were combined.
         self.assertEqual([c['name'] for c in result], ['Comp 1', 'Comp 2'])
         # call_args_list is the full history of calls made to the mock, in order.
-        # This proves the function followed the "next" link from page 1's response
-        # instead of, say, re-requesting the same URL or ignoring pagination.
+        # This proves the function paged itself via page=1, page=2 on the same
+        # fetch url - it only reads "next" to know whether to keep going, it
+        # doesn't follow it as a URL.
         self.assertEqual(mock_get.call_args_list, [
-            mock.call(self.platform.competitions_fetch_url, timeout=mock.ANY),
-            mock.call(page_two_url, timeout=mock.ANY),
+            mock.call(self.platform.competitions_fetch_url, params={'page': 1}, timeout=mock.ANY),
+            mock.call(self.platform.competitions_fetch_url, params={'page': 2}, timeout=mock.ANY),
         ])
         mock_sleep.assert_called_once()
 

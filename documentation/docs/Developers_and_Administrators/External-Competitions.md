@@ -28,7 +28,7 @@ Once saved, the platform is picked up by the next scheduled fetch (or trigger on
 
 ### How the sync works
 
-`fetch_external_competitions` (`src/apps/external_competitions/fetch_sync.py`) runs once a day via Celery beat. For each active platform it calls the fetcher matching its platform type (`codabench_fetcher.py` or `codalab_fetcher.py`) and then diffs the result against what's already stored:
+`fetch_external_competitions` (`src/apps/external_competitions/tasks.py`) runs once a day via Celery beat. For each active platform it calls the fetcher matching its platform type (`codabench_fetcher.py` or `codalab_fetcher.py`) and then diffs the result against what's already stored:
 
 - Competitions present in the fetch are created or updated (matched by `competition_url`).
 - Competitions no longer present in the fetch are deleted.
@@ -41,7 +41,7 @@ Each run writes an `ExternalFetchLog` entry (visible in the admin) recording the
 To trigger a fetch immediately instead of waiting for the daily schedule:
 
 ```bash
-docker compose exec django ./manage.py shell -c "from external_competitions.fetch_sync import fetch_external_competitions; fetch_external_competitions()"
+docker compose exec django ./manage.py shell -c "from external_competitions.tasks import fetch_external_competitions; fetch_external_competitions()"
 ```
 
 ## For platform administrators
