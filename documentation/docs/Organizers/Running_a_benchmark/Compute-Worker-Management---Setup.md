@@ -62,7 +62,7 @@ CONTAINER_ENGINE_EXECUTABLE=docker
 #HUMAN_IN_THE_LOOP=False# If set to False, the compute worker will never pull for the 
 # competition image, the image will need to be downloaded
 # manually on the host before running submissions. True by default
-#COMPETITION_IMAGE_PULL=True
+#COMPETITION_ALLOW_IMAGE_PULL=True
 
 #######################################################################
 #                       Network                                       #

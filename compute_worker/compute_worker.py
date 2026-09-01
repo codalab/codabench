@@ -119,7 +119,7 @@ class Settings:
     HUMAN_IN_THE_LOOP = (
         get("HUMAN_IN_THE_LOOP", "false").lower() == "true"
     )
-    COMPETITION_IMAGE_PULL = to_bool(get("COMPETITION_IMAGE_PULL", "True"))
+    COMPETITION_ALLOW_IMAGE_PULL = to_bool(get("COMPETITION_ALLOW_IMAGE_PULL", "True"))
 
 
 # -----------------------------------------------
@@ -742,7 +742,7 @@ class Run:
     def _get_container_image(self, image_name):
         logger.info("Running pull for image: {}".format(image_name))
         retries, max_retries = (0, 3)
-        if Settings.COMPETITION_IMAGE_PULL:
+        if Settings.COMPETITION_ALLOW_IMAGE_PULL:
             while retries < max_retries:
                 try:
                     with Progress() as progress:
@@ -776,17 +776,17 @@ class Run:
                         logger.warning("Failed. Retrying in 5 seconds...")
                         time.sleep(5)  # Wait 5 seconds before retrying
         else:
-            logger.info("COMPETITION_IMAGE_PULL is set to False, using local image if it exists")
+            logger.info("COMPETITION_ALLOW_IMAGE_PULL is set to False, using local image if it exists")
             try:
                 if client.inspect_image(image_name):
                     logger.warning("Image found, continuing")
                 else:
                     logger.error("Image not found, aborting")
             except Exception as e:
-                raise DockerImagePullException(f"Pull for {image_name} failed! COMPETITION_IMAGE_PULL is set to False, make sure the image is available locally")
+                raise DockerImagePullException(f"Pull for {image_name} failed! COMPETITION_ALLOW_IMAGE_PULL is set to False, make sure the image is available locally")
                 docker_pull_fail_data = {
                             "type": "Docker_Image_Pull_Fail",
-                            "error_message": "COMPETITION_IMAGE_PULL set to False but image is not present locally",
+                            "error_message": "COMPETITION_ALLOW_IMAGE_PULL set to False but image is not present locally",
                             "is_scoring": self.is_scoring,
                 }
                 self._update_submission(docker_pull_fail_data)
