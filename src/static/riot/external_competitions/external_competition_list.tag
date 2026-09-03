@@ -12,7 +12,7 @@
 
   <div class="external-competitions-banner">
     <span>Do you want to list competitions from your platform here? Here's how to get started.</span>
-    <a class="create-btn" href="https://docs.codabench.org/latest/Developers_and_Administrators/External-Competitions/" target="_blank" rel="noopener">View Docs</a>
+    <a class="external-btn" href="https://docs.codabench.org/latest/Developers_and_Administrators/External-Competitions/" target="_blank" rel="noopener">View Docs</a>
   </div>
 
   <!-- Two-column layout -->
@@ -53,6 +53,7 @@
       </div>
 
       <div each="{competition in competitions.results}" class="tile-wrapper">
+        <div class="platform-badge" show="{ competition.platform_name }">{competition.platform_name}</div>
         <div class="ui square tiny bordered image img-wrapper">
           <img src="{competition.image_url}" loading="lazy">
         </div>
@@ -245,6 +246,9 @@
     :scope
       display block
       margin-bottom 5px
+      background #f4f5f7
+      padding 20px
+      border-radius 6px
 
     .page-header
       display flex
@@ -256,7 +260,7 @@
       margin 0
       font-size 24px
       font-weight bold
-      color #1b1b1b
+      color #2c5a82
 
     .external-blurb
       font-size 13px
@@ -270,16 +274,16 @@
       justify-content space-between
       padding 10px 15px
       margin-bottom 20px
-      background #dce8f0
-      border 1px solid #a5b7c5
+      background #e9f0f8
+      border 1px solid #c8daee
       border-radius 4px
       font-size 16px
-      color #2d3f4d
+      color #2c5a82
 
-    .create-btn
+    .external-btn
       font-size 14px
       padding 0.5em 1em
-      background-color #43637a
+      background-color #4684c7
       color #fff
       text-decoration none
       border-radius 4px
@@ -288,7 +292,7 @@
       transition background-color 0.2s ease
 
       &:hover
-        background-color #2d3f4d
+        background-color #396ca3
         color #fff
         text-decoration none
 
@@ -303,7 +307,7 @@
       padding 10px
       margin-right 10px
       margin-left 0 !important
-      background #f9f9f9
+      background #fff
 
       input[type="text"]
           width 100%
@@ -354,6 +358,7 @@
       width 100%
 
     .tile-wrapper
+      position relative
       border solid 1px gainsboro
       display flex
       background-color #fff
@@ -366,8 +371,21 @@
     .tile-wrapper:hover
       box-shadow 0 3px 4px -1px #cac9c9ff
       transition all 75ms ease-in-out
-      background-color #e6edf2
-      border solid 1px #a5b7c5
+      background-color #e9f0f8
+      border solid 1px #c8daee
+
+    .platform-badge
+      position absolute
+      top 8px
+      right 8px
+      background #4684c7
+      color #fff
+      font-size 11px
+      font-weight 600
+      padding 3px 8px
+      border-radius 10px
+      text-transform uppercase
+      letter-spacing 0.03em
 
     .img-wrapper
       padding 5px
