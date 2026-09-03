@@ -347,6 +347,9 @@ CODALAB.api = {
     email_participant: (pk, message) => {
         return CODALAB.api.request('POST', `${URLS.API}participants/${pk}/send_email/`, {message: message})
     },
+    get_user_participant_groups: function (competition_id) {
+        return CODALAB.api.request('GET', `/competitions/${competition_id}/user_groups/`)
+    },
     /*---------------------------------------------------------------------
          Analytics
     ---------------------------------------------------------------------*/

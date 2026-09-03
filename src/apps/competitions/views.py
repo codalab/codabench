@@ -2,6 +2,7 @@ import json
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import Http404, JsonResponse, HttpResponseForbidden, HttpResponseBadRequest, HttpResponseRedirect
 from django.views.generic import TemplateView, DetailView
+from django.views.decorators.http import require_GET
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Q
 from django.contrib.auth.decorators import login_required
@@ -422,3 +423,22 @@ def _group_display_name(stored_name, competition_pk):
     if stored_name.startswith(prefix):
         return stored_name[len(prefix):]
     return stored_name
+
+@login_required
+@require_GET
+def competition_user_groups(request, pk):
+    competition = get_object_or_404(Competition, pk=pk)
+    user = request.user
+
+    groups = competition.participant_groups.filter(user=user).distinct()
+
+    data = [
+        {
+            'id': g.id,
+            'name': _group_display_name(g.name, competition.pk),
+            'queue': g.queue.pk if g.queue else None,
+        }
+        for g in groups
+    ]
+
+    return JsonResponse(data, safe=False)

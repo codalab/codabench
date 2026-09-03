@@ -52,6 +52,27 @@
                     </div>
                 </div>
 
+                <div class="ui vertical accordion menu" style="width: 36%;" id="select_groups_accordion" if="{available_groups}">
+                    <div class="item">
+                        <a class="title">
+                            <i class="dropdown icon"></i>
+                            Submit to Group
+                        </a>
+                        <div class="content">
+                            <div class="ui form">
+                                <div class="grouped fields">
+                                    <div each="{group, index in available_groups}" class="field">
+                                        <div class="ui radio checkbox">
+                                            <input type="radio" name="selected_group" id="group-{group.id}" value="{group.id}" checked="{index === 0}">
+                                            <label for="group-{group.id}">{group.name}</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="ui six wide field">
                     <label>Submit as:
                     <span class="ui mini circular icon button"
@@ -177,6 +198,8 @@
         self.datasets = {}
         self.organizations = []
 
+        self.available_groups = []
+
         self.one('mount', function () {
             CODALAB.api.get_user_participant_organizations()
                 .done((data) => {
@@ -193,11 +216,17 @@
                 onClose: () => segment.hide(),
             })
 
-            // File upload handler
+            CODALAB.api.get_user_participant_groups(self.opts.competition.id)
+                .done((data) => {
+                    self.available_groups = data
+                    self.update()
+                    $('.ui.radio.checkbox', self.root).checkbox()
+                })
+
             $(self.refs.data_file.refs.file_input).on('change', self.check_can_upload)
             self.setup_autoscroll()
             self.setup_websocket()
-        }) 
+        })
         
         // Function to capture change of `submit as` dropdown
         // Redirect to Add organization if selected option is Add Organizaiton
@@ -460,6 +489,19 @@
             } else if(self.selected_tasks.length === 1){
                 task_ids_to_run = [self.selected_tasks[0].id]
             }
+
+            let queue_to_use = self.opts.competition.queue ? self.opts.competition.queue.id : null
+            if (self.available_groups.length > 0) {
+                let selected_group_id = $('input[name="selected_group"]:checked', self.root).val()
+                // si un seul groupe existe, il n'y a pas de radio visible mais on veut quand même router dessus
+                let effective_group = selected_group_id
+                    ? _.find(self.available_groups, g => String(g.id) === String(selected_group_id))
+                    : self.available_groups[0]
+                if (effective_group && effective_group.queue) {
+                    queue_to_use = effective_group.queue
+                }
+            }
+
             var data_file_metadata = {
                 type: 'submission',
                 competition: self.opts.competition.id
@@ -485,7 +527,7 @@
                         "fact_sheet_answers": self.get_fact_sheet_answers(),
                         "tasks": task_ids_to_run,
                         "organization": organization,
-                        "queue": self.opts.competition.queue ? self.opts.competition.queue.id : null
+                        "queue": queue_to_use
                     })
                         .done(function (data) {
                             CODALAB.events.trigger('new_submission_created', data)

@@ -196,6 +196,31 @@ class SubmissionViewSet(ModelViewSet):
                 raise ValidationError('You must be apart of a organization to submit for them')
             if membership.group not in Membership.PARTICIPANT_GROUP:
                 raise ValidationError('You do not have participant permissions for this group')
+
+        submitted_queue_id = request.data.get('queue')
+        if submitted_queue_id is not None:
+            phase_id = request.data.get('phase')
+            if not phase_id:
+                raise ValidationError('Phase is required to validate the queue')
+            phase = get_object_or_404(Phase, pk=phase_id)
+            competition = phase.competition
+
+            try:
+                submitted_queue_id_int = int(submitted_queue_id)
+            except (TypeError, ValueError):
+                raise ValidationError('Invalid queue id')
+
+            allowed_queue_ids = set(
+                competition.participant_groups.filter(user_set=request.user)
+                .exclude(queue__isnull=True)
+                .values_list('queue_id', flat=True)
+            )
+            if competition.queue_id:
+                allowed_queue_ids.add(competition.queue_id)
+
+            if submitted_queue_id_int not in allowed_queue_ids:
+                raise PermissionDenied('You are not allowed to submit to this queue')
+
         return super(SubmissionViewSet, self).create(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
