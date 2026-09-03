@@ -15,7 +15,7 @@
   <!-- External Competitions banner - hidden when the feature is disabled (URLS.EXTERNAL_COMPETITIONS_PUBLIC is empty) -->
   <div class="external-competitions-banner" show="{ URLS.EXTERNAL_COMPETITIONS_PUBLIC }">
     <span>Browse external competitions from other platforms like CodaLab and other Codabench instances</span>
-    <a class="create-btn" href="{ URLS.EXTERNAL_COMPETITIONS_PUBLIC }">External Competitions</a>
+    <a class="external-btn" href="{ URLS.EXTERNAL_COMPETITIONS_PUBLIC }">External Competitions</a>
   </div>
 
   <!-- Two-column layout -->
@@ -336,11 +336,27 @@
       justify-content space-between
       padding 10px 15px
       margin-bottom 20px
-      background #dce8f0
-      border 1px solid #a5b7c5
+      background #e9f0f8
+      border 1px solid #c8daee
       border-radius 4px
       font-size 16px
-      color #2d3f4d
+      color #2c5a82
+
+    .external-btn
+      font-size 14px
+      padding 0.5em 1em
+      background-color #4684c7
+      color #fff
+      text-decoration none
+      border-radius 4px
+      display inline-block
+      cursor pointer
+      transition background-color 0.2s ease
+
+      &:hover
+        background-color #396ca3
+        color #fff
+        text-decoration none
 
     .content-container
       display flex
