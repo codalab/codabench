@@ -1,8 +1,10 @@
 import asyncio
+import logging
 from os.path import basename
 
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied
 
@@ -16,6 +18,8 @@ from utils.data import make_url_sassy
 
 from tasks.models import Task
 from queues.models import Queue
+
+logger = logging.getLogger(__name__)
 
 
 class SubmissionSerializer(serializers.ModelSerializer):
@@ -163,6 +167,7 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
 
         return data
 
+    @transaction.atomic
     def update(self, submission, validated_data):
 
         # Cannot change submission if secret key is not valid
@@ -198,13 +203,29 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
             self.instance.parent.save()
 
         if validated_data.get("status") == Submission.SCORING:
-            # Start scoring because we're "SCORING" status now from compute worker
+            # Re-enqueue scoring AFTER the new status is committed: otherwise the
+            # site-worker may pick the task up before the row reflects SCORING,
+            # and a broker error here would leave the row stuck in SCORING forever.
             from competitions.tasks import run_submission
-            # task = validated_data.get('task_pk')
-            # if not task:
-            #     raise ValidationError('Cannot update submission. Task pk was not provided')
-            # task = Task.objects.get(id=task)
-            run_submission(submission.pk, tasks=[submission.task], is_scoring=True)
+            submission_pk = submission.pk
+            scoring_task = submission.task
+
+            def _enqueue_scoring():
+                try:
+                    run_submission(submission_pk, tasks=[scoring_task], is_scoring=True)
+                except Exception:
+                    logger.exception(
+                        "Failed to re-enqueue scoring for submission %s; marking Failed",
+                        submission_pk,
+                    )
+                    Submission.objects.filter(
+                        pk=submission_pk, status=Submission.SCORING,
+                    ).update(
+                        status=Submission.FAILED,
+                        status_details="Broker unavailable when re-enqueuing scoring task",
+                    )
+
+            transaction.on_commit(_enqueue_scoring)
 
         elif validated_data.get("status") == Submission.FINISHED:
             # We finished submission, no longer need to store submission stuff in Redis, free it up!
