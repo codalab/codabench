@@ -19,14 +19,15 @@ from profiles.models import Organization, Membership
 from api.pagination import DynamicChoicePagination
 from tasks.models import Task
 from api.serializers.submissions import SubmissionCreationSerializer, SubmissionSerializer, SubmissionFilesSerializer, SubmissionDetailSerializer
-from competitions.models import Submission, SubmissionDetails, Phase, CompetitionParticipant
+from api.idempotency import IdempotentCreateMixin, ENDPOINT_SUBMISSION_CREATE
+from competitions.models import Submission, SubmissionDetails, Phase, CompetitionParticipant, IdempotencyRecord
 from leaderboards.strategies import put_on_leaderboard_by_submission_rule
 from leaderboards.models import SubmissionScore, Column, Leaderboard
 import logging
 logger = logging.getLogger(__name__)
 
 
-class SubmissionViewSet(ModelViewSet):
+class SubmissionViewSet(IdempotentCreateMixin, ModelViewSet):
     queryset = Submission.objects.all().order_by('-pk')
     permission_classes = []
     filter_backends = (DjangoFilterBackend, SearchFilter)
@@ -197,6 +198,32 @@ class SubmissionViewSet(ModelViewSet):
             if membership.group not in Membership.PARTICIPANT_GROUP:
                 raise ValidationError('You do not have participant permissions for this group')
         return super(SubmissionViewSet, self).create(request, *args, **kwargs)
+
+    @action(detail=False, methods=['get'], url_path=r'receipt/(?P<key>[^/]+)')
+    def receipt(self, request, key=None):
+        """Pollable receipt for a previous POST keyed by Idempotency-Key.
+
+        Returns 404 if no record exists, 202 if the request is in flight,
+        200 with the original response body once the create has finalised.
+        """
+        if not request.user.is_authenticated:
+            raise PermissionDenied('Authentication required')
+        try:
+            rec = IdempotencyRecord.objects.get(
+                owner=request.user,
+                endpoint=ENDPOINT_SUBMISSION_CREATE,
+                key=key,
+            )
+        except IdempotencyRecord.DoesNotExist:
+            return Response({'state': 'unknown'}, status=status.HTTP_404_NOT_FOUND)
+        if not rec.response_status:
+            return Response({'state': 'pending'}, status=status.HTTP_202_ACCEPTED)
+        return Response({
+            'state': 'completed',
+            'status': rec.response_status,
+            'submission_id': rec.submission_id,
+            'body': rec.response_body,
+        })
 
     def destroy(self, request, *args, **kwargs):
         """
