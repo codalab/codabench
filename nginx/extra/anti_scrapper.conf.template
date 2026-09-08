@@ -1,0 +1,14 @@
+# Rate limit error code (429) and definition (allow for bursts of 25 requests to load static images etc) and block immediately after the rate limit is applied to an IP
+limit_req_status 429;
+limit_req zone=scraperlimit burst=25 nodelay;
+
+# Deny access to bots
+# Block user agents that tend to be scrapers and badly behaved bots
+if ($bad_bot = 1) {
+    return 444 "? beep boop ?";
+}
+
+# No scrapers
+if ($scraper = 1) {
+    return 418 "?";
+}

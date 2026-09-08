@@ -1,0 +1,4 @@
+server {
+    listen 5432;
+    proxy_pass $backend;
+}

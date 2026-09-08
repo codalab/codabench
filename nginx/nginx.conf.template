@@ -1,0 +1,136 @@
+user nginx;
+load_module modules/ngx_http_acme_module.so;
+worker_rlimit_nofile 65535;
+worker_processes  auto;
+events {
+    worker_connections  4096;
+}
+
+error_log /var/log/nginx/error.log warn;
+
+stream {
+    resolver 127.0.0.11 ipv6=off;
+    log_format proxy '$remote_addr [$time_local] '
+                '$protocol $status $bytes_sent $bytes_received '
+                '$session_time "$upstream_addr" '
+                '"$upstream_bytes_sent" "$upstream_bytes_received" "$upstream_connect_time"';
+    access_log /var/log/nginx/stream_access.log proxy buffer=32k flush=5s;
+    error_log /var/log/nginx/stream_error.log warn;
+
+    map "" $database_access {
+        default ${DATABASE_ACCESS};
+    }
+    map $database_access $backend {
+        default no_access;
+        "True" db:5432;
+    }
+    # Rabbit and Database
+    include stream/rabbit.conf;
+    include stream/database.conf;
+}
+
+http {
+    access_log /var/log/nginx/access.log combined buffer=32k flush=5s;
+
+    # Scrapper protection
+    include extra/block_map.conf;
+
+    # Includes MinIO, Rabbit (console)
+    include http/flower.conf;
+    include http/minio.conf;
+    include http/rabbit_console.conf;
+
+    server_tokens off;
+
+    # Necessary for ACME to work inside Docker
+    resolver 127.0.0.11 ipv6=off;
+    acme_issuer letsencrypt {
+        uri         https://acme-v02.api.letsencrypt.org/directory;
+        contact   ${EMAIL};
+        #ssl_trusted_certificate /path/to/root_ca.crt;
+        state_path  /var/cache/nginx/acme-letsencrypt;
+
+        accept_terms_of_service;
+    }
+    acme_shared_zone zone=ngx_acme_shared:1M;
+
+
+    # Default server catchall for misconfigured machines trying to access the site
+    server {
+        server_name _;
+        listen *:80 default_server deferred;
+        return 444;
+    }
+
+    # HTTP for the main instance
+    server {
+        set $force_https ${HTTPS};
+        listen 80;
+        server_name ${DOMAIN_NAME};
+
+        include extra/base_django.conf;
+        include extra/anti_scrapper.conf;
+
+        location /robots.txt {
+            autoindex off;
+            alias /etc/nginx/templates/robots.txt;
+        }
+        location / {
+            if ($force_https ~* "true") {
+                return 301 https://$host$request_uri;
+            }
+            if (-f /srv/maintenance.on) {
+                return 503;
+            }
+
+            proxy_intercept_errors on;
+            proxy_redirect off;
+            proxy_buffering off;
+            # To support websocket
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "Upgrade";
+
+            proxy_pass http://django:8000;
+        }
+        include extra/maintenance.conf;
+
+    }
+
+    # HTTPS for the main instance
+    server {
+        listen 443 ssl;
+        server_name ${DOMAIN_NAME};
+
+        acme_certificate letsencrypt;
+        ssl_certificate       $acme_certificate;
+        ssl_certificate_key   $acme_certificate_key;
+        # do not parse the certificate on each request
+        ssl_certificate_cache max=2;
+
+        include extra/base_django.conf;
+        include extra/anti_scrapper.conf;
+
+        location /robots.txt {
+            autoindex off;
+            alias /etc/nginx/templates/robots.txt;
+        }
+
+        location / {
+            if (-f /srv/maintenance.on) {
+                return 503;
+            }
+
+            proxy_intercept_errors on;
+            proxy_redirect off;
+            proxy_buffering off;
+            # To support websocket
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "Upgrade";
+
+            proxy_pass http://django:8000;
+        }
+        include extra/maintenance.conf;
+    }
+}

@@ -1,0 +1,6 @@
+server {
+    listen ${RABBITMQ_MANAGEMENT_PORT};
+    location / {
+        proxy_pass http://rabbit:15672;
+    }
+}
