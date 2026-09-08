@@ -341,11 +341,11 @@
             $('#site-wide-competition-search').search({
                 apiSettings: {
                     onResponse: function(codalabResponse) {
-                        _.forEach(codalabResponse, (response) => {
+                        _.forEach(codalabResponse.results, (response) => {
                             response.url = URLS.COMPETITION_DETAIL(response.id)
                         })
                         return {
-                            results: codalabResponse,
+                            results: codalabResponse.results,
                         }
                     },
                     url: `${URLS.API}competitions/?search={query}`

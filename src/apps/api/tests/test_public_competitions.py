@@ -139,6 +139,10 @@ class PublicCompetitionsTests(TestCase):
         # Check that the competition the user is NOT participating in (self.competition1) is excluded
         self.assertNotIn(self.competition3.id, returned_ids)  # Not participating in this
 
+        # Check that a competition the user organizes (as a collaborator) is excluded, even though
+        # collaborators are auto-added as approved participants under the hood
+        self.assertNotIn(self.competition1.id, returned_ids)  # Organizing this, not "participating in" it
+
     def test_filter_by_organizing(self):
         # Send GET request to the public competitions API with the filter: organizing=true
         # This should return competitions where the request user is the creator or a collaborator

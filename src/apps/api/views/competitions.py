@@ -42,6 +42,7 @@ from django.conf import settings
 class CompetitionViewSet(ModelViewSet):
     queryset = Competition.objects.all()
     permission_classes = (AllowAny,)
+    pagination_class = LargePagination
 
     def get_queryset(self):
 
@@ -61,7 +62,7 @@ class CompetitionViewSet(ModelViewSet):
         # If user is logged in
         if self.request.user.is_authenticated:
 
-            # `mine` is true when this is called from "Benchmarks I'm Running"
+            # `mine` is true when this is called from "Organizing" tab of benchmark management
             # Filter to only see competitions you own
             mine = self.request.query_params.get('mine', None)
             if mine:
@@ -73,10 +74,16 @@ class CompetitionViewSet(ModelViewSet):
                     (Q(collaborators__in=[self.request.user]))
                 ).distinct()
 
-            # `participating_in` is true when this is called from "Benchmarks I'm in"
+            # `participating_in` is true when this is called from "Participating" tab of benchmark management
             participating_in = self.request.query_params.get('participating_in', None)
             if participating_in:
-                qs = qs.filter(participants__user=self.request.user, participants__status="approved")
+                # Exclude competitions the user organizes: creators/collaborators are auto-added
+                # as approved participants (see Competition.save()), but they belong in "Organizing" tab, not here.
+                qs = qs.filter(
+                    participants__user=self.request.user, participants__status="approved"
+                ).exclude(
+                    Q(created_by=self.request.user) | Q(collaborators=self.request.user)
+                )
 
             participant_status_query = CompetitionParticipant.objects.filter(
                 competition=OuterRef('pk'),
@@ -620,9 +627,13 @@ class CompetitionViewSet(ModelViewSet):
 
         # Filter by participation
         if participating_in:
+            # Exclude competitions the user organizes: creators/collaborators are auto-added
+            # as approved participants (see Competition.save()), but they belong under "organizing", not here.
             participant_comp_ids = CompetitionParticipant.objects.filter(
                 user=request.user,
                 status="approved"
+            ).exclude(
+                Q(competition__created_by=request.user) | Q(competition__collaborators=request.user)
             ).values_list("competition_id", flat=True)
             qs = qs.filter(id__in=participant_comp_ids)
 
