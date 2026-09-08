@@ -119,6 +119,7 @@ class Settings:
     HUMAN_IN_THE_LOOP = (
         get("HUMAN_IN_THE_LOOP", "false").lower() == "true"
     )
+    COMPETITION_ALLOW_IMAGE_PULL = to_bool(get("COMPETITION_ALLOW_IMAGE_PULL", "True"))
 
 
 # -----------------------------------------------
@@ -741,38 +742,55 @@ class Run:
     def _get_container_image(self, image_name):
         logger.info("Running pull for image: {}".format(image_name))
         retries, max_retries = (0, 3)
-        while retries < max_retries:
-            try:
-                with Progress() as progress:
-                    resp = client.pull(image_name, stream=True, decode=True)
-                    for line in resp:
-                        if isinstance(line, dict) and line.get("error"):
-                            raise DockerImagePullException(line["error"])
-                        show_progress(line, progress)
-                    break  # Break if the loop is successful to exit "with Progress() as progress"
+        if Settings.COMPETITION_ALLOW_IMAGE_PULL:
+            while retries < max_retries:
+                try:
+                    with Progress() as progress:
+                        resp = client.pull(image_name, stream=True, decode=True)
+                        for line in resp:
+                            if isinstance(line, dict) and line.get("error"):
+                                raise DockerImagePullException(line["error"])
+                            show_progress(line, progress)
+                        break  # Break if the loop is successful to exit "with Progress() as progress"
 
-            except (docker.errors.APIError, Exception) as pull_error:
-                retries += 1
-                if retries >= max_retries:
-                    logger.error(
-                        "There was a problem pulling the image : " + str(pull_error)
-                    )
-                    # Prepare data to be sent to submissions api
-                    docker_pull_fail_data = {
-                        "type": "Docker_Image_Pull_Fail",
-                        "error_message": pull_error,
-                        "is_scoring": self.is_scoring,
-                    }
-                    # Send data to be written to ingestion logs
-                    self._update_submission(docker_pull_fail_data)
-                    # Send error through web socket to the frontend
-                    asyncio.run(self._send_data_through_socket(str(pull_error)))
-                    raise DockerImagePullException(
-                        f"Pull for {image_name} failed! Check the logs for more information"
-                    )
+                except (docker.errors.APIError, Exception) as pull_error:
+                    retries += 1
+                    if retries >= max_retries:
+                        logger.error(
+                            "There was a problem pulling the image : " + str(pull_error)
+                        )
+                        # Prepare data to be sent to submissions api
+                        docker_pull_fail_data = {
+                            "type": "Docker_Image_Pull_Fail",
+                            "error_message": pull_error,
+                            "is_scoring": self.is_scoring,
+                        }
+                        # Send data to be written to ingestion logs
+                        self._update_submission(docker_pull_fail_data)
+                        # Send error through web socket to the frontend
+                        asyncio.run(self._send_data_through_socket(str(pull_error)))
+                        raise DockerImagePullException(
+                            f"Pull for {image_name} failed! Check the logs for more information"
+                        )
+                    else:
+                        logger.warning("Failed. Retrying in 5 seconds...")
+                        time.sleep(5)  # Wait 5 seconds before retrying
+        else:
+            logger.info("COMPETITION_ALLOW_IMAGE_PULL is set to False, using local image if it exists")
+            try:
+                if client.inspect_image(image_name):
+                    logger.warning("Image found, continuing")
                 else:
-                    logger.warning("Failed. Retrying in 5 seconds...")
-                    time.sleep(5)  # Wait 5 seconds before retrying
+                    logger.error("Image not found, aborting")
+            except Exception as e:
+                raise DockerImagePullException(f"Pull for {image_name} failed! COMPETITION_ALLOW_IMAGE_PULL is set to False, make sure the image is available locally")
+                docker_pull_fail_data = {
+                            "type": "Docker_Image_Pull_Fail",
+                            "error_message": "COMPETITION_ALLOW_IMAGE_PULL set to False but image is not present locally",
+                            "is_scoring": self.is_scoring,
+                }
+                self._update_submission(docker_pull_fail_data)
+
 
     async def _send_data_through_socket(self, error_message):
         """
@@ -943,23 +961,27 @@ class Run:
         # Creating container
         # COMPETITION_CONTAINER_NETWORK_DISABLED: Disable or not the competition container access to Internet (False by default)
         # HTTP and HTTPS proxy for the competition container if needed
-        container = client.create_container(
-            self.container_image,
-            name=container_name,
-            host_config=host_config,
-            detach=False,
-            volumes=volumes_host,
-            command=command,
-            working_dir="/app/program",
-            environment=[
-                "PYTHONUNBUFFERED=1",
-                "http_proxy=" + Settings.COMPETITION_CONTAINER_HTTP_PROXY,
-                "https_proxy=" + Settings.COMPETITION_CONTAINER_HTTPS_PROXY,
-            ],
-            network_disabled=Settings.COMPETITION_CONTAINER_NETWORK_DISABLED,
-        )
+        try:
+            container = client.create_container(
+                self.container_image,
+                name=container_name,
+                host_config=host_config,
+                detach=False,
+                volumes=volumes_host,
+                command=command,
+                working_dir="/app/program",
+                environment=[
+                    "PYTHONUNBUFFERED=1",
+                    "http_proxy=" + Settings.COMPETITION_CONTAINER_HTTP_PROXY,
+                    "https_proxy=" + Settings.COMPETITION_CONTAINER_HTTPS_PROXY,
+                ],
+                network_disabled=Settings.COMPETITION_CONTAINER_NETWORK_DISABLED,
+            )
 
-        logger.debug("Created container: " + str(container))
+            logger.debug("Created container: " + str(container))
+        except Exception as e:
+            logger.error(f"Error {e}")
+            raise SubmissionException(str(e))
 
         return container
 
