@@ -123,12 +123,13 @@ MAX_EXECUTION_TIME_LIMIT = int(
 )  # time limit of the default queue
 
 
-def _get_user_group_queues(user, competition):
-    all_user_groups = list(
-        competition.participant_groups.filter(user__pk=user.pk)
-        .select_related("queue")
-        .distinct()
-    )
+def _get_user_group_queues(user, competition, selected_group_ids=None):
+    qs = competition.participant_groups.filter(user__pk=user.pk).select_related("queue").distinct()
+
+    if selected_group_ids is not None:
+        qs = qs.filter(id__in=selected_group_ids)
+
+    all_user_groups = list(qs)
 
     if not all_user_groups:
         return []
@@ -341,9 +342,9 @@ def create_detailed_output_file(detail_name, submission):
     return make_url_sassy(new_details.data_file.name, permission="w")
 
 
-def run_submission(submission_pk, tasks=None, is_scoring=False):
+def run_submission(submission_pk, tasks=None, is_scoring=False, group_ids=None):
     task_ids = [t.id for t in tasks] if tasks else None
-    return _run_submission.apply_async((submission_pk, task_ids, is_scoring))
+    return _run_submission.apply_async((submission_pk, task_ids, is_scoring, group_ids))
 
 
 def send_submission_message(submission, data):
@@ -374,7 +375,7 @@ def send_child_id(submission, child_id):
 
 
 @app.task(queue="site-worker", soft_time_limit=60)
-def _run_submission(submission_pk, task_pks=None, is_scoring=False):
+def _run_submission(submission_pk, task_pks=None, is_scoring=False, group_ids=None):
     """This function is wrapped so that when we run tests we can run this function not
     via celery"""
     select_models = (
@@ -422,7 +423,7 @@ def _run_submission(submission_pk, task_pks=None, is_scoring=False):
 
     if submission.parent is None and not is_scoring:
         group_queues = _get_user_group_queues(
-            submission.owner, submission.phase.competition
+            submission.owner, submission.phase.competition, selected_group_ids=group_ids
         )
     else:
         group_queues = []
