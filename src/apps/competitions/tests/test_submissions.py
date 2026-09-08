@@ -446,3 +446,32 @@ class TestSubmissionTasks(SubmissionTestCase):
         assert self.parent_submission.status == Submission.FAILED
         for sub in self.parent_submission.children.all():
             assert sub.status == Submission.FAILED
+
+
+class PhaseIsActiveTests(SubmissionTestCase):
+    """Tests for Phase.is_active"""
+
+    def test_active_when_started_and_no_end_date(self):
+        self.phase.start = timezone.now() - timedelta(days=1)
+        self.phase.end = None
+        assert self.phase.is_active
+
+    def test_not_active_when_not_yet_started_and_no_end_date(self):
+        self.phase.start = timezone.now() + timedelta(days=1)
+        self.phase.end = None
+        assert not self.phase.is_active
+
+    def test_not_active_when_not_yet_started_and_end_date_in_future(self):
+        self.phase.start = timezone.now() + timedelta(days=1)
+        self.phase.end = timezone.now() + timedelta(days=2)
+        assert not self.phase.is_active
+
+    def test_active_when_within_start_and_end_range(self):
+        self.phase.start = timezone.now() - timedelta(days=1)
+        self.phase.end = timezone.now() + timedelta(days=1)
+        assert self.phase.is_active
+
+    def test_not_active_when_end_date_has_passed(self):
+        self.phase.start = timezone.now() - timedelta(days=2)
+        self.phase.end = timezone.now() - timedelta(days=1)
+        assert not self.phase.is_active

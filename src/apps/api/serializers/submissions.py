@@ -161,6 +161,13 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
             if not is_in_competition:
                 raise PermissionDenied("You do not have access to this competition to make a submission")
 
+            if not data["phase"].is_active:
+                raise ValidationError("This phase is not currently accepting submissions.")
+
+            can_make_submission, reason_why_not = data["phase"].can_user_make_submissions(self.context["request"].user)
+            if not can_make_submission:
+                raise ValidationError(reason_why_not)
+
         return data
 
     def update(self, submission, validated_data):
