@@ -60,6 +60,7 @@ CONTAINER_ENGINE_EXECUTABLE=docker
 #USE_GPU=True
 #GPU_DEVICE=nvidia.com/gpu=all
 #HUMAN_IN_THE_LOOP=False
+
 # If set to False, the compute worker will never pull for the 
 # competition image, the image will need to be downloaded
 # manually on the host before running submissions. True by default
@@ -70,6 +71,7 @@ CONTAINER_ENGINE_EXECUTABLE=docker
 # COMPUTE_WORKER_NO_CLEANUP=true to stop the worker's cleanup to keep
 # all the logs locally only
 #COMPUTE_WORKER_DISABLE_LOG_UPLOAD=False
+
 # Stop the predictions from being sent to Codabench.
 # This option requires only having one compute worker for ingestion
 # and scoring.
