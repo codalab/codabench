@@ -219,8 +219,6 @@ services:
     deploy:
       resources:
         limits:
-          # Limit memory substantially here so we see any problems that may
-          # appear on Heroku ahead of time
           memory: 15GB
 
   compute_worker:
