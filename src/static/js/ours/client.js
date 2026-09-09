@@ -134,7 +134,9 @@ CODALAB.api = {
             { pks: pks }   // body is JSON by convention
         );
     },
-        
+    get_user_participant_groups: function (competition_id) {
+        return CODALAB.api.request('GET', `/competitions/${competition_id}/user_groups/`)
+    },
     /*---------------------------------------------------------------------
          Leaderboards
     ---------------------------------------------------------------------*/
