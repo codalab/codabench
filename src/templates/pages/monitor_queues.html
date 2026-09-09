@@ -6,6 +6,7 @@
 {% endblock %}
 
 {% block content %}
+    <!--
     {% if user.is_authenticated %}
         {% if user.is_superuser %}
             <div class="ui container">
@@ -61,7 +62,7 @@
                 <a href="{% url 'accounts:signup' %}">Sign Up</a> to view this page
             </div>
         </div>
-    {% endif %}
+    {% endif %}-->
 
     {% if user.is_superuser %}
     <div class="ui container">
