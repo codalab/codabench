@@ -362,8 +362,8 @@
             </div>
         </div>
         <div class="actions">
-            <div class="ui primary button {disabled: !edit_modal_is_valid}" onclick="{ update_task }">Update</div>
             <div class="ui basic red cancel button">Cancel</div>
+            <div class="ui primary button {disabled: !edit_modal_is_valid}" onclick="{ update_task }">Save</div>
         </div>
     </div>
 
