@@ -16,7 +16,10 @@ def _rabbitmq_auth():
 
 
 def _rabbitmq_base_url():
-    return f"http://{settings.RABBITMQ_HOST}:{settings.RABBITMQ_MANAGEMENT_PORT}/api"
+    return (
+        f"{settings.RABBITMQ_SCHEME}://"
+        f"{settings.RABBITMQ_HOST}:{settings.RABBITMQ_MANAGEMENT_PORT}/api"
+    )
 
 
 def _build_vhost_to_source_map():
@@ -66,8 +69,11 @@ def fetch_compute_workers():
         all_queues = _fetch_all_queues()
         all_channels = _fetch_all_channels()
         all_consumers = _fetch_all_consumers()
-    except Exception:
-        logger.exception("Failed to fetch RabbitMQ data")
+    except Exception as exc:
+        # Do not log the traceback here. requests carries the HTTP basic-auth
+        # tuple in its call locals, and traceback-rich logging can expose the
+        # RabbitMQ password.
+        logger.error("Failed to fetch RabbitMQ data: %s", type(exc).__name__)
         return [], [], []
 
     try:
