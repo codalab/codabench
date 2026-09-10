@@ -312,6 +312,19 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+    'DEFAULT_THROTTLE_CLASSES': (
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+        'api.throttling.AnonBurstRateThrottle',
+        'api.throttling.UserBurstRateThrottle',
+    ),
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/day',
+        'user': '1000/day',
+        'anon_burst': '60/min',
+        'user_burst': '300/min',
+        'competitions_public': '300/day',
+    },
     'DATETIME_INPUT_FORMATS': (
         'iso-8601',
         '%B %d, %Y',
