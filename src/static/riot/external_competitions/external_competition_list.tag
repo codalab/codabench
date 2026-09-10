@@ -1,21 +1,18 @@
-<public-list>
+<external-competition-list>
   <!-- Title -->
   <div class="page-header">
-    <h1 class="page-title">Public Benchmarks and Competitions</h1>
-    <div class="action-buttons">
-      <a class="create-btn" href="{ URLS.COMPETITION_ADD }">
-        <i class="bi bi-plus-square-fill me-1"></i> Create
-      </a>
-      <a class="create-btn" href="{ URLS.COMPETITION_UPLOAD }">
-        <i class="bi bi-cloud-arrow-up-fill me-1"></i> Upload
-      </a>
-    </div>
+    <h1 class="page-title">External Competitions</h1>
   </div>
 
-  <!-- External Competitions banner - hidden when the feature is disabled (URLS.EXTERNAL_COMPETITIONS_PUBLIC is empty) -->
-  <div class="external-competitions-banner" show="{ URLS.EXTERNAL_COMPETITIONS_PUBLIC }">
-    <span>Browse external competitions from other platforms like CodaLab and other Codabench instances</span>
-    <a class="external-btn" href="{ URLS.EXTERNAL_COMPETITIONS_PUBLIC }">External Competitions</a>
+  <p class="external-blurb">
+    These competitions are hosted on other platforms (other Codabench and CodaLab instances)
+    and are fetched here periodically. Codabench does not manage registration, submissions, or data for them -
+    click through to a competition to view or join it on its original platform.
+  </p>
+
+  <div class="external-competitions-banner">
+    <span>Do you want to list competitions from your platform here? Here's how to get started.</span>
+    <a class="external-btn" href="https://docs.codabench.org/latest/Developers_and_Administrators/External-Competitions/" target="_blank" rel="noopener">View Docs</a>
   </div>
 
   <!-- Two-column layout -->
@@ -26,33 +23,20 @@
         <!-- Filters main heading   -->
         <h3>Filters</h3>
 
-        <!--  Search by title filter  -->
+        <!--  Search filter  -->
         <div class="filter-group">
-            <label class="filter-label" for="search-title"><strong>Search by Title</strong></label>
+            <label class="filter-label" for="search-title"><strong>Search</strong></label>
             <div class="ui input">
-              <input type="text" id="search-title" oninput="{on_title_input}" placeholder="Enter title...">
+              <input type="text" id="search-title" oninput="{on_search_input}" placeholder="Search by name...">
             </div>
         </div>
 
-        <!-- Order by filter   -->
-        <div class="filter-group">
-            <strong class="filter-label">Order By</strong>
-            <label><input type="radio" name="order" value="popular" onchange="{set_ordering}"> Most popular first</label>
-            <label><input type="radio" name="order" value="recent" onchange="{set_ordering}"> Recently added first</label>
-            <label><input type="radio" name="order" value="with_most_submissions" onchange="{set_ordering}"> With most submissions first</label>
-        </div>
-
-        <!-- Your competitions filters   -->
-        <div class="filter-group">
-            <strong class="filter-label">Your Competitions</strong>
-            <label><input type="checkbox" onchange="{toggle_participating}"> Participating In</label>
-            <label><input type="checkbox" onchange="{toggle_organizing}"> Organizing</label>
-        </div>
-
-        <!-- Your Other filter   -->
-        <div class="filter-group">
-            <strong class="filter-label">Other filters</strong>
-            <label><input type="checkbox" onchange="{toggle_has_reward}"> Has reward</label>
+        <!-- Platform filter   -->
+        <div class="filter-group" id="platform-filter-group">
+            <strong class="filter-label">Platform</strong>
+            <label each="{platform in platforms}">
+                <input type="checkbox" value="{platform.id}" onclick="{on_platform_toggle}"> {platform.name}
+            </label>
         </div>
 
         <!--  Clear filters  -->
@@ -68,34 +52,29 @@
         <div class="spinner"></div>
       </div>
 
-      <div each="{competition in competitions.results}">
-        <div class="tile-wrapper">
-          <div class="ui square tiny bordered image img-wrapper">
-            <img src="{competition.logo_icon ? competition.logo_icon : competition.logo}" loading="lazy">
-          </div>
-          <a class="link-no-deco" href="../{competition.id}">
-            <div class="comp-info">
-              <h4 class="heading">{competition.title}</h4>
-              <p class="comp-description">{ pretty_description(competition.description) }</p>
-              <p class="organizer"><em>Organized by: <strong>{competition.created_by}</strong></em></p>
-            </div>
-          </a>
-          <div class="comp-stats">
-            {pretty_date(competition.first_phase_start)}
-            <div if="{!competition.reward && ! competition.report}" class="ui divider"></div>
-            <div>
-              <span if="{competition.reward}"><img width="30" height="30" src="/static/img/trophy.png"></span>
-              <span if="{competition.report}"><a href="{competition.report}" target="_blank"><img width="30" height="30" src="/static/img/paper.png"></a></span>
-            </div>
-            <strong>{competition.participants_count}</strong> Participants
-          </div>
+      <div each="{competition in competitions.results}" class="tile-wrapper">
+        <div class="platform-badge" show="{ competition.platform_name }">{competition.platform_name}</div>
+        <div class="ui square tiny bordered image img-wrapper">
+          <img src="{competition.image_url}" loading="lazy">
         </div>
+        <a class="link-no-deco full-width" href="{competition.competition_url}" target="_blank" rel="noopener">
+          <div class="comp-info">
+            <h4 class="heading">{competition.name}</h4>
+            <p class="comp-description">{ pretty_description(competition.description) }</p>
+            <div class="comp-stats">
+              <div show="{ competition.platform_name }"><i class="bi bi-hdd-network-fill"></i> <span class="stat-label">Platform:</span> <span class="stat-value">{competition.platform_name}</span></div>
+              <div show="{ competition.competition_created_when }"><i class="bi bi-calendar-event-fill"></i> <span class="stat-label">Created:</span> <span class="stat-value">{pretty_date(competition.competition_created_when)}</span></div>
+              <div show="{ competition.competition_started_when }"><i class="bi bi-calendar2-week-fill"></i> <span class="stat-label">Start:</span> <span class="stat-value">{pretty_date(competition.competition_started_when)}</span></div>
+              <div show="{ competition.organizer_name }"><i class="bi bi-person-fill"></i> <span class="stat-label">Organizer:</span> <span class="stat-value">{competition.organizer_name}</span></div>
+            </div>
+          </div>
+        </a>
       </div>
 
       <!-- Show when there are no competitions in the list -->
       <div class="no-results-message" if="{competitions.results && competitions.results.length === 0}">
         <div class="ui warning message">
-          <div class="header">No competitions found</div>
+          <div class="header">No external competitions found</div>
           Try changing your filters or search term.
         </div>
       </div>
@@ -116,17 +95,16 @@
     var self = this
     self.search_timer = null
     self.competitions = {}
+    self.platforms = []
 
     // Filters state dictionary to keep track of which filters to apply
     self.filter_state = {
         search: '',
-        ordering: '',
-        participating_in: false,
-        organizing: false,
-        has_reward: false
+        platforms: []
     }
-    // Function to set search title (triggered when title is typed in the text box)
-    self.on_title_input = function(e) {
+
+    // Function to set search (triggered when text is typed in the search box)
+    self.on_search_input = function(e) {
         const value = e.target.value
         self.filter_state.search = value
         self.update()
@@ -139,71 +117,49 @@
             self.update_competitions_list(1)
         }, 1000)  // wait 1 second after user stops typing
     }
-    // Function to set ordering (triggered when a radio button is clicked)
-    self.set_ordering = function (e) {
-        self.filter_state.ordering = e.target.value
-        self.update()
-        self.update_competitions_list(1)
-    }
-    // Function to toggle participating (triggered when the checkbox is checked/uncheked)
-    self.toggle_participating = function(e) {
-        self.filter_state.participating_in = e.target.checked
-        self.update()
-        self.update_competitions_list(1)
-    }
-    // Function to toggle organizing (triggered when the checkbox is checked/uncheked)
-    self.toggle_organizing = function(e) {
-        self.filter_state.organizing = e.target.checked
-        self.update()
-        self.update_competitions_list(1)
-    }
-    // Function to toggle has reward (triggered when the checkbox is checked/uncheked)
-    self.toggle_has_reward = function(e) {
-        self.filter_state.has_reward = e.target.checked
+
+    // Function to toggle a platform in/out of the filter (triggered when a checkbox is checked/unchecked)
+    self.on_platform_toggle = function (e) {
+        const id = e.target.value
+        if (e.target.checked) {
+            self.filter_state.platforms.push(id)
+        } else {
+            self.filter_state.platforms = self.filter_state.platforms.filter(p => p !== id)
+        }
         self.update()
         self.update_competitions_list(1)
     }
 
     // Function that decides to show clear filter button or not
     self.should_show_clear_filters = function () {
-        const { search, ordering, participating_in, organizing, has_reward } = self.filter_state
-        return search || ordering || participating_in || organizing || has_reward
+        const { search, platforms } = self.filter_state
+        return search || platforms.length > 0
     }
+
     // Function to clear all filters
     self.clear_all_filters = function() {
         self.filter_state = {
             search: '',
-            ordering: '',
-            participating_in: false,
-            organizing: false,
-            has_reward: false
+            platforms: []
         }
 
         // Clear inputs
         document.getElementById('search-title').value = ''
-        document.querySelectorAll('input[name="order"]').forEach(r => r.checked = false)
-        document.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false)
+        document.querySelectorAll('#platform-filter-group input[type="checkbox"]').forEach(c => c.checked = false)
 
         // Call list update
         self.update_competitions_list(1)
     }
 
     self.one("mount", function () {
-        const urlParams = new URLSearchParams(window.location.search)
+        // Load platforms once, to populate the filter dropdown
+        CODALAB.api.get_external_competition_platforms()
+            .done(function (response) {
+                self.platforms = response
+                self.update()
+            })
 
-        // Check if ordering is set in the URL (e.g., ?ordering=popular)
-        if (urlParams.has("ordering")) {
-            const ordering = urlParams.get("ordering")
-            if (["popular", "recent"].includes(ordering)) {
-            self.filter_state.ordering = ordering
-
-            // Set the corresponding radio button as checked
-            const radio = document.querySelector(`input[name="order"][value="${ordering}"]`)
-            if (radio) radio.checked = true
-            }
-        }
-        
-      self.update_competitions_list(self.get_url_page_number_or_default())
+        self.update_competitions_list(self.get_url_page_number_or_default())
     })
 
     self.handle_ajax_pages = function (num) {
@@ -226,19 +182,16 @@
             self.update();
         }
 
-        return CODALAB.api.get_public_competitions({ 
+        return CODALAB.api.get_external_competitions({
             "page": self.current_page,
             "search": self.filter_state.search,
-            "ordering": self.filter_state.ordering,
-            "participating_in": self.filter_state.participating_in,
-            "organizing": self.filter_state.organizing,
-            "has_reward": self.filter_state.has_reward
+            "platform": self.filter_state.platforms.join(',')
         })
         .fail(function (resp) {
             $('#loading').hide()
             $('.pagination-nav').show()
 
-            let message = "Could not load competition list"
+            let message = "Could not load external competitions list"
             if (resp.responseJSON && resp.responseJSON.detail) {
                 message = resp.responseJSON.detail
             } else if (resp.responseText) {
@@ -257,16 +210,12 @@
         .done(handleSuccess);
     };
 
-    self.get_array_length = function (arr) {
-        return arr === undefined ? 0 : arr.length
-    }
-
     self.pretty_date = function (date_string) {
         return !!date_string ? luxon.DateTime.fromISO(date_string).toLocaleString(luxon.DateTime.DATE_FULL) : ''
     }
 
     self.pretty_description = function (description) {
-        return description.substring(0, 120) + (description.length > 120 ? '...' : '') || ''
+        return description ? (description.substring(0, 120) + (description.length > 120 ? '...' : '')) : ''
     }
 
     self.get_url_page_number_or_default = function () {
@@ -274,13 +223,13 @@
         if (urlParams.has('page')) {
             let pagenum = parseInt(urlParams.get('page'))
         if (pagenum < 1) {
-            history.pushState("test", document.title, "?page=1")
+            history.pushState("", document.title, "?page=1")
             return 1
         } else {
             return pagenum
         }
         } else {
-            history.pushState("test", document.title, "?page=1")
+            history.pushState("", document.title, "?page=1")
             return 1
         }
     }
@@ -291,44 +240,33 @@
   </script>
 
   <style type="text/stylus">
-    public-list
+    external-competition-list
       width 100%
 
     :scope
       display block
       margin-bottom 5px
+      background #f4f5f7
+      padding 20px
+      border-radius 6px
 
     .page-header
       display flex
       align-items center
       justify-content space-between
-      margin-bottom 20px
-
-      .action-buttons
-        display flex
-        gap 10px
+      margin-bottom 10px
 
     .page-title
       margin 0
       font-size 24px
       font-weight bold
-      color #1b1b1b
-    
-    .create-btn
-      font-size 14px
-      padding 0.5em 1em
-      background-color #43637a
-      color #fff
-      text-decoration none
-      border-radius 4px
-      display inline-block
-      cursor pointer
-      transition background-color 0.2s ease
+      color #2c5a82
 
-      &:hover
-        background-color #2d3f4d
-        color #fff
-        text-decoration none
+    .external-blurb
+      font-size 13px
+      color #5c5c5c
+      margin-bottom 20px
+      max-width 900px
 
     .external-competitions-banner
       display flex
@@ -369,7 +307,7 @@
       padding 10px
       margin-right 10px
       margin-left 0 !important
-      background #f9f9f9
+      background #fff
 
       input[type="text"]
           width 100%
@@ -378,23 +316,22 @@
           border 1px solid #ddd
           border-radius 4px
 
-      input[type="radio"],
       input[type="checkbox"]
           margin-right 5px
 
     .filter-group
         margin-bottom 20px
 
+    .filter-group label
+        display block
+        font-size 13px
+        margin-bottom 6px
+
     .filter-label
         font-size 14px
         font-weight bold
         display block
         margin-bottom 8px
-
-    .filter-group label
-        display block
-        font-size 13px
-        margin-bottom 6px
 
     .list-panel
       flex-grow 1
@@ -411,34 +348,44 @@
     .float-right
       float right
 
-    .center
-      margin auto
-
     .link-no-deco
       all unset
       text-decoration none
       cursor pointer
       width 100%
 
+    .full-width
+      width 100%
+
     .tile-wrapper
+      position relative
       border solid 1px gainsboro
-      display inline-flex
-      min-width 425px
+      display flex
       background-color #fff
       transition all 75ms ease-in-out
-      color #909090
       width 100%
       margin-bottom 6px
+      padding 1em
+      border-radius 5px
 
     .tile-wrapper:hover
       box-shadow 0 3px 4px -1px #cac9c9ff
       transition all 75ms ease-in-out
-      background-color #e6edf2
-      border solid 1px #a5b7c5
+      background-color #e9f0f8
+      border solid 1px #c8daee
 
-      .comp-stats
-        background-color #344d5e
-        transition background-color 75ms ease-in-out
+    .platform-badge
+      position absolute
+      top 8px
+      right 8px
+      background #4684c7
+      color #fff
+      font-size 11px
+      font-weight 600
+      padding 3px 8px
+      border-radius 10px
+      text-transform uppercase
+      letter-spacing 0.03em
 
     .img-wrapper
       padding 5px
@@ -450,32 +397,45 @@
         margin 0 auto
 
     .comp-info
-      width calc(100% - 140px - 80px)
+      width 100%
 
     .comp-info .heading
       text-align left
       padding 5px
       color #1b1b1b
-      margin-bottom 0
+      margin-bottom 0.3em
 
     .comp-info .comp-description
       text-align left
       font-size 13px
       line-height 1.15em
       margin 0.35em
-
-    .organizer
-      font-size 13px
-      text-align left
-      margin 0.35em
+      color #555
 
     .comp-stats
-      background #405e73
-      color #e8e8e8
-      padding 10px
-      text-align center
-      font-size 12px
-      width 140px
+      display flex
+      flex-wrap wrap
+      gap 1em
+      font-size 0.9em
+      align-items center
+      margin-top 0.5em
+      padding 0 0.35em
+      color #555
+
+    .comp-stats > div
+      display flex
+      align-items center
+      gap 0.4em
+      background #f0f2f4
+      border-radius 12px
+      padding 0.3em 0.7em
+
+    .stat-label
+      color #888
+
+    .stat-value
+      color #333
+      font-weight normal
 
     .loading-indicator
       display flex
@@ -498,4 +458,4 @@
       100%
         transform rotate(360deg)
   </style>
-</public-list>
+</external-competition-list>

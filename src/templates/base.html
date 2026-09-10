@@ -312,6 +312,8 @@
                 let urlParam = "?phase=" + phase_id
                 return urlBase.slice(0, -1) + ".json" + urlParam
             },
+            // External Competitions - empty string when the feature is disabled
+            EXTERNAL_COMPETITIONS_PUBLIC: "{% if EXTERNAL_COMPETITIONS_ENABLED %}{% url 'external_competitions:public' %}{% endif %}",
             // Forums
             FORUM: function (pk) {
                 return "{% url "forums:forum_detail" forum_pk=0 %}".replace(0, pk)
