@@ -6,12 +6,12 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('profiles', '0022_customgroup'),
+        ('competitions', '0062_competition_enable_human_in_the_loop_and_more'),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='user',
-            name='is_bot',
+            model_name='competition',
+            name='allow_robot_submissions',
         ),
     ]
