@@ -61,7 +61,6 @@ class Competition(models.Model):
     queue = models.ForeignKey('queues.Queue', on_delete=models.SET_NULL, null=True, blank=True,
                               related_name='competitions')
 
-    allow_robot_submissions = models.BooleanField(default=False)
     # we use filed type to distinguish 'competition' and 'benchmark'
     competition_type = models.CharField(max_length=128, choices=COMPETITION_TYPE, default=COMPETITION)
 
@@ -166,6 +165,7 @@ class Competition(models.Model):
                 phase=next_phase,
                 owner=submission.owner,
                 data=submission.data,
+                organization=submission.organization,
             )
             new_submission.save(ignore_submission_limit=True)
             new_submission.start()
@@ -340,7 +340,7 @@ class Phase(models.Model):
         Returns:
             (can_make_submissions, reason_if_not)
         """
-        if not self.has_max_submissions or (user.is_bot and self.competition.allow_robot_submissions):
+        if not self.has_max_submissions:
             return True, None
 
         qs = self.submissions.filter(owner=user, parent__isnull=True).exclude(status='Failed')
@@ -657,7 +657,8 @@ class Submission(models.Model):
             'has_children': self.has_children,
             'is_specific_task_re_run': is_specific_task_re_run,
             'fact_sheet_answers': self.fact_sheet_answers,
-            'queue': self.phase.competition.queue
+            'queue': self.phase.competition.queue,
+            'organization': self.organization,
         }
         sub = Submission(**submission_arg_dict)
         sub.save(ignore_submission_limit=True)

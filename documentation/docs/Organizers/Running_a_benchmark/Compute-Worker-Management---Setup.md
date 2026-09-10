@@ -59,7 +59,11 @@ HOST_DIRECTORY=/codabench
 CONTAINER_ENGINE_EXECUTABLE=docker
 #USE_GPU=True
 #GPU_DEVICE=nvidia.com/gpu=all
-#HUMAN_IN_THE_LOOP=False
+#HUMAN_IN_THE_LOOP=False# If set to False, the compute worker will never pull for the 
+# competition image, the image will need to be downloaded
+# manually on the host before running submissions. True by default
+#COMPETITION_ALLOW_IMAGE_PULL=True
+
 #######################################################################
 #                       Network                                       #
 #######################################################################

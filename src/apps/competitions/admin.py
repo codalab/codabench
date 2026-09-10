@@ -228,7 +228,6 @@ class CompetitionExpansion(admin.ModelAdmin):
                     "show_detailed_results_in_leaderboard",
                     "make_programs_available",
                     "make_input_data_available",
-                    "allow_robot_submissions",
                     "auto_run_submissions",
                     "can_participants_make_submissions_public",
                     "is_featured",

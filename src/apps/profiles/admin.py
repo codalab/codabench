@@ -103,7 +103,6 @@ class UserExpansion(UserAdmin):
         "is_staff",
         "is_superuser",
         "is_deleted",
-        "is_bot",
         "is_active",
         "is_banned",
         QuotaFilter,
@@ -140,7 +139,7 @@ class UserExpansion(UserAdmin):
             "Checkboxes",
             {
                 "fields": [
-                    ("is_active", "is_bot"),
+                    "is_active",
                     (
                         "organizer_direct_message_updates",
                         "allow_forum_notifications",

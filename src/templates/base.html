@@ -191,7 +191,7 @@
                 <div class="ui inverted link list">
                     <a href="https://github.com/codalab/codalab-competitions/wiki/Project_About_CodaLab" class="item">About</a>
                     <a href="https://github.com/codalab/codabench" class="item">Github</a>
-                    <a href="https://github.com/codalab/codalab-competitions/wiki/Privacy" class="item">Privacy and Terms</a>
+                    <a href="https://github.com/codalab/codabench/blob/master/documentation/PRIVACY.md" class="item">Privacy and Terms</a>
                     <a href="{% url 'schema-swagger-ui' %}" class="item">API Docs</a>
                 </div>
             </div>
@@ -341,11 +341,11 @@
             $('#site-wide-competition-search').search({
                 apiSettings: {
                     onResponse: function(codalabResponse) {
-                        _.forEach(codalabResponse, (response) => {
+                        _.forEach(codalabResponse.results, (response) => {
                             response.url = URLS.COMPETITION_DETAIL(response.id)
                         })
                         return {
-                            results: codalabResponse,
+                            results: codalabResponse.results,
                         }
                     },
                     url: `${URLS.API}competitions/?search={query}`
