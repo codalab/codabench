@@ -219,7 +219,8 @@ services:
     deploy:
       resources:
         limits:
-          memory: 15GB
+          # RAM limit defaults to the default competition quota
+          memory: ${SITE_WORKER_MEMORY_LIMIT:-15g}
 
   compute_worker:
     command: ["celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@%n"]
