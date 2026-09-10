@@ -453,6 +453,7 @@ def _run_submission(submission_pk, task_pks=None, is_scoring=False):
                 task=task,
                 fact_sheet_answers=submission.fact_sheet_answers,
                 queue=queue,
+                organization=submission.organization,
             )
             child_sub.save(ignore_submission_limit=True)
             _send_to_compute_worker(child_sub, is_scoring=False)
