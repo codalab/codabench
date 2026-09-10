@@ -145,73 +145,6 @@ class SubmissionAPITests(APITestCase):
         assert resp.status_code == 403
         assert resp.data["detail"] == "You cannot delete a leaderboard submission!"
 
-    def test_cannot_get_details_of_submission_unless_creator_collab_or_superuser(self):
-        url = reverse('submission-get-details', args=(self.existing_submission.pk,))
-
-        # Non logged in user can't even see this
-        resp = self.client.get(url)
-        assert resp.status_code == 404
-
-        # Regular user can't see this
-        self.client.force_login(self.other_user)
-        resp = self.client.get(url)
-        assert resp.status_code == 404
-
-        # Actual user can see download details
-        self.client.force_login(self.participant)
-        resp = self.client.get(url)
-        assert resp.status_code == 200
-
-        # Competition creator can see download details
-        self.client.force_login(self.creator)
-        resp = self.client.get(url)
-        assert resp.status_code == 200
-
-        # Collaborator can see download details
-        self.client.force_login(self.collaborator)
-        resp = self.client.get(url)
-        assert resp.status_code == 200
-
-        # Superuser can see download details
-        self.client.force_login(self.superuser)
-        resp = self.client.get(url)
-        assert resp.status_code == 200
-
-    def test_hidden_details_actually_stops_submission_creator_from_seeing_output(self):
-        self.phase.hide_output = True
-        self.phase.save()
-        url = reverse('submission-get-details', args=(self.existing_submission.pk,))
-
-        # Non logged in user can't even see this
-        resp = self.client.get(url)
-        assert resp.status_code == 404
-
-        # Regular user can't see this
-        self.client.force_login(self.other_user)
-        resp = self.client.get(url)
-        assert resp.status_code == 404
-
-        # Actual user cannot see their submission details
-        self.client.force_login(self.participant)
-        resp = self.client.get(url)
-        assert resp.status_code == 403
-        assert resp.data["detail"] == "Cannot access submission details while phase marked to hide output."
-
-        # Competition creator can see download details
-        self.client.force_login(self.creator)
-        resp = self.client.get(url)
-        assert resp.status_code == 200
-
-        # Collaborator can see download details
-        self.client.force_login(self.collaborator)
-        resp = self.client.get(url)
-        assert resp.status_code == 200
-
-        # Superuser can see download details
-        self.client.force_login(self.superuser)
-        resp = self.client.get(url)
-        assert resp.status_code == 200
-
     def test_no_one_can_see_detailed_result_when_visualization_is_false(self):
         self.comp.enable_detailed_results = False
         self.comp.save()
@@ -324,6 +257,152 @@ class SubmissionAPITests(APITestCase):
         assert resp.status_code == 200
 
         self.client.force_login(self.other_user)
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+
+
+class SubmissionGetDetailsAPITests(APITestCase):
+    def setUp(self):
+        self.superuser = UserFactory(is_superuser=True, is_staff=True)
+
+        # Competition and creator
+        self.creator = UserFactory(username='creator', password='creator')
+        self.collaborator = UserFactory(username='collab', password='collab')
+        self.comp = CompetitionFactory(created_by=self.creator, collaborators=[self.collaborator])
+        self.phase = PhaseFactory(competition=self.comp)
+        self.leaderboard = LeaderboardFactory()
+
+        # Extra dummy user to test permissions, they shouldn't have access to many things
+        self.other_user = UserFactory(username='other_user', password='other')
+
+        # Make participant
+        self.participant = UserFactory(username='participant_approved', password='other')
+        CompetitionParticipantFactory(user=self.participant, competition=self.comp, status=CompetitionParticipant.APPROVED)
+
+        # add submission with owner = approved participant
+        self.existing_submission = SubmissionFactory(
+            phase=self.phase,
+            owner=self.participant,
+            status=Submission.SUBMITTED,
+            secret='7df3600c-1234-5678-bbc8-bbe91f42d875',
+            leaderboard=None
+        )
+
+        # add submission with that is on the leaderboard
+        self.leaderboard_submission = SubmissionFactory(
+            phase=self.phase,
+            owner=self.participant,
+            status=Submission.FINISHED,
+            leaderboard=self.leaderboard
+        )
+
+    def test_cannot_get_details_of_submission_unless_creator_collab_or_superuser(self):
+        """
+        Uses a submission that is NOT on a leaderboard.
+        Expect only the owner, creator, collaborator, or superuser to get details; everyone else gets 404.
+        """
+        url = reverse('submission-get-details', args=(self.existing_submission.pk,))
+
+        # Non logged in user can't even see this
+        resp = self.client.get(url)
+        assert resp.status_code == 404
+
+        # Regular user can't see this
+        self.client.force_login(self.other_user)
+        resp = self.client.get(url)
+        assert resp.status_code == 404
+
+        # Actual user can see download details
+        self.client.force_login(self.participant)
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+
+        # Competition creator can see download details
+        self.client.force_login(self.creator)
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+
+        # Collaborator can see download details
+        self.client.force_login(self.collaborator)
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+
+        # Superuser can see download details
+        self.client.force_login(self.superuser)
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+
+    def test_hidden_details_actually_stops_submission_creator_from_seeing_output(self):
+        """
+        Uses a submission that is NOT on a leaderboard, with phase.hide_output set.
+        Expect hide_output to block even the owner, while admins still get through.
+        """
+        self.phase.hide_output = True
+        self.phase.save()
+        url = reverse('submission-get-details', args=(self.existing_submission.pk,))
+
+        # Non logged in user can't even see this
+        resp = self.client.get(url)
+        assert resp.status_code == 404
+
+        # Regular user can't see this
+        self.client.force_login(self.other_user)
+        resp = self.client.get(url)
+        assert resp.status_code == 404
+
+        # Actual user cannot see their submission details
+        self.client.force_login(self.participant)
+        resp = self.client.get(url)
+        assert resp.status_code == 403
+        assert resp.data["detail"] == "Cannot access submission details while phase marked to hide output."
+
+        # Competition creator can see download details
+        self.client.force_login(self.creator)
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+
+        # Collaborator can see download details
+        self.client.force_login(self.collaborator)
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+
+        # Superuser can see download details
+        self.client.force_login(self.superuser)
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+
+    def test_anonymous_cannot_get_details_of_finished_leaderboard_submission(self):
+        """
+        Unlike the two tests above, uses a finished submission that IS on a leaderboard,
+        so it's reachable by anonymous users; expect it to still be denied to them.
+
+        SubmissionViewSet.get_queryset() in src/apps/api/views/submissions.py has a branch
+        for unauthenticated GET requests that filters on leaderboard__isnull=False (plus
+        status=FINISHED and is_soft_deleted=False). That's what lets an anonymous request
+        find this submission via get_details' super().get_object() call in the first place --
+        so this test's leaderboard_submission (leaderboard set, status=FINISHED in setUp)
+        is what actually exercises that branch, unlike existing_submission (leaderboard=None)
+        used above, which fails the leaderboard__isnull=False filter and 404s before
+        get_details' owner/admin check is ever reached.
+        """
+        url = reverse('submission-get-details', args=(self.leaderboard_submission.pk,))
+
+        # Anonymous: object is found via the leaderboard queryset, but must still be denied
+        resp = self.client.get(url)
+        assert resp.status_code == 403
+
+        # Non-owner, non-admin authenticated user: filtered out at the queryset level
+        self.client.force_login(self.other_user)
+        resp = self.client.get(url)
+        assert resp.status_code == 404
+
+        # Owner can still see it (hide_output is False)
+        self.client.force_login(self.participant)
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+
+        # Admin (competition creator) can still see it
+        self.client.force_login(self.creator)
         resp = self.client.get(url)
         assert resp.status_code == 200
 
