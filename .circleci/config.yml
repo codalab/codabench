@@ -88,8 +88,10 @@ jobs:
       #     no_output_timeout: 30m
       - store_artifacts:
           path: tests/test-results
+          when: always
       - store_artifacts:
           path: dockerLogs/
+          when: always
 
 workflows:
   build_and_test:
