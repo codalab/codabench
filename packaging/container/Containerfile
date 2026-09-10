@@ -1,10 +1,21 @@
-FROM almalinux:10-minimal AS builder
+# Stage 1: Node.js builder
+FROM node:lts-alpine3.23 AS builder
+
+WORKDIR /app
+
+COPY package.json package-lock.json* ./
+COPY src/static ./src/static
+
+RUN npm install \
+    && export PATH=./node_modules/.bin:$PATH \
+    && npm run build-stylus \
+    && npm run build-riot \
+    && npm run concat-riot
+
+# Stage 2: Python/Django
+FROM almalinux:10-minimal
 
 RUN microdnf update -y --nodocs && microdnf install -y tar gzip &&  microdnf clean all
-
-FROM scratch
-
-COPY --from=builder / /
 
 ENV PYTHONUNBUFFERED=1
 
@@ -20,4 +31,11 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --all-extras --frozen
 
 WORKDIR /app
+
+COPY src ./src
+COPY manage.py ./
+
+# Copy built static files from Node builder
+COPY --from=builder /app/src/static ./src/static
+
 ENTRYPOINT ["/bin/bash", "-c"]
