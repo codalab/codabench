@@ -11,9 +11,9 @@ classifiers = [
 ]
 dependencies = [
     "django==5.2.17",
-    "django-oauth-toolkit==1.6.3",
-    "social-auth-core==4.8.5",
-    "social-auth-app-django==5.6.0",
+    "django-oauth-toolkit==3.4.1",
+    "social-auth-core==5.1.0",
+    "social-auth-app-django==6.0.1",
     "django-extensions==4.1.0",
     "channels==4.3.2",
     "channels-redis==4.3.0",
@@ -65,7 +65,6 @@ dependencies = [
     "django-cors-headers==4.9.0",
     "nh3==0.3.3",
     "configobj==5.0.9",
-    "black>=26.3.1",
     "redis-cli>=1.0.1",
     "uvicorn-worker>=0.4.0",
 ]
