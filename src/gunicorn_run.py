@@ -70,7 +70,7 @@ if __name__ == "__main__":
         "workers": WORKERS,
         "accesslog": "-",
         "errorlog": "-",
-        "worker_class": "uvicorn.workers.UvicornWorker",
+        "worker_class": "uvicorn_worker.UvicornWorker",
         "logger_class": StubbedGunicornLogger,
         "capture_output": 'true'
     }
