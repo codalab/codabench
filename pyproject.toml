@@ -42,7 +42,7 @@ dependencies = [
     "azure-storage-common==2.1.0",
     "boto3==1.42.50",
     "whitenoise==6.11.0",
-    "djangorestframework==3.16.1",
+    "djangorestframework==3.17.2",
     "djangorestframework-csv==3.0.1",
     "drf-extensions==0.8.0",
     "markdown==3.10.2",
