@@ -76,6 +76,11 @@ def colorize_run_args(json_str):
         json_str,
     )
     json_str = re.sub(
+        r'("human_in_the_loop": )(.*?)(,)',
+        rf"\1{green}\2{reset}\3{lineskip}",
+        json_str,
+    )
+    json_str = re.sub(
         r'("is_scoring": )(.*?)(,)', rf"\1{green}\2{reset}\3{lineskip}", json_str
     )
     json_str = re.sub(
@@ -130,7 +135,17 @@ def colorize_run_args(json_str):
         json_str,
     )
     json_str = re.sub(
-        r'("ingestion_program": ")(.*?)(",)',
+        r'("ingestion_program_data": ")(.*?)(",)',
+        rf"\1{yellow}\2{reset}\3{lineskip}",
+        json_str,
+    )
+    json_str = re.sub(
+        r'("submission_data": ")(.*?)(",)',
+        rf"\1{yellow}\2{reset}\3{lineskip}",
+        json_str,
+    )
+    json_str = re.sub(
+        r'("scoring_program_data": ")(.*?)(",)',
         rf"\1{yellow}\2{reset}\3{lineskip}",
         json_str,
     )

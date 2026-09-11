@@ -113,13 +113,17 @@ class Settings:
     COMPETITION_CONTAINER_HTTP_PROXY = get("COMPETITION_CONTAINER_HTTP_PROXY", "")
     COMPETITION_CONTAINER_HTTPS_PROXY = get("COMPETITION_CONTAINER_HTTPS_PROXY", "")
 
-    CODALAB_IGNORE_CLEANUP_STEP = to_bool(get("CODALAB_IGNORE_CLEANUP_STEP"))
+    COMPUTE_WORKER_NO_CLEANUP = to_bool(get("COMPUTE_WORKER_NO_CLEANUP", "False"))
 
     WORKER_BUNDLE_URL_REWRITE = get("WORKER_BUNDLE_URL_REWRITE", "").strip()
     HUMAN_IN_THE_LOOP = (
         get("HUMAN_IN_THE_LOOP", "false").lower() == "true"
     )
     COMPETITION_ALLOW_IMAGE_PULL = to_bool(get("COMPETITION_ALLOW_IMAGE_PULL", "True"))
+
+    COMPUTE_WORKER_DISABLE_LOG_UPLOAD = to_bool(get("COMPUTE_WORKER_DISABLE_LOG_UPLOAD", "False"))
+    COMPUTE_WORKER_DISABLE_PREDICTION_UPLOAD = to_bool(get("COMPUTE_WORKER_DISABLE_PREDICTION_UPLOAD", "False"))
+
 
 
 # -----------------------------------------------
@@ -172,6 +176,10 @@ logger.info(
     f"{'with GPU capabilities: ' + Settings.GPU_DEVICE if Settings.USE_GPU else 'without GPU capabilities'}. "
     f"Network disabled for the competition container is set to {Settings.COMPETITION_CONTAINER_NETWORK_DISABLED}"
 )
+if Settings.COMPUTE_WORKER_DISABLE_PREDICTION_UPLOAD:
+    logger.warning("COMPUTE_WORKER_DISABLE_PREDICTION_UPLOAD is set to True, setting COMPUTE_WORKER_NO_CLEANUP to True")
+    Settings.COMPUTE_WORKER_NO_CLEANUP = True
+
 
 # Intializing client
 # NOTE: CONTAINER_SOCKET is set in Settings based on CONTAINER_ENGINE_EXECUTABLE which must has either podman or docker
@@ -373,10 +381,15 @@ def run_wrapper(run_args):
     except SubmissionException as e:
         msg = str(e).strip()
         if msg:
-            msg = f"Submission failed: {msg}. See logs for more details."
+            if Settings.COMPUTE_WORKER_DISABLE_LOG_UPLOAD:
+                msg = f"Submission failed: {msg}. Contact the Organizer(s) for more details."
+            else:
+                msg = f"Submission failed: {msg}. See logs for more details."
         else:
-            msg = "Submission failed. See logs for more details."
-
+            if Settings.COMPUTE_WORKER_DISABLE_LOG_UPLOAD:
+                msg = "Submission failed. Contact the Organizer(s) for more details."
+            else:
+                msg = "Submission failed. See logs for more details."
         run._update_status(SubmissionStatus.FAILED, extra_information=msg)
         raise
 
@@ -494,10 +507,19 @@ class Run:
         self.run_related_name = (
             f"uPK-{run_args['user_pk']}_sID-{run_args['id']}"
         )
+        if run_args["is_scoring"]:
+            task_type = "scoring_program"
+        else:
+            task_type = "ingestion"
+
         # Directories for the run
         self.watch = True
         self.completed_program_counter = 0
-        self.root_dir = tempfile.mkdtemp(prefix=f'{self.run_related_name}__', dir=Settings.BASE_DIR)
+        # Create the folder then save the path to root_dir
+        self.submission_run_directory = Settings.BASE_DIR + f'{self.run_related_name}__'
+        os.mkdir(self.submission_run_directory + task_type, mode=0o700)
+        self.root_dir = self.submission_run_directory + task_type
+
         self.bundle_dir = os.path.join(self.root_dir, "bundles")
         self.input_dir = os.path.join(self.root_dir, "input")
         self.output_dir = os.path.join(self.root_dir, "output")
@@ -511,7 +533,10 @@ class Run:
         self.submissions_api_url = run_args["submissions_api_url"]
         self.container_image = run_args["docker_image"]
         self.secret = run_args["secret"]
-        self.prediction_result = run_args["prediction_result"]
+        if Settings.COMPUTE_WORKER_DISABLE_PREDICTION_UPLOAD:
+            self.prediction_result = "Prediction Upload Disabled."
+        else:
+            self.prediction_result = run_args["prediction_result"]
         self.scoring_result = run_args.get("scoring_result")
         self.execution_time_limit = run_args["execution_time_limit"]
         # ----- HITL ------
@@ -602,18 +627,36 @@ class Run:
     def push_logs(self):
         """Upload any collected logs, even in case of crash.
         """
-        try:
-            for kind, logs in (self.logs or {}).items():
-                for stream_key in ("stdout", "stderr"):
-                    entry = logs.get(stream_key) if isinstance(logs, dict) else None
-                    if not entry:
-                        continue
-                    location = entry.get("location")
-                    data = entry.get("data") or b""
-                    if location:
-                        self._put_file(location, raw_data=data)
-        except Exception as e:
-            logger.exception(f"Failed best-effort log upload: {e}")
+        if not Settings.COMPUTE_WORKER_DISABLE_LOG_UPLOAD:
+            try:
+                for kind, logs in (self.logs or {}).items():
+                    for stream_key in ("stdout", "stderr"):
+                        entry = logs.get(stream_key) if isinstance(logs, dict) else None
+                        if not entry:
+                            continue
+                        location = entry.get("location")
+                        data = entry.get("data") or b""
+                        if location:
+                            self._put_file(location, raw_data=data)
+            except Exception as e:
+                logger.exception(f"Failed best-effort log upload: {e}")
+
+        else:
+            try:
+                logs_path = os.path.join(self.root_dir, "logs")
+                with open(logs_path, "w") as f:
+                    for kind, logs in (self.logs or {}).items():
+                        for stream_key in ("stdout", "stderr"):
+                            entry = logs.get(stream_key) if isinstance(logs, dict) else None
+                            if not entry:
+                                continue
+                            location = entry.get("location")
+                            data = entry.get("data") or b""
+                            if location:
+                                f.write(str(data))
+            except Exception as e:
+                logger.exception(f"Failed best-effort log file creation: {e}")
+
 
     def get_detailed_results_file_path(self):
         default_detailed_results_path = os.path.join(
@@ -769,12 +812,17 @@ class Run:
                         self._update_submission(docker_pull_fail_data)
                         # Send error through web socket to the frontend
                         asyncio.run(self._send_data_through_socket(str(pull_error)))
-                        raise DockerImagePullException(
-                            f"Pull for {image_name} failed! Check the logs for more information"
-                        )
+                        if Settings.COMPUTE_WORKER_DISABLE_LOG_UPLOAD:
+                            raise DockerImagePullException(
+                                f"Pull for {image_name} failed! Contact the Organizer(s) for more details."
+                            )
+                        else:
+                            raise DockerImagePullException(
+                                    f"Pull for {image_name} failed! Check the logs for more information"
+                                )
                     else:
                         logger.warning("Failed. Retrying in 5 seconds...")
-                        time.sleep(5)  # Wait 5 seconds before retrying
+                        time.sleep(5) # Wait 5 seconds before retrying
         else:
             logger.info("COMPETITION_ALLOW_IMAGE_PULL is set to False, using local image if it exists")
             try:
@@ -926,7 +974,8 @@ class Run:
             "SYS_CHROOT",
         ]
 
-        # Configure whether or not we use the GPU. Also setting auto_remove to False because
+        # Configure whether or not we use the GPU. Also setting auto_remove to False because removing too fast 
+        # can bug out the worker (can't get the logs fast enough)
         if Settings.CONTAINER_ENGINE_EXECUTABLE == Settings.DOCKER:
             security_options = ["no-new-privileges"]
         else:
@@ -1004,21 +1053,24 @@ class Run:
         # Create a websocket to send the logs in real time to the codabench instance
         # We need to set a timeout for the websocket connection otherwise the program will get stuck if he websocket does not connect.
         websocket = None
-        try:
-            websocket_url = f"{self.websocket_url}?kind={kind}"
-            logger.debug(f"Connecting to {websocket_url} for container {str(container.get('Id'))}")
-            websocket = await asyncio.wait_for(
-                websockets.connect(websocket_url), timeout=10.0
-            )
-            logger.debug(f"connected to {websocket_url} for container {str(container.get('Id'))}")
 
-        except Exception as e:
-            logger.error(
-                f"There was an error trying to connect to the websocket on the codabench instance: {e}"
-            )
+        # Do not create a websocket if the real time logs are not wanted (Silent Compute Worker)
+        if not Settings.COMPUTE_WORKER_DISABLE_LOG_UPLOAD:
+            try:
+                websocket_url = f"{self.websocket_url}?kind={kind}"
+                logger.debug(f"Connecting to {websocket_url} for container {str(container.get('Id'))}")
+                websocket = await asyncio.wait_for(
+                    websockets.connect(websocket_url), timeout=10.0
+                )
+                logger.debug(f"connected to {websocket_url} for container {str(container.get('Id'))}")
 
-            if Settings.LOG_LEVEL == Settings.LOG_LEVEL_DEBUG:
-                logger.exception(e)
+            except Exception as e:
+                logger.error(
+                    f"There was an error trying to connect to the websocket on the codabench instance: {e}"
+                )
+
+                if Settings.LOG_LEVEL == Settings.LOG_LEVEL_DEBUG:
+                    logger.exception(e)
 
         start = time.time()
 
@@ -1034,6 +1086,7 @@ class Run:
             )
 
             # If we enter the for loop after the container exited, the program will get stuck
+            # Do not send the real time logs if they are not wanted (Silent Compute Worker)
             if client.inspect_container(container)["State"]["Status"].lower() == "running":
                 logger.debug(
                     "Show the logs and stream them to codabench " + container.get("Id")
@@ -1043,25 +1096,27 @@ class Run:
                     if log[0] is not None:
                         stdout_chunks.append(log[0])
                         logger.info(log[0].decode())
-                        try:
-                            if websocket is not None:
-                                await websocket.send(
-                                    json.dumps({"kind": kind, "message": log[0].decode()})
-                                )
-                        except Exception as e:
-                            logger.error(e)
+                        if not Settings.COMPUTE_WORKER_DISABLE_LOG_UPLOAD:
+                            try:
+                                if websocket is not None:
+                                    await websocket.send(
+                                        json.dumps({"kind": kind, "message": log[0].decode()})
+                                    )
+                            except Exception as e:
+                                logger.error(e)
 
                     # Errors
                     elif log[1] is not None:
                         stderr_chunks.append(log[1])
                         logger.error(log[1].decode())
-                        try:
-                            if websocket is not None:
-                                await websocket.send(
-                                    json.dumps({"kind": kind, "message": log[1].decode()})
-                                )
-                        except Exception as e:
-                            logger.error(e)
+                        if not Settings.COMPUTE_WORKER_DISABLE_LOG_UPLOAD:
+                            try:
+                                if websocket is not None:
+                                    await websocket.send(
+                                        json.dumps({"kind": kind, "message": log[1].decode()})
+                                    )
+                            except Exception as e:
+                                logger.error(e)
 
         except (docker.errors.NotFound, docker.errors.APIError) as e:
             logger.error(e)
@@ -1077,15 +1132,17 @@ class Run:
             # Gets the logs of the container, sperating stdout and stderr (first and second position) thanks for demux=True
             return_Code = client.wait(container)
             logs_Unified = (b"".join(stdout_chunks), b"".join(stderr_chunks))
-            logger.debug(
-                f"WORKER_MARKER: Disconnecting from {websocket_url}, program counter = {self.completed_program_counter}"
-            )
-            if websocket is not None:
-                try:
-                    await websocket.close()
-                    await websocket.wait_closed()
-                except Exception as e:
-                    logger.error(e)
+
+            if not Settings.COMPUTE_WORKER_DISABLE_LOG_UPLOAD:
+                logger.debug(
+                    f"WORKER_MARKER: Disconnecting from {websocket_url}, program counter = {self.completed_program_counter}"
+                )
+                if websocket is not None:
+                    try:
+                        await websocket.close()
+                        await websocket.wait_closed()
+                    except Exception as e:
+                        logger.error(e)
             client.remove_container(container, v=True, force=True)
 
             logger.debug(f"Container {container.get('Id')} exited with status code : {str(return_Code['StatusCode'])}")
@@ -1367,15 +1424,22 @@ class Run:
             (self.input_data, "input_data"),
             (self.reference_data, "input/ref"),
         ]
-        if self.is_scoring:
+        if self.is_scoring and not Settings.COMPUTE_WORKER_DISABLE_PREDICTION_UPLOAD:
             # Send along submission result so scoring_program can get access
             bundles += [(self.prediction_result, "input/res")]
+        elif self.is_scoring:
+            bundles += [("local_prediction_results", "submission")]
 
         for url, path in bundles:
             if url is not None:
                 # At the moment let's just cache input & reference data
                 cache_this_bundle = path in ("input_data", "input/ref")
-                zip_file = self._get_bundle(url, path, cache=cache_this_bundle)
+                if url == "local_prediction_results" and self.is_scoring:
+                    submission_run_directory_ingestion = self.submission_run_directory + "ingestion/output/"
+                    submission_run_directory_scoring = self.submission_run_directory + "scoring_program/submission/"
+                    shutil.copytree(submission_run_directory_ingestion, submission_run_directory_scoring, dirs_exist_ok=True)
+                else:
+                    zip_file = self._get_bundle(url, path, cache=cache_this_bundle)
 
                 # Computing checksum of the submission file during ingestion run
                 if url == self.submission_data and not self.is_scoring:
@@ -1445,6 +1509,7 @@ class Run:
                 self._run_program_directory(kind=ProgramKind.INGESTION_PROGRAM, program_dir=ingestion_program_dir),
             ])
 
+        logger.info(tasks)
         gathered_tasks = asyncio.gather(*tasks, return_exceptions=True)
 
         task_results = []  # will store results/exceptions from gather
@@ -1542,12 +1607,14 @@ class Run:
                     self.ingestion_program_exit_code = return_code
                     self.ingestion_program_elapsed_time = elapsed_time
                 logger.info(f"[exited with {logs['returncode']}]")
-                for key, value in logs.items():
-                    if key not in ["stdout", "stderr"]:
-                        continue
-                    if value["data"]:
-                        logger.info(f"[{key}]\n{value['data']}")
-                        self._put_file(value["location"], raw_data=value["data"])
+                if Settings.COMPUTE_WORKER_DISABLE_LOG_UPLOAD == False:
+                    for key, value in logs.items():
+                        if key not in ["stdout", "stderr"]:
+                            continue
+                        if value["data"]:
+                            logger.info(f"[{key}]\n{value['data']}")
+                            self._put_file(value["location"], raw_data=value["data"])
+
 
                 # set logs of this kind to None, since we handled them already
                 logger.info("Program finished")
@@ -1732,15 +1799,16 @@ class Run:
             raise SubmissionException("Failed to write metadata file.")
 
         if not self.is_scoring:
-            self._put_dir(self.prediction_result, self.output_dir)
+            if not Settings.COMPUTE_WORKER_DISABLE_PREDICTION_UPLOAD:
+                self._put_dir(self.prediction_result, self.output_dir)
         else:
             self._put_dir(self.scoring_result, self.output_dir)
 
     def clean_up(self):
         self.stop_hitl_http_server()
-        if Settings.CODALAB_IGNORE_CLEANUP_STEP:
+        if Settings.COMPUTE_WORKER_NO_CLEANUP:
             logger.warning(
-                f"CODALAB_IGNORE_CLEANUP_STEP mode enabled, ignoring clean up of: {self.root_dir}"
+                f"COMPUTE_WORKER_NO_CLEANUP mode enabled, ignoring clean up of: {self.root_dir}"
             )
             return
 
