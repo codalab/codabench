@@ -335,6 +335,9 @@ CODALAB.api = {
     delete_organization: (id) => {
         return CODALAB.api.request('DELETE', `${URLS.API}organizations/${id}/delete_organization/`)
     },
+    leave_organization: (id) => {
+        return CODALAB.api.request('DELETE', `${URLS.API}organizations/${id}/leave_organization/`)
+    },
     /*---------------------------------------------------------------------
          Participants
     ---------------------------------------------------------------------*/
