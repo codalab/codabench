@@ -374,7 +374,7 @@ MINIO_PORT=9000
   # Minio local storage helper
   #-----------------------------------------------
   minio:
-    image: minio/minio:RELEASE.2020-10-03T02-19-42Z
+    image: quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z
     command: server /export --certs-dir /root/.minio/certs
     volumes:
       - ./var/minio:/export
@@ -388,7 +388,7 @@ MINIO_PORT=9000
       interval: 5s
       retries: 5
   createbuckets:
-    image: minio/mc
+    image: quay.io/minio/mc:RELEASE.2025-07-21T05-28-08Z
     depends_on:
       minio:
         condition: service_healthy
