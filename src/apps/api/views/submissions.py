@@ -163,10 +163,7 @@ class SubmissionViewSet(ModelViewSet):
                 ) is not qs:
                     raise ValidationError("Request Contained Submissions you don't have authorization for")
             if self.action in ['re_run_many_submissions']:
-                print(f'debug {qs}')
-                print(f'debug {qs.first().status}')
                 qs = qs.filter(status__in=[Submission.FINISHED, Submission.FAILED, Submission.CANCELLED])
-                print(f'debug {qs}')
         return qs
 
     def create(self, request, *args, **kwargs):
