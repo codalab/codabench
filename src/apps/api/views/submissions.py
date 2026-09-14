@@ -161,7 +161,7 @@ class SubmissionViewSet(ModelViewSet):
                     Q(phase__competition__created_by=self.request.user) |
                     Q(phase__competition__collaborators__in=[self.request.user.pk])
                 ) is not qs:
-                    ValidationError("Request Contained Submissions you don't have authorization for")
+                    raise ValidationError("Request Contained Submissions you don't have authorization for")
             if self.action in ['re_run_many_submissions']:
                 print(f'debug {qs}')
                 print(f'debug {qs.first().status}')
