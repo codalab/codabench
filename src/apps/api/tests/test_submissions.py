@@ -45,11 +45,11 @@ class SubmissionAPITests(APITestCase):
             leaderboard=None
         )
 
-        # add submission with that is on the leaderboard
+        # add submission with that is on the leaderboard (leaderboard submissions should always be finished)
         self.leaderboard_submission = SubmissionFactory(
             phase=self.phase,
             owner=self.participant,
-            status=Submission.SUBMITTED,
+            status=Submission.FINISHED,
             leaderboard=self.leaderboard
         )
 
@@ -260,6 +260,24 @@ class SubmissionAPITests(APITestCase):
         resp = self.client.get(url)
         assert resp.status_code == 200
 
+    def test_anonymous_cannot_list_or_retrieve_submissions(self):
+        """
+        SubmissionViewSet's general list/retrieve endpoints must not leak submission
+        data to anonymous users, even for a finished submission on a leaderboard.
+        Public leaderboard data is meant to be served only through
+        PhaseViewSet.get_leaderboard, which uses a restricted serializer.
+        """
+        # List: the leaderboard submission must not appear
+        resp = self.client.get(reverse('submission-list'))
+        assert resp.status_code == 200
+        results = resp.data.get('results', resp.data)
+        assert all(item['id'] != self.leaderboard_submission.pk for item in results)
+
+        # Retrieve: must 404, not leak the record
+        url = reverse('submission-detail', args=(self.leaderboard_submission.pk,))
+        resp = self.client.get(url)
+        assert resp.status_code == 404
+
 
 class SubmissionGetDetailsAPITests(APITestCase):
     def setUp(self):
@@ -373,23 +391,19 @@ class SubmissionGetDetailsAPITests(APITestCase):
 
     def test_anonymous_cannot_get_details_of_finished_leaderboard_submission(self):
         """
-        Unlike the two tests above, uses a finished submission that IS on a leaderboard,
-        so it's reachable by anonymous users; expect it to still be denied to them.
+        Unlike the two tests above, uses a finished submission that IS on a leaderboard.
+        Being on a leaderboard must not make submission details reachable by anonymous users.
 
-        SubmissionViewSet.get_queryset() in src/apps/api/views/submissions.py has a branch
-        for unauthenticated GET requests that filters on leaderboard__isnull=False (plus
-        status=FINISHED and is_soft_deleted=False). That's what lets an anonymous request
-        find this submission via get_details' super().get_object() call in the first place --
-        so this test's leaderboard_submission (leaderboard set, status=FINISHED in setUp)
-        is what actually exercises that branch, unlike existing_submission (leaderboard=None)
-        used above, which fails the leaderboard__isnull=False filter and 404s before
-        get_details' owner/admin check is ever reached.
+        SubmissionViewSet.get_queryset() in src/apps/api/views/submissions.py returns an
+        empty queryset for unauthenticated GET requests, so get_details' super().get_object()
+        never finds the submission and we get a 404 (rather than a 403 confirming it exists).
+        Public leaderboard data is served separately by PhaseViewSet.get_leaderboard.
         """
         url = reverse('submission-get-details', args=(self.leaderboard_submission.pk,))
 
-        # Anonymous: object is found via the leaderboard queryset, but must still be denied
+        # Anonymous: filtered out at the queryset level, existence is not leaked
         resp = self.client.get(url)
-        assert resp.status_code == 403
+        assert resp.status_code == 404
 
         # Non-owner, non-admin authenticated user: filtered out at the queryset level
         self.client.force_login(self.other_user)

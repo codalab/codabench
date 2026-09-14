@@ -114,28 +114,12 @@ class SubmissionViewSet(ModelViewSet):
         qs = super().get_queryset()
         if self.request.method == 'GET':
             if not self.request.user.is_authenticated:
-                # Show leaderboard submissions to unauthenticated users
-                return (
-                    qs.filter(
-                        leaderboard__isnull=False,
-                        is_soft_deleted=False,
-                        status=Submission.FINISHED,
-                    )
-                    .select_related(
-                        'phase',
-                        'phase__competition',
-                        'participant',
-                        'participant__user',
-                        'owner',
-                        'data',
-                    )
-                    .prefetch_related(
-                        'children',
-                        'scores',
-                        'scores__column',
-                        'task',
-                    )
-                )
+                # Anonymous users get nothing here. This endpoint returns full
+                # submission records (filenames, status details, fact sheet
+                # answers, internal ids, ...); the public leaderboard view is
+                # served separately by PhaseViewSet.get_leaderboard, which uses
+                # a restricted serializer.
+                return qs.none()
 
             # Check if admin is requesting to see soft-deleted submissions
             show_is_soft_deleted = self.request.query_params.get('show_is_soft_deleted', 'false').lower() == 'true'
@@ -177,12 +161,9 @@ class SubmissionViewSet(ModelViewSet):
                     Q(phase__competition__created_by=self.request.user) |
                     Q(phase__competition__collaborators__in=[self.request.user.pk])
                 ) is not qs:
-                    ValidationError("Request Contained Submissions you don't have authorization for")
+                    raise ValidationError("Request Contained Submissions you don't have authorization for")
             if self.action in ['re_run_many_submissions']:
-                print(f'debug {qs}')
-                print(f'debug {qs.first().status}')
                 qs = qs.filter(status__in=[Submission.FINISHED, Submission.FAILED, Submission.CANCELLED])
-                print(f'debug {qs}')
         return qs
 
     def create(self, request, *args, **kwargs):
