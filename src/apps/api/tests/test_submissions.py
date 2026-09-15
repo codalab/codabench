@@ -3,6 +3,7 @@ from datetime import timedelta
 from unittest import mock
 
 from django.urls import reverse
+from django.utils.timezone import now
 from rest_framework.test import APITestCase
 
 from competitions.models import Submission, CompetitionParticipant
