@@ -19,7 +19,7 @@ from queues.models import Queue
 
 
 class SubmissionSerializer(serializers.ModelSerializer):
-    scores = SubmissionScoreSerializer(many=True)
+    scores = serializers.SerializerMethodField(read_only=True)
     filename = serializers.SerializerMethodField(read_only=True)
     owner = serializers.CharField(source='owner.username')
     phase_name = serializers.CharField(source='phase.name')
@@ -71,6 +71,10 @@ class SubmissionSerializer(serializers.ModelSerializer):
             return basename(instance.data.data_file.name)
         # NOTE: if submission data is None, it means it is soft deleted
         return "Deleted File"
+
+    def get_scores(self, instance):
+        scores = [score for score in instance.scores.all() if not score.column.hidden]
+        return SubmissionScoreSerializer(scores, many=True, context=self.context).data
 
     def get_auto_run(self, instance):
         # returns this submission's competition auto_run_submissions Flag
