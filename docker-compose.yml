@@ -28,15 +28,17 @@ services:
       dockerfile: packaging/container/Containerfile
     image: django_site-worker
     # NOTE: We use watchmedo to reload gunicorn nicely, Uvicorn + Gunicorn reloads don't work well
-    command: ["python manage.py migrate --no-input && python manage.py collectstatic --no-input && cd /app/src && watchmedo auto-restart -p '*.py' --recursive -- python3 ./gunicorn_run.py"]
+    command: ["python manage.py migrate --no-input && python manage.py provision_worker_token && python manage.py collectstatic --no-input && cd /app/src && watchmedo auto-restart -p '*.py' --recursive -- python3 ./gunicorn_run.py"]
     environment:
       - DATABASE_URL=postgres://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
+      - WORKER_TOKEN_FILE=/run/secrets/worker_token
     env_file: .env
     volumes:
       - .:/app:delegated
       - /tmp/codalab-v2/django:/codalab_tmp
       - ./backups:/app/backups
       - ./var/logs:/app/logs
+      - worker_secrets:/run/secrets
     restart: unless-stopped
     ports:
       - 8000:8000
@@ -50,7 +52,6 @@ services:
       options:
         max-size: "20m"
         max-file: "5"
-
 
   #----------------------------------------------------------------------------------------------------
   # Minio local storage helper
@@ -236,6 +237,7 @@ services:
       - ${HOST_DIRECTORY:-/tmp/codabench}:/codabench
       # Actual connection back to docker parent to run things
       - /var/run/docker.sock:/var/run/docker.sock
+      - worker_secrets:/run/secrets:ro
     hostname: local_worker
     restart: unless-stopped
     env_file: .env
@@ -248,3 +250,6 @@ services:
       options:
         max-size: "20m"
         max-file: "5"
+
+volumes:
+  worker_secrets:
