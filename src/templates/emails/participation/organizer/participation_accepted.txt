@@ -1,10 +1,8 @@
-{% extends 'emails/base_email.html' %}
+{% extends 'emails/base_email.txt' %}
 
 {% block content %}
-    <p>
-        User <strong>{{ participant.user.username }}</strong> has been accepted into your competition
-        <a href="http://{{ site.domain }}{{ participant.competition.get_absolute_url }}">{{ participant.competition.title }}</a>.
-        <br>
-        You can manage all participants from the admin panel of your competition.
-    </p>
+    User {{ participant.user.username }} has been accepted into your competition {{ participant.competition.title }}.
+    {{ protocol }}://{{ domain }}{{ participant.competition.get_absolute_url }}
+
+    You can manage all participants from the admin panel of your competition.
 {% endblock %}

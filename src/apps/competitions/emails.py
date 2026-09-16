@@ -1,17 +1,18 @@
-from utils.email import codalab_send_mail, codalab_send_markdown_email
+from utils.email import codalab_send_mail, codalab_send_markdown_email, get_link_context
 
 
 def get_organizer_emails(competition):
     return [user.email for user in competition.all_organizers if not user.is_deleted]
 
 
-def send_participation_requested_emails(participant):
+def send_participation_requested_emails(participant, request):
     if participant.user.is_deleted:
         return
 
     context = {
         'participant': participant,
-        'user': participant.user
+        'user': participant.user,
+        **get_link_context(request),
     }
     # Notify Organizers
     codalab_send_mail(
@@ -32,13 +33,14 @@ def send_participation_requested_emails(participant):
     )
 
 
-def send_participation_accepted_emails(participant):
+def send_participation_accepted_emails(participant, request):
     if participant.user.is_deleted:
         return
 
     context = {
         'participant': participant,
-        'user': participant.user
+        'user': participant.user,
+        **get_link_context(request),
     }
     codalab_send_mail(
         context_data=context,
@@ -57,13 +59,14 @@ def send_participation_accepted_emails(participant):
     )
 
 
-def send_participation_denied_emails(participant):
+def send_participation_denied_emails(participant, request):
     if participant.user.is_deleted:
         return
 
     context = {
         'participant': participant,
-        'user': participant.user
+        'user': participant.user,
+        **get_link_context(request),
     }
     # Notify Organizers
     codalab_send_mail(

@@ -3,7 +3,7 @@
 {% block content %}
 <p>
     A user <strong>{{ participant.user.username }}</strong> has requested access to your competition
-    <a href="http://{{ site.domain }}{{ participant.competition.get_absolute_url }}">{{ participant.competition.title }}</a>.
+    <a href="{{ protocol }}://{{ domain }}{{ participant.competition.get_absolute_url }}">{{ participant.competition.title }}</a>.
     <br>
     You can manage all participants from the admin panel of your competition.
 </p>
