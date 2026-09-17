@@ -24,7 +24,7 @@ class ExternalPlatform(models.Model):
 
 class ExternalCompetition(models.Model):
     platform = models.ForeignKey(ExternalPlatform, on_delete=models.CASCADE, related_name='competitions')
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=256)
     description = models.TextField(blank=True, default='')
     image_url = models.URLField(max_length=1000, blank=True, default='')
     organizer_name = models.CharField(max_length=255, blank=True, default='')

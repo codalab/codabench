@@ -1,4 +1,5 @@
 from rest_framework import generics
+from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import AllowAny
 
@@ -20,12 +21,15 @@ class ExternalCompetitionListView(generics.ListAPIView):
         # platform - it doesn't hide already-fetched competitions from the public list.
         # If in the future you don't want to show competitions from non active platfroms,
         # Add a filter to the query below: `.filter(platform__is_active=True)`
-        queryset = ExternalCompetition.objects.select_related('platform')
+        queryset = ExternalCompetition.objects.select_related('platform').order_by('-id')
 
         # Comma-separated list of platform ids, e.g. ?platform=1,2
         platform_ids = self.request.query_params.get('platform')
         if platform_ids:
-            queryset = queryset.filter(platform_id__in=platform_ids.split(','))
+            values = [value.strip() for value in platform_ids.split(',') if value.strip()]
+            if not all(value.isdigit() for value in values):
+                raise ValidationError({'platform': 'Expected a comma-separated list of platform ids, e.g. ?platform=1,2'})
+            queryset = queryset.filter(platform_id__in=values)
 
         return queryset
 

@@ -157,6 +157,27 @@ class ExternalCompetitionsApiFunctionalTests(TestCase):
         self.assertIn(self.competition1.id, ids)
         self.assertIn(self.competition2.id, ids)
 
+    def test_platform_filter_rejects_non_numeric_ids(self):
+        """
+        Filters by a non-numeric platform id and checks the response is a 400,
+        not a 500 from the ValueError the ORM would raise on it.
+        """
+        response = self.client.get('/api/external_competitions/?platform=abc')
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('platform', response.data)
+
+    def test_list_is_ordered_by_newest_first(self):
+        """
+        Calls the list endpoint and checks results come back ordered by id
+        descending, so paging through them can't repeat or skip a competition.
+        """
+        response = self.client.get('/api/external_competitions/')
+
+        self.assertEqual(response.status_code, 200)
+        ids = [r['id'] for r in response.data['results']]
+        self.assertEqual(ids, sorted(ids, reverse=True))
+
     def test_competitions_from_inactive_platform_still_listed(self):
         """
         Checks that a competition from a deactivated platform still shows up in

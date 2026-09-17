@@ -48,7 +48,7 @@ class Migration(migrations.Migration):
             name='ExternalCompetition',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=255)),
+                ('name', models.CharField(max_length=256)),
                 ('description', models.TextField(blank=True, default='')),
                 ('image_url', models.URLField(blank=True, default='', max_length=1000)),
                 ('organizer_name', models.CharField(blank=True, default='', max_length=255)),
