@@ -1437,7 +1437,11 @@ class Run:
                 if url == "local_prediction_results" and self.is_scoring:
                     submission_run_directory_ingestion = self.submission_run_directory + "ingestion/output/"
                     submission_run_directory_scoring = self.submission_run_directory + "scoring_program/submission/"
-                    shutil.copytree(submission_run_directory_ingestion, submission_run_directory_scoring, dirs_exist_ok=True)
+                    try:
+                        shutil.copytree(submission_run_directory_ingestion, submission_run_directory_scoring, dirs_exist_ok=True)
+                    except Exception as e:
+                        logger.error(e)
+                        raise SubmissionException("Can't copy file. Make sure the folder exists and that you are using only one compute worker")
                 else:
                     zip_file = self._get_bundle(url, path, cache=cache_this_bundle)
 
