@@ -48,7 +48,7 @@
     <!-- Competitions -->
     <div class="list-panel">
 
-      <div id="loading" class="loading-indicator" show="{!competitions}">
+      <div id="loading" class="loading-indicator" show="{loading}">
         <div class="spinner"></div>
       </div>
 
@@ -72,7 +72,7 @@
       </div>
 
       <!-- Show when there are no competitions in the list -->
-      <div class="no-results-message" if="{competitions.results && competitions.results.length === 0}">
+      <div class="no-results-message" if="{!loading && competitions.results && competitions.results.length === 0}">
         <div class="ui warning message">
           <div class="header">No external competitions found</div>
           Try changing your filters or search term.
@@ -80,7 +80,7 @@
       </div>
 
       <!--  Pagination  -->
-      <div class="pagination-nav" if="{competitions.next || competitions.previous}">
+      <div class="pagination-nav" if="{!loading && (competitions.next || competitions.previous)}">
         <button show="{competitions.previous}" onclick="{handle_ajax_pages.bind(this, -1)}" class="float-left ui inline button active">Back</button>
         <button hide="{competitions.previous}" disabled="disabled" class="float-left ui inline button disabled">Back</button>
         { current_page } of {Math.ceil(competitions.count/competitions.page_size)}
@@ -95,6 +95,9 @@
     var self = this
     self.search_timer = null
     self.competitions = {}
+    // Drives the spinner through riot alone. Don't show/hide #loading with jQuery:
+    // every self.update() re-applies the `show=` binding above and would undo it.
+    self.loading = true
     self.platforms = []
 
     // Filters state dictionary to keep track of which filters to apply
@@ -163,22 +166,19 @@
     })
 
     self.handle_ajax_pages = function (num) {
-        $('.pagination-nav > button').prop('disabled', true)
         self.update_competitions_list(self.get_url_page_number_or_default() + num)
     }
 
     self.update_competitions_list = function (num) {
 
         self.current_page = num;
-        $('#loading').show();
-        $('.pagination-nav').hide();
+        self.loading = true;
+        self.update();
 
         function handleSuccess(response) {
             self.competitions = response;
-            $('#loading').hide();
-            $('.pagination-nav').show();
+            self.loading = false;
             history.pushState("", document.title, "?page=" + self.current_page);
-            $('.pagination-nav > button').prop('disabled', false);
             self.update();
         }
 
@@ -188,8 +188,8 @@
             "platform": self.filter_state.platforms.join(',')
         })
         .fail(function (resp) {
-            $('#loading').hide()
-            $('.pagination-nav').show()
+            self.loading = false
+            self.update()
 
             let message = "Could not load external competitions list"
             if (resp.responseJSON && resp.responseJSON.detail) {
