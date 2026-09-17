@@ -91,6 +91,7 @@ class Settings:
     # Constants
     DOCKER = "docker"
     PODMAN = "podman"
+    KUBERNETES = "kubernetes"
     LOG_LEVEL_DEBUG = "debug"
 
     # Defaults
@@ -120,6 +121,17 @@ class Settings:
         get("HUMAN_IN_THE_LOOP", "false").lower() == "true"
     )
     COMPETITION_ALLOW_IMAGE_PULL = to_bool(get("COMPETITION_ALLOW_IMAGE_PULL", "True"))
+
+    # Kubernetes settings (only used when CONTAINER_ENGINE_EXECUTABLE=kubernetes)
+    SHARED_JOB_PVC = get("SHARED_JOB_PVC", "shared-job-pvc")
+    CURRENT_NAMESPACE = get("CURRENT_NAMESPACE", "default")
+    TOTAL_TIME_TO_WAIT_FOR_POD = float(get("TOTAL_TIME_TO_WAIT_FOR_POD", 300))
+    SLEEP_TIME_BETWEEN_RETRIES = float(get("SLEEP_TIME_BETWEEN_RETRIES", 0.5))
+    SUBMISSION_POD_USER_ID = int(get("USERID", 1000))
+    SUBMISSION_POD_GROUP_ID = int(get("GROUPID", 1000))
+    SUBMISSION_POD_FS_GROUP = int(get("FSGROUP", 1000))
+    # Set to false for clusters whose CA cert is missing the Authority Key Identifier extension
+    KUBERNETES_VERIFY_SSL = to_bool(get("KUBERNETES_VERIFY_SSL", "true"))
 
 
 # -----------------------------------------------
@@ -174,11 +186,27 @@ logger.info(
 )
 
 # Intializing client
-# NOTE: CONTAINER_SOCKET is set in Settings based on CONTAINER_ENGINE_EXECUTABLE which must has either podman or docker
-client = docker.APIClient(
-    base_url=Settings.CONTAINER_SOCKET,
-    version="auto",
-)
+if Settings.CONTAINER_ENGINE_EXECUTABLE != Settings.KUBERNETES:
+    # NOTE: CONTAINER_SOCKET is set in Settings based on CONTAINER_ENGINE_EXECUTABLE which must have either podman or docker
+    client = docker.APIClient(
+        base_url=Settings.CONTAINER_SOCKET,
+        version="auto",
+    )
+else:
+    client = None
+    import kubernetes
+    try:
+        kubernetes.config.load_incluster_config()
+        logger.info("Kubernetes in-cluster config loaded")
+    except kubernetes.config.ConfigException:
+        kubernetes.config.load_kube_config()
+        logger.info("Kubernetes kubeconfig loaded")
+    if not Settings.KUBERNETES_VERIFY_SSL:
+        # https://github.com/kubernetes-client/python/issues/2329
+        _k8s_conf = kubernetes.client.Configuration.get_default_copy()
+        _k8s_conf.verify_ssl = False
+        kubernetes.client.Configuration.set_default(_k8s_conf)
+        logger.warning("Kubernetes SSL verification disabled (KUBERNETES_VERIFY_SSL=false)")
 
 
 # -----------------------------------------------
@@ -541,6 +569,9 @@ class Run:
         self.ingestion_program_elapsed_time = None
         self.scoring_program_exit_code = None
         self.scoring_program_elapsed_time = None
+
+        # On Kubernetes the execution-time alarm is armed by the first pod
+        self._alarm_armed = False
 
         # Socket connection to stream output of submission
         submission_api_url_parsed = urlparse(self.submissions_api_url)
@@ -1128,6 +1159,198 @@ class Run:
         # Communicate that the program is closing
         self.completed_program_counter += 1
 
+    async def _run_pod(self, kind, command, volumes_config):
+        """Kubernetes equivalent of _run_container_engine_cmd.
+
+        Creates a Pod, streams its logs via websocket, waits for completion,
+        and populates self.logs[kind] in the same format as _run_container_engine_cmd.
+        K8s merges stdout/stderr, so stderr will be empty bytes.
+        """
+        import kubernetes
+
+        core_v1 = kubernetes.client.CoreV1Api()
+
+        websocket = None
+        websocket_url = f"{self.websocket_url}?kind={kind}"
+        try:
+            logger.debug(f"Connecting to {websocket_url}")
+            websocket = await asyncio.wait_for(
+                websockets.connect(websocket_url), timeout=10.0
+            )
+        except Exception as e:
+            logger.error(f"Failed to connect to websocket: {e}")
+
+        # Build VolumeMount list from Docker-style volumes_config
+        # {host_path: {"bind": "/app/...", "mode": "z"/"ro"}}
+        # subPath is the path within the PVC (relative to HOST_DIRECTORY = PVC root)
+        volume_mounts = []
+        for host_path, vol_config in volumes_config.items():
+            volume_mounts.append(
+                kubernetes.client.V1VolumeMount(
+                    name="shared-storage",
+                    mount_path=vol_config["bind"],
+                    sub_path=os.path.relpath(host_path, Settings.HOST_DIRECTORY),
+                    read_only=(vol_config.get("mode") == "ro"),
+                )
+            )
+
+        resources = node_selector = None
+        if Settings.USE_GPU:
+            try:
+                resources = kubernetes.client.V1ResourceRequirements(
+                    limits=json.loads(os.getenv("RESOURCE_LIMITS", "{}"))
+                )
+                node_selector = json.loads(os.getenv("NODE_SELECTOR", "{}")) or None
+            except json.JSONDecodeError:
+                logger.warning("Failed to parse RESOURCE_LIMITS or NODE_SELECTOR, ignoring GPU config")
+
+        try:
+            labels = json.loads(os.getenv("COMPUTE_WORKER_LABELS", "{}")) or {}
+        except json.JSONDecodeError:
+            labels = {}
+        labels["submission_id"] = str(self.submission_id)
+
+        pod_spec = kubernetes.client.V1Pod(
+            metadata=kubernetes.client.V1ObjectMeta(
+                generate_name=f"codabench-{kind.replace('_', '-')}-",
+                namespace=Settings.CURRENT_NAMESPACE,
+                labels=labels,
+            ),
+            spec=kubernetes.client.V1PodSpec(
+                restart_policy="Never",
+                node_selector=node_selector,
+                security_context=kubernetes.client.V1PodSecurityContext(
+                    fs_group=Settings.SUBMISSION_POD_FS_GROUP,
+                ),
+                containers=[
+                    kubernetes.client.V1Container(
+                        name="runner",
+                        image=self.container_image,
+                        command=["sh", "-c", command],
+                        working_dir="/app/program",
+                        env=[kubernetes.client.V1EnvVar(name="PYTHONUNBUFFERED", value="1")],
+                        volume_mounts=volume_mounts,
+                        resources=resources,
+                        security_context=kubernetes.client.V1SecurityContext(
+                            allow_privilege_escalation=False,
+                            run_as_non_root=True,
+                            run_as_user=Settings.SUBMISSION_POD_USER_ID,
+                            run_as_group=Settings.SUBMISSION_POD_GROUP_ID,
+                            capabilities=kubernetes.client.V1Capabilities(drop=["ALL"]),
+                        ),
+                    )
+                ],
+                volumes=[
+                    kubernetes.client.V1Volume(
+                        name="shared-storage",
+                        persistent_volume_claim=kubernetes.client.V1PersistentVolumeClaimVolumeSource(
+                            claim_name=Settings.SHARED_JOB_PVC,
+                        ),
+                    )
+                ],
+            ),
+        )
+
+        pod = core_v1.create_namespaced_pod(namespace=Settings.CURRENT_NAMESPACE, body=pod_spec)
+        pod_name = pod.metadata.name
+        logger.info(f"Created pod {pod_name} for {kind}")
+
+        # Wait for pod to leave Pending state
+        elapsed = 0.0
+        while elapsed < Settings.TOTAL_TIME_TO_WAIT_FOR_POD:
+            try:
+                pod = core_v1.read_namespaced_pod(pod_name, Settings.CURRENT_NAMESPACE)
+                if pod.status.phase in ("Running", "Succeeded", "Failed"):
+                    logger.info(f"Pod {pod_name} is {pod.status.phase}")
+                    break
+                if pod.status.container_statuses:
+                    waiting = pod.status.container_statuses[0].state.waiting
+                    if waiting and waiting.reason in ("ImagePullBackOff", "ErrImagePull"):
+                        raise DockerImagePullException(f"Image pull failed: {waiting.message}")
+            except DockerImagePullException:
+                raise
+            except Exception as e:
+                logger.error(f"Error checking pod status: {e}")
+            await asyncio.sleep(Settings.SLEEP_TIME_BETWEEN_RETRIES)
+            elapsed += Settings.SLEEP_TIME_BETWEEN_RETRIES
+
+        if elapsed >= Settings.TOTAL_TIME_TO_WAIT_FOR_POD:
+            raise SubmissionException(
+                f"Pod {pod_name} did not start within {Settings.TOTAL_TIME_TO_WAIT_FOR_POD}s"
+            )
+
+        start = time.time()
+        if not self._alarm_armed:
+            self._alarm_armed = True
+            signal.alarm(self.execution_time_limit)
+
+        # Stream logs (K8s merges stdout/stderr; all output goes to stdout)
+        stdout = b""
+        try:
+            log_stream = core_v1.read_namespaced_pod_log(
+                name=pod_name,
+                namespace=Settings.CURRENT_NAMESPACE,
+                follow=True,
+                _preload_content=False,
+            )
+            for line in log_stream:
+                stdout += line
+                decoded = line.decode(errors="ignore")
+                logger.info(decoded.rstrip())
+                if websocket:
+                    try:
+                        await websocket.send(json.dumps({"kind": kind, "message": decoded}))
+                    except Exception as e:
+                        logger.error(f"Error sending log to websocket: {e}")
+        except Exception as e:
+            logger.error(f"Error streaming pod logs: {e}")
+            if Settings.LOG_LEVEL == Settings.LOG_LEVEL_DEBUG:
+                logger.exception(e)
+
+        # Get final exit code
+        return_code = 1
+        elapsed = 0.0
+        while elapsed < Settings.TOTAL_TIME_TO_WAIT_FOR_POD:
+            try:
+                pod = core_v1.read_namespaced_pod(pod_name, Settings.CURRENT_NAMESPACE)
+                if pod.status.container_statuses:
+                    terminated = pod.status.container_statuses[0].state.terminated
+                    if terminated:
+                        return_code = terminated.exit_code
+                        break
+            except Exception as e:
+                logger.error(f"Error getting pod exit code: {e}")
+            await asyncio.sleep(Settings.SLEEP_TIME_BETWEEN_RETRIES)
+            elapsed += Settings.SLEEP_TIME_BETWEEN_RETRIES
+
+        logger.info(f"Pod {pod_name} exited with code {return_code}")
+
+        if websocket:
+            try:
+                await websocket.close()
+            except Exception:
+                pass
+
+        self.logs[kind] = {
+            "returncode": return_code,
+            "start": start,
+            "end": time.time(),
+            "stdout": {
+                "data": stdout,
+                "stream": stdout,
+                "continue": True,
+                "location": self.stdout if kind == ProgramKind.SCORING_PROGRAM else self.ingestion_stdout,
+            },
+            "stderr": {
+                # K8s does not separate stderr; empty bytes keeps push_logs happy
+                "data": b"",
+                "stream": b"",
+                "continue": True,
+                "location": self.stderr if kind == ProgramKind.SCORING_PROGRAM else self.ingestion_stderr,
+            },
+        }
+        self.completed_program_counter += 1
+
     def _get_host_path(self, *paths):
         """Turns an absolute path inside our container, into what the path
         would be on the host machine. We also ensure that the directory exists,
@@ -1236,7 +1459,16 @@ class Run:
             ingestion_only_during_scoring=self.ingestion_only_during_scoring,
         )
 
-        # Create container
+        if Settings.CONTAINER_ENGINE_EXECUTABLE == Settings.KUBERNETES:
+            try:
+                return await self._run_pod(kind=kind, command=command, volumes_config=volumes_config)
+            except DockerImagePullException:
+                raise
+            except Exception as e:
+                logger.exception("Pod execution failed")
+                raise SubmissionException(str(e))
+
+        # Create container (Docker/Podman path)
         container_name = self.ingestion_program_container_name if kind == ProgramKind.INGESTION_PROGRAM else self.scoring_program_container_name
         container = self._create_container(
             container_name=container_name,
@@ -1397,7 +1629,9 @@ class Run:
 
         # Before the run starts we want to download images, they may take a while to download
         # and to do this during the run would subtract from the participants time.
-        self._get_container_image(self.container_image)
+        # Kubernetes pulls the image automatically when the pod starts.
+        if Settings.CONTAINER_ENGINE_EXECUTABLE != Settings.KUBERNETES:
+            self._get_container_image(self.container_image)
         self._update_status(SubmissionStatus.RUNNING)
 
     def validate_hitl_configuration(self):
@@ -1449,7 +1683,8 @@ class Run:
 
         task_results = []  # will store results/exceptions from gather
         signal.signal(signal.SIGALRM, alarm_handler)
-        signal.alarm(self.execution_time_limit)
+        if Settings.CONTAINER_ENGINE_EXECUTABLE != Settings.KUBERNETES:
+            signal.alarm(self.execution_time_limit)
 
         try:
             # run tasks
@@ -1466,22 +1701,24 @@ class Run:
                 "is_scoring": self.is_scoring,
             }
 
-            # Cleanup containers
-            containers_to_kill = [
-                self.ingestion_program_container_name, 
-                self.scoring_program_container_name
-            ]
-            logger.debug("Trying to kill and remove container " + str(containers_to_kill))
-
-            for container in containers_to_kill:
-                try:
-                    client.remove_container(str(container), v=True, force=True)
-                except docker.errors.APIError as e:
-                    logger.error(e)
-                except Exception as e:
-                    logger.error(f"There was a problem killing {containers_to_kill}: {e}")
-                    if Settings.LOG_LEVEL == Settings.LOG_LEVEL_DEBUG:
-                        logger.exception(e)
+            # Cleanup containers / pods
+            if Settings.CONTAINER_ENGINE_EXECUTABLE == Settings.KUBERNETES:
+                self._delete_submission_pods()
+            else:
+                containers_to_kill = [
+                    self.ingestion_program_container_name,
+                    self.scoring_program_container_name
+                ]
+                logger.debug("Trying to kill and remove container " + str(containers_to_kill))
+                for container in containers_to_kill:
+                    try:
+                        client.remove_container(str(container), v=True, force=True)
+                    except docker.errors.APIError as e:
+                        logger.error(e)
+                    except Exception as e:
+                        logger.error(f"There was a problem killing {containers_to_kill}: {e}")
+                        if Settings.LOG_LEVEL == Settings.LOG_LEVEL_DEBUG:
+                            logger.exception(e)
 
             # Send data to be written to ingestion/scoring std_err
             self._update_submission(execution_time_limit_exceeded_data)
@@ -1520,21 +1757,22 @@ class Run:
                 )
                 if return_code is None:
                     logger.warning("No return code from Process. Killing it")
-                    if kind == ProgramKind.INGESTION_PROGRAM:
-                        containers_to_kill = self.ingestion_program_container_name
-                    else:
-                        containers_to_kill = self.scoring_program_container_name
-                    try:
-                        client.kill(containers_to_kill)
-                        client.remove_container(containers_to_kill, v=True, force=True)
-                    except docker.errors.APIError as e:
-                        logger.error(e)
-                    except Exception as e:
-                        logger.error(
-                            f"There was a problem killing {containers_to_kill}: {e}"
-                        )
-                        if Settings.LOG_LEVEL == Settings.LOG_LEVEL_DEBUG:
-                            logger.exception(e)
+                    if Settings.CONTAINER_ENGINE_EXECUTABLE != Settings.KUBERNETES:
+                        if kind == ProgramKind.INGESTION_PROGRAM:
+                            containers_to_kill = self.ingestion_program_container_name
+                        else:
+                            containers_to_kill = self.scoring_program_container_name
+                        try:
+                            client.kill(containers_to_kill)
+                            client.remove_container(containers_to_kill, v=True, force=True)
+                        except docker.errors.APIError as e:
+                            logger.error(e)
+                        except Exception as e:
+                            logger.error(
+                                f"There was a problem killing {containers_to_kill}: {e}"
+                            )
+                            if Settings.LOG_LEVEL == Settings.LOG_LEVEL_DEBUG:
+                                logger.exception(e)
                 if kind == ProgramKind.SCORING_PROGRAM:
                     self.scoring_program_exit_code = return_code
                     self.scoring_program_elapsed_time = elapsed_time
@@ -1551,6 +1789,9 @@ class Run:
 
                 # set logs of this kind to None, since we handled them already
                 logger.info("Program finished")
+
+            if Settings.CONTAINER_ENGINE_EXECUTABLE == Settings.KUBERNETES:
+                self._delete_submission_pods()
         signal.alarm(0)
 
         if self.is_scoring:
@@ -1746,3 +1987,16 @@ class Run:
 
         logger.info(f"Destroying submission temp dir: {self.root_dir}")
         shutil.rmtree(self.root_dir)
+
+    def _delete_submission_pods(self):
+        import kubernetes
+        try:
+            core_v1 = kubernetes.client.CoreV1Api()
+            core_v1.delete_collection_namespaced_pod(
+                namespace=Settings.CURRENT_NAMESPACE,
+                label_selector=f"submission_id={self.submission_id}",
+                body=kubernetes.client.V1DeleteOptions(propagation_policy="Foreground"),
+            )
+            logger.info(f"Cleaned up Kubernetes pods for submission {self.submission_id}")
+        except Exception as e:
+            logger.warning(f"Could not clean up K8s pods for submission {self.submission_id}: {e}")
