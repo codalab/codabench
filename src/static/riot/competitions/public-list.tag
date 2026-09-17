@@ -12,6 +12,12 @@
     </div>
   </div>
 
+  <!-- External Competitions banner - hidden when the feature is disabled (URLS.EXTERNAL_COMPETITIONS_PUBLIC is empty) -->
+  <div class="external-competitions-banner" show="{ URLS.EXTERNAL_COMPETITIONS_PUBLIC }">
+    <span>Browse external competitions from other platforms like CodaLab and other Codabench instances</span>
+    <a class="external-btn" href="{ URLS.EXTERNAL_COMPETITIONS_PUBLIC }">External Competitions</a>
+  </div>
+
   <!-- Two-column layout -->
   <div class="content-container">
 
@@ -323,6 +329,9 @@
         background-color #2d3f4d
         color #fff
         text-decoration none
+
+    // .external-competitions-banner / .external-btn live in
+    // src/static/stylus/external_competitions.styl - shared with external_competitions/external_competition_list.tag
 
     .content-container
       display flex
