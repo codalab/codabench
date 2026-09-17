@@ -268,33 +268,8 @@
       margin-bottom 20px
       max-width 900px
 
-    .external-competitions-banner
-      display flex
-      align-items center
-      justify-content space-between
-      padding 10px 15px
-      margin-bottom 20px
-      background #e9f0f8
-      border 1px solid #c8daee
-      border-radius 4px
-      font-size 16px
-      color #2c5a82
-
-    .external-btn
-      font-size 14px
-      padding 0.5em 1em
-      background-color #4684c7
-      color #fff
-      text-decoration none
-      border-radius 4px
-      display inline-block
-      cursor pointer
-      transition background-color 0.2s ease
-
-      &:hover
-        background-color #396ca3
-        color #fff
-        text-decoration none
+    // .external-competitions-banner / .external-btn live in
+    // src/static/stylus/external_competitions.styl - shared with competitions/public-list.tag
 
     .content-container
       display flex
