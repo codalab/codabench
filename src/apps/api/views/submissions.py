@@ -49,7 +49,7 @@ class SubmissionViewSet(ModelViewSet):
                     hostname = request.data['status_details'].replace('ingestion_hostname-', '')
                     obj.ingestion_worker_hostname = hostname
                     obj.save()
-                # Check scoring hostname
+                # Check socring hostname
                 if request.data['status_details'].find('scoring_hostname') != -1:
                     hostname = request.data['status_details'].replace('scoring_hostname-', '')
                     obj.scoring_worker_hostname = hostname

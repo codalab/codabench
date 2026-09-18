@@ -320,9 +320,9 @@ REST_FRAMEWORK = {
         'api.throttling.UserBurstRateThrottle',
     ),
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '100000/min',
+        'anon': '100/day',
         'user': '1000/day',
-        'anon_burst': '60000/min',
+        'anon_burst': '60/min',
         'user_burst': '300/min',
         'competitions_public': '300/day',
     },
