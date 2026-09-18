@@ -315,7 +315,8 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_THROTTLE_CLASSES': (
         'rest_framework.throttling.AnonRateThrottle',
-        'rest_framework.throttling.UserRateThrottle',
+        'api.throttling.ServiceAccountRateThrottle',
+        'api.throttling.SubmissionOwnerRateThrottle',
         'api.throttling.AnonBurstRateThrottle',
         'api.throttling.UserBurstRateThrottle',
     ),
@@ -325,6 +326,8 @@ REST_FRAMEWORK = {
         'anon_burst': '60/min',
         'user_burst': '300/min',
         'competitions_public': '300/day',
+        'service_account': '20000/day',
+        'submission_owner': '5000/day',
     },
     'DATETIME_INPUT_FORMATS': (
         'iso-8601',
