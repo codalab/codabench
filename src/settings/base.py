@@ -304,6 +304,8 @@ REST_FRAMEWORK_EXTENSIONS = {
 # =============================================================================
 # DRF
 # =============================================================================
+
+# TODO: Throttling is set to 100000/sec for everything while we find a way to fix the compute workers being throttled
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.SessionAuthentication',
@@ -320,11 +322,11 @@ REST_FRAMEWORK = {
         'api.throttling.UserBurstRateThrottle',
     ),
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '100000/min',
-        'user': '1000/day',
-        'anon_burst': '100000/min',
-        'user_burst': '100000/min',
-        'competitions_public': '300/day',
+        'anon': '100000/sec',
+        'user': '100000/sec',
+        'anon_burst': '100000/sec',
+        'user_burst': '100000/sec',
+        'competitions_public': '100000/sec',
     },
     'DATETIME_INPUT_FORMATS': (
         'iso-8601',
