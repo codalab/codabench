@@ -9,6 +9,7 @@ from pytz import UTC
 
 from competitions.models import Competition, Phase, Submission, CompetitionParticipant, PhaseTaskInstance
 from datasets.models import Data
+from external_competitions.models import ExternalPlatform, ExternalCompetition
 from leaderboards.models import Leaderboard, Column, SubmissionScore
 from profiles.models import User, Organization
 from tasks.models import Task, Solution
@@ -227,3 +228,22 @@ class OrganizationFactory(DjangoModelFactory):
 
     name = factory.Faker('word')
     email = factory.Faker('email')
+
+
+class ExternalPlatformFactory(DjangoModelFactory):
+    class Meta:
+        model = ExternalPlatform
+
+    name = factory.Sequence(lambda n: f'External Platform {n}')
+    platform_type = ExternalPlatform.PLATFORM_TYPE_CODABENCH
+    competitions_fetch_url = factory.Faker('url')
+    competition_base_url = factory.Faker('url')
+
+
+class ExternalCompetitionFactory(DjangoModelFactory):
+    class Meta:
+        model = ExternalCompetition
+
+    platform = factory.SubFactory(ExternalPlatformFactory)
+    name = factory.Sequence(lambda n: f'External Competition {n}')
+    competition_url = factory.Sequence(lambda n: f'https://example.org/competitions/{n}/')

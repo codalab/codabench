@@ -15,17 +15,6 @@
         </label>
       </div>
     </div>
-    <div class="field">
-      <div class="ui checkbox">
-          <input type="checkbox" name="allow_robot_submissions" ref="allow_robot_submissions" onchange="{form_updated}">
-          <label>Allow robot submissions
-              <span data-tooltip="If left unchecked, robot users will have to be manually approved by the benchmark creator or collaborators. This can be changed later."
-                    data-inverted=""
-                    data-position="bottom center">
-              <i class="help icon circle"></i></span>
-          </label>
-      </div>
-    </div>
     <!--  Whitelist emails list  -->
     <div class="field">
       <label>Whitelist Emails</label>
@@ -547,7 +536,6 @@
 
     self.form_updated = () => {
       self.data.registration_auto_approve = $(self.refs.registration_auto_approve).prop('checked')
-      self.data.allow_robot_submissions   = $(self.refs.allow_robot_submissions).prop('checked')
       self.data.terms = (self.markdown_editor && self.markdown_editor.value()) || (self.refs.terms && self.refs.terms.value) || ''
 
       let whitelist_emails_content = self.markdown_editor_whitelist && typeof self.markdown_editor_whitelist.value === 'function'
@@ -592,7 +580,6 @@
       try {
         if (self.refs) {
           if (self.refs.registration_auto_approve) self.refs.registration_auto_approve.checked = competition.registration_auto_approve
-          if (self.refs.allow_robot_submissions)   self.refs.allow_robot_submissions.checked   = competition.allow_robot_submissions
         }
       } catch(e) { console.warn('setting checkboxes failed', e) }
 

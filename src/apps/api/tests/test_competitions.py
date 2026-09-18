@@ -84,6 +84,61 @@ class CompetitionTests(APITestCase):
         assert not Competition.objects.filter(pk=self.comp.pk).exists()
 
 
+class CompetitionListTests(APITestCase):
+    def setUp(self):
+        self.user = UserFactory(username='user', password='user')
+        self.client.force_authenticate(user=self.user)
+
+    def test_list_endpoint_is_paginated(self):
+        # Create 3 competitions organized by the user
+        for _ in range(3):
+            CompetitionFactory(created_by=self.user)
+
+        url = reverse('competition-list')
+        response = self.client.get(url, {'mine': 'true', 'type': 'any', 'page_size': 2})
+
+        assert response.status_code == 200
+        assert set(response.data.keys()) == {'next', 'previous', 'count', 'page_size', 'results'}
+        assert response.data['count'] == 3
+        assert len(response.data['results']) == 2
+        assert response.data['next'] is not None
+        assert response.data['previous'] is None
+
+    def test_participating_in_excludes_organized_competitions(self):
+        # Competition the user organizes: they're auto-added as an approved participant
+        # under the hood (see Competition.save()), but this should NOT show up as "participating"
+        organized = CompetitionFactory(created_by=self.user)
+
+        # Competition the user genuinely participates in
+        other_creator = UserFactory(username='other_creator', password='other')
+        participated = CompetitionFactory(created_by=other_creator, published=True)
+        CompetitionParticipantFactory(user=self.user, competition=participated, status='approved')
+
+        url = reverse('competition-list')
+        response = self.client.get(url, {'participating_in': 'true'})
+
+        assert response.status_code == 200
+        returned_ids = [c['id'] for c in response.data['results']]
+        assert participated.id in returned_ids
+        assert organized.id not in returned_ids
+
+    def test_mine_returns_organized_competitions(self):
+        # Sanity check that the "organizing" filter is unaffected by the participating_in fix
+        organized = CompetitionFactory(created_by=self.user)
+
+        other_creator = UserFactory(username='other_creator', password='other')
+        participated = CompetitionFactory(created_by=other_creator, published=True)
+        CompetitionParticipantFactory(user=self.user, competition=participated, status='approved')
+
+        url = reverse('competition-list')
+        response = self.client.get(url, {'mine': 'true', 'type': 'any'})
+
+        assert response.status_code == 200
+        returned_ids = [c['id'] for c in response.data['results']]
+        assert organized.id in returned_ids
+        assert participated.id not in returned_ids
+
+
 class PhaseMigrationTests(APITestCase):
     def setUp(self):
         self.creator = UserFactory(username='creator', password='creator')

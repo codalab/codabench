@@ -404,4 +404,13 @@ CODALAB.api = {
     request_delete_account: (data) => {
         return CODALAB.api.request('DELETE', `${URLS.API}delete_account/`, data)
     },
+    /*---------------------------------------------------------------------
+         External Competitions
+    ---------------------------------------------------------------------*/
+    get_external_competitions: function (query) {
+        return CODALAB.api.request('GET', URLS.API + "external_competitions/", query)
+    },
+    get_external_competition_platforms: function () {
+        return CODALAB.api.request('GET', URLS.API + "external_competitions/platforms/")
+    },
 }

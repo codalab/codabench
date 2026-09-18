@@ -265,7 +265,6 @@ class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerialize
             'make_programs_available',
             'make_input_data_available',
             'docker_image',
-            'allow_robot_submissions',
             'competition_type',
             'fact_sheet',
             'reward',
@@ -410,7 +409,6 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
             'make_programs_available',
             'make_input_data_available',
             'docker_image',
-            'allow_robot_submissions',
             'competition_type',
             'fact_sheet',
             'forum',
@@ -509,7 +507,6 @@ class CompetitionCreationTaskStatusSerializer(serializers.ModelSerializer):
 
 class CompetitionParticipantSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username')
-    is_bot = serializers.BooleanField(source='user.is_bot')
     email = serializers.CharField(source='user.email')
     is_deleted = serializers.BooleanField(source='user.is_deleted')
 
@@ -518,7 +515,6 @@ class CompetitionParticipantSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'username',
-            'is_bot',
             'email',
             'status',
             'is_deleted',

@@ -97,9 +97,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     rabbitmq_username = models.CharField(max_length=36, null=True, blank=True)
     rabbitmq_password = models.CharField(max_length=36, null=True, blank=True)
 
-    # Robot submissions
-    is_bot = models.BooleanField(default=False)
-
     # Required for social auth and such to create users
     objects = CodabenchUserManager()
 

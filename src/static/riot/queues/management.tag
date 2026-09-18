@@ -276,7 +276,14 @@
                     self.update_queues()
                 })
                 .fail(function (response) {
-                    toastr.error("An error occurred!")
+                    let errorMsg = 
+                        _.get(response, 'responseJSON.detail') || 
+                        _.get(response, 'responseJSON.error') || 
+                        _.get(response, 'responseJSON.message') || 
+                        _.get(response, 'statusText') || 
+                        "An unknown error occurred!"
+
+                    toastr.error(errorMsg)
                 })
         }
 

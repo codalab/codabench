@@ -7,7 +7,6 @@ nav = [
     {"Home" = "index.md"},
     {"Participants" = [
         {"Participating in a Competition" = "Participants/User_Participating-in-a-Competition.md"},
-        {"Robot Submissions" = "Developers_and_Administrators/Robot-submissions.md"},
         {"List of Current Benchmarks and Competitions" = "https://www.codabench.org/competitions/public/?page=1"}
     ]},
     {"Organizers" = [
@@ -54,6 +53,7 @@ nav = [
     {"Self-Hosters" = [
         {"How to Deploy a Server" = "Developers_and_Administrators/How-to-deploy-Codabench-on-your-server.md"},
         {"Administrative Procedures" = "Developers_and_Administrators/Administrator-procedures.md"},
+        {"External Competitions" = "Developers_and_Administrators/External-Competitions.md"},
         {"Backups - Automating Creation and Restoring" = "Developers_and_Administrators/Creating-and-Restoring-from-Backup.md"},
         {" Upgrading Codabench" = [
             "Developers_and_Administrators/Upgrading_Codabench/index.md",

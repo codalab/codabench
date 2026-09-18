@@ -243,6 +243,8 @@ You can update these by:
 1. Replacing the logos in `src/static/img/` folder
 2. Updating the code in `src/templates/pages/home.html` to point to the right websites of your organizations
 
+!!! tip
+    Now that your instance is up and running, consider registering it with `codabench.org` as an [External Competitions](External-Competitions.md) platform. Once registered, your instance's public competitions are also listed on `codabench.org`'s own External Competitions page, giving them more visibility. See the [registration instructions](External-Competitions.md#registering-your-platform) for details.
 
 ## Frequently asked questions (FAQs)
 
@@ -374,7 +376,7 @@ MINIO_PORT=9000
   # Minio local storage helper
   #-----------------------------------------------
   minio:
-    image: minio/minio:RELEASE.2020-10-03T02-19-42Z
+    image: quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z
     command: server /export --certs-dir /root/.minio/certs
     volumes:
       - ./var/minio:/export
@@ -388,7 +390,7 @@ MINIO_PORT=9000
       interval: 5s
       retries: 5
   createbuckets:
-    image: minio/mc
+    image: quay.io/minio/mc:RELEASE.2025-07-21T05-28-08Z
     depends_on:
       minio:
         condition: service_healthy

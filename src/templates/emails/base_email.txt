@@ -14,4 +14,4 @@ Unsubscribe or manage notification settings:
 http://{{ site.domain }}
 
 Privacy policy:
-https://github.com/codalab/codalab-competitions/wiki/Privacy
+https://github.com/codalab/codabench/blob/master/documentation/PRIVACY.md
