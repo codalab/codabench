@@ -2,13 +2,7 @@ from playwright.sync_api import expect, Page
 import toml
 import pytest
 import re
-import os
 from loguru import logger
-
-if os.environ.get("CI", "false").lower() == "true":
-    ci = True
-else:
-    ci = False
 
 data = toml.load("config/config.toml")
 
@@ -139,7 +133,6 @@ def test_v18_autowsl(page: Page):
 
 
 # Skip this test if in the CI
-@pytest.mark.skipif(ci, reason="Works locally but fails in the CI because of CELERY_TASK_ALWAYS_EAGER = True")
 def test_v2_multiTask(page: Page) -> None:
     page.goto("/")
     page.get_by_role("link", name=" Benchmarks/Competitions").click()
@@ -159,7 +152,7 @@ def test_v2_multiTask(page: Page) -> None:
     # Wait for Finished to show. If it does not, catch the error and reload the page in case the page didn't update automatically
     try:
         expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=35000)
-    except:
+    except Exception:
         page.reload()
         expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=2000)
     # Add to leaderboard and see if shows
@@ -167,7 +160,7 @@ def test_v2_multiTask(page: Page) -> None:
     submission_Id = text.split(None, 1)
     try:
         page.locator("td:nth-child(6) > span > .icon").first.click(timeout=300)
-    except:
+    except Exception:
         page.locator("td:nth-child(7) > span > .icon").first.click(timeout=300)
     page.locator("div").filter(has_text=re.compile(r"^Results$")).click()
     expect(
@@ -186,14 +179,13 @@ def test_v2_multiTask(page: Page) -> None:
             ).to_be_visible()
             found = True
             break
-        except:
+        except Exception:
             pass
     if not found:
         assert 0, "Submission not found in the leaderboard"
 
 
 # Skip this test if in the CI
-@pytest.mark.skipif(ci, reason="Works locally but fails in the CI because of CELERY_TASK_ALWAYS_EAGER = True")
 def test_v2_multiTaskFactSheet(page: Page) -> None:
     page.goto("/")
     page.get_by_role("link", name=" Benchmarks/Competitions").click()
