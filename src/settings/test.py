@@ -1,9 +1,10 @@
+import os
 from settings.base import *  # noqa: F401,F403
 # these noqa comments are for flake8 ignores
 
 DEBUG = True
 
-CELERY_TASK_ALWAYS_EAGER = True
+CELERY_TASK_ALWAYS_EAGER = os.environ.get("CELERY_TASK_ALWAYS_EAGER", "True").lower() == "true"
 INSTALLED_APPS += ('debug_toolbar',)
 MIDDLEWARE = ('debug_toolbar.middleware.DebugToolbarMiddleware',
               'querycount.middleware.QueryCountMiddleware',
