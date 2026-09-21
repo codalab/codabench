@@ -2,10 +2,10 @@
     <div class="ui center aligned grid">
         <div class="fourteen wide column">
             <h1 style="float: left; display: inline-block;">Benchmark Management</h1>
-            <a class="ui right floated green button" href="{ URLS.COMPETITION_UPLOAD }">
+            <a if="{ CODALAB.state.user.can_create_competition }" class="ui right floated green button" href="{ URLS.COMPETITION_UPLOAD }">
                 <i class="upload icon"></i> Upload
             </a>
-            <a class="ui right floated green button" href="{ URLS.COMPETITION_ADD }">
+            <a if="{ CODALAB.state.user.can_create_competition }" class="ui right floated green button" href="{ URLS.COMPETITION_ADD }">
                 <i class="add square icon"></i> Create
             </a>
         </div>

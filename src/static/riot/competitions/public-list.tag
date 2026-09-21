@@ -2,7 +2,7 @@
   <!-- Title -->
   <div class="page-header">
     <h1 class="page-title">Public Benchmarks and Competitions</h1>
-    <div class="action-buttons">
+    <div class="action-buttons" if="{ CODALAB.state.user.can_create_competition }">
       <a class="create-btn" href="{ URLS.COMPETITION_ADD }">
         <i class="bi bi-plus-square-fill me-1"></i> Create
       </a>

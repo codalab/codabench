@@ -1,8 +1,10 @@
 from django.urls import reverse
 from faker import Factory
+from django.test import override_settings
 from django.test import TestCase
 from rest_framework.test import APITestCase
 from datasets.models import Data
+from competitions.models import CompetitionCreationTaskStatus
 from factories import (
     UserFactory,
     DataFactory,
@@ -216,6 +218,50 @@ class DatasetDownloadTests(TestCase):
         response = self.client.get(reverse("datasets:download_by_pk", args=[99999]))
         # Should return 404 (access denied)
         self.assertEqual(response.status_code, 404)
+
+
+class DatasetUploadCompletedPermissionTests(APITestCase):
+    def setUp(self):
+        self.user = UserFactory()
+        self.client.force_login(self.user)
+        self.dataset = DataFactory(created_by=self.user, type=Data.COMPETITION_BUNDLE)
+        self.url = f"/api/datasets/completed/{self.dataset.key}/"
+
+    @override_settings(COMPETITION_CREATION_ENABLED_BY_DEFAULT=False)
+    @patch("competitions.tasks.unpack_competition.apply_async")
+    def test_upload_completed_denied_by_default(self, mock_apply_async):
+        response = self.client.put(self.url)
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.data["detail"], "You do not have permission to create competitions")
+        self.assertEqual(CompetitionCreationTaskStatus.objects.count(), 0)
+        mock_apply_async.assert_not_called()
+
+    @override_settings(COMPETITION_CREATION_ENABLED_BY_DEFAULT=False)
+    @patch("competitions.tasks.unpack_competition.apply_async")
+    def test_upload_completed_allowed_with_override(self, mock_apply_async):
+        self.user.can_create_competition = True
+        self.user.save(update_fields=["can_create_competition"])
+
+        response = self.client.put(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("status_id", response.data)
+        self.assertEqual(CompetitionCreationTaskStatus.objects.count(), 1)
+        mock_apply_async.assert_called_once()
+
+    @override_settings(COMPETITION_CREATION_ENABLED_BY_DEFAULT=True)
+    @patch("competitions.tasks.unpack_competition.apply_async")
+    def test_upload_completed_denied_with_override(self, mock_apply_async):
+        self.user.can_create_competition = False
+        self.user.save(update_fields=["can_create_competition"])
+
+        response = self.client.put(self.url)
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.data["detail"], "You do not have permission to create competitions")
+        self.assertEqual(CompetitionCreationTaskStatus.objects.count(), 0)
+        mock_apply_async.assert_not_called()
 
 
 class DatasetCreateTests(APITestCase):
