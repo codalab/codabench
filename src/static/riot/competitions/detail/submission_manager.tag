@@ -62,25 +62,37 @@
     </div>
     <table class="ui celled selectable sortable table" ref="submission_table">
         <thead>
-            <tr>
-                <th if="{opts.admin}">
-                    <div class="ui checkbox" onclick="{select_all_pressed.bind(this)}">
-                        <input type="checkbox" name="select_all">
-                        <label>All</label>
-                    </div>
-                </th>
-                <th class="sorted descending collapsing">ID #</th>
-                <th>File name</th>
-                <th if="{ opts.admin }">Owner</th>
-                <th if="{ opts.admin }">Phase</th>
-                <th>Date</th>
-                <th>Status</th>
-                <th>Score</th>
-                <th if="{ opts.competition.enable_detailed_results && opts.competition.show_detailed_results_in_submission_panel}">
-                    Detailed Results
-                </th>
-                <th class="center aligned">Actions</th>
-            </tr>
+        <tr if="{ submission.has_children && expanded_submissions[submission.id] }" class="child-submissions-row">
+            <td colspan="100%" style="padding: 0 0 0 40px; background:#fafafa;">
+                <table class="ui very compact celled table">
+                    <thead>
+                        <tr>
+                            <th>ID #</th>
+                            <th>File name</th>
+                            <th if="{ opts.admin }">Owner</th>
+                            <th if="{ opts.admin }">Phase</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr if="{ _.isEmpty(get_children(submission)) }">
+                            <td colspan="100%"><em>Aucune soumission enfant trouvée</em></td>
+                        </tr>
+                        <tr each="{ child in get_children(submission) }">
+                            <td>{ child.id }</td>
+                            <td>{ child.filename }</td>
+                            <td if="{ opts.admin }">{ child.owner }</td>
+                            <td if="{ opts.admin }">{ child.phase ? child.phase.name : '' }</td>
+                            <td>{ pretty_date(child.created_when) }</td>
+                            <td>{ child.status }</td>
+                            <td>{ get_score(child) }</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
         </thead>
         <tbody>
             <tr if="{ _.isEmpty(submissions) && !loading }" class="center aligned">
@@ -99,7 +111,18 @@
                         <label></label>
                     </div>
                 </td>
-                <td>{ submission.id }</td>
+                
+                <td>
+                    <span if="{ submission.has_children }" 
+                        data-tooltip="{ expanded_submissions[submission.id] ? 'Hide child submissions' : 'Show child submissions' }"
+                        data-inverted=""
+                        onclick="{ toggle_expand.bind(this, submission) }"
+                        style="cursor:pointer; margin-right:6px;">
+                        <i class="icon { expanded_submissions[submission.id] ? 'caret down' : 'caret right' }"></i>
+                    </span>
+                    { submission.id }
+                </td>
+
                 <td>{ submission.filename }</td>
                 <td if="{ opts.admin }">{ submission.owner }</td>
                 <td if="{ opts.admin }">{ submission.phase.name }</td>
@@ -277,6 +300,8 @@
         self.next = null
         self.previous = null
 
+        self.expanded_submissions = {}
+
         self.on("mount", function () {
             $(self.refs.search).dropdown()
             $(self.refs.status).dropdown()
@@ -300,6 +325,16 @@
 
         self.do_nothing = event => {
             event.stopPropagation()
+        }
+
+        self.get_children = function (submission) {
+            return _.filter(self.submissions, sub => sub.parent === submission.id)
+        }
+
+        self.toggle_expand = function (submission, event) {
+            event.stopPropagation()
+            self.expanded_submissions[submission.id] = !self.expanded_submissions[submission.id]
+            self.update()
         }
 
         self.filter_children = submissions => {
@@ -973,5 +1008,10 @@
 
         .soft-deleted
             background-color #ffdede !important
+
+        .child-submissions-row
+            td
+                padding-top 0
+                padding-bottom 0
     </style>
 </submission-manager>
