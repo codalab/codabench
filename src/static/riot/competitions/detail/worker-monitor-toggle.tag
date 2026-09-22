@@ -41,18 +41,21 @@
                 </div>
             </div>
 
+            <!-- Queue stats -->
             <div class="workers-section" if="{ queueStats.length }">
                 <div class="workers-section-header">
-                    <div class="workers-section-title">
-                        Queues stats
-                    </div>
+                    <div class="workers-section-title">Queues stats</div>
+                    <button type="button" class="workers-collapse-btn" onclick="{ toggleQueueStats }">
+                        <i class="{ queueStatsCollapsed ? 'chevron down' : 'chevron up' } icon"></i>
+                        { queueStatsCollapsed ? 'Expand' : 'Collapse' }
+                    </button>
                 </div>
-                <div class="workers-table-wrap">
+                <div if="{ !queueStatsCollapsed }" class="workers-table-wrap">
                     <table class="workers-table workers-table--stats">
                         <colgroup>
                             <col class="col-worker">
-                            <col class="col-jobs">
-                            <col class="col-jobs">
+                            <col class="col-stat">
+                            <col class="col-stat">
                         </colgroup>
                         <thead>
                             <tr>
@@ -62,7 +65,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr each="{ qs in queueStats }">
+                            <tr each="{ qs in sortedQueueStats() }">
                                 <td class="cell-worker">
                                     <span class="worker-hostname">{ qs.source_name }</span>
                                     <span class="queue-worker-count">
@@ -83,24 +86,24 @@
                         </tbody>
                     </table>
                 </div>
+                <div if="{ queueStatsCollapsed }" class="workers-collapsed">
+                    <i class="compress icon"></i>
+                    Queue stats collapsed.
+                </div>
             </div>
 
+            <!-- Public workers -->
             <div class="workers-section">
                 <div class="workers-section-header">
                     <div class="workers-section-title">
                         Public compute workers
                         <span class="workers-count">{ sortedWorkers().length }</span>
                     </div>
-
-                    <button
-                        type="button"
-                        class="workers-collapse-btn"
-                        onclick="{ togglePublicWorkers }">
+                    <button type="button" class="workers-collapse-btn" onclick="{ togglePublicWorkers }">
                         <i class="{ publicWorkersCollapsed ? 'chevron down' : 'chevron up' } icon"></i>
                         { publicWorkersCollapsed ? 'Expand' : 'Collapse' }
                     </button>
                 </div>
-
                 <div if="{ !publicWorkersCollapsed }" class="workers-table-wrap">
                     <table class="workers-table workers-table--public">
                         <colgroup>
@@ -110,7 +113,7 @@
                         </colgroup>
                         <thead>
                             <tr>
-                                <th>Worker</th>
+                                <th>Workers</th>
                                 <th>Status</th>
                                 <th>Last seen</th>
                             </tr>
@@ -128,9 +131,8 @@
                                 </td>
                                 <td class="cell-muted cell-nowrap">{ formatLastSeen(getLastSeenValue(worker)) }</td>
                             </tr>
-
                             <tr if="{ sortedWorkers().length === 0 }">
-                                <td colspan="4">
+                                <td colspan="3">
                                     <div class="workers-empty">
                                         <div class="header">No public compute workers detected</div>
                                         <div class="description">Waiting for the first websocket snapshot.</div>
@@ -140,20 +142,25 @@
                         </tbody>
                     </table>
                 </div>
-
                 <div if="{ publicWorkersCollapsed }" class="workers-collapsed">
                     <i class="compress icon"></i>
                     Public workers list collapsed.
                 </div>
             </div>
 
-            <div class="workers-section">
-                <div class="workers-section-title">
-                    Private compute workers
-                    <span class="workers-count">{ sortedPrivateWorkers().length }</span>
+            <!-- Private workers -->
+            <div class="workers-section" if="{ sortedPrivateWorkers().length || allWorkers }">
+                <div class="workers-section-header">
+                    <div class="workers-section-title">
+                        Private compute workers
+                        <span class="workers-count">{ sortedPrivateWorkers().length }</span>
+                    </div>
+                    <button type="button" class="workers-collapse-btn" onclick="{ togglePrivateWorkers }">
+                        <i class="{ privateWorkersCollapsed ? 'chevron down' : 'chevron up' } icon"></i>
+                        { privateWorkersCollapsed ? 'Expand' : 'Collapse' }
+                    </button>
                 </div>
-
-                <div class="workers-table-wrap">
+                <div if="{ !privateWorkersCollapsed }" class="workers-table-wrap">
                     <table class="workers-table workers-table--private">
                         <colgroup>
                             <col class="col-worker">
@@ -183,9 +190,8 @@
                                 </td>
                                 <td class="cell-muted cell-nowrap">{ formatLastSeen(getLastSeenValue(worker)) }</td>
                             </tr>
-
                             <tr if="{ sortedPrivateWorkers().length === 0 }">
-                                <td colspan="5">
+                                <td colspan="4">
                                     <div class="workers-empty">
                                         <div class="header">No private compute workers detected</div>
                                         <div class="description">Waiting for the first websocket snapshot.</div>
@@ -194,6 +200,10 @@
                             </tr>
                         </tbody>
                     </table>
+                </div>
+                <div if="{ privateWorkersCollapsed }" class="workers-collapsed">
+                    <i class="compress icon"></i>
+                    Private workers list collapsed.
                 </div>
             </div>
         </div>
@@ -425,6 +435,8 @@
         self.dragOffsetX = 0
         self.dragOffsetY = 0
         self.publicWorkersCollapsed = false
+        self.queueStatsCollapsed = false
+        self.privateWorkersCollapsed = false
         self.panelResizeObserver = null
 
         self.queueKey = function (worker) {
@@ -462,6 +474,18 @@
             self.update()
         }
 
+        self.toggleQueueStats = function (event) {
+            if (event) { event.preventDefault(); event.stopPropagation() }
+            self.queueStatsCollapsed = !self.queueStatsCollapsed
+            self.update()
+        }
+
+        self.togglePrivateWorkers = function (event) {
+            if (event) { event.preventDefault(); event.stopPropagation() }
+            self.privateWorkersCollapsed = !self.privateWorkersCollapsed
+            self.update()
+        }
+
         self.toggleWorkersPanel = function () {
             if (self.inlineMode) return
 
@@ -479,6 +503,14 @@
             }
 
             self.update()
+        }
+
+        self.sortedQueueStats = function () {
+            return (self.queueStats || []).slice().sort(function (a, b) {
+                if (a.source_name === 'default') return -1
+                if (b.source_name === 'default') return 1
+                return a.source_name.localeCompare(b.source_name)
+            })
         }
 
         self.close_workers_socket = function (allowReconnect) {
