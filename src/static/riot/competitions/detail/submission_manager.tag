@@ -82,6 +82,8 @@
                 <th class="center aligned">Actions</th>
             </tr>
         </thead>
+
+        <!-- tbody statique : états vide / chargement -->
         <tbody>
             <tr if="{ _.isEmpty(submissions) && !loading }" class="center aligned">
                 <td colspan="100%"><em>No submissions found! Please make a submission</em></td>
@@ -91,7 +93,11 @@
                     <em>Loading Submissions...</em>
                 </td>
             </tr>
-            <tr show="{!loading}" each="{ submission, index in filter_children(submissions) }"
+        </tbody>
+
+        <!-- tbody répété : le each est ICI, sur le tbody -->
+        <tbody each="{ submission, index in filter_children(submissions) }">
+            <tr show="{!loading}"
                 onclick="{ submission_clicked.bind(this, submission) }" class="submission_row {submission.is_soft_deleted ? 'soft-deleted' : ''}">
                 <td if="{ opts.admin }">
                     <div if="{ !submission.is_soft_deleted }" class="ui checkbox" onclick="{on_submission_checked.bind(this)}">
@@ -99,7 +105,22 @@
                         <label></label>
                     </div>
                 </td>
-                <td>{ submission.id }</td>
+                
+                <td>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <span style="display:inline-flex; width:16px; justify-content:center; flex-shrink:0;">
+                            <span if="{ submission.has_children }"
+                                data-tooltip="{ expanded_submissions[submission.id] ? 'Hide child submissions' : 'Show child submissions' }"
+                                data-inverted=""
+                                onclick="{ toggle_expand.bind(this, submission) }"
+                                style="cursor:pointer;">
+                                <i class="icon { expanded_submissions[submission.id] ? 'caret down' : 'caret right' }" style="margin:0;"></i>
+                            </span>
+                        </span>
+                        <span>{ submission.id }</span>
+                    </div>
+                </td>
+
                 <td>{ submission.filename }</td>
                 <td if="{ opts.admin }">{ submission.owner }</td>
                 <td if="{ opts.admin }">{ submission.phase.name }</td>
@@ -192,6 +213,95 @@
                     </span>
                 </td>
             </tr>
+
+            <tr if="{ submission.has_children && expanded_submissions[submission.id] }" class="child-submissions-row">
+                <td colspan="100%" style="padding: 0 0 0 40px; background:#fafafa;">
+                    <table class="ui very compact celled table">
+                        <thead>
+                            <tr>
+                                <th>ID #</th>
+                                <th>File name</th>
+                                <th if="{ opts.admin }">Owner</th>
+                                <th if="{ opts.admin }">Phase</th>
+                                <th if="{ has_multiple_tasks(submission) }">Task</th>
+                                <th>Group</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Score</th>
+                                <th class="center aligned">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr each="{ child in get_children(submission) }">
+                                <td>{ child.id }</td>
+                                <td>{ child.filename }</td>
+                                <td if="{ opts.admin }">{ child.owner }</td>
+                                <td if="{ opts.admin }">{ child.phase ? child.phase.name : '' }</td>
+                                <td if="{ has_multiple_tasks(submission) }">{ child.task ? child.task.name : '' }</td>
+                                <td>{ child.participant_group_name || '-' }</td>
+                                <td>{ pretty_date(child.created_when) }</td>
+                                <td>{ child.status }</td>
+                                <td>{ get_score(child) }</td>
+
+                                <td if="{ child.is_soft_deleted }">
+                                    <virtual if="{ opts.admin }">
+                                        <span data-tooltip="Delete Submission" data-inverted=""
+                                            onclick="{ delete_submission.bind(this, child) }">
+                                            <i class="icon red trash alternate"></i>
+                                        </span>
+                                    </virtual>
+                                </td>
+                                <td class="center aligned" if="{ !child.is_soft_deleted }">
+                                    <virtual if="{ opts.admin}">
+                                        <span
+                                            data-tooltip="{ child.status === 'Submitting' && !child.auto_run ? 'Run Submission' : 'Rerun Submission' }"
+                                            data-inverted=""
+                                            onclick="{ child.status === 'Submitting' && !child.auto_run ? run_submission.bind(this, child) : rerun_submission.bind(this, child) }">
+                                            <i
+                                                class="icon { child.status === 'Submitting' && !child.auto_run ? 'green play' : 'blue redo' }"></i>
+                                        </span>
+                                        <span data-tooltip="Delete Submission" data-inverted=""
+                                            onclick="{ delete_submission.bind(this, child) }">
+                                            <i class="icon red trash alternate"></i>
+                                        </span>
+                                    </virtual>
+                                    <span if="{!_.includes(['Finished', 'Cancelled', 'Unknown', 'Failed'], child.status)}"
+                                        data-tooltip="Cancel Submission" data-inverted=""
+                                        onclick="{ cancel_submission.bind(this, child) }">
+                                        <i class="grey minus circle icon"></i>
+                                    </span>
+                                    <span if="{!child.on_leaderboard && child.status === 'Finished'}"
+                                        data-tooltip="Add to Leaderboard" data-inverted=""
+                                        onclick="{ add_to_leaderboard.bind(this, child) }">
+                                        <i class="icon green columns"></i>
+                                    </span>
+                                    <span if="{ child.on_leaderboard }" data-tooltip="On the Leaderboard" data-inverted=""
+                                        onclick="{ remove_from_leaderboard.bind(this, child) }">
+                                        <i class="icon green check"></i>
+                                    </span>
+                                    <span
+                                        if="{!child.is_public && child.status === 'Finished' && child.can_make_submissions_public}"
+                                        data-tooltip="Make Public" data-inverted=""
+                                        onclick="{toggle_submission_is_public.bind(this, child)}">
+                                        <i class="icon share teal alternate"></i>
+                                    </span>
+                                    <span
+                                        if="{!!child.is_public && child.status === 'Finished' && child.can_make_submissions_public}"
+                                        data-tooltip="Make Private" data-inverted=""
+                                        onclick="{toggle_submission_is_public.bind(this, child)}">
+                                        <i class="icon share grey alternate"></i>
+                                    </span>
+                                    <span if="{ ((child.status === 'Finished' && !child.on_leaderboard) || child.status === 'Failed' || child.status === 'Cancelled')  && !opts.admin}"
+                                        data-tooltip="Delete Submission" data-inverted=""
+                                        onclick="{ soft_delete_submission.bind(this, child) }">
+                                        <i class="icon red trash"></i>
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
         </tbody>
     </table>
 
@@ -277,6 +387,8 @@
         self.next = null
         self.previous = null
 
+        self.expanded_submissions = {}
+
         self.on("mount", function () {
             $(self.refs.search).dropdown()
             $(self.refs.status).dropdown()
@@ -300,6 +412,22 @@
 
         self.do_nothing = event => {
             event.stopPropagation()
+        }
+
+        self.get_children = function (submission) {
+            return _.filter(self.submissions, sub => sub.parent === submission.id)
+        }
+
+        self.has_multiple_tasks = function (submission) {
+            let children = self.get_children(submission)
+            let task_ids = _.uniq(_.map(children, child => _.get(child, 'task.id')).filter(id => id != null))
+            return task_ids.length > 1
+        }
+
+        self.toggle_expand = function (submission, event) {
+            event.stopPropagation()
+            self.expanded_submissions[submission.id] = !self.expanded_submissions[submission.id]
+            self.update()
         }
 
         self.filter_children = submissions => {
@@ -973,5 +1101,10 @@
 
         .soft-deleted
             background-color #ffdede !important
+
+        .child-submissions-row
+            td
+                padding-top 0
+                padding-bottom 0
     </style>
 </submission-manager>
