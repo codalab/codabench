@@ -223,20 +223,21 @@
                                 <th>File name</th>
                                 <th if="{ opts.admin }">Owner</th>
                                 <th if="{ opts.admin }">Phase</th>
+                                <th>Task</th>
+                                <th>Group</th>
                                 <th>Date</th>
                                 <th>Status</th>
                                 <th>Score</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr if="{ _.isEmpty(get_children(submission)) }">
-                                <td colspan="100%"><em>Aucune soumission enfant trouvée</em></td>
-                            </tr>
                             <tr each="{ child in get_children(submission) }">
                                 <td>{ child.id }</td>
                                 <td>{ child.filename }</td>
                                 <td if="{ opts.admin }">{ child.owner }</td>
                                 <td if="{ opts.admin }">{ child.phase ? child.phase.name : '' }</td>
+                                <td if="{child.task}">{ child.task ? child.task.name : '' }</td>
+                                <td>{ child.participant_group_name || '-' }</td>
                                 <td>{ pretty_date(child.created_when) }</td>
                                 <td>{ child.status }</td>
                                 <td>{ get_score(child) }</td>

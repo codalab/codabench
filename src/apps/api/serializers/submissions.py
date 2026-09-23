@@ -11,6 +11,7 @@ from api.serializers import leaderboards
 from api.serializers.tasks import TaskSerializer
 from api.serializers.submission_leaderboard import SubmissionScoreSerializer
 from competitions.models import Submission, SubmissionDetails, CompetitionParticipant, Phase
+from competitions.views import _group_display_name
 from datasets.models import Data
 from utils.data import make_url_sassy
 
@@ -28,6 +29,7 @@ class SubmissionSerializer(serializers.ModelSerializer):
     created_when = serializers.DateTimeField()
     auto_run = serializers.SerializerMethodField(read_only=True)
     can_make_submissions_public = serializers.SerializerMethodField(read_only=True)
+    participant_group_name = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Submission
@@ -56,6 +58,7 @@ class SubmissionSerializer(serializers.ModelSerializer):
             'auto_run',
             'can_make_submissions_public',
             'is_soft_deleted',
+            'participant_group_name',
         )
         read_only_fields = (
             'pk',
@@ -79,6 +82,21 @@ class SubmissionSerializer(serializers.ModelSerializer):
     def get_can_make_submissions_public(self, instance):
         # returns this submission's competition can_participants_make_submissions_public Flag
         return instance.phase.competition.can_participants_make_submissions_public
+
+    def get_participant_group_name(self, instance):
+        if not instance.queue_id or not instance.phase_id:
+            return None
+
+        competition = instance.phase.competition
+
+        group = competition.participant_groups.filter(
+            queue_id=instance.queue_id
+        ).exclude(queue_id__isnull=True).first()
+
+        if group:
+            return _group_display_name(group.name, competition.pk)
+
+        return None
 
 
 class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSerializer):
