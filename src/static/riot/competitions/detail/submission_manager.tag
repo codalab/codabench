@@ -62,38 +62,28 @@
     </div>
     <table class="ui celled selectable sortable table" ref="submission_table">
         <thead>
-        <tr if="{ submission.has_children && expanded_submissions[submission.id] }" class="child-submissions-row">
-            <td colspan="100%" style="padding: 0 0 0 40px; background:#fafafa;">
-                <table class="ui very compact celled table">
-                    <thead>
-                        <tr>
-                            <th>ID #</th>
-                            <th>File name</th>
-                            <th if="{ opts.admin }">Owner</th>
-                            <th if="{ opts.admin }">Phase</th>
-                            <th>Date</th>
-                            <th>Status</th>
-                            <th>Score</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr if="{ _.isEmpty(get_children(submission)) }">
-                            <td colspan="100%"><em>Aucune soumission enfant trouvée</em></td>
-                        </tr>
-                        <tr each="{ child in get_children(submission) }">
-                            <td>{ child.id }</td>
-                            <td>{ child.filename }</td>
-                            <td if="{ opts.admin }">{ child.owner }</td>
-                            <td if="{ opts.admin }">{ child.phase ? child.phase.name : '' }</td>
-                            <td>{ pretty_date(child.created_when) }</td>
-                            <td>{ child.status }</td>
-                            <td>{ get_score(child) }</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </td>
-        </tr>
+            <tr>
+                <th if="{opts.admin}">
+                    <div class="ui checkbox" onclick="{select_all_pressed.bind(this)}">
+                        <input type="checkbox" name="select_all">
+                        <label>All</label>
+                    </div>
+                </th>
+                <th class="sorted descending collapsing">ID #</th>
+                <th>File name</th>
+                <th if="{ opts.admin }">Owner</th>
+                <th if="{ opts.admin }">Phase</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Score</th>
+                <th if="{ opts.competition.enable_detailed_results && opts.competition.show_detailed_results_in_submission_panel}">
+                    Detailed Results
+                </th>
+                <th class="center aligned">Actions</th>
+            </tr>
         </thead>
+
+        <!-- tbody statique : états vide / chargement -->
         <tbody>
             <tr if="{ _.isEmpty(submissions) && !loading }" class="center aligned">
                 <td colspan="100%"><em>No submissions found! Please make a submission</em></td>
@@ -103,7 +93,11 @@
                     <em>Loading Submissions...</em>
                 </td>
             </tr>
-            <tr show="{!loading}" each="{ submission, index in filter_children(submissions) }"
+        </tbody>
+
+        <!-- tbody répété : le each est ICI, sur le tbody -->
+        <tbody each="{ submission, index in filter_children(submissions) }">
+            <tr show="{!loading}"
                 onclick="{ submission_clicked.bind(this, submission) }" class="submission_row {submission.is_soft_deleted ? 'soft-deleted' : ''}">
                 <td if="{ opts.admin }">
                     <div if="{ !submission.is_soft_deleted }" class="ui checkbox" onclick="{on_submission_checked.bind(this)}">
@@ -113,14 +107,18 @@
                 </td>
                 
                 <td>
-                    <span if="{ submission.has_children }" 
-                        data-tooltip="{ expanded_submissions[submission.id] ? 'Hide child submissions' : 'Show child submissions' }"
-                        data-inverted=""
-                        onclick="{ toggle_expand.bind(this, submission) }"
-                        style="cursor:pointer; margin-right:6px;">
-                        <i class="icon { expanded_submissions[submission.id] ? 'caret down' : 'caret right' }"></i>
-                    </span>
-                    { submission.id }
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <span style="display:inline-flex; width:16px; justify-content:center; flex-shrink:0;">
+                            <span if="{ submission.has_children }"
+                                data-tooltip="{ expanded_submissions[submission.id] ? 'Hide child submissions' : 'Show child submissions' }"
+                                data-inverted=""
+                                onclick="{ toggle_expand.bind(this, submission) }"
+                                style="cursor:pointer;">
+                                <i class="icon { expanded_submissions[submission.id] ? 'caret down' : 'caret right' }" style="margin:0;"></i>
+                            </span>
+                        </span>
+                        <span>{ submission.id }</span>
+                    </div>
                 </td>
 
                 <td>{ submission.filename }</td>
@@ -213,6 +211,38 @@
                         onclick="{ soft_delete_submission.bind(this, submission) }">
                         <i class="icon red trash"></i>
                     </span>
+                </td>
+            </tr>
+
+            <tr if="{ submission.has_children && expanded_submissions[submission.id] }" class="child-submissions-row">
+                <td colspan="100%" style="padding: 0 0 0 40px; background:#fafafa;">
+                    <table class="ui very compact celled table">
+                        <thead>
+                            <tr>
+                                <th>ID #</th>
+                                <th>File name</th>
+                                <th if="{ opts.admin }">Owner</th>
+                                <th if="{ opts.admin }">Phase</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Score</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr if="{ _.isEmpty(get_children(submission)) }">
+                                <td colspan="100%"><em>Aucune soumission enfant trouvée</em></td>
+                            </tr>
+                            <tr each="{ child in get_children(submission) }">
+                                <td>{ child.id }</td>
+                                <td>{ child.filename }</td>
+                                <td if="{ opts.admin }">{ child.owner }</td>
+                                <td if="{ opts.admin }">{ child.phase ? child.phase.name : '' }</td>
+                                <td>{ pretty_date(child.created_when) }</td>
+                                <td>{ child.status }</td>
+                                <td>{ get_score(child) }</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </td>
             </tr>
         </tbody>
