@@ -134,7 +134,15 @@ CODALAB.api = {
             { pks: pks }   // body is JSON by convention
         );
     },
-        
+    migrate_submission: function (submission_id, destination_phase_id) {
+        return $.ajax({
+            url: `/api/submissions/${submission_id}/migrate_to_phase/`,
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ destination_phase_id: destination_phase_id }),
+        })
+    },
+
     /*---------------------------------------------------------------------
          Leaderboards
     ---------------------------------------------------------------------*/

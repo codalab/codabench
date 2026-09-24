@@ -677,6 +677,14 @@ class Submission(models.Model):
         sub.start(tasks=tasks)
         return sub
 
+    def get_tasks_to_migrate(self):
+        if self.has_children:
+            finished_children = self.children.filter(status=Submission.FINISHED)
+            task_pks = finished_children.exclude(task__isnull=True).values_list('task', flat=True).distinct()
+            return list(Task.objects.filter(pk__in=task_pks))
+        else:
+            return [self.task] if self.task else []
+
     def cancel(self, status=CANCELLED):
         if self.status not in [Submission.CANCELLED, Submission.FAILED, Submission.FINISHED]:
             if self.has_children:
