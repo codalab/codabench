@@ -224,6 +224,25 @@
                         onclick="{ soft_delete_submission.bind(this, submission) }">
                         <i class="icon red trash"></i>
                     </span>
+                    <!-- Atomic Migration -->
+                    <span
+                        if="{ get_future_phases(submission).length > 0 }"
+                        data-tooltip="Migrate to another phase"
+                        data-inverted=""
+                        onclick="{ toggle_migrate_menu.bind(this, submission) }">
+                        <i class="icon blue arrow right"></i>
+                        <div
+                            if="{ migrate_menu_open === submission.id }"
+                            class="ui vertical menu"
+                            style="position:absolute; z-index:1000; right:0; top:20px; min-width:180px;">
+                            <div
+                                each="{ phase in get_future_phases(submission) }"
+                                class="item"
+                                onclick="{ migrate_submission.bind(this, submission, phase) }">
+                                Migrate to { phase.name }
+                            </div>
+                        </div>
+                    </span>
                 </td>
             </tr>
 
@@ -489,6 +508,51 @@
 
         self.is_hitl_failure = function (submission) {
             return !!(submission.status_details && submission.status_details.indexOf('Human in the Loop') !== -1)
+        }
+
+        self.migrate_menu_open = null
+
+        self.toggle_migrate_menu = function (submission) {
+            self.migrate_menu_open =
+                self.migrate_menu_open === submission.id
+                    ? null
+                    : submission.id
+
+            self.update()
+        }
+
+        self.migrate_submission = function (submission, phase, event) {
+            if (event) event.stopPropagation()
+            self.migrate_menu_open = null
+            if (confirm(`Migrer la soumission #${submission.id} vers la phase "${phase.name}" ?`)) {
+                CODALAB.api.migrate_submission(submission.id, phase.id)
+                    .done(function (response) {
+                        toastr.success('Submission migrated successfully')
+                        self.update_submissions()
+                    })
+                    .fail(function (response) {
+                        let msg = 'Error migrating submission'
+                        if (response.responseJSON && response.responseJSON.detail) {
+                            msg = response.responseJSON.detail
+                        }
+                        toastr.error(msg)
+                    })
+            }
+        }
+
+        self.get_future_phases = function (submission) {
+            if (!submission || !submission.phase) return []
+
+            const phase = _.isObject(submission.phase)
+                ? submission.phase
+                : _.find(opts.competition.phases, p => p.id === submission.phase)
+
+            if (!phase) return []
+
+            return _.filter(
+                opts.competition.phases,
+                p => p.index > phase.index
+            )
         }
 
         self.update_submissions = function (filters) {
