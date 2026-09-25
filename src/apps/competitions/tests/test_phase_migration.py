@@ -131,6 +131,14 @@ class PhaseToPhaseMigrationTests(TestCase):
         mock_sub_start = self.mock_migration()
         assert mock_sub_start.call_count == 1
 
+    def test_fact_sheet_answers_are_migrated(self):
+        answers = {'method_name': 'my method', 'uses_external_data': 'false'}
+        self.phase1.submissions.update(fact_sheet_answers=answers)
+        self.mock_migration()
+        assert self.phase2.submissions.exists()
+        for submission in self.phase2.submissions.all():
+            assert submission.fact_sheet_answers == answers
+
 
 class PhaseStatusTests(TestCase):
     def setUp(self):

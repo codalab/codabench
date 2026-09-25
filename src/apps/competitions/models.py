@@ -166,6 +166,7 @@ class Competition(models.Model):
                 owner=submission.owner,
                 data=submission.data,
                 organization=submission.organization,
+                fact_sheet_answers=submission.fact_sheet_answers,
             )
             new_submission.save(ignore_submission_limit=True)
             new_submission.start()
