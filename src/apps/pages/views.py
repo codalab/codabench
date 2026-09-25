@@ -20,7 +20,6 @@ class HomeView(TemplateView):
 
         news_posts = NewsPost.objects.all().order_by('-id')
         context['news_posts'] = news_posts
-        context['CONTACT_EMAIL'] = settings.CONTACT_EMAIL
 
         return context
 
