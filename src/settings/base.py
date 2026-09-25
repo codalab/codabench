@@ -258,7 +258,7 @@ CELERY_BEAT_SCHEDULE = {
     },
     'submission_status_cleanup': {
         'task': 'competitions.tasks.submission_status_cleanup',
-        'schedule': timedelta(seconds=3600)
+        'schedule': timedelta(seconds=7200)
     },
     'create_storage_analytics_snapshot': {
         'task': 'analytics.tasks.create_storage_analytics_snapshot',
@@ -598,3 +598,6 @@ if EXTERNAL_COMPETITIONS_ENABLED:
         'task': 'external_competitions.tasks.fetch_external_competitions',
         'schedule': timedelta(days=1),
     }
+
+# Data Upload limit (used in django admin when selecing multiple items, or when adding multiple participants in the Participant Routing feature)
+DATA_UPLOAD_MAX_NUMBER_FIELDS = int(os.environ.get('DJANGO_DATA_UPLOAD_MAX_NUMBER_FIELDS', 2000))
