@@ -5,7 +5,6 @@ from django.db.models import Q
 from competitions.models import Submission
 from announcements.models import Announcement, NewsPost
 
-from django.conf import settings
 from utils.data import pretty_bytes
 
 
