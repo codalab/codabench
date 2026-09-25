@@ -58,4 +58,5 @@ def common_settings(request):
         'VERSION_INFO': version_info,
         'HOME_PAGE_COUNTERS_INFO': home_page_counters_info,
         'DOMAIN_NAME': settings.DOMAIN_NAME,
+        'CONTACT_EMAIL': settings.CONTACT_EMAIL,
     }
