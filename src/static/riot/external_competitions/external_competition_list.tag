@@ -53,7 +53,6 @@
       </div>
 
       <div each="{competition in competitions.results}" class="tile-wrapper">
-        <div class="platform-badge" show="{ competition.platform_name }">{competition.platform_name}</div>
         <div class="ui square tiny bordered image img-wrapper">
           <img src="{competition.image_url}" loading="lazy">
         </div>
@@ -246,7 +245,7 @@
     :scope
       display block
       margin-bottom 5px
-      background #f4f5f7
+      background #e3ecf7
       padding 20px
       border-radius 6px
 
@@ -263,13 +262,16 @@
       color #2c5a82
 
     .external-blurb
-      font-size 13px
+      font-size 15px
       color #5c5c5c
       margin-bottom 20px
       max-width 900px
 
     // .external-competitions-banner / .external-btn live in
     // src/static/stylus/external_competitions.styl - shared with competitions/public-list.tag
+    // Only the background is overridden here, so the banner stays readable on the blue page
+    .external-competitions-banner
+      background #fafcff
 
     .content-container
       display flex
@@ -278,6 +280,7 @@
     .filters-panel
       width 250px
       flex-shrink 0
+      align-self flex-start
       border 1px solid #ddd
       padding 10px
       margin-right 10px
@@ -333,7 +336,6 @@
       width 100%
 
     .tile-wrapper
-      position relative
       border solid 1px gainsboro
       display flex
       background-color #fff
@@ -344,23 +346,10 @@
       border-radius 5px
 
     .tile-wrapper:hover
-      box-shadow 0 3px 4px -1px #cac9c9ff
+      box-shadow 0 3px 8px -1px rgba(44, 90, 130, 0.3)
       transition all 75ms ease-in-out
-      background-color #e9f0f8
-      border solid 1px #c8daee
-
-    .platform-badge
-      position absolute
-      top 8px
-      right 8px
-      background #4684c7
-      color #fff
-      font-size 11px
-      font-weight 600
-      padding 3px 8px
-      border-radius 10px
-      text-transform uppercase
-      letter-spacing 0.03em
+      background-color #f7faff
+      border solid 1px #4684c7
 
     .img-wrapper
       padding 5px
