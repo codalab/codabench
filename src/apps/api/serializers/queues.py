@@ -64,6 +64,14 @@ class QueueCreationSerializer(QueueOwnerMixin, DefaultUserCreateMixin, serialize
         return super().validate(attrs)
 
 
+class QueuePublicSerializer(serializers.ModelSerializer):
+    """Minimal queue info safe to expose on public endpoints (no broker credentials)."""
+    class Meta:
+        model = Queue
+        fields = ('id', 'name')
+        read_only_fields = fields
+
+
 class QueueSerializer(QueueOwnerMixin, serializers.ModelSerializer):
     is_owner = serializers.SerializerMethodField()
     owner = serializers.CharField(source='owner.username', read_only=True)

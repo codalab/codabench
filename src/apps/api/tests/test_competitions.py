@@ -1,6 +1,7 @@
 import json
 import random
 import csv
+import uuid
 from zipfile import ZipFile
 from io import StringIO, BytesIO
 from unittest import mock
@@ -10,7 +11,7 @@ from rest_framework.test import APITestCase
 from api.serializers.competitions import CompetitionSerializer
 from competitions.models import CompetitionParticipant, Submission, Competition
 from factories import UserFactory, CompetitionFactory, CompetitionParticipantFactory, PhaseFactory, LeaderboardFactory, \
-    ColumnFactory, SubmissionFactory, SubmissionScoreFactory, TaskFactory
+    ColumnFactory, SubmissionFactory, SubmissionScoreFactory, TaskFactory, QueueFactory
 
 
 class CompetitionTests(APITestCase):
@@ -82,6 +83,65 @@ class CompetitionTests(APITestCase):
         resp = self.client.delete(url)
         assert resp.status_code == 204
         assert not Competition.objects.filter(pk=self.comp.pk).exists()
+
+
+class CompetitionDetailQueueTests(APITestCase):
+    def setUp(self):
+        self.creator = UserFactory(username='creator', password='creator')
+        self.queue_owner = UserFactory(
+            username='queue_owner',
+            password='queue_owner',
+            rabbitmq_username='queue-owner-rabbit-user',
+            rabbitmq_password='queue-owner-rabbit-password',
+        )
+        # Mock RabbitMQ so saving the queue doesn't create a real vhost; return a fake vhost UUID instead
+        with mock.patch('queues.models.rabbit.create_queue') as rabbit_create_queue:
+            rabbit_create_queue.return_value = uuid.uuid4()
+            self.queue = QueueFactory(owner=self.queue_owner, is_public=True)
+        self.comp = CompetitionFactory(created_by=self.creator, queue=self.queue, published=True)
+        self.url = reverse('competition-detail', kwargs={"pk": self.comp.pk})
+        self.queue_owner_comp = CompetitionFactory(created_by=self.queue_owner, queue=self.queue, published=True)
+        self.queue_owner_comp_url = reverse('competition-detail', kwargs={"pk": self.queue_owner_comp.pk})
+
+    def _assert_queue_has_no_sensitive_details(self, resp):
+        """
+        Check that the response succeeded and its queue field contains only the queue id and name.
+        Expects the queue owner's RabbitMQ username/password and the queue vhost
+        to be absent from the whole response body.
+        """
+        assert resp.status_code == 200
+        assert resp.data['queue'] == {'id': self.queue.id, 'name': self.queue.name}
+        content = resp.content.decode()
+        assert self.queue_owner.rabbitmq_username not in content
+        assert self.queue_owner.rabbitmq_password not in content
+        assert str(self.queue.vhost) not in content
+
+    def test_anonymous_user_does_not_see_queue_broker_details(self):
+        """
+        A logged-out user requests the competition detail API.
+        Expects a 200 response where the queue has only id and name, with no broker credentials or vhost.
+        """
+        resp = self.client.get(self.url)
+        self._assert_queue_has_no_sensitive_details(resp)
+
+    def test_competition_creator_not_owning_queue_does_not_see_queue_broker_details(self):
+        """
+        The competition creator (who does not own the queue) requests the competition detail API.
+        Expects a 200 response where the queue has only id and name, with no broker credentials or vhost.
+        """
+        self.client.login(username='creator', password='creator')
+        resp = self.client.get(self.url)
+        self._assert_queue_has_no_sensitive_details(resp)
+
+    def test_competition_creator_who_owns_queue_does_not_see_queue_broker_details(self):
+        """
+        The queue owner requests the detail API of their own competition that uses their queue.
+        Expects a 200 response where the queue has only id and name, with no broker credentials or vhost.
+        Queue owners can get the broker URL from the queues API instead.
+        """
+        self.client.login(username='queue_owner', password='queue_owner')
+        resp = self.client.get(self.queue_owner_comp_url)
+        self._assert_queue_has_no_sensitive_details(resp)
 
 
 class CompetitionListTests(APITestCase):
