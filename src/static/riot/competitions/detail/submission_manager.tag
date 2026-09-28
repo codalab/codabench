@@ -1374,5 +1374,55 @@
             td
                 padding-top 0
                 padding-bottom 0
+        .migrate-wrapper
+            position relative
+            display inline-block
+
+        .migrate-menu
+            position absolute
+            z-index 1000
+            right 0
+            top 26px
+            min-width 240px
+            background white
+            border 1px solid #ddd
+            border-radius 4px
+            box-shadow 0 4px 12px rgba(0, 0, 0, 0.15)
+            text-align left
+
+        .migrate-header
+            padding 8px 12px
+            font-weight bold
+            font-size 0.9em
+            color #555
+            background #f7f7f7
+            border-bottom 1px solid #eee
+            border-radius 4px 4px 0 0
+
+        .migrate-item
+            padding 8px 12px
+            cursor pointer
+            border-bottom 1px solid #f0f0f0
+            &:hover
+                background #eef6ff
+            &.disabled
+                opacity 0.5
+                pointer-events none
+
+        .migrate-item-title
+            display flex
+            justify-content space-between
+            align-items center
+            font-weight 600
+
+        .migrate-item-meta
+            color #8c8c8c
+
+        .migrate-footer
+            padding 6px 12px
+            font-size 0.8em
+            color #8c8c8c
+            background #fafafa
+            border-radius 0 0 4px 4px
     </style>
 </submission-manager>
