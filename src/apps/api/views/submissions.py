@@ -18,7 +18,7 @@ from django.core.files.base import ContentFile
 from profiles.models import Organization, Membership
 from api.pagination import DynamicChoicePagination
 from tasks.models import Task
-from api.serializers.submissions import SubmissionCreationSerializer, SubmissionSerializer, SubmissionFilesSerializer, SubmissionDetailSerializer
+from api.serializers.submissions import SubmissionCreationSerializer, SubmissionSerializer, SubmissionFilesSerializer
 from competitions.models import Submission, SubmissionDetails, Phase, CompetitionParticipant
 from leaderboards.strategies import put_on_leaderboard_by_submission_rule
 from leaderboards.models import SubmissionScore, Column, Leaderboard
@@ -388,9 +388,27 @@ class SubmissionViewSet(ModelViewSet):
             submission.re_run()
         return Response({})
 
-    # TODO: The 3 functions download many should be bundled inside a genereic with the function like "get_prediction_result" as a parameter instead of the same code 3 times
     @action(detail=False, methods=('POST',))
-    def download_many(self, request):
+    def download_many_submissions(self, request):
+        return self._download_many_files(request=request, file_type='submission')
+
+    @action(detail=False, methods=('POST',))
+    def download_many_prediction_results(self, request):
+        return self._download_many_files(request=request, file_type='prediction_result')
+
+    @action(detail=False, methods=('POST',))
+    def download_many_scoring_results(self, request):
+        return self._download_many_files(request=request, file_type='scoring_result')
+
+    def _download_many_files(self, request, file_type):
+        """
+        Returns a list of {name, url} for one file of each requested submission.
+        `file_type` is one of 'submission', 'prediction_result' or 'scoring_result'.
+        """
+        # Only allow authenticated users to proceed
+        if not request.user.is_authenticated:
+            raise PermissionDenied("You must be logged in to download submissions")
+
         pks = request.data.get('pks')
         if not pks:
             return Response({"error": "`pks` field is required"}, status=400)
@@ -402,55 +420,55 @@ class SubmissionViewSet(ModelViewSet):
         # Get submissions
         submissions = Submission.objects.filter(pk__in=pks).select_related(
             "owner",
-            "phase",
+            "phase__competition",
             "data"
         )
 
         if len(list(submissions)) != len(pks):
             return Response({"error": "One or more submission IDs are invalid"}, status=404)
 
-        # Nicolas Homberg : should create a function for this ?
-        # Check permissions
-        if not request.user.is_authenticated:
-            raise PermissionDenied("You must be logged in to download submissions")
-        # Allow admins
-        if request.user.is_superuser or request.user.is_staff:
-            allowed = True
-        else:
-            # Build one Q object for "owner OR organizer"
-            organiser_q = (
+        # Admins can download any submission. Everyone else can only download
+        # submissions they own or that belong to a competition they organize.
+        is_admin = request.user.is_superuser or request.user.is_staff
+        if not is_admin:
+            can_download = (
+                Q(owner=request.user) |
                 Q(phase__competition__created_by=request.user) |
                 Q(phase__competition__collaborators=request.user)
             )
-            # Submissions that violate the rule
-            disallowed = submissions.exclude(Q(owner=request.user) | organiser_q)
-            allowed = not disallowed.exists()
-        if not allowed:
-            raise PermissionDenied(
-                "You do not have permission to download one or more of the requested submissions"
-            )
+            # Deny if any requested submission is one this user is not allowed to download
+            if submissions.exclude(can_download).exists():
+                raise PermissionDenied(
+                    "You do not have permission to download one or more of the requested submissions"
+                )
 
+        serializer = SubmissionFilesSerializer(context=self.get_serializer_context())
         files = []
-
         for sub in submissions:
-            file_path = sub.data.data_file.name.split('/')[-1]
-            short_name = f"{sub.id}_{sub.owner}_PhaseId{sub.phase.id}_{sub.data.created_when.strftime('%Y-%m-%d:%M-%S')}_{file_path}"
-            # url = sub.data.data_file.url
-            url = SubmissionDetailSerializer(sub.data, context=self.get_serializer_context()).data['data_file']
-            # url = SubmissionFilesSerializer(sub, context=self.get_serializer_context()).data['data_file']
-            files.append({"name": short_name, "url": url})
-
-        return Response(files)
-
-        for sub in submissions:
-            if sub.status not in [Submission.FINISHED]:  # Submission.FAILED, Submission.CANCELLED
+            # Results are only downloaded for finished submissions
+            if file_type != 'submission' and sub.status != Submission.FINISHED:
                 continue
-            file_path = sub.data.data_file.name.split('/')[-1]
-            complete_name = f"res_{sub.id}_{sub.owner}_PhaseId{sub.phase.id}_{sub.data.created_when.strftime('%Y-%m-%d:%M-%S')}_{file_path}"
-            result_url = SubmissionDetailSerializer(sub.data, context=self.get_serializer_context()).get_scoring_result(sub)
-            # detailed results is already in the results zip file but For very large detailed results it could be helpfull to remove it
-            # detailed_result_url = serializer.get_scoring_result(sub)
-            files.append({"name": complete_name, "url": result_url})
+
+            if file_type == 'submission':
+                file = sub.data.data_file
+                url = serializer.get_data_file(instance=sub)
+                prefix = 'sub_'
+            elif file_type == 'prediction_result':
+                file = sub.prediction_result
+                url = serializer.get_prediction_result(instance=sub)
+                prefix = 'pred_res_'
+            else:
+                file = sub.scoring_result
+                url = serializer.get_scoring_result(instance=sub)
+                prefix = 'sco_res_'
+
+            # url is None when the file doesn't exist, or when the serializer hides it
+            # from this user (phase hide_output / hide_prediction_output / hide_score_output)
+            if not url:
+                continue
+            file_path = file.name.split('/')[-1]
+            download_name = f"{prefix}{sub.id}_{sub.owner}_PhaseId{sub.phase.id}_{sub.data.created_when.strftime('%Y-%m-%d:%M-%S')}_{file_path}"
+            files.append({"name": download_name, "url": url})
 
         return Response(files)
 
