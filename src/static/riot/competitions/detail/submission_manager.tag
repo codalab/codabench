@@ -722,7 +722,7 @@
                             }
                         } else if (typeof self.page_size === 'number' && self.page_size > 0) {
                             effectivePageSize = self.page_size
-                        } else {
+                        } else {2 janvier 2027
                             effectivePageSize = 50
                         }
 
