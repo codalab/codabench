@@ -94,6 +94,37 @@
                 </th>
                 <th class="center aligned">Actions</th>
             </tr>
+        <tr if="{ submission.has_children && expanded_submissions[submission.id] }" class="child-submissions-row">
+            <td colspan="100%" style="padding: 0 0 0 40px; background:#fafafa;">
+                <table class="ui very compact celled table">
+                    <thead>
+                        <tr>
+                            <th>ID #</th>
+                            <th>File name</th>
+                            <th if="{ opts.admin }">Owner</th>
+                            <th if="{ opts.admin }">Phase</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr if="{ _.isEmpty(get_children(submission)) }">
+                            <td colspan="100%"><em>Aucune soumission enfant trouvée</em></td>
+                        </tr>
+                        <tr each="{ child in get_children(submission) }">
+                            <td>{ child.id }</td>
+                            <td>{ child.filename }</td>
+                            <td if="{ opts.admin }">{ child.owner }</td>
+                            <td if="{ opts.admin }">{ child.phase ? child.phase.name : '' }</td>
+                            <td>{ pretty_date(child.created_when) }</td>
+                            <td>{ child.status }</td>
+                            <td>{ get_score(child) }</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
         </thead>
 
         <tbody>
@@ -130,6 +161,14 @@
                         </span>
                         <span>{ submission.id }</span>
                     </div>
+                    <span if="{ submission.has_children }" 
+                        data-tooltip="{ expanded_submissions[submission.id] ? 'Hide child submissions' : 'Show child submissions' }"
+                        data-inverted=""
+                        onclick="{ toggle_expand.bind(this, submission) }"
+                        style="cursor:pointer; margin-right:6px;">
+                        <i class="icon { expanded_submissions[submission.id] ? 'caret down' : 'caret right' }"></i>
+                    </span>
+                    { submission.id }
                 </td>
 
                 <td>{ submission.filename }</td>
@@ -1318,5 +1357,9 @@
             color #8c8c8c
             background #fafafa
             border-radius 0 0 4px 4px
+        .child-submissions-row
+            td
+                padding-top 0
+                padding-bottom 0
     </style>
 </submission-manager>
