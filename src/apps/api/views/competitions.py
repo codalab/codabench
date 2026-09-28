@@ -187,7 +187,7 @@ class CompetitionViewSet(ModelViewSet):
         if search_query:
             qs = qs.filter(Q(title__icontains=search_query) | Q(description__icontains=search_query))
 
-        qs = qs.order_by('created_when')
+        qs = qs.order_by('-created_when')
         return qs
 
     def get_permissions(self):
