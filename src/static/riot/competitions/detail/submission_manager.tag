@@ -397,7 +397,6 @@
             $(self.refs.phase).dropdown()
             $(self.refs.rerun_button).dropdown()
             $(self.refs.submission_handling_operation).dropdown()
-            $(self.refs.submission_table).tablesort()
         })
 
         self.pretty_date = function (date_string) {
