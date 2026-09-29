@@ -166,6 +166,12 @@
 
     self.handle_ajax_pages = function (num) {
         self.update_competitions_list(self.get_url_page_number_or_default() + num)
+            .done(function () {
+                // Short pause so the user sees the new results appear before scrolling up
+                setTimeout(function () {
+                    window.scrollTo({top: 0, behavior: 'smooth'})
+                }, 200)
+            })
     }
 
     self.update_competitions_list = function (num) {
