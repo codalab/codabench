@@ -378,6 +378,26 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
     queue = QueuePublicSerializer(read_only=True)
     whitelist_emails = serializers.SerializerMethodField()
 
+    # Fields only visible to competition admins (creator, collaborators, staff/superusers)
+    ADMIN_ONLY_FIELDS = (
+        'secret_key',
+        'whitelist_emails',
+        'collaborators',
+        'queue',
+        'enable_detailed_results',
+        'show_detailed_results_in_submission_panel',
+        'show_detailed_results_in_leaderboard',
+        'auto_run_submissions',
+        'forum',
+        'forum_enabled',
+        'enable_human_in_the_loop',
+        'registration_auto_approve',
+        'can_participants_make_submissions_public',
+        'make_programs_available',
+        'make_input_data_available',
+        'fact_sheet',
+    )
+
     class Meta:
         model = Competition
         fields = (
@@ -446,24 +466,10 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
         representation = super().to_representation(instance)
         user = self.context['request'].user
 
-        # If user is not admin/creator/collaborator then do not include the following fields
+        # If user is not admin/creator/collaborator then do not include the admin-only fields
         if not instance.user_has_admin_permission(user):
-            representation.pop('secret_key', None)
-            representation.pop('whitelist_emails', None)
-            representation.pop('collaborators', None)
-            representation.pop('queue', None)
-            representation.pop('enable_detailed_results', None)
-            representation.pop('show_detailed_results_in_submission_panel', None)
-            representation.pop('show_detailed_results_in_leaderboard', None)
-            representation.pop('auto_run_submissions', None)
-            representation.pop('forum', None)
-            representation.pop('forum_enabled', None)
-            representation.pop('enable_human_in_the_loop', None)
-            representation.pop('registration_auto_approve', None)
-            representation.pop('can_participants_make_submissions_public', None)
-            representation.pop('make_programs_available', None)
-            representation.pop('make_input_data_available', None)
-            representation.pop('fact_sheet', None)
+            for field in self.ADMIN_ONLY_FIELDS:
+                representation.pop(field, None)
 
         return representation
 
