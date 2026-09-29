@@ -85,6 +85,7 @@
             </tr>
         </thead>
 
+        <!-- tbody statique : états vide / chargement -->
         <tbody>
             <tr if="{ _.isEmpty(submissions) && !loading }" class="center aligned">
                 <td colspan="100%"><em>No submissions found! Please make a submission</em></td>
@@ -96,6 +97,7 @@
             </tr>
         </tbody>
 
+        <!-- tbody répété : le each est ICI, sur le tbody -->
         <tbody each="{ submission, index in filter_children(submissions) }">
             <tr show="{!loading}"
                 onclick="{ submission_clicked.bind(this, submission) }" class="submission_row {submission.is_soft_deleted ? 'soft-deleted' : ''}">
@@ -220,6 +222,7 @@
                         <thead>
                             <tr>
                                 <th>ID #</th>
+                                <th>File name</th>
                                 <th if="{ opts.admin }">Owner</th>
                                 <th if="{ opts.admin }">Phase</th>
                                 <th if="{ has_multiple_tasks(submission) }">Task</th>
@@ -233,6 +236,7 @@
                         <tbody>
                             <tr each="{ child in get_children(submission) }">
                                 <td>{ child.id }</td>
+                                <td>{ child.filename }</td>
                                 <td if="{ opts.admin }">{ child.owner }</td>
                                 <td if="{ opts.admin }">{ child.phase ? child.phase.name : '' }</td>
                                 <td if="{ has_multiple_tasks(submission) }">{ child.task ? child.task.name : '' }</td>
