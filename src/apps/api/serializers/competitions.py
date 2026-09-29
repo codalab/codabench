@@ -15,7 +15,7 @@ from leaderboards.models import Leaderboard
 from profiles.models import User
 from tasks.models import Task
 
-from api.serializers.queues import QueueSerializer
+from api.serializers.queues import QueueSerializer, QueuePublicSerializer
 from datetime import datetime
 from django.utils.timezone import now
 
@@ -375,7 +375,7 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
     participant_status = serializers.CharField(read_only=True)
     participants_count = serializers.IntegerField(read_only=True)
     submissions_count = serializers.IntegerField(read_only=True)
-    queue = QueueSerializer(read_only=True)
+    queue = QueuePublicSerializer(read_only=True)
     whitelist_emails = serializers.SerializerMethodField()
 
     class Meta:
