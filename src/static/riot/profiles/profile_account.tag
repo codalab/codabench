@@ -15,6 +15,10 @@
             <i class="exclamation triangle icon"></i>
             This is extremely important.
         </div>
+        <div class="ui bottom attached negative message">
+            <i class="exclamation triangle icon"></i>
+            If you just want to change your username, contact us instead at <code>{ contact_email }</code>
+        </div>
 
         <div class="content">
             <p>By clicking <b>"Delete my account"</b> you will receive a confirmation email to proceed with your account deletion.
@@ -25,7 +29,7 @@
             <br><br>
             You will also no longer be eligible for any cash prizes in competitions you are participating in.
             <br><br>
-            You will not be able to re-create an account using the same email address for 30 days.
+            <b style="color: red;"">You will not be able to re-create an account using the same email address for 30 days.</b>
             </p>
             <div class="ui divider"></div>
 
@@ -53,7 +57,7 @@
     <script>
         var self = this;
         self.user = user;
-
+        self.contact_email = contact_email;
         self.isDeleteAccountSubmitButtonDisabled = true;
 
         self.show_modal = selector => $(selector).modal('show');

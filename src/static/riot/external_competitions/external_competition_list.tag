@@ -41,7 +41,7 @@
 
         <!--  Clear filters  -->
         <div class="filter-group" show="{should_show_clear_filters()}">
-            <button class="clear-filters-btn ui button" onclick="{clear_all_filters}">Clear All Filters</button>
+            <button class="clear-filters-btn ui button theme-btn" onclick="{clear_all_filters}">Clear All Filters</button>
         </div>
     </div>
 
@@ -53,7 +53,6 @@
       </div>
 
       <div each="{competition in competitions.results}" class="tile-wrapper">
-        <div class="platform-badge" show="{ competition.platform_name }">{competition.platform_name}</div>
         <div class="ui square tiny bordered image img-wrapper">
           <img src="{competition.image_url}" loading="lazy">
         </div>
@@ -81,11 +80,11 @@
 
       <!--  Pagination  -->
       <div class="pagination-nav" if="{!loading && (competitions.next || competitions.previous)}">
-        <button show="{competitions.previous}" onclick="{handle_ajax_pages.bind(this, -1)}" class="float-left ui inline button active">Back</button>
-        <button hide="{competitions.previous}" disabled="disabled" class="float-left ui inline button disabled">Back</button>
+        <button show="{competitions.previous}" onclick="{handle_ajax_pages.bind(this, -1)}" class="float-left ui inline button theme-btn">Back</button>
+        <button hide="{competitions.previous}" disabled="disabled" class="float-left ui inline button theme-btn disabled">Back</button>
         { current_page } of {Math.ceil(competitions.count/competitions.page_size)}
-        <button show="{competitions.next}" onclick="{handle_ajax_pages.bind(this, 1)}" class="float-right ui inline button active">Next</button>
-        <button hide="{competitions.next}" disabled="disabled" class="float-right ui inline button disabled">Next</button>
+        <button show="{competitions.next}" onclick="{handle_ajax_pages.bind(this, 1)}" class="float-right ui inline button theme-btn">Next</button>
+        <button hide="{competitions.next}" disabled="disabled" class="float-right ui inline button theme-btn disabled">Next</button>
       </div>
 
     </div>
@@ -167,6 +166,12 @@
 
     self.handle_ajax_pages = function (num) {
         self.update_competitions_list(self.get_url_page_number_or_default() + num)
+            .done(function () {
+                // Short pause so the user sees the new results appear before scrolling up
+                setTimeout(function () {
+                    window.scrollTo({top: 0, behavior: 'smooth'})
+                }, 200)
+            })
     }
 
     self.update_competitions_list = function (num) {
@@ -238,199 +243,4 @@
         self.update_competitions_list(self.get_url_page_number_or_default())
     })
   </script>
-
-  <style type="text/stylus">
-    external-competition-list
-      width 100%
-
-    :scope
-      display block
-      margin-bottom 5px
-      background #f4f5f7
-      padding 20px
-      border-radius 6px
-
-    .page-header
-      display flex
-      align-items center
-      justify-content space-between
-      margin-bottom 10px
-
-    .page-title
-      margin 0
-      font-size 24px
-      font-weight bold
-      color #2c5a82
-
-    .external-blurb
-      font-size 13px
-      color #5c5c5c
-      margin-bottom 20px
-      max-width 900px
-
-    // .external-competitions-banner / .external-btn live in
-    // src/static/stylus/external_competitions.styl - shared with competitions/public-list.tag
-
-    .content-container
-      display flex
-      width 100%
-
-    .filters-panel
-      width 250px
-      flex-shrink 0
-      border 1px solid #ddd
-      padding 10px
-      margin-right 10px
-      margin-left 0 !important
-      background #fff
-
-      input[type="text"]
-          width 100%
-          padding 5px
-          margin 5px 0 5px 0
-          border 1px solid #ddd
-          border-radius 4px
-
-      input[type="checkbox"]
-          margin-right 5px
-
-    .filter-group
-        margin-bottom 20px
-
-    .filter-group label
-        display block
-        font-size 13px
-        margin-bottom 6px
-
-    .filter-label
-        font-size 14px
-        font-weight bold
-        display block
-        margin-bottom 8px
-
-    .list-panel
-      flex-grow 1
-
-    .pagination-nav
-      padding 10px 0
-      width 100%
-      text-align center
-      margin-bottom 20px
-
-    .float-left
-      float left
-
-    .float-right
-      float right
-
-    .link-no-deco
-      all unset
-      text-decoration none
-      cursor pointer
-      width 100%
-
-    .full-width
-      width 100%
-
-    .tile-wrapper
-      position relative
-      border solid 1px gainsboro
-      display flex
-      background-color #fff
-      transition all 75ms ease-in-out
-      width 100%
-      margin-bottom 6px
-      padding 1em
-      border-radius 5px
-
-    .tile-wrapper:hover
-      box-shadow 0 3px 4px -1px #cac9c9ff
-      transition all 75ms ease-in-out
-      background-color #e9f0f8
-      border solid 1px #c8daee
-
-    .platform-badge
-      position absolute
-      top 8px
-      right 8px
-      background #4684c7
-      color #fff
-      font-size 11px
-      font-weight 600
-      padding 3px 8px
-      border-radius 10px
-      text-transform uppercase
-      letter-spacing 0.03em
-
-    .img-wrapper
-      padding 5px
-      align-self center
-
-      img
-        max-height 60px !important
-        max-width 60px !important
-        margin 0 auto
-
-    .comp-info
-      width 100%
-
-    .comp-info .heading
-      text-align left
-      padding 5px
-      color #1b1b1b
-      margin-bottom 0.3em
-
-    .comp-info .comp-description
-      text-align left
-      font-size 13px
-      line-height 1.15em
-      margin 0.35em
-      color #555
-
-    .comp-stats
-      display flex
-      flex-wrap wrap
-      gap 1em
-      font-size 0.9em
-      align-items center
-      margin-top 0.5em
-      padding 0 0.35em
-      color #555
-
-    .comp-stats > div
-      display flex
-      align-items center
-      gap 0.4em
-      background #f0f2f4
-      border-radius 12px
-      padding 0.3em 0.7em
-
-    .stat-label
-      color #888
-
-    .stat-value
-      color #333
-      font-weight normal
-
-    .loading-indicator
-      display flex
-      align-items center
-      padding 20px
-      width 100%
-      margin 0 auto
-
-    .spinner
-      border 4px solid rgba(0,0,0,.1)
-      width 36px
-      height 36px
-      border-radius 50%
-      border-top-color #3498db
-      animation spin 1s ease-in-out infinite
-
-    @keyframes spin
-      0%
-        transform rotate(0deg)
-      100%
-        transform rotate(360deg)
-  </style>
 </external-competition-list>

@@ -56,7 +56,7 @@ services:
   # Minio local storage helper
   #----------------------------------------------------------------------------------------------------
   minio:
-    image: quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z
+    image: codalab/minio:RELEASE.2025-04-22T22-12-26Z
     command: server /export
     volumes:
       - ./var/minio:/export
@@ -69,7 +69,7 @@ services:
       interval: 5s
       retries: 5
   createbuckets:
-    image: quay.io/minio/mc:RELEASE.2025-07-21T05-28-08Z
+    image: codalab/mc:RELEASE.2025-07-21T05-28-08Z
     depends_on:
       minio:
         condition: service_healthy
