@@ -446,10 +446,24 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
         representation = super().to_representation(instance)
         user = self.context['request'].user
 
-        # If user is not admin/creator/collaborator then do not include secret_key and whitelist_emails
+        # If user is not admin/creator/collaborator then do not include the following fields
         if not instance.user_has_admin_permission(user):
             representation.pop('secret_key', None)
             representation.pop('whitelist_emails', None)
+            representation.pop('collaborators', None)
+            representation.pop('queue', None)
+            representation.pop('enable_detailed_results', None)
+            representation.pop('show_detailed_results_in_submission_panel', None)
+            representation.pop('show_detailed_results_in_leaderboard', None)
+            representation.pop('auto_run_submissions', None)
+            representation.pop('forum', None)
+            representation.pop('forum_enabled', None)
+            representation.pop('enable_human_in_the_loop', None)
+            representation.pop('registration_auto_approve', None)
+            representation.pop('can_participants_make_submissions_public', None)
+            representation.pop('make_programs_available', None)
+            representation.pop('make_input_data_available', None)
+            representation.pop('fact_sheet', None)
 
         return representation
 
