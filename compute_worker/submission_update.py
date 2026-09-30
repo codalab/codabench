@@ -37,7 +37,8 @@ def patch_submission(
 
     Retrying is opt-in because some submission PATCH payloads have
     non-idempotent server-side effects (for example, appending worker errors
-    to stderr). Status updates are idempotent and explicitly opt in.
+    to stderr), and the SCORING status dispatches a new scoring task. Only
+    explicitly allowlisted worker statuses use application-level retries.
     """
     attempts = max_attempts if retry else 1
     if attempts < 1:

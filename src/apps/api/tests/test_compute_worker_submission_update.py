@@ -8,6 +8,7 @@ import requests
 REPO_ROOT = Path(__file__).resolve().parents[4]
 HELPER_PATH = REPO_ROOT / "compute_worker" / "submission_update.py"
 WORKER_PATH = REPO_ROOT / "compute_worker" / "compute_worker.py"
+CONTAINERFILE_PATH = REPO_ROOT / "packaging" / "container" / "Containerfile.compute_worker"
 
 SPEC = importlib.util.spec_from_file_location("submission_update", HELPER_PATH)
 SUBMISSION_UPDATE = importlib.util.module_from_spec(SPEC)
@@ -164,3 +165,9 @@ def test_worker_uses_dedicated_no_retry_transport_for_status_retries():
     assert "retry=should_retry_submission_status(status)" in source.replace(
         "\n", " "
     ).replace("  ", " ")
+
+
+def test_compute_worker_image_includes_retry_helper():
+    containerfile = CONTAINERFILE_PATH.read_text()
+
+    assert "compute_worker/submission_update.py" in containerfile
