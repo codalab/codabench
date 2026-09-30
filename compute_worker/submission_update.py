@@ -1,0 +1,45 @@
+import time
+
+import requests
+
+
+RETRYABLE_STATUS_CODES = frozenset({429, 500, 502, 503, 504})
+
+
+def patch_submission(
+    session,
+    url,
+    data,
+    *,
+    timeout,
+    retry=False,
+    max_attempts=3,
+    backoff_factor=1,
+    sleep=time.sleep,
+):
+    """PATCH submission data, optionally retrying transient failures.
+
+    Retrying is opt-in because some submission PATCH payloads have
+    non-idempotent server-side effects (for example, appending worker errors
+    to stderr). Status updates are idempotent and explicitly opt in.
+    """
+    attempts = max_attempts if retry else 1
+    if attempts < 1:
+        raise ValueError("max_attempts must be at least 1")
+
+    for attempt in range(1, attempts + 1):
+        try:
+            response = session.patch(url, data=data, timeout=timeout)
+        except requests.RequestException:
+            if attempt >= attempts:
+                raise
+        else:
+            if (
+                response.status_code not in RETRYABLE_STATUS_CODES
+                or attempt >= attempts
+            ):
+                return response
+
+        sleep(backoff_factor * (2 ** (attempt - 1)))
+
+    raise RuntimeError("retry loop exited unexpectedly")

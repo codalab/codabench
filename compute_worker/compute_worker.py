@@ -27,6 +27,8 @@ from urllib.request import urlretrieve
 from zipfile import ZipFile, BadZipFile
 from urllib3 import Retry
 
+from submission_update import patch_submission
+
 from rich.pretty import pprint
 from rich.progress import Progress
 from kombu import Queue, Exchange
@@ -754,13 +756,19 @@ class Run:
             ]
         return [run_args[name] for name in DETAILED_OUTPUT_NAMES]
 
-    def _update_submission(self, data):
+    def _update_submission(self, data, retry=False):
         url = f"{self.submissions_api_url}/submissions/{self.submission_id}/"
         data["secret"] = self.secret
 
         logger.info(f"Updating submission @ {url} with data = {data}")
 
-        resp = self.requests_session.patch(url, data=data, timeout=150)
+        resp = patch_submission(
+            self.requests_session,
+            url,
+            data,
+            timeout=150,
+            retry=retry,
+        )
         if resp.status_code == 200:
             logger.info("Submission updated successfully!")
         else:
@@ -777,7 +785,7 @@ class Run:
             )
         data = {"status": status, "status_details": extra_information}
         try:
-            self._update_submission(data)
+            self._update_submission(data, retry=True)
         except Exception as e:
             # Always catch exception and never raise error
             logger.exception(f"Failed to update submission status to {status}: {e}")
