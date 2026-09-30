@@ -231,7 +231,6 @@
                         <thead>
                             <tr>
                                 <th>ID #</th>
-                                <th>File name</th>
                                 <th if="{ opts.admin }">Owner</th>
                                 <th if="{ opts.admin }">Phase</th>
                                 <th if="{ has_multiple_tasks(submission) }">Task</th>
@@ -245,7 +244,6 @@
                         <tbody>
                             <tr each="{ child in get_children(submission) }">
                                 <td>{ child.id }</td>
-                                <td>{ child.filename }</td>
                                 <td if="{ opts.admin }">{ child.owner }</td>
                                 <td if="{ opts.admin }">{ child.phase ? child.phase.name : '' }</td>
                                 <td if="{ has_multiple_tasks(submission) }">{ child.task ? child.task.name : '' }</td>
