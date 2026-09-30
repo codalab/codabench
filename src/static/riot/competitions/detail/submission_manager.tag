@@ -94,39 +94,7 @@
                 </th>
                 <th class="center aligned">Actions</th>
             </tr>
-        <tr if="{ submission.has_children && expanded_submissions[submission.id] }" class="child-submissions-row">
-            <td colspan="100%" style="padding: 0 0 0 40px; background:#fafafa;">
-                <table class="ui very compact celled table">
-                    <thead>
-                        <tr>
-                            <th>ID #</th>
-                            <th>File name</th>
-                            <th if="{ opts.admin }">Owner</th>
-                            <th if="{ opts.admin }">Phase</th>
-                            <th>Date</th>
-                            <th>Status</th>
-                            <th>Score</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr if="{ _.isEmpty(get_children(submission)) }">
-                            <td colspan="100%"><em>Aucune soumission enfant trouvée</em></td>
-                        </tr>
-                        <tr each="{ child in get_children(submission) }">
-                            <td>{ child.id }</td>
-                            <td>{ child.filename }</td>
-                            <td if="{ opts.admin }">{ child.owner }</td>
-                            <td if="{ opts.admin }">{ child.phase ? child.phase.name : '' }</td>
-                            <td>{ pretty_date(child.created_when) }</td>
-                            <td>{ child.status }</td>
-                            <td>{ get_score(child) }</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </td>
-        </tr>
         </thead>
-
         <tbody>
             <tr if="{ _.isEmpty(submissions) && !loading }" class="center aligned">
                 <td colspan="100%"><em>No submissions found! Please make a submission</em></td>
@@ -472,7 +440,6 @@
             $(self.refs.phase).dropdown()
             $(self.refs.rerun_button).dropdown()
             $(self.refs.submission_handling_operation).dropdown()
-            $(self.refs.submission_table).tablesort()
             $(document).on('click.migrate_menu', self.close_migrate_menu)
             $(document).on('keydown.migrate_menu', function (e) {
             if (e.key === 'Escape') self.close_migrate_menu()
