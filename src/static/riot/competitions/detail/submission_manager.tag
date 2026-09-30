@@ -163,14 +163,6 @@
                         </span>
                         <span>{ submission.id }</span>
                     </div>
-                    <span if="{ submission.has_children }" 
-                        data-tooltip="{ expanded_submissions[submission.id] ? 'Hide child submissions' : 'Show child submissions' }"
-                        data-inverted=""
-                        onclick="{ toggle_expand.bind(this, submission) }"
-                        style="cursor:pointer; margin-right:6px;">
-                        <i class="icon { expanded_submissions[submission.id] ? 'caret down' : 'caret right' }"></i>
-                    </span>
-                    { submission.id }
                 </td>
 
                 <td>{ submission.filename }</td>
