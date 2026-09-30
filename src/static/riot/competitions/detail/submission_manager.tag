@@ -29,7 +29,6 @@
         <div id="downloadStatus" style="display:none; display: flex; flex-direction: column; align-items: flex-start;">
             <progress id="downloadProgress" value="0" max="100"  style="display:none; width: 150px;"></progress>
             <div id="progressText" style="margin-top: 4px;"></div>
-            <!-- -->
         </div>
     </div>
     <div class="ui icon input">
@@ -60,7 +59,7 @@
         onclick="{toggleShowSoftDeleted}">
         <label class="checkbox-label">Show soft-deleted submissions</label>
     </div>
-    <table class="ui celled selectable sortable table" ref="submission_table">
+    <table class="ui celled selectable table" ref="submission_table">
         <thead>
             <tr>
                 <th if="{opts.admin}">
@@ -69,13 +68,27 @@
                         <label>All</label>
                     </div>
                 </th>
-                <th class="sorted descending collapsing">ID #</th>
-                <th>File name</th>
-                <th if="{ opts.admin }">Owner</th>
-                <th if="{ opts.admin }">Phase</th>
-                <th>Date</th>
-                <th>Status</th>
-                <th>Score</th>
+                <th class="collapsing" style="cursor:pointer;" onclick="{ sort_by.bind(this, 'id') }">
+                    ID # <i if="{ sort_column === 'id' }" class="icon { sort_direction === 'asc' ? 'caret up' : 'caret down' }"></i>
+                </th>
+                <th style="cursor:pointer;" onclick="{ sort_by.bind(this, 'filename') }">
+                    File name <i if="{ sort_column === 'filename' }" class="icon { sort_direction === 'asc' ? 'caret up' : 'caret down' }"></i>
+                </th>
+                <th if="{ opts.admin }" style="cursor:pointer;" onclick="{ sort_by.bind(this, 'owner') }">
+                    Owner <i if="{ sort_column === 'owner' }" class="icon { sort_direction === 'asc' ? 'caret up' : 'caret down' }"></i>
+                </th>
+                <th if="{ opts.admin }" style="cursor:pointer;" onclick="{ sort_by.bind(this, 'phase') }">
+                    Phase <i if="{ sort_column === 'phase' }" class="icon { sort_direction === 'asc' ? 'caret up' : 'caret down' }"></i>
+                </th>
+                <th style="cursor:pointer;" onclick="{ sort_by.bind(this, 'created_when') }">
+                    Date <i if="{ sort_column === 'created_when' }" class="icon { sort_direction === 'asc' ? 'caret up' : 'caret down' }"></i>
+                </th>
+                <th style="cursor:pointer;" onclick="{ sort_by.bind(this, 'status') }">
+                    Status <i if="{ sort_column === 'status' }" class="icon { sort_direction === 'asc' ? 'caret up' : 'caret down' }"></i>
+                </th>
+                <th style="cursor:pointer;" onclick="{ sort_by.bind(this, 'score') }">
+                    Score <i if="{ sort_column === 'score' }" class="icon { sort_direction === 'asc' ? 'caret up' : 'caret down' }"></i>
+                </th>
                 <th if="{ opts.competition.enable_detailed_results && opts.competition.show_detailed_results_in_submission_panel}">
                     Detailed Results
                 </th>
@@ -83,7 +96,6 @@
             </tr>
         </thead>
 
-        <!-- tbody statique : états vide / chargement -->
         <tbody>
             <tr if="{ _.isEmpty(submissions) && !loading }" class="center aligned">
                 <td colspan="100%"><em>No submissions found! Please make a submission</em></td>
@@ -95,8 +107,7 @@
             </tr>
         </tbody>
 
-        <!-- tbody répété : le each est ICI, sur le tbody -->
-        <tbody each="{ submission, index in filter_children(submissions) }">
+        <tbody each="{ submission, index in sorted_parents(submissions) }">
             <tr show="{!loading}"
                 onclick="{ submission_clicked.bind(this, submission) }" class="submission_row {submission.is_soft_deleted ? 'soft-deleted' : ''}">
                 <td if="{ opts.admin }">
@@ -429,8 +440,47 @@
             self.update()
         }
 
+        self.sort_column = 'created_when'
+        self.sort_direction = 'desc'  // or 'asc'
+
         self.filter_children = submissions => {
             return _.filter(submissions, sub => !sub.parent)
+        }
+
+        self.sort_by = function (column, event) {
+            if (event) event.stopPropagation()
+            if (self.sort_column === column) {
+                self.sort_direction = self.sort_direction === 'asc' ? 'desc' : 'asc'
+            } else {
+                self.sort_column = column
+                self.sort_direction = 'asc'
+            }
+            self.update()
+        }
+
+        self.get_sort_value = function (submission, column) {
+            switch (column) {
+                case 'id': return submission.id
+                case 'filename': return (submission.filename || '').toLowerCase()
+                case 'owner': return (submission.owner || '').toLowerCase()
+                case 'phase': return _.get(submission, 'phase.name', '').toLowerCase()
+                case 'created_when': return submission.created_when || ''
+                case 'status': return (submission.status || '').toLowerCase()
+                case 'score':
+                    let s = self.get_score(submission)
+                    return s === '' ? -Infinity : parseFloat(s)
+                default: return ''
+            }
+        }
+
+        self.sorted_parents = function (submissions) {
+            let parents = self.filter_children(submissions)
+            let sorted = _.orderBy(
+                parents,
+                [sub => self.get_sort_value(sub, self.sort_column)],
+                [self.sort_direction]
+            )
+            return sorted
         }
 
         self.toggleShowSoftDeleted = function () {
