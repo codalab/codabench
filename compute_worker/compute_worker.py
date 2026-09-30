@@ -27,7 +27,7 @@ from urllib.request import urlretrieve
 from zipfile import ZipFile, BadZipFile
 from urllib3 import Retry
 
-from submission_update import patch_submission
+from submission_update import patch_submission, should_retry_submission_status
 
 from rich.pretty import pprint
 from rich.progress import Progress
@@ -586,6 +586,14 @@ class Run:
         self.requests_session.mount("http://", adapter)
         self.requests_session.mount("https://", adapter)
 
+        # Status updates use a dedicated session without adapter-level retries.
+        # This keeps the application-level retry bound exact and avoids stacking
+        # the existing transport retries with the status retry loop.
+        self.status_requests_session = requests.Session()
+        status_adapter = requests.adapters.HTTPAdapter(max_retries=0)
+        self.status_requests_session.mount("http://", status_adapter)
+        self.status_requests_session.mount("https://", status_adapter)
+
     async def watch_detailed_results(self):
         """Watches files alongside scoring + program containers, currently only used
         for detailed_results.html"""
@@ -762,8 +770,9 @@ class Run:
 
         logger.info(f"Updating submission @ {url} with data = {data}")
 
+        session = self.status_requests_session if retry else self.requests_session
         resp = patch_submission(
-            self.requests_session,
+            session,
             url,
             data,
             timeout=150,
@@ -785,7 +794,10 @@ class Run:
             )
         data = {"status": status, "status_details": extra_information}
         try:
-            self._update_submission(data, retry=True)
+            self._update_submission(
+                data,
+                retry=should_retry_submission_status(status),
+            )
         except Exception as e:
             # Always catch exception and never raise error
             logger.exception(f"Failed to update submission status to {status}: {e}")

@@ -5,6 +5,22 @@ import requests
 
 RETRYABLE_STATUS_CODES = frozenset({429, 500, 502, 503, 504})
 
+# These worker status updates are safe to repeat at the application level.
+# SCORING is intentionally excluded: the API serializer dispatches a scoring
+# task when it receives that status, so an ambiguous response could otherwise
+# launch scoring twice.
+RETRYABLE_SUBMISSION_STATUSES = frozenset({
+    "Preparing",
+    "Running",
+    "Awaiting validation",
+    "Finished",
+    "Failed",
+})
+
+
+def should_retry_submission_status(status):
+    return status in RETRYABLE_SUBMISSION_STATUSES
+
 
 def patch_submission(
     session,

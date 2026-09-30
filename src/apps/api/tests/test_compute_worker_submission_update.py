@@ -115,34 +115,52 @@ def test_retries_rate_limit_response():
     assert delays == [1]
 
 
-def test_only_status_updates_opt_in_to_retry():
+def _submission_status_values():
     tree = ast.parse(WORKER_PATH.read_text())
-    retrying_callers = []
-    direct_callers = []
-
-    for node in ast.walk(tree):
-        if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+    status_class = next(
+        node
+        for node in tree.body
+        if isinstance(node, ast.ClassDef) and node.name == "SubmissionStatus"
+    )
+    values = {}
+    for node in status_class.body:
+        if not isinstance(node, ast.Assign) or len(node.targets) != 1:
             continue
-        for child in ast.walk(node):
-            if not isinstance(child, ast.Call):
-                continue
-            if not isinstance(child.func, ast.Attribute):
-                continue
-            if child.func.attr != "_update_submission":
-                continue
+        target = node.targets[0]
+        if (
+            isinstance(target, ast.Name)
+            and isinstance(node.value, ast.Constant)
+            and isinstance(node.value.value, str)
+        ):
+            values[target.id] = node.value.value
+    return values
 
-            retry_keyword = next(
-                (kw for kw in child.keywords if kw.arg == "retry"),
-                None,
-            )
-            if (
-                retry_keyword is not None
-                and isinstance(retry_keyword.value, ast.Constant)
-                and retry_keyword.value.value is True
-            ):
-                retrying_callers.append(node.name)
-            else:
-                direct_callers.append(node.name)
 
-    assert retrying_callers == ["_update_status"]
-    assert direct_callers
+def test_retry_policy_excludes_scoring_side_effect():
+    values = _submission_status_values()
+
+    expected = {
+        values["PREPARING"],
+        values["RUNNING"],
+        values["AWAITING_VALIDATION"],
+        values["FINISHED"],
+        values["FAILED"],
+    }
+    assert SUBMISSION_UPDATE.RETRYABLE_SUBMISSION_STATUSES == expected
+    assert not SUBMISSION_UPDATE.should_retry_submission_status(
+        values["SCORING"]
+    )
+
+
+def test_worker_uses_dedicated_no_retry_transport_for_status_retries():
+    source = WORKER_PATH.read_text()
+
+    assert "self.status_requests_session = requests.Session()" in source
+    assert "status_adapter = requests.adapters.HTTPAdapter(max_retries=0)" in source
+    assert (
+        "session = self.status_requests_session if retry else self.requests_session"
+        in source
+    )
+    assert "retry=should_retry_submission_status(status)" in source.replace(
+        "\n", " "
+    ).replace("  ", " ")
