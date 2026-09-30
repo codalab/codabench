@@ -91,7 +91,7 @@ class SubmissionViewSet(ModelViewSet):
                     except SubmissionDetails.DoesNotExist:
                         logger.error("SubmissionDetails object not found.")
 
-            if self.action in ['update_fact_sheet', 'run_submission', 're_run_submission']:
+            if self.action in ['update_fact_sheet', 'run_submission', 're_run_submission', 'migrate_to_phase']:
                 # get_queryset will stop us from re-running something we're not supposed to
                 pass
             else:
