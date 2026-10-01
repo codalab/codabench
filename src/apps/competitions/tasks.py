@@ -126,12 +126,10 @@ MAX_EXECUTION_TIME_LIMIT = int(
 def _get_user_group_queues(user, competition, selected_group_ids=None):
     qs = competition.participant_groups.filter(user__pk=user.pk).select_related("queue").distinct()
 
-    qs = qs.filter(
-        Q(is_selectable_by_participant=False) | Q(id__in=selected_group_ids)
-    )
-
     if selected_group_ids is not None:
-        qs = qs.filter(id__in=selected_group_ids)
+        qs = qs.filter(
+            Q(is_selectable_by_participant=False) | Q(id__in=selected_group_ids)
+        )
 
     all_user_groups = list(qs)
 
