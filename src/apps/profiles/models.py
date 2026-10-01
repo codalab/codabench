@@ -348,6 +348,9 @@ class CustomGroup(Group):
     queue = models.ForeignKey(Queue, null=True, blank=True, on_delete=models.SET_NULL, related_name='custom_groups', verbose_name="Groups_for_queue",
                               help_text="Queue Foreign Key on group model for multiple submissions routing.")
 
+    is_selectable_by_participant = models.BooleanField(default=False, verbose_name="Show group selection for participant",
+                                                       help_text="If checked, participants can choose whether to submit to this group's queue. If unchecked, the group is always active.")
+
     class Meta:
         verbose_name = "Group"
         verbose_name_plural = "Groups"
