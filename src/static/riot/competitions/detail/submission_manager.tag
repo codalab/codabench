@@ -228,7 +228,7 @@
             <tr if="{ submission.has_children && expanded_submissions[submission.id] }" class="child-submissions-row">
                 <td colspan="100%" style="padding: 0 0 0 40px; background:#fafafa;">
                     <table class="ui very compact celled table">
-                        <thead>
+                        <thead style="height:20px !important;">
                             <tr>
                                 <th>ID #</th>
                                 <th if="{ opts.admin }">Owner</th>
@@ -242,7 +242,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr each="{ child in get_children(submission) }">
+                            <tr each="{ child in get_children(submission) }" onclick="{ submission_clicked.bind(this, child) }" class="submission_row">
                                 <td>{ child.id }</td>
                                 <td if="{ opts.admin }">{ child.owner }</td>
                                 <td if="{ opts.admin }">{ child.phase ? child.phase.name : '' }</td>
@@ -1135,7 +1135,7 @@
         .submission_row
             &:hover
                 cursor pointer
-            height 52px
+            height 42px
 
         table tbody .center.aligned td
             color #8c8c8c
@@ -1153,5 +1153,10 @@
             td
                 padding-top 0
                 padding-bottom 0
+                height 42px
+
+            table tbody tr:hover
+                cursor pointer
+                background-color rgba(0,0,0,0.03)
     </style>
 </submission-manager>
