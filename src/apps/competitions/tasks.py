@@ -27,7 +27,7 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.db import transaction
-from django.db.models import Case, Count, F, OuterRef, Subquery, Value, When
+from django.db.models import Q, Case, Count, F, OuterRef, Subquery, Value, When
 from django.utils.text import slugify
 from django.utils.timezone import now
 from leaderboards.models import Leaderboard
@@ -125,6 +125,10 @@ MAX_EXECUTION_TIME_LIMIT = int(
 
 def _get_user_group_queues(user, competition, selected_group_ids=None):
     qs = competition.participant_groups.filter(user__pk=user.pk).select_related("queue").distinct()
+
+    qs = qs.filter(
+        Q(is_selectable_by_participant=False) | Q(id__in=selected_group_ids)
+    )
 
     if selected_group_ids is not None:
         qs = qs.filter(id__in=selected_group_ids)

@@ -52,7 +52,7 @@
                     </div>
                 </div>
 
-                <div class="ui vertical accordion menu" style="width: 36%;" id="select_groups_accordion" if="{available_groups}">
+                <div class="ui vertical accordion menu" style="width: 36%;" id="select_groups_accordion" if="{available_groups}" hide="{!available_groups || available_groups.length === 0}">
                     <div class="item">
                         <a class="title">
                             <i class="dropdown icon"></i>
