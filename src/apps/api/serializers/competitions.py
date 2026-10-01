@@ -378,33 +378,13 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
     queue = QueuePublicSerializer(read_only=True)
     whitelist_emails = serializers.SerializerMethodField()
 
-    # Fields only visible to competition admins (creator, collaborators, staff/superusers)
-    ADMIN_ONLY_FIELDS = (
-        'secret_key',
-        'whitelist_emails',
-        'collaborators',
-        'queue',
-        'enable_detailed_results',
-        'show_detailed_results_in_submission_panel',
-        'show_detailed_results_in_leaderboard',
-        'auto_run_submissions',
-        'forum',
-        'forum_enabled',
-        'enable_human_in_the_loop',
-        'registration_auto_approve',
-        'can_participants_make_submissions_public',
-        'make_programs_available',
-        'make_input_data_available',
-        'fact_sheet',
-    )
-
     class Meta:
         model = Competition
-        fields = (
+        # Fields visible to everyone who can access the competition
+        public_fields = (
             'id',
             'title',
             'published',
-            'secret_key',
             'created_by',
             'owner_display_name',
             'created_when',
@@ -414,31 +394,36 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
             'pages',
             'phases',
             'leaderboards',
-            'collaborators',
             'participant_status',
-            'registration_auto_approve',
             'description',
             'participants_count',
             'submissions_count',
-            'queue',
-            'enable_detailed_results',
-            'show_detailed_results_in_submission_panel',
-            'show_detailed_results_in_leaderboard',
-            'auto_run_submissions',
-            'can_participants_make_submissions_public',
-            'make_programs_available',
-            'make_input_data_available',
             'docker_image',
             'competition_type',
-            'fact_sheet',
-            'forum',
             'reward',
             'contact_email',
             'report',
-            'whitelist_emails',
+            'enable_detailed_results',
+            'show_detailed_results_in_submission_panel',
+            'show_detailed_results_in_leaderboard',
+            'forum',
             'forum_enabled',
-            'enable_human_in_the_loop'
         )
+        # Fields only visible to competition admins (creator, collaborators, staff/superusers)
+        admin_fields = (
+            'secret_key',
+            'whitelist_emails',
+            'collaborators',
+            'queue',
+            'auto_run_submissions',
+            'enable_human_in_the_loop',
+            'registration_auto_approve',
+            'can_participants_make_submissions_public',
+            'make_programs_available',
+            'make_input_data_available',
+            'fact_sheet',
+        )
+        fields = public_fields + admin_fields
 
     def get_leaderboards(self, instance):
         try:
@@ -466,10 +451,11 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
         representation = super().to_representation(instance)
         user = self.context['request'].user
 
-        # If user is not admin/creator/collaborator then do not include the admin-only fields
+        # If user is not admin/creator/collaborator then only include the public fields
         if not instance.user_has_admin_permission(user):
-            for field in self.ADMIN_ONLY_FIELDS:
-                representation.pop(field, None)
+            for field in list(representation):
+                if field not in self.Meta.public_fields:
+                    representation.pop(field)
 
         return representation
 
