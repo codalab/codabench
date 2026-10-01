@@ -1,0 +1,55 @@
+{{- range .Values.compute_worker.brokers }}
+{{- $isDefault := eq .name "default" }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: compute-worker{{ if not $isDefault }}-{{ .name }}{{ end }}
+  labels:
+    app: compute-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: compute-worker
+  template:
+    metadata:
+      labels:
+        app: compute-worker
+    spec:
+      serviceAccountName: compute-worker-sa
+      containers:
+        - name: compute-worker
+          image: "{{ $.Values.compute_worker.image.repository }}:{{ $.Values.compute_worker.image.tag }}"
+          imagePullPolicy: {{ $.Values.compute_worker.image.pullPolicy | default "IfNotPresent" }}
+          command:
+            - bash
+            - -c
+            - >
+              watchmedo auto-restart -p '*.py' --recursive -- celery -A compute_worker worker -l info -Q compute-worker -n compute-worker{{ if not $isDefault }}-{{ .name }}{{ end }}@%n
+          workingDir: /app
+          env:
+            - name: BROKER_URL
+              value: "{{ if .url }}{{ .url }}{{ else }}pyamqp://{{ $.Values.env.RABBITMQ_DEFAULT_USER }}:{{ $.Values.env.RABBITMQ_DEFAULT_PASS }}@{{ $.Values.env.RABBITMQ_HOST }}:{{ $.Values.env.RABBITMQ_PORT }}//{{ end }}"
+            - name: CODALAB_IGNORE_CLEANUP_STEP
+              value: "1"
+            {{- range $key, $value := $.Values.env }}
+            - name: {{ $key }}
+              value: "{{ $value }}"
+            {{- end }}
+          resources:
+            {{- toYaml $.Values.compute_worker.resources | nindent 12 }}
+          volumeMounts:
+            - name: docker-socket
+              mountPath: /var/run/docker.sock
+            - name: codabench-storage
+              mountPath: /codabench
+      volumes:
+        - name: docker-socket
+          hostPath:
+            path: /var/run/docker.sock
+            type: Socket
+        - name: codabench-storage
+          persistentVolumeClaim:
+            claimName: {{ $.Values.compute_worker.volumes.pvcName }}
+{{- end }}

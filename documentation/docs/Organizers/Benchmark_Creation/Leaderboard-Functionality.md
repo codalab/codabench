@@ -49,6 +49,7 @@ Computation options are:
   - avg
   - min
   - max
+  - avg_rank
 
 These are applied across the columns specified as `computation_indexes`.
 

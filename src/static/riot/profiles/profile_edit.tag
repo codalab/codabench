@@ -73,7 +73,7 @@
     </div>
 
     <script>
-        self = this
+        var self = this
         self.selected_user = selected_user
         self.photo = self.selected_user.photo
         delete self.selected_user.photo

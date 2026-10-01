@@ -42,6 +42,7 @@ class QueueExpansion(admin.ModelAdmin):
     list_filter = ["is_public"]
     search_fields = ["id", "name", "owner__username", "organizers__username"]
     actions = [export_as_csv, export_as_json]
+    ordering = ('-id',)
 
 
 admin.site.register(models.Queue, QueueExpansion)

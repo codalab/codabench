@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.conf.urls import include
 from django.urls import path
 
@@ -13,6 +14,7 @@ from .views import (
     analytics,
     competitions,
     datasets,
+    external_competitions,
     profiles,
     leaderboards,
     submissions,
@@ -54,6 +56,8 @@ urlpatterns = [
     path('delete_unused_datasets/', quota.delete_unused_datasets, name="delete_unused_datasets"),
     path('delete_unused_submissions/', quota.delete_unused_submissions, name="delete_unused_submissions"),
     path('delete_failed_submissions/', quota.delete_failed_submissions, name="delete_failed_submissions"),
+    path('delete_unused_starting_kits/', quota.delete_unused_starting_kits, name="delete_unused_starting_kits"),
+    path('delete_unused_competition_bundles/', quota.delete_unused_competition_bundles, name="delete_unused_competition_bundles"),
 
     # User account
     path('delete_account/', profiles.delete_account, name="delete_account"),
@@ -74,3 +78,9 @@ urlpatterns = [
     # Include this at the end so our URLs above run first, like /datasets/completed/<pk>/ before /datasets/<pk>/
     path('', include(format_suffix_patterns(router.urls, allowed=['html', 'json', 'csv', 'zip']))),
 ]
+
+if settings.EXTERNAL_COMPETITIONS_ENABLED:
+    urlpatterns += [
+        path('external_competitions/', external_competitions.ExternalCompetitionListView.as_view(), name='external_competition_list'),
+        path('external_competitions/platforms/', external_competitions.ExternalPlatformListView.as_view(), name='external_platform_list'),
+    ]

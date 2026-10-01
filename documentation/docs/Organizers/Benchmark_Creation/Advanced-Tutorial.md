@@ -110,26 +110,7 @@ After the bundle has been uploaded, you will see the screenshot shown below.
 ![image](../../_attachments/102434028-e182bb00-404e-11eb-9de8-002e4589db66_17528513099222646.png)
 
 
-
-## Benchmark Examples
-
-Example bundles for code & dataset competition can be found here:
-
-https://github.com/codalab/competition-examples/tree/master/codabench
-
-### Iris
-
-[Iris Codabench Bundle](https://github.com/codalab/competition-examples/tree/master/codabench/iris) is a simple benchmark involving two phases, code submission and results submission.
-
-### AutoWSL
-
-Two versions of the [Automated Weakly Supervised Learning Benchmark](https://github.com/codalab/competition-examples/tree/master/codabench/autowsl):
-- [Code submission benchmark](https://github.com/codalab/competition-examples/tree/master/codabench/autowsl/code_submission)
-- [Dataset submission benchmark](https://github.com/codalab/competition-examples/tree/master/codabench/autowsl/dataset_submission)
-
-### Mini-AutoML
-
-[Mini-AutoML Bundle](https://github.com/codalab/competition-examples/tree/master/codabench/mini-automl) is a benchmark template for Codabench, featuring code submission to multiple datasets (tasks).
+!!! tip "You can find benchmark templates to start your own project in [Benchmark Examples](Benchmark-Examples.md) page."
 
 
 ## How do I set up submission comments for multiple submissions?

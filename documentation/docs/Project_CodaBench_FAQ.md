@@ -5,8 +5,8 @@
 Codabench benchmarks are aimed at researchers, scientists and other professionals who want to track algorithm performance via benchmarks or have participants participate in a competition to find the best solution to a problem. We run a free public instance at [https://www.codabench.org/](https://www.codabench.org/) and the raw code is on [Github](https://github.com/codalab/codabench).
 
 
-### Can CodaLab competitions be privately hosted?
-Yes, you can host your own CodaLab instance on a private or hosted server (e.g. Azure, GCP or AWS). For more information, see [how to deploy Codabench on your server](Developers_and_Administrators/How-to-deploy-Codabench-on-your-server.md) and [local installation](Developers_and_Administrators/Codabench-Installation.md) guide. However, most benchmark organizers do NOT need to run their own instance. If you run a computationally demanding competition, you can hook up your own [compute workers](Organizers/Running_a_benchmark/Compute-Worker-Management---Setup.md) in the backend very easily. 
+### Can Codabench be privately hosted?
+Yes, you can host your own Codabench instance on a private or hosted server (e.g. Azure, GCP or AWS). For more information, see [how to deploy Codabench on your server](Developers_and_Administrators/How-to-deploy-Codabench-on-your-server.md) and [local installation](Developers_and_Administrators/Codabench-Installation.md) guide. However, most benchmark organizers do NOT need to run their own instance. If you run a computationally demanding competition, you can hook up your own [compute workers](Organizers/Running_a_benchmark/Compute-Worker-Management---Setup.md) in the backend very easily.
 
 
 ### How to change my username?
@@ -23,6 +23,9 @@ Follow the detailed instruction [here](Organizers/Benchmark_Creation/Public-Task
 
 ### How to delete my account?
 Click on your account name on the top right of the website, then on `account`
+
+### How to link one competition page to another?
+Follow the detailed instructions [here](Organizers/Benchmark_Creation/Competition-Creation-Form.md#pages) to link from one page's content to another page (or the Terms page) on your competition.
 
 
 
@@ -74,8 +77,3 @@ When deploying a local instance, the email server is not configured by default, 
 ```
 
 Uncomment and fill in SMPT server credentials. A good suggestion if you've never done this is to use [sendgrid](https://sendgrid.com/).
-
-### Robots and automated submissions?
-What about robot policy, reckless, or malicious behavior?
-Codabench does not forbid the use of [robots](Developers_and_Administrators/Robot-submissions.md) (bots) to access the website, provided that it is not done with malicious intentions to disturb the normal use and jam the system. A user who abuses their rights by knowingly, maliciously, or recklessly jamming the system, causing the system to crash, causing loss of data, or gaining access to unauthorized data, will be banned from accessing all Codabench services.
-

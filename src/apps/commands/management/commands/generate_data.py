@@ -31,7 +31,7 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         size = kwargs.get('size') or 3
         no_admin = kwargs.get('no_admin')
-        print(f'Creating data of size {size} {"without an admin account." if no_admin else "with an admin account." }')
+        print(f'Creating data of size {size} {"without an admin account." if no_admin else "with an admin account."}')
         users = []
         for i in range(size):
             if i == 0 and not no_admin:

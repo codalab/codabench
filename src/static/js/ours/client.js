@@ -147,6 +147,10 @@ CODALAB.api = {
     get_leaderboard_for_render: function (phase_pk) {
         return CODALAB.api.request('GET', `${URLS.API}phases/${phase_pk}/get_leaderboard/`)
     },
+    get_leaderboard_for_render: function (phase_pk, params = {}) {
+        return CODALAB.api.request('GET', `${URLS.API}phases/${phase_pk}/get_leaderboard/`, params)
+    },
+
     update_submission_score: function (pk, data) {
         return CODALAB.api.request('PATCH', `${URLS.API}submission_scores/${pk}/`, data)
     },
@@ -388,10 +392,25 @@ CODALAB.api = {
     delete_failed_submissions: () => {
         return CODALAB.api.request('DELETE', `${URLS.API}delete_failed_submissions/`)
     },
+    delete_unused_starting_kits: () => {
+        return CODALAB.api.request('DELETE', `${URLS.API}delete_unused_starting_kits/`)
+    },
+    delete_unused_competition_bundles: () => {
+        return CODALAB.api.request('DELETE', `${URLS.API}delete_unused_competition_bundles/`)
+    },
     /*---------------------------------------------------------------------
          User Account
     ---------------------------------------------------------------------*/
     request_delete_account: (data) => {
         return CODALAB.api.request('DELETE', `${URLS.API}delete_account/`, data)
+    },
+    /*---------------------------------------------------------------------
+         External Competitions
+    ---------------------------------------------------------------------*/
+    get_external_competitions: function (query) {
+        return CODALAB.api.request('GET', URLS.API + "external_competitions/", query)
+    },
+    get_external_competition_platforms: function () {
+        return CODALAB.api.request('GET', URLS.API + "external_competitions/platforms/")
     },
 }

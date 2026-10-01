@@ -21,7 +21,7 @@ from utils.data import make_url_sassy, pretty_bytes, gb_to_bytes
 class DataViewSet(ModelViewSet):
     queryset = Data.objects.all()
     filter_backends = (DjangoFilterBackend, SearchFilter)
-    filter_fields = ('type', 'name', 'key', 'was_created_by_competition', 'is_public')
+    filterset_fields = ('type', 'name', 'key', 'was_created_by_competition', 'is_public')
     search_fields = ('file_name', 'name', 'description', 'key', 'competition__title',)
     pagination_class = BasicPagination
 

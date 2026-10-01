@@ -82,6 +82,7 @@
                 <th class="center aligned">Actions</th>
             </tr>
         </thead>
+
         <tbody>
             <tr if="{ _.isEmpty(submissions) && !loading }" class="center aligned">
                 <td colspan="100%"><em>No submissions found! Please make a submission</em></td>
@@ -91,7 +92,10 @@
                     <em>Loading Submissions...</em>
                 </td>
             </tr>
-            <tr show="{!loading}" each="{ submission, index in filter_children(submissions) }"
+        </tbody>
+
+        <tbody each="{ submission, index in filter_children(submissions) }">
+            <tr show="{!loading}"
                 onclick="{ submission_clicked.bind(this, submission) }" class="submission_row {submission.is_soft_deleted ? 'soft-deleted' : ''}">
                 <td if="{ opts.admin }">
                     <div if="{ !submission.is_soft_deleted }" class="ui checkbox" onclick="{on_submission_checked.bind(this)}">
@@ -99,7 +103,22 @@
                         <label></label>
                     </div>
                 </td>
-                <td>{ submission.id }</td>
+                
+                <td>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <span style="display:inline-flex; width:16px; justify-content:center; flex-shrink:0;">
+                            <span if="{ submission.has_children }"
+                                data-tooltip="{ expanded_submissions[submission.id] ? 'Hide child submissions' : 'Show child submissions' }"
+                                data-inverted=""
+                                onclick="{ toggle_expand.bind(this, submission) }"
+                                style="cursor:pointer;">
+                                <i class="icon { expanded_submissions[submission.id] ? 'caret down' : 'caret right' }" style="margin:0;"></i>
+                            </span>
+                        </span>
+                        <span>{ submission.id }</span>
+                    </div>
+                </td>
+
                 <td>{ submission.filename }</td>
                 <td if="{ opts.admin }">{ submission.owner }</td>
                 <td if="{ opts.admin }">{ submission.phase.name }</td>
@@ -107,7 +126,8 @@
                 <td class="right aligned collapsing">
                     { submission.status }
                     <sup data-tooltip="{submission.status_details}">
-                        <i if="{submission.status === 'Failed'}" class="failed question circle icon"></i>
+                        <i if="{submission.status === 'Failed' && !is_hitl_failure(submission)}" class="failed question circle icon"></i>
+                        <i if="{submission.status === 'Failed' && is_hitl_failure(submission)}" class="orange lock icon"></i>
                     </sup>
                     <sup data-tooltip="An organizer will run your submission soon">
                         <i if="{submission.status === 'Submitting' && !submission.auto_run}"
@@ -123,8 +143,15 @@
                     </a>
                 </td>
                 <!--  Show Action buttons when submission is not soft deleted  -->
-                <!--  Otherwise show empty <td>  -->
-                <td if="{ submission.is_soft_deleted }"></td>
+                <!--  For soft-deleted submissions, organizers can still hard-delete  -->
+                <td if="{ submission.is_soft_deleted }">
+                    <virtual if="{ opts.admin }">
+                        <span data-tooltip="Delete Submission" data-inverted=""
+                            onclick="{ delete_submission.bind(this, submission) }">
+                            <i class="icon red trash alternate"></i>
+                        </span>
+                    </virtual>
+                </td>
                 <td class="center aligned" if="{ !submission.is_soft_deleted }">
                     <virtual if="{ opts.admin}">
                         <!-- run/rerun submission -->
@@ -184,8 +211,126 @@
                     </span>
                 </td>
             </tr>
+
+            <tr if="{ submission.has_children && expanded_submissions[submission.id] }" class="child-submissions-row">
+                <td colspan="100%" style="padding: 0 0 0 40px; background:#fafafa;">
+                    <table class="ui very compact celled table">
+                        <thead>
+                            <tr>
+                                <th>ID #</th>
+                                <th if="{ opts.admin }">Owner</th>
+                                <th if="{ opts.admin }">Phase</th>
+                                <th if="{ has_multiple_tasks(submission) }">Task</th>
+                                <th>Group</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Score</th>
+                                <th class="center aligned">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr each="{ child in get_children(submission) }">
+                                <td>{ child.id }</td>
+                                <td if="{ opts.admin }">{ child.owner }</td>
+                                <td if="{ opts.admin }">{ child.phase ? child.phase.name : '' }</td>
+                                <td if="{ has_multiple_tasks(submission) }">{ child.task ? child.task.name : '' }</td>
+                                <td>{ child.participant_group_name || '-' }</td>
+                                <td>{ pretty_date(child.created_when) }</td>
+                                <td>{ child.status }</td>
+                                <td>{ get_score(child) }</td>
+
+                                <td if="{ child.is_soft_deleted }">
+                                    <virtual if="{ opts.admin }">
+                                        <span data-tooltip="Delete Submission" data-inverted=""
+                                            onclick="{ delete_submission.bind(this, child) }">
+                                            <i class="icon red trash alternate"></i>
+                                        </span>
+                                    </virtual>
+                                </td>
+                                <td class="center aligned" if="{ !child.is_soft_deleted }">
+                                    <virtual if="{ opts.admin}">
+                                        <span
+                                            data-tooltip="{ child.status === 'Submitting' && !child.auto_run ? 'Run Submission' : 'Rerun Submission' }"
+                                            data-inverted=""
+                                            onclick="{ child.status === 'Submitting' && !child.auto_run ? run_submission.bind(this, child) : rerun_submission.bind(this, child) }">
+                                            <i
+                                                class="icon { child.status === 'Submitting' && !child.auto_run ? 'green play' : 'blue redo' }"></i>
+                                        </span>
+                                        <span data-tooltip="Delete Submission" data-inverted=""
+                                            onclick="{ delete_submission.bind(this, child) }">
+                                            <i class="icon red trash alternate"></i>
+                                        </span>
+                                    </virtual>
+                                    <span if="{!_.includes(['Finished', 'Cancelled', 'Unknown', 'Failed'], child.status)}"
+                                        data-tooltip="Cancel Submission" data-inverted=""
+                                        onclick="{ cancel_submission.bind(this, child) }">
+                                        <i class="grey minus circle icon"></i>
+                                    </span>
+                                    <span if="{!child.on_leaderboard && child.status === 'Finished'}"
+                                        data-tooltip="Add to Leaderboard" data-inverted=""
+                                        onclick="{ add_to_leaderboard.bind(this, child) }">
+                                        <i class="icon green columns"></i>
+                                    </span>
+                                    <span if="{ child.on_leaderboard }" data-tooltip="On the Leaderboard" data-inverted=""
+                                        onclick="{ remove_from_leaderboard.bind(this, child) }">
+                                        <i class="icon green check"></i>
+                                    </span>
+                                    <span
+                                        if="{!child.is_public && child.status === 'Finished' && child.can_make_submissions_public}"
+                                        data-tooltip="Make Public" data-inverted=""
+                                        onclick="{toggle_submission_is_public.bind(this, child)}">
+                                        <i class="icon share teal alternate"></i>
+                                    </span>
+                                    <span
+                                        if="{!!child.is_public && child.status === 'Finished' && child.can_make_submissions_public}"
+                                        data-tooltip="Make Private" data-inverted=""
+                                        onclick="{toggle_submission_is_public.bind(this, child)}">
+                                        <i class="icon share grey alternate"></i>
+                                    </span>
+                                    <span if="{ ((child.status === 'Finished' && !child.on_leaderboard) || child.status === 'Failed' || child.status === 'Cancelled')  && !opts.admin}"
+                                        data-tooltip="Delete Submission" data-inverted=""
+                                        onclick="{ soft_delete_submission.bind(this, child) }">
+                                        <i class="icon red trash"></i>
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
         </tbody>
     </table>
+
+    <div class="ui pagination menu" style="display:flex; align-items:center; justify-content:space-between; margin-top: 12px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+            <button class="ui button" onclick="{ go_to_page.bind(this, page - 1) }" disabled="{ page <= 1 }">
+                <i class="icon chevron left"></i> Previous
+            </button>
+
+            <div style="display:flex; align-items:center; gap:6px;">
+                <span>Page</span>
+                <input type="number" min="1" value="{ page }" onkeydown="{ handle_page_enter }" style="width:70px; text-align:center;" />
+                <span> / { total_pages || 1 }</span>
+            </div>
+
+            <button class="ui button" onclick="{ go_to_page.bind(this, page + 1) }" disabled="{ !next }">
+                Next <i class="icon chevron right"></i>
+            </button>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:8px;">
+            <label>Per page</label>
+            <select class="ui dropdown" value="{ page_size }" onchange="{ change_page_size.bind(this) }">
+                <option value="50">50</option>
+                <option value="100">100</option>
+                <option value="500">500</option>
+                <option value="all">1000</option>
+            </select>
+
+            <div style="margin-right: 10px; color: #8c8c8c;">
+                <small>{ total_count || 0 } total</small>
+            </div>
+    </div>
 
     <div class="ui large modal" ref="modal">
         <div class="content">
@@ -201,9 +346,7 @@
                         Task {i + 1}
                     </div>
 
-                    <div if="{is_admin()}" data-tab="admin" class="parent-modal item">Admin</div>
 
-                    <!-- Sometimes submissions end up in a bad state with no children..  -->
                     <div class="item" if="{_.get(selected_submission, 'children').length === 0}">
                         <i style="padding: 5px;">ERROR: Submission is a parent, but has no children. There was an error
                             during creation.</i>
@@ -216,9 +359,8 @@
                         show_visualization="{opts.competition.enable_detailed_results}"
                         submission="{child}"></submission-modal>
                 </div>
-                <div class="ui tab" style="height: 565px; overflow: auto;" data-tab="admin" if="{is_admin()}">
-                    <submission-scores leaderboards="{leaderboards}"></submission-scores>
-                </div>
+
+
             </div>
         </div>
     </div>
@@ -233,6 +375,15 @@
         self.loading = true
         self.checked_submissions = []
         self.show_is_soft_deleted = false
+
+        self.page = 1
+        self.page_size = 50
+        self.total_count = 0
+        self.total_pages = 1
+        self.next = null
+        self.previous = null
+
+        self.expanded_submissions = {}
 
         self.on("mount", function () {
             $(self.refs.search).dropdown()
@@ -259,6 +410,22 @@
             event.stopPropagation()
         }
 
+        self.get_children = function (submission) {
+            return _.filter(self.submissions, sub => sub.parent === submission.id)
+        }
+
+        self.has_multiple_tasks = function (submission) {
+            let children = self.get_children(submission)
+            let task_ids = _.uniq(_.map(children, child => _.get(child, 'task.id')).filter(id => id != null))
+            return task_ids.length > 1
+        }
+
+        self.toggle_expand = function (submission, event) {
+            event.stopPropagation()
+            self.expanded_submissions[submission.id] = !self.expanded_submissions[submission.id]
+            self.update()
+        }
+
         self.filter_children = submissions => {
             return _.filter(submissions, sub => !sub.parent)
         }
@@ -269,37 +436,122 @@
             self.update()
         }
 
+        self.is_hitl_failure = function (submission) {
+            return !!(submission.status_details && submission.status_details.indexOf('Human in the Loop') !== -1)
+        }
+
         self.update_submissions = function (filters) {
             self.loading = true
             self.update()
-            if (opts.admin) {
-                filters = filters || { phase__competition: opts.competition.id }
-                filters.show_is_soft_deleted = self.show_is_soft_deleted
-            } else {
-                filters = filters || { phase: self.selected_phase.id }
+
+            if (!filters) {
+                if (opts.admin) {
+                    filters = { phase__competition: opts.competition.id }
+                    filters.show_is_soft_deleted = self.show_is_soft_deleted
+                } else {
+                    filters = { phase: self.selected_phase ? self.selected_phase.id : undefined }
+                }
             }
-            filters = filters || { phase: self.selected_phase.id }
+
+            filters.page = self.page
+            if (String(self.page_size).toLowerCase() === 'all') {
+                filters.page_size = 'all'
+            } else {
+                filters.page_size = self.page_size
+            }
+
             CODALAB.api.get_submissions(filters)
-                .done(function (submissions) {
-                    // TODO: should be able to do this with a serializer?
+                .done(function (response) {
+                    let data = response
+                    let results = response
+                    if (response && typeof response === 'object' && response.hasOwnProperty('results')) {
+                        results = response.results || []
+                        self.next = response.next || null
+                        self.previous = response.previous || null
+                        self.total_count = response.count || 0
+
+                        var effectivePageSize = 1
+                        var serverPageSize = undefined
+                        var totalCount = (typeof response.count === 'number') ? response.count : self.total_count
+                        var isLastPage = (response.next === null)
+
+                        if (response && typeof response.page_size !== 'undefined') {
+                            serverPageSize = response.page_size
+                        }
+
+                        if (typeof serverPageSize !== 'undefined') {
+                            if (String(serverPageSize).toLowerCase() === 'all') {
+                                self.page_size = 'all'
+                            } else {
+                                var parsedServerPS = Number(serverPageSize)
+                                if (!isNaN(parsedServerPS) && parsedServerPS > 0) {
+                                    self.page_size = parsedServerPS
+                                }
+                            }
+                        }
+
+                        if (String(self.page_size).toLowerCase() === 'all') {
+                            if (typeof response.page_size_numeric === 'number' && response.page_size_numeric > 0) {
+                                effectivePageSize = response.page_size_numeric
+                            } else if (typeof response.effective_page_size === 'number' && response.effective_page_size > 0) {
+                                effectivePageSize = response.effective_page_size
+                            } else {
+                                if (!isLastPage && Array.isArray(results) && results.length > 0) {
+                                    effectivePageSize = results.length
+                                } else if (isLastPage && self.page > 1 && typeof totalCount === 'number' && totalCount > 0) {
+                                    var itemsOnLastPage = Array.isArray(results) ? results.length : 0
+                                    var pagesBefore = self.page - 1
+                                    var calc = Math.floor((totalCount - itemsOnLastPage) / pagesBefore)
+                                    if (calc > 0) {
+                                        effectivePageSize = calc
+                                    } else {
+                                        effectivePageSize = 50
+                                    }
+                                } else if (Array.isArray(results) && results.length > 0) {
+                                    effectivePageSize = results.length
+                                } else {
+                                    effectivePageSize = 50
+                                }
+                            }
+                        } else if (typeof self.page_size === 'number' && self.page_size > 0) {
+                            effectivePageSize = self.page_size
+                        } else {
+                            effectivePageSize = 50
+                        }
+
+                        if (typeof totalCount !== 'number' || totalCount < 0) {
+                            self.total_pages = 1
+                        } else {
+                            self.total_pages = Math.max(1, Math.ceil(totalCount / effectivePageSize))
+                        }
+                    } else {
+                        results = response || []
+                        self.next = null
+                        self.previous = null
+                        self.total_count = results.length
+                        self.total_pages = Math.max(1, Math.ceil(self.total_count / self.page_size))
+                    }
+
                     if (opts.admin) {
-                        self.submissions = submissions.map((item) => {
+                        self.submissions = results.map((item) => {
                             item.phase = opts.competition.phases.filter((phase) => {
                                 return phase.id === item.phase
                             })[0]
                             return item
                         })
                     } else {
-                        self.submissions = _.filter(submissions, sub => sub.owner === CODALAB.state.user.username)
+                        self.submissions = _.filter(results, sub => sub.owner === CODALAB.state.user.username)
                     }
+
                     if (!opts.admin) {
                         CODALAB.events.trigger('submissions_loaded', self.submissions)
                     }
+
                     self.csv_link = CODALAB.api.get_submission_csv_URL(filters)
+
                     self.update()
                     self.submission_checked()
 
-                    // Timeout here so loader doesn't flicker
                     _.delay(() => {
                         self.loading = false
                         self.update()
@@ -308,6 +560,43 @@
                 .fail(function (response) {
                     toastr.error("Error retrieving submissions")
                 })
+        }
+
+
+        self.go_to_page = function (p) {
+            let newPage = parseInt(p, 10)
+            if (isNaN(newPage) || newPage < 1) newPage = 1
+            if (self.total_pages && newPage > self.total_pages) newPage = self.total_pages
+            if (newPage === self.page) return
+            self.page = newPage
+            self.update_submissions()
+        }
+
+        self.change_page_size = function (e) {
+            const raw = (e && e.target && typeof e.target.value !== 'undefined') ? String(e.target.value).toLowerCase() : String(self.page_size).toLowerCase()
+
+            if (raw === 'all') {
+                self.page_size = 'all'
+            } else {
+                const val = parseInt(raw, 10)
+                if (isNaN(val) || val <= 0) return
+                // n'autorise que 50,100,500
+                if (![50, 100, 500].includes(val)) return
+                self.page_size = val
+            }
+
+            self.page = 1  // reset to first page when page size changes
+            self.update_submissions()
+        }
+
+        self.handle_page_enter = function (ev) {
+            if (ev.key === 'Enter') {
+                // value du champ input
+                let v = ev.target.value
+                let requested = parseInt(v, 10)
+                if (isNaN(requested)) return
+                self.go_to_page(requested)
+            }
         }
 
         self.add_to_leaderboard = function (submission) {
@@ -365,6 +654,7 @@
                         filters['phase__competition'] = opts.competition.id
                     }
                 }
+                self.page = 1
                 self.update_submissions(filters)
             }, 100)
         }
@@ -482,8 +772,12 @@
 
         self.get_score = function (submission) {
             try {
-                return parseFloat(submission.scores[0].score).toFixed(2)
-
+                // Look for a primary score, fallback to the first score if not found
+                let score_obj = _.find(submission.scores, s => s.is_primary) || submission.scores[0]
+                if (score_obj) {
+                    return parseFloat(score_obj.score).toFixed(score_obj.precision || 0)
+                }
+                return ""
             } catch {
                 return ""
             }
@@ -524,15 +818,10 @@
             // Set checkboxes to be equal to Select_All checkbox
             check_boxes.prop('checked', check_boxes.first().is(':checked'))
 
-
             let inputs = $(self.refs.submission_table).find('input')
             let checked_boxes = inputs.not(':first').filter('input:checked')
             self.checked_submissions = checked_boxes.serializeArray().map((x) => { return x.name })
         }
-
-
-
-
 
         self.submission_clicked = function (submission) {
             // stupid workaround to not modify the original submission object
@@ -554,9 +843,6 @@
                         })
                         self.update()
                     })
-            }
-            if (opts.admin) {
-                submission.admin = true
             }
             self.selected_submission = submission
             self.update()
@@ -811,5 +1097,10 @@
 
         .soft-deleted
             background-color #ffdede !important
+
+        .child-submissions-row
+            td
+                padding-top 0
+                padding-bottom 0
     </style>
 </submission-manager>

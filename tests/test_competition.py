@@ -25,7 +25,7 @@ def test_competition_upload(page: Page):
     with page.expect_file_chooser() as fc_info:
         page.get_by_role("button", name="").click()
     file_chooser = fc_info.value
-    file_chooser.set_files("test_files/competitions/competition.zip")
+    file_chooser.set_files("test_files/competitions/competition_v2_wheat_code.zip")
     expect(page.get_by_text("Competition created!")).to_be_visible()
 
 
@@ -75,7 +75,7 @@ def test_manual_competition_creation(page: Page):
     with page.expect_file_chooser() as fc_info:
         page.get_by_role("button", name="").click()
     file_chooser = fc_info.value
-    file_chooser.set_files("test_files/competition/test_logo.png")
+    file_chooser.set_files("test_files/competitions/test_logo.png")
     page.locator(".CodeMirror-scroll").first.click()
     page.get_by_role("application").get_by_role("textbox").fill("Test Description ")
     page.get_by_role("textbox", name="Example: $1000 for the top").click()
@@ -97,7 +97,7 @@ def test_manual_competition_creation(page: Page):
     page.get_by_role("application").filter(has_text="|||xxxxxxxxxx 101:").get_by_role(
         "textbox"
     ).fill("Test Terms")
-    page.locator('input[name="registration_auto_approve"]').check()
+    page.locator('input[selenium="auto-approve"]').locator("..").click()
     page.locator("a").filter(has_text="Pages").click()
     page.get_by_role("button", name=" Add page").click()
     page.get_by_role("textbox").nth(1).fill("Test Title")
@@ -123,11 +123,12 @@ def test_manual_competition_creation(page: Page):
     page.locator(
         ".CodeMirror.cm-s-easymde.CodeMirror-wrap.CodeMirror-focused > div > textarea"
     ).fill("This is a phase Test")
-    page.locator(".ui.search.selection.dropdown.multiple").first.click()
-    page.locator(".ui.search.selection.dropdown.multiple > .search").first.fill(
-        str(titleNum) + "Playwright Task"
-    )
-    page.get_by_text(str(titleNum) + "Playwright Task").nth(1).click()
+    tasks_dropdown = page.locator("#tasks_select_container .ui.dropdown")
+    tasks_dropdown.click()
+    page.keyboard.type(f"{titleNum}Playwright Task")
+    tasks_dropdown.locator(".visible.menu .item").filter(
+        has_text=f"{titleNum}Playwright Task"
+    ).click()
     page.locator(".title > .dropdown").click()
     page.locator('input[name="execution_time_limit"]').click()
     page.locator('input[name="execution_time_limit"]').fill("100")

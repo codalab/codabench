@@ -115,20 +115,25 @@ class DeletePostView(ForumBaseMixin, LoginRequiredMixin, DeleteView):
     model = Post
     pk_url_kwarg = 'post_pk'
 
-    def delete(self, request, *args, **kwargs):
+    def get_success_url(self):
+        post = self.get_object()
+        if post.thread:
+            return post.thread.get_absolute_url() if post.thread.posts.count() > 1 else post.thread.forum.get_absolute_url()
+        return '/'
+
+    def form_valid(self, form):
         self.object = self.get_object()
 
-        if self.object.posted_by == request.user or \
-            request.user in self.object.thread.forum.competition.collaborators.all() or \
-                self.object.thread.forum.competition.created_by == request.user:
+        if self.object.posted_by == self.request.user or \
+            self.request.user in self.object.thread.forum.competition.collaborators.all() or \
+                self.object.thread.forum.competition.created_by == self.request.user:
             # If there are more posts in the thread, leave it around, otherwise delete it
+            success_url = self.get_success_url()
             if self.object.thread.posts.count() == 1:
-                success_url = self.object.thread.forum.get_absolute_url()
                 self.object.thread.delete()
-            else:
-                success_url = self.object.thread.get_absolute_url()
             self.object.delete()
             return HttpResponseRedirect(success_url)
+
         else:
             raise PermissionDenied("Cannot delete a post you don't own in a competition you aren't organizing!")
 
@@ -165,11 +170,15 @@ class DeleteThreadView(ForumBaseMixin, LoginRequiredMixin, DeleteView):
     model = Thread
     pk_url_kwarg = 'thread_pk'
 
-    def delete(self, request, *args, **kwargs):
+    def get_success_url(self):
+        thread = self.get_object()
+        return thread.forum.get_absolute_url()
+
+    def form_valid(self, form):
         self.object = self.get_object()
 
-        if self.object.forum.competition.created_by == request.user or \
-                self.object.started_by == request.user:
+        if self.object.forum.competition.created_by == self.request.user or \
+                self.object.started_by == self.request.user:
 
             success_url = self.object.forum.get_absolute_url()
             self.object.delete()

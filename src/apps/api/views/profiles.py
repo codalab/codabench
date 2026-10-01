@@ -64,14 +64,21 @@ class GetMyProfile(RetrieveAPIView, GenericAPIView):
 @login_required
 def user_lookup(request):
     search = request.GET.get('q', '')
-    filters = Q()
     is_admin = request.user.is_superuser or request.user.is_staff
 
-    if search:
-        filters |= Q(username__icontains=search)
-        filters |= Q(email__icontains=search) if is_admin else Q(email__iexact=search)
+    # Start with base query strictly excluding deleted & current user
+    queryset = User.objects.filter(is_deleted=False).exclude(id=request.user.id)
 
-    users = User.objects.exclude(id=request.user.id).filter(filters)[:5]
+    if search:
+        search_filter = Q(username__icontains=search)
+        if is_admin:
+            search_filter |= Q(email__icontains=search)
+        else:
+            search_filter |= Q(email__iexact=search)
+
+        queryset = queryset.filter(search_filter)
+
+    users = queryset[:5]
 
     # Helper to print username with email for admins
     def _get_data(user):
@@ -166,7 +173,7 @@ class OrganizationViewSet(mixins.CreateModelMixin,
     @action(detail=True, methods=['post'], permission_classes=[IsOrganizationEditor])
     def invite_users(self, request, pk=None):
         org = self.get_object()
-        if type(request.data['users']) != list:
+        if type(request.data['users']) is not list:
             raise ValidationError(f'Required data is an Array of User ID\'s not a {type(request.data["users"])} ')
         # Getting users, but filtering out any that are already in the organization
         users = User.objects.filter(id__in=request.data['users']).exclude(organizations=pk)

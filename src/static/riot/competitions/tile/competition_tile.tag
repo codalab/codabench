@@ -19,7 +19,7 @@
             </div>
             </a>
             <div class="comp-stats" id="compStats">
-                {pretty_date(created_when)}
+                {pretty_date(first_phase_start)}
                 <div if="{!reward && !report}" class="ui divider"></div>
                 <div>
                     <span if="{reward}"><img width="30" height="30" src="/static/img/trophy.png"></span>

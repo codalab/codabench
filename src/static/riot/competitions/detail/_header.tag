@@ -35,6 +35,13 @@
                         <button class="ui small button" onclick="{show_modal.bind(this, '.migration.modal')}">
                             Migrate
                         </button>
+
+                        <worker-monitor-toggle
+                            if="{competition.admin}"
+                            can_view_workers_panel="true"
+                            competition_id="{ competition.id }">
+                        </worker-monitor-toggle>
+
                     </div>
                     <div class="row">
                         <div class="column">

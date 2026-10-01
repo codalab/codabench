@@ -1,7 +1,7 @@
 import zipfile
 import json
 import csv
-from collections import OrderedDict
+from collections import Counter, OrderedDict
 from io import StringIO
 from django.http import HttpResponse
 from tempfile import SpooledTemporaryFile
@@ -18,7 +18,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 from rest_framework_csv.renderers import CSVRenderer
-from api.pagination import LargePagination
+from api.pagination import DynamicChoicePagination, LargePagination
 from api.renderers import ZipRenderer
 from rest_framework.viewsets import ModelViewSet
 from api.serializers.competitions import CompetitionSerializerSimple, PhaseSerializer, \
@@ -31,7 +31,8 @@ from competitions.models import Competition, Phase, CompetitionCreationTaskStatu
 from datasets.models import Data
 from competitions.tasks import batch_send_email, manual_migration, create_competition_dump
 from competitions.utils import get_popular_competitions, get_recent_competitions
-from leaderboards.models import Leaderboard
+from leaderboards.models import Leaderboard, Column
+from leaderboards.ranking import inject_average_ranks
 from utils.data import make_url_sassy
 from api.permissions import IsOrganizerOrCollaborator
 from django.db import transaction
@@ -41,6 +42,7 @@ from django.conf import settings
 class CompetitionViewSet(ModelViewSet):
     queryset = Competition.objects.all()
     permission_classes = (AllowAny,)
+    pagination_class = LargePagination
 
     def get_queryset(self):
 
@@ -60,7 +62,7 @@ class CompetitionViewSet(ModelViewSet):
         # If user is logged in
         if self.request.user.is_authenticated:
 
-            # `mine` is true when this is called from "Benchmarks I'm Running"
+            # `mine` is true when this is called from "Organizing" tab of benchmark management
             # Filter to only see competitions you own
             mine = self.request.query_params.get('mine', None)
             if mine:
@@ -72,10 +74,16 @@ class CompetitionViewSet(ModelViewSet):
                     (Q(collaborators__in=[self.request.user]))
                 ).distinct()
 
-            # `participating_in` is true when this is called from "Benchmarks I'm in"
+            # `participating_in` is true when this is called from "Participating" tab of benchmark management
             participating_in = self.request.query_params.get('participating_in', None)
             if participating_in:
-                qs = qs.filter(participants__user=self.request.user, participants__status="approved")
+                # Exclude competitions the user organizes: creators/collaborators are auto-added
+                # as approved participants (see Competition.save()), but they belong in "Organizing" tab, not here.
+                qs = qs.filter(
+                    participants__user=self.request.user, participants__status="approved"
+                ).exclude(
+                    Q(created_by=self.request.user) | Q(collaborators=self.request.user)
+                )
 
             participant_status_query = CompetitionParticipant.objects.filter(
                 competition=OuterRef('pk'),
@@ -116,7 +124,7 @@ class CompetitionViewSet(ModelViewSet):
                     # And competitions where you are admin
                     # And public competitions
                     # And competitions where you are approved participant
-                    # this filters out all private compettions from other users
+                    # this filters out all private competitions from other users
                     base_qs = qs.filter(
                         (Q(created_by=self.request.user)) |
                         (Q(collaborators__in=[self.request.user])) |
@@ -179,7 +187,7 @@ class CompetitionViewSet(ModelViewSet):
         if search_query:
             qs = qs.filter(Q(title__icontains=search_query) | Q(description__icontains=search_query))
 
-        qs = qs.order_by('created_when')
+        qs = qs.order_by('-created_when')
         return qs
 
     def get_permissions(self):
@@ -424,26 +432,43 @@ class CompetitionViewSet(ModelViewSet):
             phase_id = phases[0].id
 
         leaderboard = Leaderboard.objects.prefetch_related('columns').get(phases=phase_id)
-        leaderboard_titles = {phase['id']: f'{leaderboard.title} - {phase["name"]}({phase["id"]})' for phase in submission_query}
+        leaderboard_titles = {
+            phase['id']: f'{leaderboard.title} - {phase["name"]}({phase["id"]})'
+            for phase in submission_query
+        }
         leaderboard_data = {title: {} for title in leaderboard_titles.values()}
 
         for phase in submission_query:
             generated_columns = OrderedDict()
             for task in phase['tasks']:
                 for col in leaderboard.columns.all():
-                    generated_columns.update({f'{col.key}-{task["id"]}': f'{task["name"]}({task["id"]})-{col.title}'})
+                    generated_columns.update({
+                        f'{col.key}-{task["id"]}': f'{task["name"]}({task["id"]})-{col.title}'
+                    })
+
             for submission in phase['submissions']:
-                submission_key = f'{submission["owner"]}-{submission["parent"] or submission["id"]}'
-                if submission_key not in leaderboard_data[leaderboard_titles[phase['id']]].keys():
-                    leaderboard_data[leaderboard_titles[phase['id']]].update({submission_key: OrderedDict()})
-                    if 'fact_sheet_answers' in submission.keys() and submission['fact_sheet_answers']:
-                        leaderboard_data[leaderboard_titles[phase['id']]][submission_key]\
-                            .update({'fact_sheet_answers': submission['fact_sheet_answers']})
+                queue_name = submission.get('queue_name') or ''
+                submission_key = f'{submission["owner"]}-{submission["id"]}'
+                if queue_name:
+                    submission_key = f'{submission_key}-{queue_name}'
+
+                if submission_key not in leaderboard_data[leaderboard_titles[phase['id']]]:
+                    leaderboard_data[leaderboard_titles[phase['id']]][submission_key] = OrderedDict()
+
+                    if submission.get('fact_sheet_answers'):
+                        leaderboard_data[leaderboard_titles[phase['id']]][submission_key].update({
+                            'fact_sheet_answers': submission['fact_sheet_answers']
+                        })
+
                     for col_title in generated_columns.values():
                         leaderboard_data[leaderboard_titles[phase['id']]][submission_key].update({col_title: ""})
+
                 for score in submission['scores']:
                     score_column = generated_columns[f'{score["column_key"]}-{submission["task"]}']
-                    leaderboard_data[leaderboard_titles[phase['id']]][submission_key].update({score_column: score['score']})
+                    leaderboard_data[leaderboard_titles[phase['id']]][submission_key].update({
+                        score_column: score['score']
+                    })
+
         return leaderboard_data
 
     @action(detail=True, methods=['GET'], renderer_classes=[JSONRenderer, CSVRenderer, ZipRenderer])
@@ -602,15 +627,19 @@ class CompetitionViewSet(ModelViewSet):
 
         # Filter by participation
         if participating_in:
+            # Exclude competitions the user organizes: creators/collaborators are auto-added
+            # as approved participants (see Competition.save()), but they belong under "organizing", not here.
             participant_comp_ids = CompetitionParticipant.objects.filter(
                 user=request.user,
                 status="approved"
+            ).exclude(
+                Q(competition__created_by=request.user) | Q(competition__collaborators=request.user)
             ).values_list("competition_id", flat=True)
             qs = qs.filter(id__in=participant_comp_ids)
 
         # Filter by organizing (created_by or collaborator)
         if organizing:
-            qs = qs.filter(Q(created_by=request.user) | Q(collaborators=request.user))
+            qs = qs.filter(Q(created_by=request.user) | Q(collaborators=request.user)).distinct()
 
         # Apply ordering
         if ordering == "recent":
@@ -773,11 +802,35 @@ class PhaseViewSet(ModelViewSet):
     @action(detail=True, methods=['GET'], permission_classes=[AllowAny])
     def get_leaderboard(self, request, pk):
         phase = self.get_object()
+
+        def _clean_group_label(raw_name, submission_parent_id=None):
+            if not raw_name:
+                return None
+
+            label = str(raw_name)
+
+            if submission_parent_id is not None:
+                prefix = f"{submission_parent_id}_"
+                if label.startswith(prefix):
+                    label = label[len(prefix):]
+
+            if "__" in label:
+                label = label.rsplit("__", 1)[1]
+
+            return label or None
+
         if phase.competition.fact_sheet:
-            fact_sheet_keys = [(phase.competition.fact_sheet[question]['key'], phase.competition.fact_sheet[question]['title'])
-                               for question in phase.competition.fact_sheet if phase.competition.fact_sheet[question]['is_on_leaderboard'] == 'true']
+            fact_sheet_keys = [
+                (
+                    phase.competition.fact_sheet[question]['key'],
+                    phase.competition.fact_sheet[question]['title']
+                )
+                for question in phase.competition.fact_sheet
+                if phase.competition.fact_sheet[question]['is_on_leaderboard'] == 'true'
+            ]
         else:
             fact_sheet_keys = None
+
         query = LeaderboardPhaseSerializer(phase).data
         response = {
             'title': query['leaderboard']['title'],
@@ -785,19 +838,73 @@ class PhaseViewSet(ModelViewSet):
             'submissions': [],
             'tasks': [],
             'fact_sheet_keys': fact_sheet_keys or None,
-            'primary_index': query['leaderboard']['primary_index']
+            'primary_index': query['leaderboard']['primary_index'],
+            'has_group_queues': False,
         }
-        columns = [col for col in query['columns']]
+
+        columns = list(query['columns'])
         submissions_keys = {}
         submission_detailed_results = {}
+
+        group_name_by_user_queue = {}
+        for group in phase.competition.participant_groups.filter(
+            queue__isnull=False
+        ).select_related('queue').prefetch_related('user_set'):
+            cleaned_group_name = _clean_group_label(group.name)
+            for user in group.user_set.all():
+                group_name_by_user_queue[(user.username, group.queue_id)] = cleaned_group_name
+
+        parent_ids = {
+            s['parent']
+            for s in query['submissions']
+            if s['parent'] is not None
+        }
+        parent_task_counts = Counter(
+            (s['parent'], s['task'])
+            for s in query['submissions']
+            if s['parent'] is not None
+        )
+
         for submission in query['submissions']:
-            submission_key = f"{submission['owner']}{submission['parent'] or submission['id']}"
+            if submission['id'] in parent_ids:
+                continue
+
+            submission_parent_id = submission.get('parent') or submission.get('id')
+            raw_queue_name = submission.get('queue_name') or ''
+            queue_id = submission.get('queue_id')
+
+            group_name = group_name_by_user_queue.get(
+                (submission['owner'], queue_id)
+            ) if queue_id else None
+
+            group_label = _clean_group_label(
+                group_name or raw_queue_name,
+                submission_parent_id=submission_parent_id
+            )
+
+            display_group = (
+                f"{submission_parent_id}_{group_label}"
+                if group_label
+                else None
+            )
+
+            parent_id = submission['parent']
+            task_id = submission.get('task')
+
+            # Cas particulier: plusieurs submissions d'un même parent sans queue explicite
+            is_multi_group_null_queue = (
+                parent_id is not None
+                and not queue_id
+                and parent_task_counts.get((parent_id, task_id), 0) > 1
+            )
+
+            if is_multi_group_null_queue:
+                submission_key = f"{submission['owner']}{parent_id}_{submission['id']}"
+            else:
+                submission_key = f"{submission['owner']}{submission_parent_id}_{group_label or ''}"
+
             # gather detailed result from submissions for each task
-            # detailed_results are gathered based on submission key
-            # `id` is used to fetch the right detailed result in detailed results page
-            # `detailed_result` url is not needed
             submission_detailed_results.setdefault(submission_key, []).append({
-                # 'detailed_result': submission['detailed_result'],
                 'task': submission['task'],
                 'id': submission['id']
             })
@@ -812,22 +919,18 @@ class PhaseViewSet(ModelViewSet):
                     'fact_sheet_answers': submission['fact_sheet_answers'],
                     'slug_url': submission['slug_url'],
                     'organization': submission['organization'],
-                    'created_when': submission['created_when']
+                    'created_when': submission['created_when'],
+                    'queue_name': display_group,
                 })
-            for score in submission['scores']:
 
-                # to check if a column is found
-                # this is useful because of `hidden` field
-                # if a column is hidden it will not be shown here so
-                # we will not return that score to the front-end
+                if queue_id or is_multi_group_null_queue:
+                    response['has_group_queues'] = True
+
+            for score in submission['scores']:
                 column_found = False
-                # default precision is set to 2
                 precision = 2
-                # default hidden is set to false
                 hidden = False
 
-                # loop over columns to find a column with the same index
-                # replace default precision with column precision
                 for col in columns:
                     if col["index"] == score["index"]:
                         precision = col["precision"]
@@ -837,13 +940,8 @@ class PhaseViewSet(ModelViewSet):
 
                 tempScore = score
                 tempScore['task_id'] = submission['task']
-                # round the score to 'precision' decimal points
                 tempScore['score'] = str(round(float(tempScore["score"]), precision))
 
-                # only add scores to the scores list
-                # if this column is found
-                # and
-                # column is not hidden
                 if column_found and not hidden:
                     response['submissions'][submissions_keys[submission_key]]['scores'].append(tempScore)
 
@@ -851,8 +949,28 @@ class PhaseViewSet(ModelViewSet):
         for k, v in submissions_keys.items():
             response['submissions'][v]['detailed_results'] = submission_detailed_results[k]
 
+        # Compute average rank for any AVERAGE_RANK columns and inject into response.
+        col_by_index = {col['index']: col for col in columns}
+        avg_rank_cols = [col for col in columns if col.get('computation') == Column.AVERAGE_RANK]
+        if avg_rank_cols:
+            inject_average_ranks(response['submissions'], avg_rank_cols, col_by_index, response['primary_index'])
+
+        # --- pagination addition ---
+        total_count = len(response['submissions'])
+        paginator = DynamicChoicePagination()
+        paginated_submissions = paginator.paginate_queryset(response['submissions'], request, view=self)
+        if paginated_submissions is None:
+            paginated_submissions = response['submissions']
+
+        response['submissions'] = paginated_submissions
+        response['count'] = total_count
+        response['page_size'] = getattr(paginator, 'requested_page_size', request.query_params.get('page_size', 50))
+        response['next'] = paginator.get_next_link()
+        response['previous'] = paginator.get_previous_link()
+        response['allowed_page_sizes'] = [50, 100, 500, 'all']
+        # --- end pagination addition ---
+
         for task in query['tasks']:
-            # This can be used to rendered variable columns on each task
             tempTask = {
                 'name': task['name'],
                 'id': task['id'],
@@ -862,6 +980,7 @@ class PhaseViewSet(ModelViewSet):
             for col in columns:
                 tempTask['columns'].append(col)
             response['tasks'].append(tempTask)
+
         return Response(response)
 
 
@@ -869,7 +988,7 @@ class CompetitionParticipantViewSet(ModelViewSet):
     queryset = CompetitionParticipant.objects.all()
     serializer_class = CompetitionParticipantSerializer
     filter_backends = (DjangoFilterBackend, SearchFilter)
-    filter_fields = ('user__username', 'user__email', 'status', 'competition', 'user__is_deleted')
+    filterset_fields = ('user__username', 'user__email', 'status', 'competition', 'user__is_deleted')
     search_fields = ('user__username', 'user__email',)
 
     def get_queryset(self):

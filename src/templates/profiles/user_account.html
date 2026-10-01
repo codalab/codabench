@@ -5,5 +5,6 @@
     <profile-account class="ui text container"></profile-account>
     <script>
         const user = JSON.parse("{{ serialized_user | escapejs }}")
+        const contact_email = "{{ CONTACT_EMAIL }}"
     </script>
 {% endblock %}

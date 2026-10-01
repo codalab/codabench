@@ -19,6 +19,7 @@ from django.views.generic import DetailView, TemplateView
 
 from api.serializers.profiles import UserSerializer, OrganizationDetailSerializer, OrganizationEditSerializer, \
     UserNotificationSerializer
+from api.serializers.competitions import CompetitionSerializerSimple
 from .forms import SignUpForm, LoginForm, ActivationForm
 from .models import User, DeletedUser, Organization, Membership
 from oidc_configurations.models import Auth_Organization
@@ -67,7 +68,23 @@ class UserDetailView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['serialized_user'] = json.dumps(UserSerializer(self.get_object()).data)
+        user = self.get_object()
+        user_data = UserSerializer(user).data
+        # Fetch competitions organized by this user (as owner or collaborator)
+        organized_qs = (
+            Competition.objects
+            .filter(
+                Q(created_by=user) | Q(collaborators=user),
+                published=True,
+            )
+            .distinct()
+            .order_by("-created_when")
+        )
+        # Serialize into the same shape your public-list cards expect
+        user_data["competitions_organized"] = CompetitionSerializerSimple(
+            organized_qs, many=True, context={"request": self.request}
+        ).data
+        context["serialized_user"] = json.dumps(user_data).replace("</", "<\\/")
         return context
 
 
@@ -273,7 +290,7 @@ def log_in(request):
             try:
                 user = User.objects.get((Q(username=username) | Q(email=username)) & Q(is_deleted=False))
             except User.DoesNotExist:
-                messages.error(request, "User does not exist!")
+                messages.error(request, "Invalid login/password")
             else:
                 # Authenticate user with credentials
                 user = authenticate(username=username, password=password)
@@ -290,7 +307,7 @@ def log_in(request):
                     else:
                         context['activation_error'] = "Your account is not activated. Please check your email for the activation link"
                 else:
-                    messages.error(request, "Wrong Credentials!")
+                    messages.error(request, "Invalid login/password")
         else:
             context['form'] = form
 

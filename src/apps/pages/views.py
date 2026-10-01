@@ -5,8 +5,6 @@ from django.db.models import Q
 from competitions.models import Submission
 from announcements.models import Announcement, NewsPost
 
-from django.conf import settings
-from django.shortcuts import render
 from utils.data import pretty_bytes
 
 
@@ -16,12 +14,8 @@ class HomeView(TemplateView):
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
 
-        announcement = Announcement.objects.all().first()
-        context['announcement'] = announcement.text if announcement else None
-
-        news_posts = NewsPost.objects.all().order_by('-id')
-        context['news_posts'] = news_posts
-        context['CONTACT_EMAIL'] = settings.CONTACT_EMAIL
+        context['announcements'] = Announcement.objects.filter(is_active=True).order_by("priority", "-created_when")
+        context['news_posts'] = NewsPost.objects.all().order_by('-id')
 
         return context
 
@@ -96,13 +90,7 @@ class ServerStatusView(TemplateView):
                 submission.file_size = pretty_bytes(0)
 
             # Get queue from each submission
-            queue_name = ""
-            # if submission has parent get queue from parent otherwise from the submission iteset
-            if submission.parent:
-                queue_name = "*" if submission.parent.queue is None else submission.parent.queue.name
-            else:
-                queue_name = "*" if submission.queue is None else submission.queue.name
-            submission.competition_queue = queue_name
+            submission.competition_queue = "*" if submission.queue is None else submission.queue.name
 
             # Add submission owner display name
             submission.owner_display_name = submission.owner.display_name if submission.owner.display_name else submission.owner.username
@@ -115,8 +103,3 @@ class ServerStatusView(TemplateView):
 
 class MonitorQueuesView(TemplateView):
     template_name = 'pages/monitor_queues.html'
-
-
-def page_not_found_view(request, exception):
-    print(request)
-    return render(request, '404.html', status=404)

@@ -12,8 +12,8 @@ from django.utils.timezone import now
 from decimal import Decimal
 
 from celery_config import app, app_for_vhost
-from leaderboards.models import SubmissionScore
-from profiles.models import User, Organization
+from leaderboards.models import SubmissionScore, Column
+from profiles.models import CustomGroup, User, Organization
 from utils.data import PathWrapper
 from utils.storage import BundleStorage
 from PIL import Image
@@ -55,10 +55,12 @@ class Competition(models.Model):
     make_programs_available = models.BooleanField(default=False)
     make_input_data_available = models.BooleanField(default=False)
 
+    participant_groups = models.ManyToManyField(CustomGroup, blank=True, related_name='competitions', verbose_name="group of participants",
+                                                help_text="Competition owner being able to create groups of users.")
+
     queue = models.ForeignKey('queues.Queue', on_delete=models.SET_NULL, null=True, blank=True,
                               related_name='competitions')
 
-    allow_robot_submissions = models.BooleanField(default=False)
     # we use filed type to distinguish 'competition' and 'benchmark'
     competition_type = models.CharField(max_length=128, choices=COMPETITION_TYPE, default=COMPETITION)
 
@@ -86,6 +88,7 @@ class Competition(models.Model):
 
     # If true, forum is enabled (default=True)
     forum_enabled = models.BooleanField(default=True)
+    enable_human_in_the_loop = models.BooleanField(default=False)
 
     def __str__(self):
         return f"competition-{self.title}-{self.pk}-{self.competition_type}"
@@ -101,6 +104,13 @@ class Competition(models.Model):
     @property
     def all_organizers(self):
         return [self.created_by] + list(self.collaborators.all())
+
+    @property
+    def first_phase_start(self):
+        first_phase = self.phases.filter(index=0).first()
+        if first_phase and first_phase.start:
+            return first_phase.start
+        return self.created_when
 
     def user_has_admin_permission(self, user):
         if isinstance(user, int):
@@ -153,9 +163,10 @@ class Competition(models.Model):
                 created_by_migration=current_phase,
                 participant=submission.participant,
                 phase=next_phase,
-                task=submission.task,
                 owner=submission.owner,
                 data=submission.data,
+                organization=submission.organization,
+                fact_sheet_answers=submission.fact_sheet_answers,
             )
             new_submission.save(ignore_submission_limit=True)
             new_submission.start()
@@ -330,7 +341,7 @@ class Phase(models.Model):
         Returns:
             (can_make_submissions, reason_if_not)
         """
-        if not self.has_max_submissions or (user.is_bot and self.competition.allow_robot_submissions):
+        if not self.has_max_submissions:
             return True, None
 
         qs = self.submissions.filter(owner=user, parent__isnull=True).exclude(status='Failed')
@@ -349,7 +360,7 @@ class Phase(models.Model):
     def is_active(self):
         """ Returns true when this phase of the competition is on-going. """
         if not self.end:
-            return True
+            return self.start < now()
         else:
             return self.start < now() < self.end
 
@@ -428,6 +439,7 @@ class Submission(models.Model):
     PREPARING = "Preparing"
     RUNNING = "Running"
     SCORING = "Scoring"
+    AWAITING_VALIDATION = "Awaiting validation"
     CANCELLED = "Cancelled"
     FINISHED = "Finished"
     FAILED = "Failed"
@@ -439,6 +451,7 @@ class Submission(models.Model):
         (PREPARING, "Preparing"),
         (RUNNING, "Running"),
         (SCORING, "Scoring"),
+        (AWAITING_VALIDATION, "Awaiting validation"),
         (CANCELLED, "Cancelled"),
         (FINISHED, "Finished"),
         (FAILED, "Failed"),
@@ -527,9 +540,10 @@ class Submission(models.Model):
             detail.delete()  # Remove record from DB
 
         # Clear the data field if no other submissions are using it
-        other_submissions_using_data = Submission.objects.filter(data=self.data).exclude(pk=self.pk).exists()
-        if not other_submissions_using_data:
-            self.data.delete()
+        if self.data:
+            other_submissions_using_data = Submission.objects.filter(data=self.data).exclude(pk=self.pk).exists()
+            if not other_submissions_using_data:
+                self.data.delete()
 
         # Clear the data field for this submission
         self.data = None
@@ -545,11 +559,12 @@ class Submission(models.Model):
     def delete(self, **kwargs):
 
         # Check if any other submissions are using the same data
-        other_submissions_using_data = Submission.objects.filter(data=self.data).exclude(pk=self.pk).exists()
+        if self.data:
+            other_submissions_using_data = Submission.objects.filter(data=self.data).exclude(pk=self.pk).exists()
 
-        if not other_submissions_using_data:
-            # If no other submissions are using the same data, delete it
-            self.data.delete()
+            if not other_submissions_using_data:
+                # If no other submissions are using the same data, delete it
+                self.data.delete()
 
         # Also clean up details on delete
         self.details.all().delete()
@@ -643,7 +658,8 @@ class Submission(models.Model):
             'has_children': self.has_children,
             'is_specific_task_re_run': is_specific_task_re_run,
             'fact_sheet_answers': self.fact_sheet_answers,
-            'queue': self.phase.competition.queue
+            'queue': self.phase.competition.queue,
+            'organization': self.organization,
         }
         sub = Submission(**submission_arg_dict)
         sub.save(ignore_submission_limit=True)
@@ -668,10 +684,12 @@ class Submission(models.Model):
                     sub.cancel(status=status)
             celery_app = app
             # If a custom queue is set, we need to fetch the appropriate celery app
-            if self.phase.competition.queue:
-                celery_app = app_for_vhost(str(self.phase.competition.queue.vhost))
-
-            celery_app.control.revoke(self.celery_task_id, terminate=True)
+            # NOTE: We fetch the queue from submission and not from competition to be sure that we are using the correct queue
+            # Originally we were using queue from the competition (self.phase.competition.queue)
+            if self.queue:
+                celery_app = app_for_vhost(str(self.queue.vhost))
+            # We need to convert the UUID given by celery into a byte like object otherwise it won't work
+            celery_app.control.revoke(str(self.celery_task_id), terminate=True)
             self.status = status
             self.save()
             return True
@@ -686,7 +704,7 @@ class Submission(models.Model):
     def calculate_scores(self):
         # leaderboards = self.phase.competition.leaderboards.all()
         # for leaderboard in leaderboards:
-        columns = self.phase.leaderboard.columns.exclude(computation__isnull=True)
+        columns = self.phase.leaderboard.columns.exclude(computation__isnull=True).exclude(computation=Column.AVERAGE_RANK)
         for column in columns:
             scores = self.scores.filter(column__index__in=column.computation_indexes.split(',')).values_list('score',
                                                                                                              flat=True)

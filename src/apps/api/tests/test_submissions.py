@@ -1,4 +1,5 @@
 import random
+from datetime import timedelta
 from unittest import mock
 
 from django.urls import reverse
@@ -46,11 +47,11 @@ class SubmissionAPITests(APITestCase):
             leaderboard=None
         )
 
-        # add submission with that is on the leaderboard
+        # add submission with that is on the leaderboard (leaderboard submissions should always be finished)
         self.leaderboard_submission = SubmissionFactory(
             phase=self.phase,
             owner=self.participant,
-            status=Submission.SUBMITTED,
+            status=Submission.FINISHED,
             leaderboard=self.leaderboard
         )
 
@@ -145,73 +146,6 @@ class SubmissionAPITests(APITestCase):
 
         assert resp.status_code == 403
         assert resp.data["detail"] == "You cannot delete a leaderboard submission!"
-
-    def test_cannot_get_details_of_submission_unless_creator_collab_or_superuser(self):
-        url = reverse('submission-get-details', args=(self.existing_submission.pk,))
-
-        # Non logged in user can't even see this
-        resp = self.client.get(url)
-        assert resp.status_code == 404
-
-        # Regular user can't see this
-        self.client.force_login(self.other_user)
-        resp = self.client.get(url)
-        assert resp.status_code == 404
-
-        # Actual user can see download details
-        self.client.force_login(self.participant)
-        resp = self.client.get(url)
-        assert resp.status_code == 200
-
-        # Competition creator can see download details
-        self.client.force_login(self.creator)
-        resp = self.client.get(url)
-        assert resp.status_code == 200
-
-        # Collaborator can see download details
-        self.client.force_login(self.collaborator)
-        resp = self.client.get(url)
-        assert resp.status_code == 200
-
-        # Superuser can see download details
-        self.client.force_login(self.superuser)
-        resp = self.client.get(url)
-        assert resp.status_code == 200
-
-    def test_hidden_details_actually_stops_submission_creator_from_seeing_output(self):
-        self.phase.hide_output = True
-        self.phase.save()
-        url = reverse('submission-get-details', args=(self.existing_submission.pk,))
-
-        # Non logged in user can't even see this
-        resp = self.client.get(url)
-        assert resp.status_code == 404
-
-        # Regular user can't see this
-        self.client.force_login(self.other_user)
-        resp = self.client.get(url)
-        assert resp.status_code == 404
-
-        # Actual user cannot see their submission details
-        self.client.force_login(self.participant)
-        resp = self.client.get(url)
-        assert resp.status_code == 403
-        assert resp.data["detail"] == "Cannot access submission details while phase marked to hide output."
-
-        # Competition creator can see download details
-        self.client.force_login(self.creator)
-        resp = self.client.get(url)
-        assert resp.status_code == 200
-
-        # Collaborator can see download details
-        self.client.force_login(self.collaborator)
-        resp = self.client.get(url)
-        assert resp.status_code == 200
-
-        # Superuser can see download details
-        self.client.force_login(self.superuser)
-        resp = self.client.get(url)
-        assert resp.status_code == 200
 
     def test_no_one_can_see_detailed_result_when_visualization_is_false(self):
         self.comp.enable_detailed_results = False
@@ -328,6 +262,166 @@ class SubmissionAPITests(APITestCase):
         resp = self.client.get(url)
         assert resp.status_code == 200
 
+    def test_anonymous_cannot_list_or_retrieve_submissions(self):
+        """
+        SubmissionViewSet's general list/retrieve endpoints must not leak submission
+        data to anonymous users, even for a finished submission on a leaderboard.
+        Public leaderboard data is meant to be served only through
+        PhaseViewSet.get_leaderboard, which uses a restricted serializer.
+        """
+        # List: the leaderboard submission must not appear
+        resp = self.client.get(reverse('submission-list'))
+        assert resp.status_code == 200
+        results = resp.data.get('results', resp.data)
+        assert all(item['id'] != self.leaderboard_submission.pk for item in results)
+
+        # Retrieve: must 404, not leak the record
+        url = reverse('submission-detail', args=(self.leaderboard_submission.pk,))
+        resp = self.client.get(url)
+        assert resp.status_code == 404
+
+
+class SubmissionGetDetailsAPITests(APITestCase):
+    def setUp(self):
+        self.superuser = UserFactory(is_superuser=True, is_staff=True)
+
+        # Competition and creator
+        self.creator = UserFactory(username='creator', password='creator')
+        self.collaborator = UserFactory(username='collab', password='collab')
+        self.comp = CompetitionFactory(created_by=self.creator, collaborators=[self.collaborator])
+        self.phase = PhaseFactory(competition=self.comp)
+        self.leaderboard = LeaderboardFactory()
+
+        # Extra dummy user to test permissions, they shouldn't have access to many things
+        self.other_user = UserFactory(username='other_user', password='other')
+
+        # Make participant
+        self.participant = UserFactory(username='participant_approved', password='other')
+        CompetitionParticipantFactory(user=self.participant, competition=self.comp, status=CompetitionParticipant.APPROVED)
+
+        # add submission with owner = approved participant
+        self.existing_submission = SubmissionFactory(
+            phase=self.phase,
+            owner=self.participant,
+            status=Submission.SUBMITTED,
+            secret='7df3600c-1234-5678-bbc8-bbe91f42d875',
+            leaderboard=None
+        )
+
+        # add submission with that is on the leaderboard
+        self.leaderboard_submission = SubmissionFactory(
+            phase=self.phase,
+            owner=self.participant,
+            status=Submission.FINISHED,
+            leaderboard=self.leaderboard
+        )
+
+    def test_cannot_get_details_of_submission_unless_creator_collab_or_superuser(self):
+        """
+        Uses a submission that is NOT on a leaderboard.
+        Expect only the owner, creator, collaborator, or superuser to get details; everyone else gets 404.
+        """
+        url = reverse('submission-get-details', args=(self.existing_submission.pk,))
+
+        # Non logged in user can't even see this
+        resp = self.client.get(url)
+        assert resp.status_code == 404
+
+        # Regular user can't see this
+        self.client.force_login(self.other_user)
+        resp = self.client.get(url)
+        assert resp.status_code == 404
+
+        # Actual user can see download details
+        self.client.force_login(self.participant)
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+
+        # Competition creator can see download details
+        self.client.force_login(self.creator)
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+
+        # Collaborator can see download details
+        self.client.force_login(self.collaborator)
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+
+        # Superuser can see download details
+        self.client.force_login(self.superuser)
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+
+    def test_hidden_details_actually_stops_submission_creator_from_seeing_output(self):
+        """
+        Uses a submission that is NOT on a leaderboard, with phase.hide_output set.
+        Expect hide_output to block even the owner, while admins still get through.
+        """
+        self.phase.hide_output = True
+        self.phase.save()
+        url = reverse('submission-get-details', args=(self.existing_submission.pk,))
+
+        # Non logged in user can't even see this
+        resp = self.client.get(url)
+        assert resp.status_code == 404
+
+        # Regular user can't see this
+        self.client.force_login(self.other_user)
+        resp = self.client.get(url)
+        assert resp.status_code == 404
+
+        # Actual user cannot see their submission details
+        self.client.force_login(self.participant)
+        resp = self.client.get(url)
+        assert resp.status_code == 403
+        assert resp.data["detail"] == "Cannot access submission details while phase marked to hide output."
+
+        # Competition creator can see download details
+        self.client.force_login(self.creator)
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+
+        # Collaborator can see download details
+        self.client.force_login(self.collaborator)
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+
+        # Superuser can see download details
+        self.client.force_login(self.superuser)
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+
+    def test_anonymous_cannot_get_details_of_finished_leaderboard_submission(self):
+        """
+        Unlike the two tests above, uses a finished submission that IS on a leaderboard.
+        Being on a leaderboard must not make submission details reachable by anonymous users.
+
+        SubmissionViewSet.get_queryset() in src/apps/api/views/submissions.py returns an
+        empty queryset for unauthenticated GET requests, so get_details' super().get_object()
+        never finds the submission and we get a 404 (rather than a 403 confirming it exists).
+        Public leaderboard data is served separately by PhaseViewSet.get_leaderboard.
+        """
+        url = reverse('submission-get-details', args=(self.leaderboard_submission.pk,))
+
+        # Anonymous: filtered out at the queryset level, existence is not leaked
+        resp = self.client.get(url)
+        assert resp.status_code == 404
+
+        # Non-owner, non-admin authenticated user: filtered out at the queryset level
+        self.client.force_login(self.other_user)
+        resp = self.client.get(url)
+        assert resp.status_code == 404
+
+        # Owner can still see it (hide_output is False)
+        self.client.force_login(self.participant)
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+
+        # Admin (competition creator) can still see it
+        self.client.force_login(self.creator)
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+
 
 class SubmissionUpdateTest(APITestCase):
     def setUp(self):
@@ -401,103 +495,6 @@ class OrganizationSubmissionTests(APITestCase):
             assert resp.status_code == 400
 
 
-class BotUserSubmissionTests(APITestCase):
-    def setUp(self):
-        self.creator = UserFactory(username='creator', password='creator')
-        self.bot_user = UserFactory(username='bot_user', password='other', is_bot=True)
-        self.non_bot_user = UserFactory(username='non_bot', password='other')
-        self.bot_comp = CompetitionFactory(created_by=self.creator, allow_robot_submissions=True)
-        self.bot_phase = PhaseFactory(competition=self.bot_comp)
-        self.bot_phase_day_limited = PhaseFactory(competition=self.bot_comp, has_max_submissions=True, max_submissions_per_day=1)
-        self.bot_phase_person_limited = PhaseFactory(competition=self.bot_comp, has_max_submissions=True, max_submissions_per_person=1)
-        CompetitionParticipant(user=self.non_bot_user, competition=self.bot_comp, status=CompetitionParticipant.APPROVED).save()
-
-    def test_bot_users_are_automatically_added_to_participants_on_submission(self):
-        self.client.login(username="bot_user", password="other")
-
-        resp = self.client.get(reverse("can_make_submission", args=(self.bot_phase.pk,)))
-
-        assert resp.status_code == 200
-        assert resp.data["can"]
-
-    def test_bots_can_exceed_max_submissions_per_day(self):
-        self.client.login(username='bot_user', password='other')
-
-        resp = self.client.get(reverse("can_make_submission", args=(self.bot_phase_day_limited.pk,)))
-
-        assert resp.status_code == 200
-        assert resp.data['can']
-
-        for _ in range(2):
-            SubmissionFactory(
-                phase=self.bot_phase_day_limited,
-                owner=self.bot_user,
-                status=Submission.SUBMITTED,
-                secret='7df3600c-1234-5678-bbc8-bbe91f42d875'
-            )
-
-        assert Submission.objects.filter(owner=self.bot_user, phase=self.bot_phase_day_limited).count() > self.bot_phase_day_limited.max_submissions_per_day
-
-    def test_bots_can_exceed_max_submissions_per_person(self):
-        self.client.login(username='bot_user', password='other')
-
-        resp = self.client.get(reverse("can_make_submission", args=(self.bot_phase_person_limited.pk,)))
-
-        assert resp.status_code == 200
-        assert resp.data['can']
-
-        for _ in range(2):
-            SubmissionFactory(
-                phase=self.bot_phase_person_limited,
-                owner=self.bot_user,
-                status=Submission.SUBMITTED,
-                secret='7df3600c-1234-5678-bbc8-bbe91f42d875'
-            )
-
-        assert Submission.objects.filter(owner=self.bot_user, phase=self.bot_phase_person_limited).count() > self.bot_phase_person_limited.max_submissions_per_person
-
-    def test_non_bot_users_cannot_exceed_max_submissions_per_day(self):
-        self.client.login(username='non_bot', password='other')
-
-        resp = self.client.get(reverse("can_make_submission", args=(self.bot_phase_day_limited.pk,)))
-
-        assert resp.status_code == 200
-        assert resp.data['can']
-
-        SubmissionFactory(
-            phase=self.bot_phase_day_limited,
-            owner=self.non_bot_user,
-            status=Submission.SUBMITTED,
-            secret='7df3600c-1234-5678-bbc8-bbe91f42d875',
-            created_when=now(),
-        )
-
-        resp = self.client.get(reverse("can_make_submission", args=(self.bot_phase_day_limited.pk,)))
-
-        assert resp.status_code == 200
-        assert not resp.data['can']
-
-    def test_non_bot_users_cannot_exceed_max_submissions_per_person(self):
-        self.client.login(username='non_bot', password='other')
-
-        resp = self.client.get(reverse("can_make_submission", args=(self.bot_phase_person_limited.pk,)))
-
-        assert resp.status_code == 200
-        assert resp.data['can']
-
-        SubmissionFactory(
-            phase=self.bot_phase_person_limited,
-            owner=self.non_bot_user,
-            status=Submission.SUBMITTED,
-            secret='7df3600c-1234-5678-bbc8-bbe91f42d875'
-        )
-
-        resp = self.client.get(reverse("can_make_submission", args=(self.bot_phase_person_limited.pk,)))
-
-        assert resp.status_code == 200
-        assert not resp.data['can']
-
-
 class TaskSelectionTests(APITestCase):
     def setUp(self):
         # Competition and creator
@@ -561,40 +558,9 @@ class TaskSelectionTests(APITestCase):
             # Make sure the selected tasks were run in the duplicate submission's children
             assert list(sub_copy.children.all().order_by('task__pk').values_list('task', flat=True)) == self.sorted_tasks
 
-    def test_can_re_run_submissions_with_specific_task_with_bot_user_without_original_submission_secret(self):
-        bot_user = UserFactory(username="botman", password="botman", is_bot=True)
-        self.client.login(username=bot_user.username, password="botman")
-
-        pre_existing_sub = Submission.objects.create(**{
-            'phase': self.phase,
-            'owner': self.creator,
-            'task': self.phase.tasks.first(),
-            'data': self.data,
-            'status': Submission.FINISHED,
-        })
-
-        new_task = TaskFactory()
-
-        query_params = f'task_key={new_task.key}&private=true'
-        url = f"{reverse('submission-re-run-submission', args=(pre_existing_sub.pk,))}?{query_params}"
-
-        self.creator.is_bot = True
-        self.creator.save()
-
-        assert not Submission.objects.filter(task=new_task).exists()
-
-        # Mock _send_to_compute_worker so submissions don't actually run
-        with mock.patch('competitions.tasks._send_to_compute_worker'):
-            self.client.post(url)
-            sub = Submission.objects.get(task=new_task)
-            assert sub.owner == self.creator
-            assert sub.phase == self.phase
-            assert sub.data == self.data
-            assert sub.is_specific_task_re_run
-
-    def test_cannot_re_run_submissions_with_specific_task_without_bot_user(self):
-        non_bot_user = UserFactory(username="nonbotman", password="nonbotman")
-        self.client.login(username=non_bot_user.username, password="nonbotman")
+    def test_cannot_re_run_submissions_with_specific_task_without_permission(self):
+        other_user = UserFactory(username="otheruser", password="otheruser")
+        self.client.login(username=other_user.username, password="otheruser")
 
         pre_existing_sub = Submission.objects.create(**{
             'phase': self.phase,
@@ -731,3 +697,63 @@ class SubmissionSoftDeletionTest(APITestCase):
         self.organization_submission.refresh_from_db()
         assert self.organization_submission.is_soft_deleted is True
         assert self.organization_submission.organization is None
+
+
+class PhaseActiveSubmissionTests(APITestCase):
+    """a submission must only be creatable while its phase is active
+    (has started and, if it has an end date, has not ended)."""
+
+    def setUp(self):
+        self.creator = UserFactory()
+        self.comp = CompetitionFactory(created_by=self.creator)
+        self.participant = UserFactory()
+        CompetitionParticipantFactory(user=self.participant, competition=self.comp, status=CompetitionParticipant.APPROVED)
+        self.dataset = DataFactory(type='submission', created_by=self.participant)
+        self.url_submission = reverse('submission-list')
+
+    def post_submission(self, phase):
+        self.client.force_login(user=self.participant)
+        data = {'phase': phase.id, 'data': self.dataset.key}
+        # Mock _send_to_compute_worker so submissions don't actually run
+        with mock.patch('competitions.tasks._send_to_compute_worker'):
+            return self.client.post(self.url_submission, data=data)
+
+    def test_cannot_submit_before_phase_starts(self):
+        phase = PhaseFactory(competition=self.comp, start=now() + timedelta(days=1), end=None)
+        resp = self.post_submission(phase)
+        assert resp.status_code == 400
+        assert "This phase is not currently accepting submissions." in str(resp.data)
+
+    def test_cannot_submit_before_phase_starts_even_with_end_date_set(self):
+        phase = PhaseFactory(
+            competition=self.comp,
+            start=now() + timedelta(days=1),
+            end=now() + timedelta(days=2),
+        )
+        resp = self.post_submission(phase)
+        assert resp.status_code == 400
+        assert "This phase is not currently accepting submissions." in str(resp.data)
+
+    def test_cannot_submit_after_phase_ends(self):
+        phase = PhaseFactory(
+            competition=self.comp,
+            start=now() - timedelta(days=2),
+            end=now() - timedelta(days=1),
+        )
+        resp = self.post_submission(phase)
+        assert resp.status_code == 400
+        assert "This phase is not currently accepting submissions." in str(resp.data)
+
+    def test_can_submit_during_active_phase_with_no_end_date(self):
+        phase = PhaseFactory(competition=self.comp, start=now() - timedelta(days=1), end=None)
+        resp = self.post_submission(phase)
+        assert resp.status_code == 201
+
+    def test_can_submit_during_active_phase_with_future_end_date(self):
+        phase = PhaseFactory(
+            competition=self.comp,
+            start=now() - timedelta(days=1),
+            end=now() + timedelta(days=1),
+        )
+        resp = self.post_submission(phase)
+        assert resp.status_code == 201

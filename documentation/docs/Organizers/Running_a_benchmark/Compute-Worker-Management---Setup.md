@@ -27,11 +27,11 @@ b) Install manually, following the steps at: https://docs.docker.com/install/
 ## Pull Compute Worker Image
 On the compute worker machine, run the following command in a shell:
 ```bash
-docker pull codalab/competitions-v2-compute-worker
+docker pull codalab/codabench-compute-worker
 ```
 
 That will pull the latest image for the v2 worker. For specific versions, see the docker hub page at:
-https://hub.docker.com/r/codalab/competitions-v2-compute-worker/tags
+https://hub.docker.com/r/codalab/codabench-compute-worker/tags
 
 
 ## Start CPU worker
@@ -59,6 +59,25 @@ HOST_DIRECTORY=/codabench
 CONTAINER_ENGINE_EXECUTABLE=docker
 #USE_GPU=True
 #GPU_DEVICE=nvidia.com/gpu=all
+#HUMAN_IN_THE_LOOP=False
+
+# If set to False, the compute worker will never pull for the 
+# competition image, the image will need to be downloaded
+# manually on the host before running submissions. True by default
+#COMPETITION_ALLOW_IMAGE_PULL=True
+
+# This option removes the ability of the compute worker to send logs to
+# codabench, instead writing them locally on disk. Combine with
+# COMPUTE_WORKER_NO_CLEANUP=true to stop the worker's cleanup to keep
+# all the logs locally only
+#COMPUTE_WORKER_DISABLE_LOG_UPLOAD=False
+
+# Stop the predictions from being sent to Codabench.
+# This option requires only having one compute worker for ingestion
+# and scoring.
+#COMPUTE_WORKER_DISABLE_PREDICTION_UPLOAD=False
+
+#COMPUTE_WORKER_NO_CLEANUP=False
 
 #######################################################################
 #                       Network                                       #
@@ -71,6 +90,8 @@ CONTAINER_ENGINE_EXECUTABLE=docker
 By default, the competition container created by the compute worker has access to internet. If you want to remove this access, you can uncomment `COMPETITION_CONTAINER_NETWORK_DISABLED` and set it to `True`
 
 If the VM hosting the compute worker is behind a proxy, and you want to allow the competition container to access internet, you will also need to set the proxy for the competition container to use, in which case you can use `COMPETITION_CONTAINER_HTTP_PROXY`
+
+To control the scoring output before sending it to the instance, you can use the human in the loop feature the check the scoring file (json or txt) before sending anything to the instance, see: [HITL documentation](https://docs.codabench.org/latest/Organizers/Running_a_benchmark/Competition-HITL/)
 
 !!! note
     - The broker URL is a unique identifier of the job queue that the worker should listen to. To create a queue or obtain the broker URL of an existing queue, you can refer to [Queue Management](Queue-Management.md) docs page.
@@ -106,21 +127,6 @@ services:
 You can then launch the worker by running this command in the terminal where the `docker-compose.yml` file is located:
 ```bash
 docker compose up -d
-```
-
-### Deprecated method (one liner)
-Alternately, you can use the docker run below:
-```bash
-docker run \
-    -v /codabench:/codabench \
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    -d \
-    --env-file .env \
-    --name compute_worker \
-    --restart unless-stopped \
-    --log-opt max-size=50m \
-    --log-opt max-file=3 \
-    codalab/competitions-v2-compute-worker:latest
 ```
 
 
@@ -163,23 +169,6 @@ You can then launch the worker by running this command in the terminal where the
 docker compose up -d
 ```
 
-
-### NVIDIA-docker Wrapper (deprecated method)
-[Nvidia installation instructions](https://github.com/NVIDIA/nvidia-docker#quickstart)
-```bash
-nvidia-docker run \
-    -v /codabench:/codabench \
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    -v /var/lib/nvidia-docker/nvidia-docker.sock:/var/lib/nvidia-docker/nvidia-docker.sock \
-    -d \
-    --env-file .env \
-    --name compute_worker \
-    --restart unless-stopped \
-    --log-opt max-size=50m \
-    --log-opt max-file=3 \
-    codalab/competitions-v2-compute-worker:gpu
-```
-
 Note that a competition docker image including CUDA and other GPU libraries, such as `codalab/codalab-legacy:gpu`, is then required.
 
 ## Check logs
@@ -213,7 +202,7 @@ It is recommended to store the docker container hostname to identify the worker.
 ```sh
 $ docker ps
 CONTAINER ID   IMAGE                                           COMMAND                  CREATED      STATUS      PORTS     NAMES
-1a2b3d4e5f67   codalab/competitions-v2-compute-worker:latest   "/bin/sh -c 'celery …"   3 days ago   Up 3 days             compute_worker
+1a2b3d4e5f67   codalab/codabench-compute-worker:latest   "/bin/sh -c 'celery …"   3 days ago   Up 3 days             compute_worker
 ```
 
 For each submission made to your queue, you can know what worker computed the ingestion and the scoring jobs in the [server status page](Server-status-page.md).
@@ -236,6 +225,7 @@ The folder `$HOST_DIRECTORY/data`, usually `/codabench/data`, is shared between 
 
 
 !!! tip "If you simply wish to set up some compute workers to increase the computing power of your benchmark, you don't need to scroll this page any further."
+
 ---
 
 ## Building compute worker

@@ -4,13 +4,13 @@
         <input type="text" placeholder="Search..." ref="search" onkeyup="{ filter.bind(this, undefined) }">
         <i class="search icon"></i>
     </div>
-    <button class="ui red right floated labeled icon button {disabled: marked_datasets.length === 0}" onclick="{delete_datasets}">
+    <button class="ui red right floated labeled icon button {disabled: marked_competition_bundles.length === 0}" onclick="{delete_competition_bundles}">
         <i class="icon delete"></i>
         Delete Selected
     </button>
 
     <!-- Data Table -->
-    <table id="bundlesTable" class="ui {selectable: datasets.length > 0} celled compact sortable table">
+    <table id="bundlesTable" class="ui {selectable: competition_bundles.length > 0} celled compact sortable table">
         <thead>
             <tr>
                 <th>File Name</th>
@@ -23,32 +23,32 @@
         </thead>
 
         <tbody>
-            <tr each="{ dataset, index in datasets }"
+            <tr each="{ bundle, index in competition_bundles }"
                 class="dataset-row"
-                onclick="{show_info_modal.bind(this, dataset)}">
-                <td>{ dataset.name }</td>
+                onclick="{show_info_modal.bind(this, bundle)}">
+                <td>{ bundle.name }</td>
                 <td>
-                    <div if="{dataset.competition}" class="ui fitted">
-                        <a id="competitionLink" href="{URLS.COMPETITION_DETAIL(dataset.competition.id)}" target="_blank">{dataset.competition.title}</a>
+                    <div if="{bundle.competition}" class="ui fitted">
+                        <a id="competitionLink" href="{URLS.COMPETITION_DETAIL(bundle.competition.id)}" target="_blank">{bundle.competition.title}</a>
                     </div>
                 </td>
-                <td>{ pretty_bytes(dataset.file_size) }</td>
-                <td>{ timeSince(Date.parse(dataset.created_when)) } ago</td>
+                <td>{ pretty_bytes(bundle.file_size) }</td>
+                <td>{ timeSince(Date.parse(bundle.created_when)) } ago</td>
                 <td class="center aligned">
-                    <button show="{dataset.created_by === CODALAB.state.user.username}" class="ui mini button red icon" onclick="{ delete_dataset.bind(this, dataset) }">
+                    <button show="{bundle.created_by === CODALAB.state.user.username}" class="ui mini button red icon" onclick="{ delete_competition_bundle.bind(this, bundle) }">
                         <i class="icon delete"></i>
                     </button>
                 </td>
                 <td class="center aligned">
-                    <div show="{dataset.created_by === CODALAB.state.user.username}" class="ui fitted checkbox">
-                        <input type="checkbox" name="delete_checkbox" onclick="{ mark_dataset_for_deletion.bind(this, dataset) }">
+                    <div show="{bundle.created_by === CODALAB.state.user.username}" class="ui fitted checkbox">
+                        <input type="checkbox" name="delete_checkbox" onclick="{ mark_competition_bundle_for_deletion.bind(this, bundle) }">
                         <label></label>
                     </div>
                 </td>
             </tr>
-            <tr if="{datasets.length === 0}">
+            <tr if="{competition_bundles.length === 0}">
                 <td class="center aligned" colspan="6">
-                    <em>No Datasets Yet!</em>
+                    <em>No Competition Bundles Yet!</em>
                 </td>
             </tr>
         </tbody>
@@ -56,8 +56,8 @@
         <tfoot>
             <!-- Pagination -->
             <tr>
-                <th colspan="8" if="{datasets.length > 0}">
-                    <div class="ui right floated pagination menu" if="{datasets.length > 0}">
+                <th colspan="8" if="{competition_bundles.length > 0}">
+                    <div class="ui right floated pagination menu" if="{competition_bundles.length > 0}">
                         <a show="{!!_.get(pagination, 'previous')}" class="icon item" onclick="{previous_page}">
                             <i class="left chevron icon"></i>
                         </a>
@@ -125,8 +125,8 @@
          Init
         ---------------------------------------------------------------------*/
 
-        self.datasets = []
-        self.marked_datasets = []
+        self.competition_bundles = []
+        self.marked_competition_bundles = []
         self.selected_row = {}
         self.page = 1
 
@@ -134,7 +134,7 @@
             $(".ui.dropdown", self.root).dropdown()
             $(".ui.checkbox", self.root).checkbox()
             $('#bundlesTable').tablesort()
-            self.update_datasets()
+            self.update_competition_bundles()
         })
 
         /*---------------------------------------------------------------------
@@ -150,7 +150,7 @@
                 page: 1,
             })
             self.page = filters.page
-            self.update_datasets(filters)
+            self.update_competition_bundles(filters)
         }
 
         self.next_page = function () {
@@ -171,12 +171,12 @@
             }
         }
 
-        self.update_datasets = function (filters) {
+        self.update_competition_bundles = function (filters) {
             filters = filters || {}
             filters._type = "bundle"
             CODALAB.api.get_datasets(filters)
                 .done(function (data) {
-                    self.datasets = data.results
+                    self.competition_bundles = data.results
                     self.pagination = {
                         "count": data.count,
                         "next": data.next,
@@ -185,16 +185,16 @@
                     self.update()
                 })
                 .fail(function (response) {
-                    toastr.error("Could not load datasets...")
+                    toastr.error("Could not load competition bundles...")
                 })
         }
 
-        self.delete_dataset = function (dataset, e) {
-            if (confirm(`Are you sure you want to delete '${dataset.name}'?`)) {
-                CODALAB.api.delete_dataset(dataset.id)
+        self.delete_competition_bundle = function (bundle, e) {
+            if (confirm(`Are you sure you want to delete '${bundle.name}'?`)) {
+                CODALAB.api.delete_dataset(bundle.id)
                     .done(function () {
-                        self.update_datasets()
-                        toastr.success("Dataset deleted successfully!")
+                        self.update_competition_bundles()
+                        toastr.success("Competition bundle deleted successfully!")
                         CODALAB.events.trigger('reload_quota_cleanup')
                     })
                     .fail(function (response) {
@@ -204,13 +204,13 @@
             event.stopPropagation()
         }
 
-        self.delete_datasets = function () {
-            if (confirm(`Are you sure you want to delete multiple datasets?`)) {
-                CODALAB.api.delete_datasets(self.marked_datasets)
+        self.delete_competition_bundles = function () {
+            if (confirm(`Are you sure you want to delete multiple competition bundles?`)) {
+                CODALAB.api.delete_datasets(self.marked_competition_bundles)
                     .done(function () {
-                        self.update_datasets()
-                        toastr.success("Dataset deleted successfully!")
-                        self.marked_datasets = []
+                        self.update_competition_bundles()
+                        toastr.success("Competition bundles deleted successfully!")
+                        self.marked_competition_bundles = []
                         CODALAB.events.trigger('reload_quota_cleanup')
                     })
                     .fail(function (response) {
@@ -222,12 +222,12 @@
             event.stopPropagation()
         }
 
-        self.mark_dataset_for_deletion = function(dataset, e) {
+        self.mark_competition_bundle_for_deletion = function(bundle, e) {
             if (e.target.checked) {
-                self.marked_datasets.push(dataset.id)
+                self.marked_competition_bundles.push(bundle.id)
             }
             else {
-                self.marked_datasets.splice(self.marked_datasets.indexOf(dataset.id), 1)
+                self.marked_competition_bundles.splice(self.marked_competition_bundles.indexOf(bundle.id), 1)
             }
         }
 
@@ -240,6 +240,9 @@
             self.update()
             $(self.refs.info_modal).modal('show')
         }
+
+        // Update bundles on unused bundles delete
+        CODALAB.events.on('reload_competition_bundles', self.update_competition_bundles)
 
 
     </script>

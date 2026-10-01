@@ -1,9 +1,13 @@
 from django.contrib import admin
+from django import forms
+from django.contrib.admin.widgets import FilteredSelectMultiple
+from django.contrib.auth.models import Group
+
 from django.utils.translation import gettext_lazy as _
 import json
 import csv
 from django.http import HttpResponse
-from profiles.models import User
+from profiles.models import CustomGroup, User
 from . import models
 
 
@@ -24,6 +28,10 @@ class InputFilter(admin.SimpleListFilter):
             if k != self.parameter_name
         )
         yield all_choice
+
+    def get_facet_counts(self, pk_attname, filtered_qs):
+        # Text-input filters have no predefined choices to count (Django 5.0+ facets).
+        return {}
 
 
 class SubmissionsCountFilter(InputFilter):
@@ -92,9 +100,58 @@ def SubmissionsExport_as_csv(modeladmin, request, queryset):
         headers={"Content-Disposition": 'attachment; filename="submissions.csv"'},
     )
     writer = csv.writer(response)
-    writer.writerow(["ID", "Owner", "Status", "Task", "Phase", "Queue"])
+    writer.writerow(
+        [
+            "ID",
+            "Owner",
+            "Status",
+            "Submitted on",
+            "Task",
+            "Phase",
+            "Competition Title",
+            "Competition creation date",
+            "Queue",
+            "Scores",
+            "On Leaderboard",
+        ]
+    )
     for obj in queryset:
-        writer.writerow([obj.id, obj.owner, obj.status, obj.task, obj.phase, obj.queue])
+        scores_list = []
+        for scores in obj.scores.all():
+            scores_list.append(scores.score)
+        if obj.task is not None:
+            if len(scores_list) == 0:
+                writer.writerow(
+                    [
+                        obj.id,
+                        obj.owner,
+                        obj.status,
+                        obj.created_when,
+                        obj.task,
+                        obj.phase,
+                        obj.phase.competition.title,
+                        obj.phase.competition.created_when,
+                        obj.queue,
+                        "None",
+                        obj.appear_on_leaderboards,
+                    ]
+                )
+            else:
+                writer.writerow(
+                    [
+                        obj.id,
+                        obj.owner,
+                        obj.status,
+                        obj.created_when,
+                        obj.task,
+                        obj.phase,
+                        obj.phase.competition.title,
+                        obj.phase.competition.created_when,
+                        obj.queue,
+                        scores_list[0],
+                        obj.appear_on_leaderboards,
+                    ]
+                )
     return response
 
 
@@ -131,6 +188,7 @@ class CompetitionExpansion(admin.ModelAdmin):
     list_display_links = ["id", "title"]
     actions = [CompetitionExport_as_json, CompetitionExport_as_csv]
     raw_id_fields = ["created_by", "collaborators", "queue"]
+    ordering = ('-id',)
     list_filter = [
         "published",
         "is_featured",
@@ -170,11 +228,11 @@ class CompetitionExpansion(admin.ModelAdmin):
                     "show_detailed_results_in_leaderboard",
                     "make_programs_available",
                     "make_input_data_available",
-                    "allow_robot_submissions",
                     "auto_run_submissions",
                     "can_participants_make_submissions_public",
                     "is_featured",
                     "forum_enabled",
+                    "enable_human_in_the_loop"
                 ]
             },
         ),
@@ -211,6 +269,7 @@ class SubmissionExpansion(admin.ModelAdmin):
         "scores",
     ]
     search_fields = ["id", "owner__username", "phase__competition__title", "task__name"]
+    ordering = ('-id',)
     actions = [SubmissionsExport_as_csv]
     list_display = [
         "id",
@@ -294,6 +353,7 @@ class CompetitionCreationTaskStatusExpansion(admin.ModelAdmin):
     list_display = ["id", "created_by", "resulting_competition", "status"]
     search_fields = ["id", "created_by__username"]
     list_filter = ["status"]
+    ordering = ('-id',)
 
 
 class CompetitionParticipantExpansion(admin.ModelAdmin):
@@ -301,18 +361,21 @@ class CompetitionParticipantExpansion(admin.ModelAdmin):
     list_display = ["id", "user", "competition", "status"]
     list_filter = ["status"]
     search_fields = ["id", "user__username", "competition"]
+    ordering = ('-id',)
 
 
 class PageExpansion(admin.ModelAdmin):
     raw_id_fields = ["competition"]
     list_display = ["id", "competition"]
     search_fields = ["id", "competition", "content"]
+    ordering = ('-id',)
 
 
 class PhaseExpansion(admin.ModelAdmin):
     raw_id_fields = ["competition", "leaderboard", "public_data", "starting_kit"]
     list_display = ["id", "competition", "name"]
     search_fields = ["id", "competition", "name"]
+    ordering = ('-id',)
     fieldsets = [
         (
             None,
@@ -356,3 +419,45 @@ admin.site.register(models.CompetitionParticipant, CompetitionParticipantExpansi
 admin.site.register(models.Page, PageExpansion)
 admin.site.register(models.Phase, PhaseExpansion)
 admin.site.register(models.Submission, SubmissionExpansion)
+
+
+class CustomGroupAdminForm(forms.ModelForm):
+    users = forms.ModelMultipleChoiceField(
+        queryset=User.objects.all(),
+        required=False,
+        widget=FilteredSelectMultiple("Users", is_stacked=False),
+        help_text="Add/Remove users for this group."
+    )
+
+    class Meta:
+        model = CustomGroup
+        fields = ('name', 'permissions', 'queue', 'users')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            self.fields['users'].initial = self.instance.user_set.all()
+
+
+@admin.register(CustomGroup)
+class CustomGroupAdmin(admin.ModelAdmin):
+    form = CustomGroupAdminForm
+    list_display = ('name', 'queue')
+    search_fields = ('name',)
+    filter_horizontal = ('permissions',)
+    fieldsets = (
+        (None, {'fields': ('name',)}),
+        ('Permissions', {'fields': ('permissions',)}),
+        ('Utilisateurs', {'fields': ('users',)}),
+        ('Options', {'fields': ('queue',)}),
+    )
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+        form.instance.user_set.set(form.cleaned_data['users'])
+
+
+admin.site.unregister(Group)

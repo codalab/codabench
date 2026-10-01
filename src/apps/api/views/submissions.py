@@ -16,6 +16,7 @@ from rest_framework_csv import renderers
 from django.core.files.base import ContentFile
 
 from profiles.models import Organization, Membership
+from api.pagination import DynamicChoicePagination
 from tasks.models import Task
 from api.serializers.submissions import SubmissionCreationSerializer, SubmissionSerializer, SubmissionFilesSerializer, SubmissionDetailSerializer
 from competitions.models import Submission, SubmissionDetails, Phase, CompetitionParticipant
@@ -29,9 +30,10 @@ class SubmissionViewSet(ModelViewSet):
     queryset = Submission.objects.all().order_by('-pk')
     permission_classes = []
     filter_backends = (DjangoFilterBackend, SearchFilter)
-    filter_fields = ('phase__competition', 'phase', 'status', 'is_soft_deleted')
+    filterset_fields = ('phase__competition', 'phase', 'status', 'is_soft_deleted')
     search_fields = ('data__data_file', 'description', 'name', 'owner__username')
     renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES + [renderers.CSVRenderer]
+    pagination_class = DynamicChoicePagination
 
     def check_object_permissions(self, request, obj):
         if self.action in ['submission_leaderboard_connection']:
@@ -89,12 +91,10 @@ class SubmissionViewSet(ModelViewSet):
                     except SubmissionDetails.DoesNotExist:
                         logger.error("SubmissionDetails object not found.")
 
-            not_bot_user = self.request.user.is_authenticated and not self.request.user.is_bot
-
             if self.action in ['update_fact_sheet', 'run_submission', 're_run_submission']:
                 # get_queryset will stop us from re-running something we're not supposed to
                 pass
-            elif not self.request.user.is_authenticated or not_bot_user:
+            else:
                 try:
                     if request.data.get('secret') is None or uuid.UUID(request.data.get('secret')) != obj.secret:
                         raise PermissionDenied("Submission secrets do not match")
@@ -114,33 +114,17 @@ class SubmissionViewSet(ModelViewSet):
         qs = super().get_queryset()
         if self.request.method == 'GET':
             if not self.request.user.is_authenticated:
-                # Show leaderboard submissions to unauthenticated users
-                return (
-                    qs.filter(
-                        leaderboard__isnull=False,
-                        is_soft_deleted=False,
-                        status=Submission.FINISHED,
-                    )
-                    .select_related(
-                        'phase',
-                        'phase__competition',
-                        'participant',
-                        'participant__user',
-                        'owner',
-                        'data',
-                    )
-                    .prefetch_related(
-                        'children',
-                        'scores',
-                        'scores__column',
-                        'task',
-                    )
-                )
+                # Anonymous users get nothing here. This endpoint returns full
+                # submission records (filenames, status details, fact sheet
+                # answers, internal ids, ...); the public leaderboard view is
+                # served separately by PhaseViewSet.get_leaderboard, which uses
+                # a restricted serializer.
+                return qs.none()
 
             # Check if admin is requesting to see soft-deleted submissions
             show_is_soft_deleted = self.request.query_params.get('show_is_soft_deleted', 'false').lower() == 'true'
 
-            if not self.request.user.is_superuser and not self.request.user.is_staff and not self.request.user.is_bot:
+            if not self.request.user.is_superuser and not self.request.user.is_staff:
                 # if you're the creator of the submission or a collaborator on the competition
                 qs = qs.filter(
                     Q(owner=self.request.user) |
@@ -177,12 +161,9 @@ class SubmissionViewSet(ModelViewSet):
                     Q(phase__competition__created_by=self.request.user) |
                     Q(phase__competition__collaborators__in=[self.request.user.pk])
                 ) is not qs:
-                    ValidationError("Request Contained Submissions you don't have authorization for")
+                    raise ValidationError("Request Contained Submissions you don't have authorization for")
             if self.action in ['re_run_many_submissions']:
-                print(f'debug {qs}')
-                print(f'debug {qs.first().status}')
                 qs = qs.filter(status__in=[Submission.FINISHED, Submission.FAILED, Submission.CANCELLED])
-                print(f'debug {qs}')
         return qs
 
     def create(self, request, *args, **kwargs):
@@ -289,13 +270,16 @@ class SubmissionViewSet(ModelViewSet):
             'created_when': 'Created When',
             'status': 'Status',
             'phase_name': 'Phase',
+            'task.name': 'Task',
+            'scores.0.score': 'Score',
+            'on_leaderboard': 'On Leaderboard'
         }
         context["header"] = [k for k in context["labels"].keys()]
         return context
 
     def has_admin_permission(self, user, submission):
         competition = submission.phase.competition
-        return user.is_authenticated and (user.is_superuser or user in competition.all_organizers or user.is_bot)
+        return user.is_authenticated and (user.is_superuser or user in competition.all_organizers)
 
     @action(detail=True, methods=('POST', 'DELETE'))
     def submission_leaderboard_connection(self, request, pk):
@@ -473,8 +457,17 @@ class SubmissionViewSet(ModelViewSet):
     @action(detail=True, methods=('GET',))
     def get_details(self, request, pk):
         submission = super().get_object()
-        if submission.phase.hide_output:
-            if not self.has_admin_permission(request.user, submission):
+
+        is_owner = request.user.is_authenticated and request.user == submission.owner
+        is_admin = self.has_admin_permission(request.user, submission)
+
+        # Admin (orgnaizer + super admin) can access details without any restriction
+        # Owner can only access details when phase.hide_ouptut is False
+        # Other users cannot access submission details
+        if not is_admin:
+            if not is_owner:
+                raise PermissionDenied("You do not have permission to view this submission's details.")
+            if submission.phase.hide_output:
                 raise PermissionDenied("Cannot access submission details while phase marked to hide output.")
 
         data = SubmissionFilesSerializer(submission, context=self.get_serializer_context()).data
@@ -559,6 +552,14 @@ class SubmissionViewSet(ModelViewSet):
         Submission.objects.filter(Q(parent=top_level_submission) | Q(id=top_level_submission.id)).update(fact_sheet_answers=request_data)
         return Response({})
 
+    def paginate_queryset(self, queryset):
+        '''
+            This Méthode is added to override pagination when trying to download the Sub CSV
+        '''
+        if getattr(getattr(self.request, "accepted_renderer", None), "format", None) == "csv":
+            return None
+        return super().paginate_queryset(queryset)
+
 
 @api_view(['POST'])
 @permission_classes((AllowAny,))  # permissions are checked via the submission secret
@@ -602,14 +603,6 @@ def can_make_submission(request, phase_id):
         user=request.user,
         status=CompetitionParticipant.APPROVED
     ).exists()
-
-    if request.user.is_bot and phase.competition.allow_robot_submissions and not user_is_approved:
-        CompetitionParticipant.objects.create(
-            user=request.user,
-            competition=phase.competition,
-            status=CompetitionParticipant.APPROVED
-        )
-        user_is_approved = True
 
     if user_is_approved:
         can_make_submission, reason_why_not = phase.can_user_make_submissions(request.user)

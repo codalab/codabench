@@ -1,16 +1,17 @@
 import json
 import random
 import csv
+import uuid
 from zipfile import ZipFile
 from io import StringIO, BytesIO
 from unittest import mock
 from django.urls import reverse
 from rest_framework.test import APITestCase
 
-from api.serializers.competitions import CompetitionSerializer
+from api.serializers.competitions import CompetitionSerializer, CompetitionDetailSerializer
 from competitions.models import CompetitionParticipant, Submission, Competition
 from factories import UserFactory, CompetitionFactory, CompetitionParticipantFactory, PhaseFactory, LeaderboardFactory, \
-    ColumnFactory, SubmissionFactory, SubmissionScoreFactory, TaskFactory
+    ColumnFactory, SubmissionFactory, SubmissionScoreFactory, TaskFactory, QueueFactory
 
 
 class CompetitionTests(APITestCase):
@@ -82,6 +83,259 @@ class CompetitionTests(APITestCase):
         resp = self.client.delete(url)
         assert resp.status_code == 204
         assert not Competition.objects.filter(pk=self.comp.pk).exists()
+
+
+class CompetitionDetailTests(APITestCase):
+    """
+    Tests for the competition detail API: who can access public and private competitions,
+    which fields admins and non-admins see, and that the queue only includes its id and name.
+    """
+    def setUp(self):
+        self.creator = UserFactory(username='creator', password='creator')
+        self.collaborator = UserFactory(username='collaborator', password='collaborator')
+        self.participant = UserFactory(username='participant', password='participant')
+        self.pending_participant = UserFactory(username='pending_participant', password='pending_participant')
+        self.other_user = UserFactory(username='other_user', password='other_user')
+        self.superuser = UserFactory(username='superuser', password='superuser', is_superuser=True, is_staff=True)
+        self.queue_owner = UserFactory(username='queue_owner', password='queue_owner')
+        # Mock RabbitMQ so saving the queue doesn't create a real vhost; return a fake vhost UUID instead
+        with mock.patch('queues.models.rabbit.create_queue') as rabbit_create_queue:
+            rabbit_create_queue.return_value = uuid.uuid4()
+            self.queue = QueueFactory(owner=self.queue_owner, is_public=True)
+
+        self.public_comp = CompetitionFactory(
+            created_by=self.creator, collaborators=[self.collaborator], queue=self.queue, published=True
+        )
+        self.private_comp = CompetitionFactory(
+            created_by=self.creator, collaborators=[self.collaborator], queue=self.queue, published=False
+        )
+        for comp in (self.public_comp, self.private_comp):
+            CompetitionParticipantFactory(user=self.participant, competition=comp, status='approved')
+            CompetitionParticipantFactory(user=self.pending_participant, competition=comp, status='pending')
+        self.queue_owner_comp = CompetitionFactory(created_by=self.queue_owner, queue=self.queue, published=True)
+
+        # One visible and one hidden leaderboard on the public competition
+        self.visible_leaderboard = LeaderboardFactory(hidden=False)
+        self.hidden_leaderboard = LeaderboardFactory(hidden=True)
+        PhaseFactory(competition=self.public_comp, leaderboard=self.visible_leaderboard)
+        PhaseFactory(competition=self.public_comp, leaderboard=self.hidden_leaderboard)
+
+        # None means a logged-out user
+        self.admins = [self.creator, self.collaborator, self.superuser]
+        self.non_admins = [None, self.participant, self.pending_participant, self.other_user]
+
+    def _get(self, competition, user=None, **params):
+        """Request the detail API of `competition` as `user`, or logged out when `user` is None."""
+        self.client.logout()
+        if user:
+            self.client.force_login(user)
+        url = reverse('competition-detail', kwargs={"pk": competition.pk})
+        return self.client.get(url, params)
+
+    # ---------- Access ----------
+
+    def test_anyone_can_access_public_competition(self):
+        """
+        Admins, participants, other users and logged-out users request a published competition.
+        Expects a 200 response for all of them.
+        """
+        for user in self.admins + self.non_admins:
+            assert self._get(self.public_comp, user).status_code == 200
+
+    def test_organizers_approved_participants_and_superusers_can_access_private_competition(self):
+        """
+        The creator, a collaborator, an approved participant and a superuser request an unpublished competition.
+        Expects a 200 response for all of them.
+        """
+        for user in [self.creator, self.collaborator, self.participant, self.superuser]:
+            assert self._get(self.private_comp, user).status_code == 200
+
+    def test_other_users_cannot_access_private_competition(self):
+        """
+        A logged-out user, an unrelated user and a pending participant request an unpublished competition
+        without a secret key.
+        Expects a 404 response for all of them.
+        """
+        for user in [None, self.other_user, self.pending_participant]:
+            assert self._get(self.private_comp, user).status_code == 404
+
+    def test_valid_secret_key_gives_access_to_private_competition(self):
+        """
+        A logged-out user, an unrelated user and a pending participant request an unpublished competition
+        with its secret key.
+        Expects a 200 response for all of them.
+        """
+        for user in [None, self.other_user, self.pending_participant]:
+            resp = self._get(self.private_comp, user, secret_key=str(self.private_comp.secret_key))
+            assert resp.status_code == 200
+
+    def test_invalid_secret_key_does_not_give_access_to_private_competition(self):
+        """
+        A logged-out user and an unrelated user request an unpublished competition with a wrong secret key.
+        Expects a 404 response for both.
+        """
+        for user in [None, self.other_user]:
+            resp = self._get(self.private_comp, user, secret_key=str(uuid.uuid4()))
+            assert resp.status_code == 404
+
+    # ---------- Fields ----------
+
+    def test_admins_see_admin_only_fields(self):
+        """
+        The creator, a collaborator and a superuser request a published competition.
+        Expects every admin-only field in the response, including the competition's secret key.
+        """
+        for user in self.admins:
+            resp = self._get(self.public_comp, user)
+            assert resp.status_code == 200
+            for field in CompetitionDetailSerializer.ADMIN_ONLY_FIELDS:
+                assert field in resp.data, field
+            assert resp.data['secret_key'] == str(self.public_comp.secret_key)
+
+    def test_non_admins_do_not_see_admin_only_fields(self):
+        """
+        Participants, an unrelated user and a logged-out user request a published competition.
+        Expects the public fields in the response, no admin-only field,
+        and the competition's secret key absent from the whole response body.
+        """
+        for user in self.non_admins:
+            resp = self._get(self.public_comp, user)
+            assert resp.status_code == 200
+            for field in ('id', 'title', 'created_by', 'phases', 'leaderboards'):
+                assert field in resp.data, field
+            for field in CompetitionDetailSerializer.ADMIN_ONLY_FIELDS:
+                assert field not in resp.data, field
+            assert str(self.public_comp.secret_key) not in resp.content.decode()
+
+    def test_non_admins_with_secret_key_do_not_see_admin_only_fields(self):
+        """
+        A logged-out user and an unrelated user open an unpublished competition with its secret key.
+        Expects a 200 response without any admin-only field.
+        """
+        for user in [None, self.other_user]:
+            resp = self._get(self.private_comp, user, secret_key=str(self.private_comp.secret_key))
+            assert resp.status_code == 200
+            for field in CompetitionDetailSerializer.ADMIN_ONLY_FIELDS:
+                assert field not in resp.data, field
+
+    def test_admins_see_hidden_leaderboards(self):
+        """
+        The creator, a collaborator and a superuser request a competition with a visible and a hidden leaderboard.
+        Expects both leaderboards in the response.
+        """
+        for user in self.admins:
+            resp = self._get(self.public_comp, user)
+            leaderboard_ids = {lb['id'] for lb in resp.data['leaderboards']}
+            assert leaderboard_ids == {self.visible_leaderboard.id, self.hidden_leaderboard.id}
+
+    def test_non_admins_do_not_see_hidden_leaderboards(self):
+        """
+        Participants, an unrelated user and a logged-out user request a competition
+        with a visible and a hidden leaderboard.
+        Expects only the visible leaderboard in the response.
+        """
+        for user in self.non_admins:
+            resp = self._get(self.public_comp, user)
+            leaderboard_ids = {lb['id'] for lb in resp.data['leaderboards']}
+            assert leaderboard_ids == {self.visible_leaderboard.id}
+
+    # ---------- Queue ----------
+
+    def test_admins_see_only_queue_id_and_name(self):
+        """
+        The creator and a collaborator (neither owns the queue) and a superuser request a competition
+        that uses someone else's queue.
+        Expects the queue to have only id and name.
+        """
+        for user in self.admins:
+            resp = self._get(self.public_comp, user)
+            assert resp.status_code == 200
+            assert resp.data['queue'] == {'id': self.queue.id, 'name': self.queue.name}
+
+    def test_queue_owner_sees_only_queue_id_and_name_on_own_competition(self):
+        """
+        The queue owner requests the detail API of their own competition that uses their queue.
+        Expects the queue to have only id and name.
+        Queue owners can get the broker URL from the queues API instead.
+        """
+        resp = self._get(self.queue_owner_comp, self.queue_owner)
+        assert resp.status_code == 200
+        assert resp.data['queue'] == {'id': self.queue.id, 'name': self.queue.name}
+
+    def test_non_admins_do_not_see_queue(self):
+        """
+        Participants, an unrelated user and a logged-out user request a competition that uses a queue.
+        Expects no queue field in the response.
+        """
+        for user in self.non_admins:
+            resp = self._get(self.public_comp, user)
+            assert resp.status_code == 200
+            assert 'queue' not in resp.data
+
+    def test_admins_see_null_queue_when_competition_has_no_queue(self):
+        """
+        The creator requests a competition that doesn't use a custom queue.
+        Expects the queue field to be None.
+        """
+        comp = CompetitionFactory(created_by=self.creator, queue=None, published=True)
+        resp = self._get(comp, self.creator)
+        assert resp.status_code == 200
+        assert resp.data['queue'] is None
+
+
+class CompetitionListTests(APITestCase):
+    def setUp(self):
+        self.user = UserFactory(username='user', password='user')
+        self.client.force_authenticate(user=self.user)
+
+    def test_list_endpoint_is_paginated(self):
+        # Create 3 competitions organized by the user
+        for _ in range(3):
+            CompetitionFactory(created_by=self.user)
+
+        url = reverse('competition-list')
+        response = self.client.get(url, {'mine': 'true', 'type': 'any', 'page_size': 2})
+
+        assert response.status_code == 200
+        assert set(response.data.keys()) == {'next', 'previous', 'count', 'page_size', 'results'}
+        assert response.data['count'] == 3
+        assert len(response.data['results']) == 2
+        assert response.data['next'] is not None
+        assert response.data['previous'] is None
+
+    def test_participating_in_excludes_organized_competitions(self):
+        # Competition the user organizes: they're auto-added as an approved participant
+        # under the hood (see Competition.save()), but this should NOT show up as "participating"
+        organized = CompetitionFactory(created_by=self.user)
+
+        # Competition the user genuinely participates in
+        other_creator = UserFactory(username='other_creator', password='other')
+        participated = CompetitionFactory(created_by=other_creator, published=True)
+        CompetitionParticipantFactory(user=self.user, competition=participated, status='approved')
+
+        url = reverse('competition-list')
+        response = self.client.get(url, {'participating_in': 'true'})
+
+        assert response.status_code == 200
+        returned_ids = [c['id'] for c in response.data['results']]
+        assert participated.id in returned_ids
+        assert organized.id not in returned_ids
+
+    def test_mine_returns_organized_competitions(self):
+        # Sanity check that the "organizing" filter is unaffected by the participating_in fix
+        organized = CompetitionFactory(created_by=self.user)
+
+        other_creator = UserFactory(username='other_creator', password='other')
+        participated = CompetitionFactory(created_by=other_creator, published=True)
+        CompetitionParticipantFactory(user=self.user, competition=participated, status='approved')
+
+        url = reverse('competition-list')
+        response = self.client.get(url, {'mine': 'true', 'type': 'any'})
+
+        assert response.status_code == 200
+        returned_ids = [c['id'] for c in response.data['results']]
+        assert organized.id in returned_ids
+        assert participated.id not in returned_ids
 
 
 class PhaseMigrationTests(APITestCase):

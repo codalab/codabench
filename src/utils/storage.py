@@ -1,10 +1,6 @@
 import hashlib
 from django.conf import settings
 
-# Fallbacks
-PublicStorageClass = object
-PrivateStorageClass = object
-
 # Import only the required backend
 if settings.STORAGE_IS_S3:
     try:

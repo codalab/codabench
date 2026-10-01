@@ -17,7 +17,7 @@ print(f"Making dump {dump_name}")
 call([
     'docker',
     'exec',
-    'codabench-db-1',
+    'db',
     'bash',
     '-c',
     f'PGPASSWORD=$DB_PASSWORD pg_dump -Fc -U $DB_USERNAME $DB_NAME > /app/backups/{dump_name}'
@@ -25,5 +25,5 @@ call([
 
 # Push/destroy dump
 call([
-    'docker', 'exec', 'codabench-django-1', 'python', 'manage.py', 'upload_backup', f'{dump_name}'
+    'docker', 'exec', 'django', 'python', 'manage.py', 'upload_backup', f'{dump_name}'
 ])

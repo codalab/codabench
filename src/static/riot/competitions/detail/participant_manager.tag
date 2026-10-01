@@ -31,7 +31,6 @@
             <tr>
                 <th>Username</th>
                 <th>Email</th>
-                <th>Is Bot?</th>
                 <th>Status</th>
                 <th class="center aligned">Actions</th>
             </tr>
@@ -40,7 +39,6 @@
             <tr each="{participants}">
                 <td><a href="/profiles/user/{username}" target="_BLANK">{username}</a></td>
                 <td>{email}</td>
-                <td>{is_bot}</td>
                 <td>{is_deleted ? "account deleted" : _.startCase(status)}</td>
                 <td class="right aligned">
                     <button class="mini ui red button icon"
@@ -222,13 +220,12 @@
             }
 
             // prepare csv header
-            const headers = ['ID', 'Username', 'Email', 'Is Bot', 'Status'];
+            const headers = ['ID', 'Username', 'Email', 'Status'];
             // prepare csv rows
             const rows = self.participants.map(p => [
                 p.id,
                 p.username,
                 p.email,
-                p.is_bot ? 'Yes' : 'No',
                 p.status
             ]);
 

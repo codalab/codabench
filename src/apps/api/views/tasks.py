@@ -29,7 +29,7 @@ from utils.data import pretty_bytes, gb_to_bytes
 class TaskViewSet(ModelViewSet):
     queryset = Task.objects.all()
     serializer_class = serializers.TaskSerializer
-    filter_fields = ('created_by', 'is_public')
+    filterset_fields = ('created_by', 'is_public')
     filter_backends = (DjangoFilterBackend, SearchFilter)
     search_fields = ('name', 'description',)
     pagination_class = BasicPagination

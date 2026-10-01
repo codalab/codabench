@@ -1,6 +1,7 @@
+from queues.models import Queue
 import uuid
 
-from django.contrib.auth.models import PermissionsMixin, AbstractBaseUser, UserManager
+from django.contrib.auth.models import Group, PermissionsMixin, AbstractBaseUser, UserManager
 from django.db import models
 from django.utils.timezone import now
 from django.utils.text import slugify
@@ -92,12 +93,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     allow_organization_invite_emails = models.BooleanField(default=True)
 
     # Queues
-    rabbitmq_queue_limit = models.PositiveIntegerField(default=5, blank=True)
+    rabbitmq_queue_limit = models.PositiveIntegerField(default=10, blank=True)
     rabbitmq_username = models.CharField(max_length=36, null=True, blank=True)
     rabbitmq_password = models.CharField(max_length=36, null=True, blank=True)
-
-    # Robot submissions
-    is_bot = models.BooleanField(default=False)
 
     # Required for social auth and such to create users
     objects = CodabenchUserManager()
@@ -343,3 +341,16 @@ class Membership(models.Model):
 
     class Meta:
         ordering = ["date_joined"]
+
+
+class CustomGroup(Group):
+
+    queue = models.ForeignKey(Queue, null=True, blank=True, on_delete=models.SET_NULL, related_name='custom_groups', verbose_name="Groups_for_queue",
+                              help_text="Queue Foreign Key on group model for multiple submissions routing.")
+
+    class Meta:
+        verbose_name = "Group"
+        verbose_name_plural = "Groups"
+
+    def __str__(self):
+        return self.name
