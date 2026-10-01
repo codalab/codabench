@@ -24,6 +24,7 @@ class UserFactory(DjangoModelFactory):
             '_username',
             '_i',
         )
+        skip_postgeneration_save = True
 
     _username = factory.Faker('user_name')
     _i = factory.Sequence(lambda n: n)
@@ -50,11 +51,14 @@ class UserFactory(DjangoModelFactory):
         if extracted:
             self.is_superuser = True
             self.is_staff = True
+            if created:
+                self.save()
 
 
 class CompetitionFactory(DjangoModelFactory):
     class Meta:
         model = Competition
+        skip_postgeneration_save = True
 
     title = factory.Sequence(lambda n: f'Competition {n}')
     created_by = factory.SubFactory(UserFactory)
@@ -71,6 +75,8 @@ class CompetitionFactory(DjangoModelFactory):
         if extracted:
             for user in extracted:
                 self.collaborators.add(user)
+            # Competition.save() adds the collaborators as approved participants
+            self.save()
 
 
 class DataFactory(DjangoModelFactory):
@@ -95,6 +101,7 @@ class DataFactory(DjangoModelFactory):
 class TaskFactory(DjangoModelFactory):
     class Meta:
         model = Task
+        skip_postgeneration_save = True
 
     name = factory.Sequence(lambda n: f'Task {n}')
     created_by = factory.SubFactory(UserFactory)
@@ -128,6 +135,7 @@ class QueueFactory(DjangoModelFactory):
 class PhaseFactory(DjangoModelFactory):
     class Meta:
         model = Phase
+        skip_postgeneration_save = True
 
     competition = factory.SubFactory(CompetitionFactory)
     start = factory.LazyFunction(now)
@@ -206,6 +214,7 @@ class ColumnFactory(DjangoModelFactory):
 class SubmissionScoreFactory(DjangoModelFactory):
     class Meta:
         model = SubmissionScore
+        skip_postgeneration_save = True
 
     column = factory.SubFactory(ColumnFactory)
     score = factory.LazyAttribute(lambda n: random.choice(range(1, 11)) / 10)
