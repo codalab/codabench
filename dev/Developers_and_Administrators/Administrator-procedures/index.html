@@ -2094,10 +2094,21 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#edit-announcement-and-news" class="md-nav__link">
+  <a href="#edit-announcements" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Edit announcement and news
+        Edit announcements
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#edit-news" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Edit news
       </span>
     </span>
   </a>
@@ -3290,10 +3301,21 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#edit-announcement-and-news" class="md-nav__link">
+  <a href="#edit-announcements" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Edit announcement and news
+        Edit announcements
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#edit-news" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Edit news
       </span>
     </span>
   </a>
@@ -3610,12 +3632,29 @@
 <p>Once you log in an account with superuser privileges, you have access to the "Django Admin" interface:</p>
 <p><a class="glightbox" data-type="image" href="../_attachments/214587579-53b8f79c-dc51-4323-b48d-360dd7b5774f_1753436642870153.png"><img alt="interface access" src="../_attachments/214587579-53b8f79c-dc51-4323-b48d-360dd7b5774f_1753436642870153.png" /></a></p>
 <p>From this interface, you can change a user's quota, change their staff and superuser status, change the featured competitions displayed on the homepage, manage user accounts and more.</p>
-<h4 id="edit-announcement-and-news">Edit announcement and news</h4>
-<p>In the Django admin interface, click on <code>Announcements</code> or <code>New posts</code>:</p>
-<p><a class="glightbox" data-type="image" href="../_attachments/de2a053f-c804-4c2a-a7ff-0df189c1d79c_17534366434691174.jpg"><img alt="" src="../_attachments/de2a053f-c804-4c2a-a7ff-0df189c1d79c_17534366434691174.jpg" /></a></p>
-<p>For announcement, only the first announcement is read by the front page. For news, all objects are read as separate news.
-You can create and edit objects using the interface. Write the announcement and news using HTML to format the text, add links, and more:</p>
-<p><a class="glightbox" data-type="image" href="../_attachments/38c0d1ce-9b27-44bb-804b-c4eed55613df_17534366434285173.jpg"><img alt="" src="../_attachments/38c0d1ce-9b27-44bb-804b-c4eed55613df_17534366434285173.jpg" /></a></p>
+<h4 id="edit-announcements">Edit announcements</h4>
+<p>In the Django admin interface, click on <code>Announcements</code>:</p>
+<p><a class="glightbox" data-type="image" href="../_attachments/announcements.png"><img alt="" src="../_attachments/announcements.png" /></a></p>
+<p>Every announcement marked <strong>Is active</strong> is shown on the front page, inside the "Announcement" box. Each announcement has:</p>
+<ul>
+<li><strong>Title</strong> (optional): shown in bold above the text.</li>
+<li><strong>Level</strong>: controls the style.<ul>
+<li><code>Critical</code>: red with an exclamation icon</li>
+<li><code>Warning</code>: yellow with a warning icon</li>
+<li><code>Info</code>: blue with an info icon</li>
+<li><code>Plain</code>: plain text with no background or icon</li>
+</ul>
+</li>
+<li><strong>Text</strong>: the body, written in HTML. Links are shown bold and underlined in the announcement's color.</li>
+<li><strong>Is active</strong>: untick to hide an announcement without deleting it.</li>
+<li><strong>Priority</strong>: controls the order. Lower numbers are shown first; announcements with the same priority are shown newest first.</li>
+</ul>
+<p>You can create and edit announcements using the interface. Write the text using HTML to format it, add links, and more:</p>
+<h4 id="edit-news">Edit news</h4>
+<p>In the Django admin interface, click on <code>News posts</code>:</p>
+<p><a class="glightbox" data-type="image" href="../_attachments/news.png"><img alt="" src="../_attachments/news.png" /></a></p>
+<p>All news objects are read by the front page as separate news.
+You can create and edit news using the interface. Write the news using HTML to format the text, add links, and more.</p>
 <h4 id="delete-a-user">Delete a user</h4>
 <p>Go to <code>Users</code>:</p>
 <p><a class="glightbox" data-type="image" href="../_attachments/47b45c3e-13ed-4870-a83d-a25338aeaa39_17534366434936385.jpg"><img alt="" src="../_attachments/47b45c3e-13ed-4870-a83d-a25338aeaa39_17534366434936385.jpg" /></a></p>
