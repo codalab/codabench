@@ -230,7 +230,7 @@
             <tr if="{ submission.has_children && expanded_submissions[submission.id] }" class="child-submissions-row">
                 <td colspan="100%" style="padding: 0 0 0 40px; background:#fafafa;">
                     <table class="ui very compact celled table">
-                        <thead style="height:20px !important;">
+                        <thead>
                             <tr>
                                 <th>ID #</th>
                                 <th if="{ opts.admin }">Owner</th>
