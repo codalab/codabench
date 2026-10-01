@@ -422,6 +422,36 @@ class SubmissionGetDetailsAPITests(APITestCase):
         resp = self.client.get(url)
         assert resp.status_code == 200
 
+    def test_get_details_returns_detailed_result_when_detailed_results_enabled(self):
+        """
+        Uses a submission that has a detailed result file, with enable_detailed_results set.
+        Expect the detailed result url in the response.
+        """
+        self.comp.enable_detailed_results = True
+        self.comp.save()
+        Submission.objects.filter(pk=self.existing_submission.pk).update(detailed_result='detailed_result/test.html')
+        url = reverse('submission-get-details', args=(self.existing_submission.pk,))
+
+        self.client.force_login(self.participant)
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+        assert resp.data['detailed_result'] is not None
+
+    def test_get_details_does_not_return_detailed_result_when_detailed_results_disabled(self):
+        """
+        Uses a submission that has a detailed result file, with enable_detailed_results not set.
+        Expect no detailed result url in the response.
+        """
+        self.comp.enable_detailed_results = False
+        self.comp.save()
+        Submission.objects.filter(pk=self.existing_submission.pk).update(detailed_result='detailed_result/test.html')
+        url = reverse('submission-get-details', args=(self.existing_submission.pk,))
+
+        self.client.force_login(self.participant)
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+        assert resp.data['detailed_result'] is None
+
 
 class SubmissionUpdateTest(APITestCase):
     def setUp(self):

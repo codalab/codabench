@@ -291,6 +291,8 @@ class SubmissionFilesSerializer(serializers.ModelSerializer):
 
     def get_detailed_result(self, instance):
         if instance.detailed_result.name:
+            if not instance.phase.competition.enable_detailed_results:
+                return None
             return make_url_sassy(instance.detailed_result.name)
 
     def get_scoring_result(self, instance):
