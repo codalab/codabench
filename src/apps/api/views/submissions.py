@@ -493,49 +493,55 @@ class SubmissionViewSet(ModelViewSet):
 
     @action(detail=True, methods=('GET',))
     def get_detail_result(self, request, pk):
-        submission = get_object_or_404(Submission, pk=pk)
+        # Soft-deleted submissions are not found
+        submission = get_object_or_404(Submission, pk=pk, is_soft_deleted=False)
         competition = submission.phase.competition
+        user = request.user
 
-        # Helper to avoid repeating serialization/Response code
-        def _allowed():
-            data = SubmissionFilesSerializer(submission, context=self.get_serializer_context()).data
-            return Response(data.get("detailed_result"), status=status.HTTP_200_OK)
-
-        # Check if competition show visualization is true
-        if competition.enable_detailed_results:
-            if competition.published:
-                # Detailed results are publicly available
-                return _allowed()
-            else:
-                # Competition is private
-                user = request.user
-                if not user.is_authenticated:
-                    return Response(
-                        {"error_msg": "You do not have permission to see the detailed result. Participate in this competition to view result."},
-                        status=status.HTTP_403_FORBIDDEN,
-                    )
-                # Give access if user is collaborator, approved participant,
-                # competition creator or super user
-                is_collaborator = competition.collaborators.filter(pk=user.pk).exists()
-                is_creator = (user == competition.created_by)
-                is_superuser = user.is_superuser
-                is_approved_participant = CompetitionParticipant.objects.filter(
-                    competition=competition,
-                    user=user,
-                    status=CompetitionParticipant.APPROVED,
-                ).exists()
-                if is_collaborator or is_approved_participant or is_creator or is_superuser:
-                    # Allow access
-                    return _allowed()
-            return Response(
-                {"error_msg": "You do not have permission to see the detailed result."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-        else:
+        # No one can see the detailed result when detailed results are disabled
+        if not competition.enable_detailed_results:
             return Response(
                 {"error_msg": "Detailed results are disabled for this competition!"},
                 status=status.HTTP_404_NOT_FOUND
             )
+
+        # Admin (organizer + super admin) can see the detailed result without any restriction
+        if not self.has_admin_permission(user, submission):
+
+            # No one can see the detailed result when phase.hide_output is True
+            if submission.phase.hide_output:
+                return Response(
+                    {"error_msg": "Cannot access detailed result while phase marked to hide output."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+            # Approved participants can see the detailed result of their own submissions
+            # and of leaderboard submissions, whether the competition is public or private
+            is_approved_participant = user.is_authenticated and CompetitionParticipant.objects.filter(
+                competition=competition,
+                user=user,
+                status=CompetitionParticipant.APPROVED,
+            ).exists()
+            is_visible_to_participant = is_approved_participant and (
+                submission.owner == user or submission.on_leaderboard
+            )
+
+            # Everyone else can only see the detailed result of a leaderboard submission
+            # when the competition is public and detailed results are shown in the leaderboard
+            is_public_leaderboard_submission = (
+                competition.published
+                and competition.show_detailed_results_in_leaderboard
+                and submission.on_leaderboard
+            )
+
+            if not is_visible_to_participant and not is_public_leaderboard_submission:
+                return Response(
+                    {"error_msg": "You do not have permission to see the detailed result."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+        data = SubmissionFilesSerializer(submission, context=self.get_serializer_context()).data
+        return Response(data.get("detailed_result"), status=status.HTTP_200_OK)
 
     @action(detail=True, methods=('GET',))
     def toggle_public(self, request, pk):
