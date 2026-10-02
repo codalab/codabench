@@ -1,12 +1,7 @@
-{% extends 'emails/base_email.html' %}
+{% extends 'emails/base_email.txt' %}
 
 {% block content %}
-    <p>
-        Your application for the
-        <a href="http://{{ site.domain }}{{ participant.competition.get_absolute_url }}">{{ participant.competition.title }}</a>
-        competition has been <b>accepted</b>. Get ready to showcase your skills and compete with other talented individuals.
-    </p>
+    Your application for the {{ participant.competition.title }} competition has been accepted. Get ready to showcase your skills and compete with other talented individuals.
+
+    {{ protocol }}://{{ domain }}{{ participant.competition.get_absolute_url }}
 {% endblock %}
-
-
-

@@ -1,14 +1,11 @@
 {% extends 'emails/base_email.txt' %}
 
 {% block title %}
-    <p>
-        This is a message from the organizer for the competition:
-        <a href="http://{{ site.domain }}{{ competition.get_absolute_url }}">{{ competition }}</a>
-    </p>
-    <br><br>
+    This is a message from the organizer for the competition: {{ competition }}
+    {{ protocol }}://{{ domain }}{{ competition.get_absolute_url }}
 {% endblock %}
 
 {% block content %}
-    <h3>Message:</h3>
-    <pre>{{ body }}</pre>
+    Message:
+    {{ body }}
 {% endblock %}
