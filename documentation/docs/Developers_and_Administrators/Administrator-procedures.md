@@ -95,16 +95,34 @@ Once you log in an account with superuser privileges, you have access to the "Dj
 
 From this interface, you can change a user's quota, change their staff and superuser status, change the featured competitions displayed on the homepage, manage user accounts and more.
 
-#### Edit announcement and news
+#### Edit announcements
 
-In the Django admin interface, click on `Announcements` or `New posts`:
+In the Django admin interface, click on `Announcements`:
 
-![](_attachments/de2a053f-c804-4c2a-a7ff-0df189c1d79c_17534366434691174.jpg)
+![](_attachments/announcements.png)
 
-For announcement, only the first announcement is read by the front page. For news, all objects are read as separate news.
-You can create and edit objects using the interface. Write the announcement and news using HTML to format the text, add links, and more:
+Every announcement marked **Is active** is shown on the front page, inside the "Announcement" box. Each announcement has:
 
-![](_attachments/38c0d1ce-9b27-44bb-804b-c4eed55613df_17534366434285173.jpg)
+- **Title** (optional): shown in bold above the text.
+- **Level**: controls the style.
+    - `Critical`: red with an exclamation icon
+    - `Warning`: yellow with a warning icon
+    - `Info`: blue with an info icon
+    - `Plain`: plain text with no background or icon
+- **Text**: the body, written in HTML. Links are shown bold and underlined in the announcement's color.
+- **Is active**: untick to hide an announcement without deleting it.
+- **Priority**: controls the order. Lower numbers are shown first; announcements with the same priority are shown newest first.
+
+You can create and edit announcements using the interface. Write the text using HTML to format it, add links, and more:
+
+#### Edit news
+
+In the Django admin interface, click on `News posts`:
+
+![](_attachments/news.png)
+
+All news objects are read by the front page as separate news.
+You can create and edit news using the interface. Write the news using HTML to format the text, add links, and more.
 
 
 #### Delete a user

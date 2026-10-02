@@ -128,13 +128,15 @@ CODALAB.api = {
         return CODALAB.api.request('GET', `${URLS.API}submissions/${id}/get_detail_result/`)
     },
     download_many_submissions: function (pks) {
-        return CODALAB.api.request(
-            'POST',
-            URLS.API + "submissions/download_many/",
-            { pks: pks }   // body is JSON by convention
-        );
+        return CODALAB.api.request('POST', URLS.API + "submissions/download_many_submissions/", { pks: pks });
     },
-        
+    download_many_prediction_results: function (pks) {
+        return CODALAB.api.request('POST', URLS.API + "submissions/download_many_prediction_results/", { pks: pks });
+    },
+    download_many_scoring_results: function (pks) {
+        return CODALAB.api.request('POST', URLS.API + "submissions/download_many_scoring_results/", { pks: pks });
+    },
+
     /*---------------------------------------------------------------------
          Leaderboards
     ---------------------------------------------------------------------*/
@@ -334,6 +336,9 @@ CODALAB.api = {
     },
     delete_organization: (id) => {
         return CODALAB.api.request('DELETE', `${URLS.API}organizations/${id}/delete_organization/`)
+    },
+    leave_organization: (id) => {
+        return CODALAB.api.request('DELETE', `${URLS.API}organizations/${id}/leave_organization/`)
     },
     /*---------------------------------------------------------------------
          Participants
