@@ -202,6 +202,29 @@ class CompetitionDetailTests(APITestCase):
             for field in CompetitionDetailSerializer.Meta.admin_fields:
                 assert field not in resp.data, field
 
+    def test_non_admins_see_fields_used_by_competition_page(self):
+        """
+        Participants, an unrelated user and a logged-out user request a published competition.
+        Expects every field the competition page uses for non-admins in the response.
+        """
+        # Listed here instead of using Meta.public_fields, so moving one of them to admin_fields fails this test
+        fields_used_by_competition_page = [
+            'fact_sheet',
+            'registration_auto_approve',
+            'make_programs_available',
+            'make_input_data_available',
+            'enable_detailed_results',
+            'show_detailed_results_in_submission_panel',
+            'show_detailed_results_in_leaderboard',
+            'forum',
+            'forum_enabled',
+        ]
+        for user in self.non_admins:
+            resp = self._get(self.public_comp, user)
+            assert resp.status_code == 200
+            for field in fields_used_by_competition_page:
+                assert field in resp.data, field
+
     def test_non_admins_with_secret_key_do_not_see_admin_only_fields(self):
         """
         A logged-out user and an unrelated user open an unpublished competition with its secret key.
