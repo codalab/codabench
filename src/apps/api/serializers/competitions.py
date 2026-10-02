@@ -408,6 +408,10 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
             'show_detailed_results_in_leaderboard',
             'forum',
             'forum_enabled',
+            'fact_sheet',
+            'make_programs_available',
+            'make_input_data_available',
+            'registration_auto_approve',
         )
         # Fields only visible to competition admins (creator, collaborators, staff/superusers)
         admin_fields = (
@@ -417,11 +421,7 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
             'queue',
             'auto_run_submissions',
             'enable_human_in_the_loop',
-            'registration_auto_approve',
             'can_participants_make_submissions_public',
-            'make_programs_available',
-            'make_input_data_available',
-            'fact_sheet',
         )
         fields = public_fields + admin_fields
 
