@@ -1,0 +1,10 @@
+{% extends 'emails/base_email.txt' %}
+
+{% block content %}
+    You are receiving this notice because you are an administrator of the platform.
+
+    The user {{ listing.owner.username }} ({{ listing.owner.email }}) has {% if resubmitted %}updated{% else %}submitted{% endif %} the consulting listing "{{ listing.title }}". It is waiting for review.
+
+    Review the listing:
+    {{ protocol }}://{{ domain }}{% url 'admin:consulting_consultinglisting_change' listing.pk %}
+{% endblock %}
