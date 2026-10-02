@@ -1,0 +1,7 @@
+{% extends 'emails/base_email.txt' %}
+
+{% block content %}
+    You are receiving this notice because you are an administrator of the platform.
+
+    The user {{ owner.username }} ({{ owner.email }}) has deleted their consulting listing "{{ title }}".
+{% endblock %}

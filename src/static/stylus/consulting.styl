@@ -1,0 +1,204 @@
+// Consulting pages (riot/consulting/public_list.tag and my_listing.tag).
+// Nested under the tag names so these generic class names don't leak to other pages.
+consulting-list, consulting-my-listing
+  display block
+  width 100%
+  margin-bottom 5px
+
+  .page-header
+    display flex
+    align-items center
+    justify-content space-between
+    margin-bottom 20px
+
+  .page-title
+    margin 0
+    font-size 24px
+    font-weight bold
+    color #1b1b1b
+
+  // Kept small and grey so it doesn't draw attention away from the listings
+  .sort-group
+    display flex
+    align-items center
+    gap 6px
+    margin-bottom 8px
+    font-size 12px
+    color #767676
+
+    select
+      font-size 12px
+      color #555
+      padding 2px 4px
+      border 1px solid #ddd
+      border-radius 3px
+      background #fff
+
+  .consulting-blurb
+    font-size 15px
+    color #5c5c5c
+    margin-bottom 20px
+    max-width 900px
+
+  .consulting-banner
+    display flex
+    align-items center
+    justify-content space-between
+    gap 15px
+    padding 10px 15px
+    margin-bottom 20px
+    // Lighter shades of the button color (#43637a)
+    background #e6edf2
+    border 1px solid #a5b7c5
+    border-radius 4px
+    font-size 16px
+    color #1b1b1b
+
+  .consulting-btn
+    flex-shrink 0
+    font-size 14px
+    padding 0.5em 1em
+    background-color #43637a
+    color #fff
+    text-decoration none
+    border none
+    border-radius 4px
+    display inline-block
+    cursor pointer
+    transition background-color 0.2s ease
+
+    &:hover
+      background-color #2d3f4d
+      color #fff
+      text-decoration none
+
+  .pagination-nav
+    padding 10px 0
+    width 100%
+    text-align center
+    margin-bottom 20px
+
+  .float-left
+    float left
+
+  .float-right
+    float right
+
+  // Two cards per row, one on narrow screens. align-items start keeps a card's
+  // height its own, so opening one description doesn't stretch its neighbour.
+  .listing-grid
+    display grid
+    grid-template-columns repeat(2, minmax(0, 1fr))
+    gap 12px
+    align-items start
+    margin-bottom 12px
+
+    @media (max-width: 767px)
+      grid-template-columns minmax(0, 1fr)
+
+  .listing-card
+    border solid 1px gainsboro
+    background-color #fff
+    padding 1.2em
+    border-radius 5px
+
+    .card-main
+      gap 1.5em
+
+    .heading
+      font-size 16px
+      color #555
+      margin-bottom 0.6em
+
+    // Fixed height, so a card without any links is as tall as one with links
+    .card-links
+      font-size 1.5em
+      height 32px
+      align-items center
+
+  .card-main
+    display flex
+    align-items center
+    gap 1em
+
+  // Fixed height so all cards are the same size. The whole picture is always shown
+  // (never cropped), scaled to fit and vertically centered in that height.
+  .card-picture
+    height 50px
+    margin-bottom 0.8em
+    display flex
+    align-items center
+
+    img
+      max-width 100%
+      max-height 100%
+      object-fit contain
+
+  .card-info
+    flex-grow 1
+
+  .heading
+    color #1b1b1b
+    margin 0 0 0.3em 0
+
+  .card-links
+    display flex
+    gap 0.8em
+    font-size 1.3em
+
+    a
+      color #43637a
+
+      &:hover
+        color #2d3f4d
+
+  .expand-btn
+    background none
+    border none
+    cursor pointer
+    font-size 1.6em
+    color #43637a
+    padding 0.3em 0.5em
+
+  .card-description
+    margin-top 1em
+    padding-top 1em
+    border-top 1px solid gainsboro
+
+    img
+      max-width 100%
+
+  .listing-panel
+    background #fff
+    border 1px solid #ddd
+    border-radius 5px
+    padding 20px
+
+  // Semantic UI makes message icons 3em; :not(.close) is repeated here to beat its selector
+  .ui.icon.message > .icon:not(.close)
+    font-size 1.5em
+
+  .remove-banner
+    display flex
+    align-items center
+    justify-content space-between
+    gap 15px
+    margin-top 2em
+
+    .ui.button
+      flex-shrink 0
+
+  .loading-indicator
+    display flex
+    align-items center
+    padding 20px
+    width 100%
+    margin 0 auto
+
+  .spinner
+    border 4px solid rgba(0,0,0,.1)
+    width 36px
+    height 36px
+    border-radius 50%
+    border-top-color #3498db
+    animation spin 1s ease-in-out infinite

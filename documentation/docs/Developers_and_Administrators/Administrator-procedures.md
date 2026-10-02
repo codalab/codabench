@@ -71,6 +71,8 @@ docker compose up -d
 docker compose exec django ./manage.py migrate
 ```
 
+***
+
 ## Feature competitions in home page
 
 There are two ways of setting a competition as featured:
@@ -83,9 +85,12 @@ comp.is_featured = True  ## set to False if you want to unfeature a competition
 comp.save()
 ```
 
+***
+
 ## Shell Based Admin Features
 If you're running your own Codabench instance, there are different ways to interact with the application. Inside the `django` container (`#!bash docker compose exec django bash`) you can use `#!bash python manage.py help` to display all available commands and a brief description. By far the most useful are `createsuperuser` and `shell/shell_plus`. 
 
+***
 
 ## Django Admin interface
 
@@ -95,7 +100,7 @@ Once you log in an account with superuser privileges, you have access to the "Dj
 
 From this interface, you can change a user's quota, change their staff and superuser status, change the featured competitions displayed on the homepage, manage user accounts and more.
 
-#### Edit announcements
+### Edit announcements
 
 In the Django admin interface, click on `Announcements`:
 
@@ -115,7 +120,7 @@ Every announcement marked **Is active** is shown on the front page, inside the "
 
 You can create and edit announcements using the interface. Write the text using HTML to format it, add links, and more:
 
-#### Edit news
+### Edit news
 
 In the Django admin interface, click on `News posts`:
 
@@ -124,8 +129,33 @@ In the Django admin interface, click on `News posts`:
 All news objects are read by the front page as separate news.
 You can create and edit news using the interface. Write the news using HTML to format the text, add links, and more.
 
+### Review consulting listings
 
-#### Delete a user
+Users can add a listing to the [consulting page](../Organizers/Consulting.md). A listing is only shown publicly once an administrator has approved it.
+
+All superusers receive an email when a user:
+
+- submits a new listing,
+- edits a listing (an edit sends it back to `Pending`),
+- deletes their listing.
+
+In the Django admin interface, click on `Consulting listings`:
+
+![Consulting listings in the Django admin](_attachments/consulting-listings-admin.png)
+
+The **Status** column shows where each listing stands: `Pending` (yellow), `Approved` (green) or `Rejected` (red). Use the filter on the right to show only the pending ones.
+
+- **Approve**: select the listings, choose the `Approve selected listings` action and click on `Go`. You can also open a listing, set **Status** to `Approved` and save.
+- **Reject**: open the listing, set **Status** to `Rejected`, fill in **Rejection reason** and save. The reason is required; it is sent to the owner and shown on their listing page.
+- **Is active**: untick to hide a listing from the consulting page without rejecting or deleting it. The owner sees that it was deactivated, and can still edit or remove it.
+
+The owner receives an email when their listing is approved or rejected. No email is sent when **Is active** is changed.
+
+!!! note
+    The Django admin interface requires staff status, so an administrator who reviews listings needs to be both staff and superuser.
+
+
+### Delete a user
 
 Go to `Users`:
 
@@ -136,7 +166,7 @@ Select it, select the `Delete selected users` action and click on `Go`:
 ![](_attachments/c0fdd7ff-0c46-4bae-b9e2-7d4e0b774ec2_17534366434447145.jpg)
 
 
-#### Ban/Unban a user
+### Ban/Unban a user
 
 Go to `Users` in the `django admin`:
 
@@ -144,7 +174,7 @@ Go to `Users` in the `django admin`:
 
 Search for user using the search bar, or use the filter on the right side. Click on the username of the user to open user details, scroll down to find `Is Banned`. Check/uncheck this option to toggle the banned status.
 
-
+***
 
 ## RabbitMQ Management
 The RabbitMQ management tool allows you to see the status of various queues, virtual hosts, and jobs. By default, you can access it at: `http://<your_codalab_instance>:15672/`. The username/password is your RabbitMQ `.env` settings for username and password. The port is hard-set in `docker-compose.yml` to 15672, but you can always change this if needed. For more information, see:
