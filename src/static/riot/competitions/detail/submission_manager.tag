@@ -372,8 +372,6 @@
                         show_visualization="{opts.competition.enable_detailed_results}"
                         submission="{child}"></submission-modal>
                 </div>
-
-
             </div>
         </div>
     </div>
