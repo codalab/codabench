@@ -178,7 +178,7 @@
                     </select>
                 </div>
 
-                <p class="form-note">
+                <p class="ui small info message">
                     The zip file must contain the files directly at its root, not nested inside a
                     subfolder. A scoring or ingestion program needs <code>metadata.yaml</code> plus the
                     program file(s) (e.g. <code>score.py</code>) at the root. See
