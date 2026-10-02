@@ -178,6 +178,15 @@
                     </select>
                 </div>
 
+                <p class="form-note">
+                    The zip file must contain the files directly at its root, not nested inside a
+                    subfolder. A scoring or ingestion program needs <code>metadata.yaml</code> plus the
+                    program file(s) (e.g. <code>score.py</code>) at the root. See
+                    <a href="https://docs.codabench.org/latest/Organizers/Benchmark_Creation/Competition-Bundle-Structure/#data-types-and-their-role"
+                       target="_blank" rel="noopener">Competition Bundle Structure, Data Types And Their Role</a>
+                    for what each type means and how it is used.
+                </p>
+
                 <input-file selenium="file" name="data_file" ref="data_file" error="{errors.data_file}"
                             accept=".zip"></input-file>
             </form>
