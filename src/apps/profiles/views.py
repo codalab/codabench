@@ -1,14 +1,17 @@
 import json
+import logging
 import django
 
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
+from django.db import IntegrityError
 from django.db.models import Q
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.http import Http404
 from django.shortcuts import render, redirect
+from django.urls import reverse
 from django.contrib.auth import views as auth_views
 from django.contrib.auth import forms as auth_forms
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -29,6 +32,8 @@ from datasets.models import Data
 from tasks.models import Task
 from forums.models import Post
 from utils.email import codalab_send_mail
+
+logger = logging.getLogger(__name__)
 
 
 class LoginView(auth_views.LoginView):
@@ -117,7 +122,17 @@ def activateEmail(request, user, to_email):
         'protocol': 'https' if request.is_secure() else 'http'
     })
     email = EmailMessage(mail_subject, message, to=[to_email])
-    if email.send():
+    try:
+        sent = email.send()
+    except Exception:
+        # Show a message instead of an error page, the account is already saved when signing up
+        logger.exception(f"Failed to send activation email to {to_email}")
+        resend_activation_url = request.build_absolute_uri(reverse('accounts:resend_activation'))
+        messages.error(request, f'We could not send the activation email to {to_email}. \
+            Please request a new activation link at {resend_activation_url}. If the problem continues, \
+            contact the platform administrator at {settings.CONTACT_EMAIL}.')
+        return
+    if sent:
         messages.success(request, f'Dear {user.username}, please go to your email {to_email} inbox and click on \
             the activation link to confirm and complete the registration. *Note: Check your spam folder.')
     else:
@@ -228,15 +243,21 @@ def sign_up(request):
                 user = form.save(commit=False)  # Get the user instance without saving
                 user.email = email  # Ensure email is stored in lowercase
                 user.is_active = False  # Set user as inactive
-                user.save()  # Save user instance with updated email
+                try:
+                    user.save()  # Save user instance with updated email
+                except IntegrityError:
+                    # The form checks for existing accounts, but a second request (e.g. a double submit)
+                    # can create the same username or email between that check and this save
+                    messages.error(request, "An account with this username or email already exists.")
+                    context['form'] = form
+                else:
+                    # Authenticate and send activation email
+                    username = form.cleaned_data.get('username')
+                    raw_password = form.cleaned_data.get('password1')
+                    user = authenticate(username=username, password=raw_password)
+                    activateEmail(request, user, email)
 
-                # Authenticate and send activation email
-                username = form.cleaned_data.get('username')
-                raw_password = form.cleaned_data.get('password1')
-                user = authenticate(username=username, password=raw_password)
-                activateEmail(request, user, email)
-
-                return redirect('pages:home')
+                    return redirect('pages:home')
         else:
             context['form'] = form
 
@@ -295,7 +316,9 @@ def log_in(request):
                 # Authenticate user with credentials
                 user = authenticate(username=username, password=password)
                 if user is not None:
-                    if user.is_active:
+                    if user.is_banned:
+                        messages.error(request, "You are banned from using Codabench")
+                    elif user.is_active:
                         login(request, user)
 
                         # if next is none redirect to home
@@ -332,6 +355,13 @@ class CustomPasswordResetForm(auth_forms.PasswordResetForm):
         to see the email in the logs.
         Source: https://github.com/django/django/blob/8b1ff0da4b162e87edebd94e61f2cd153e9e159d/django/contrib/auth/forms.py#L287
     """
+    def get_users(self, email):
+        """
+        Override of PasswordResetForm.get_users to also exclude banned users from receiving a reset email.
+        The users returned by super().get_users() are already active, match the email and have a usable password.
+        """
+        return (user for user in super().get_users(email) if not user.is_banned)
+
     def send_mail(
         self,
         subject_template_name,
@@ -391,6 +421,16 @@ class CustomPasswordResetConfirmView(auth_views.PasswordResetConfirmView):
     # token_generator = '' # This will default to default_token_generator, it’s an instance of django.contrib.auth.tokens.PasswordResetTokenGenerator.
     # post_reset_login = '' # Defaults to False.
     success_url = django.urls.reverse_lazy("accounts:password_reset_complete")
+
+    def get_user(self, uidb64):
+        """
+        Override of PasswordResetConfirmView.get_user so a reset link of a banned user is treated as invalid,
+        e.g. a link that was emailed before the user was banned. Returning None makes Django show the invalid link page.
+        """
+        user = super().get_user(uidb64)
+        if user is not None and user.is_banned:
+            return None
+        return user
 
 
 class UserNotificationEdit(LoginRequiredMixin, DetailView):
