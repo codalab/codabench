@@ -132,8 +132,23 @@ class PasswordResetConfirmTests(TestCase):
         self.user = UserFactory(username='resetuser', email='resetuser@example.com', password='test')
 
     def assert_link_refused(self, response):
+        """
+        Checks that the reset link was refused. validlink is set by Django's PasswordResetConfirmView: it is False
+        when get_user returns None or the token check fails, and the template then shows the error instead of the form.
+        """
         assert response.status_code == 200
         assert response.context['validlink'] is False
+        self.assertContains(response, 'This password reset link is invalid or has expired')
+        self.assertNotContains(response, 'name="new_password1"')
+
+    def test_valid_link_shows_form(self):
+        """Opening a valid reset link shows the new password form and no invalid link error."""
+        resp = self.client.get(get_reset_link(user=self.user), follow=True)
+
+        assert resp.status_code == 200
+        assert resp.context['validlink'] is True
+        self.assertContains(resp, 'name="new_password1"')
+        self.assertNotContains(resp, 'This password reset link is invalid or has expired')
 
     def test_valid_link_sets_new_password(self):
         """Opening a valid reset link and submitting a new password changes the password and redirects to the 'complete' page."""

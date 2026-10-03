@@ -425,7 +425,8 @@ class CustomPasswordResetConfirmView(auth_views.PasswordResetConfirmView):
     def get_user(self, uidb64):
         """
         Override of PasswordResetConfirmView.get_user so a reset link of a banned user is treated as invalid,
-        e.g. a link that was emailed before the user was banned. Returning None makes Django show the invalid link page.
+        e.g. a link that was emailed before the user was banned. Returning None leaves Django's validlink False,
+        so the template shows the invalid link error instead of the form.
         """
         user = super().get_user(uidb64)
         if user is not None and user.is_banned:
