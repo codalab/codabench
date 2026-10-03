@@ -594,6 +594,14 @@ def upload_submission_scores(request, submission_pk):
     if "scores" not in request.data:
         raise ValidationError("'scores' required.")
 
+    # Reject the upload if this submission already has scores, so a repeated upload does not add duplicate score rows
+    if submission.scores.filter(column__leaderboard=submission.phase.leaderboard).exists():
+        logger.warning(f"Rejected score upload for submission {submission_pk}: scores already uploaded")
+        return Response(
+            {"detail": "Scores have already been uploaded for this submission."},
+            status=status.HTTP_409_CONFLICT,
+        )
+
     competition_columns = submission.phase.leaderboard.columns.values_list('key', flat=True)
 
     for column_key, score in request.data.get("scores").items():
