@@ -128,3 +128,57 @@ class HiddenLeaderboardTests(APITestCase):
         self.lb.save()
         resp = self.get_leaderboard()
         assert resp.status_code == 200
+
+
+class LeaderboardMissingScoreOrderingTests(APITestCase):
+    def setUp(self):
+        self.creator = factories.UserFactory(username='creator', password='creator')
+        self.comp = factories.CompetitionFactory(created_by=self.creator)
+        self.leaderboard = factories.LeaderboardFactory(primary_index=0)
+        self.phase = factories.PhaseFactory(competition=self.comp, leaderboard=self.leaderboard)
+        self.accuracy_column = factories.ColumnFactory(leaderboard=self.leaderboard, index=0, key='accuracy', sorting='desc')
+        self.time_column = factories.ColumnFactory(leaderboard=self.leaderboard, index=1, key='time', sorting='asc')
+
+        self.sub_low = self.make_submission(accuracy=0.8, time=10)
+        self.sub_high = self.make_submission(accuracy=0.9, time=12)
+        # Submission without an accuracy score, shown as n/a on the leaderboard
+        self.sub_missing = self.make_submission(accuracy=None, time=5)
+
+    def make_submission(self, accuracy, time):
+        submission = factories.SubmissionFactory(phase=self.phase, leaderboard=self.leaderboard)
+        if accuracy is not None:
+            factories.SubmissionScoreFactory(submissions=submission, column=self.accuracy_column, score=accuracy)
+        factories.SubmissionScoreFactory(submissions=submission, column=self.time_column, score=time)
+        return submission
+
+    def get_phase_leaderboard_ids(self):
+        self.client.force_login(self.creator)
+        resp = self.client.get(reverse('phases-get-leaderboard', kwargs={'pk': self.phase.pk}))
+        assert resp.status_code == 200
+        return [submission['id'] for submission in resp.json()['submissions']]
+
+    def get_leaderboard_entries_ids(self):
+        self.client.force_login(self.creator)
+        resp = self.client.get(reverse('leaderboard-detail', kwargs={'pk': self.leaderboard.pk}))
+        assert resp.status_code == 200
+        return [submission['id'] for submission in resp.json()['submissions']]
+
+    def test_missing_primary_score_ranked_last_on_phase_leaderboard_desc(self):
+        """Phase leaderboard with primary column sorted desc: expected order is 0.9, 0.8, then the submission without a primary score."""
+        assert self.get_phase_leaderboard_ids() == [self.sub_high.id, self.sub_low.id, self.sub_missing.id]
+
+    def test_missing_primary_score_ranked_last_on_phase_leaderboard_asc(self):
+        """Phase leaderboard with primary column sorted asc: expected order is 0.8, 0.9, then the submission without a primary score."""
+        self.accuracy_column.sorting = 'asc'
+        self.accuracy_column.save()
+        assert self.get_phase_leaderboard_ids() == [self.sub_low.id, self.sub_high.id, self.sub_missing.id]
+
+    def test_missing_primary_score_ranked_last_on_leaderboard_entries_desc(self):
+        """Leaderboard entries endpoint with primary column sorted desc: expected order is 0.9, 0.8, then the submission without a primary score."""
+        assert self.get_leaderboard_entries_ids() == [self.sub_high.id, self.sub_low.id, self.sub_missing.id]
+
+    def test_missing_primary_score_ranked_last_on_leaderboard_entries_asc(self):
+        """Leaderboard entries endpoint with primary column sorted asc: expected order is 0.8, 0.9, then the submission without a primary score."""
+        self.accuracy_column.sorting = 'asc'
+        self.accuracy_column.save()
+        assert self.get_leaderboard_entries_ids() == [self.sub_low.id, self.sub_high.id, self.sub_missing.id]
