@@ -47,7 +47,7 @@ Replace the value of IP address in the following environment variables according
 ```ini title=".env"
 SUBMISSIONS_API_URL=https://<IP ADDRESS>/api
 DOMAIN_NAME=<IP ADDRESS>:80
-AWS_S3_ENDPOINT_URL=http://<IP ADDRESS>/
+AWS_S3_ENDPOINT_URL=http://<IP ADDRESS>:9000/
 ```
 
 #### Using a domain name (DNS)
@@ -55,8 +55,11 @@ AWS_S3_ENDPOINT_URL=http://<IP ADDRESS>/
 ```ini title=".env"
 SUBMISSIONS_API_URL=https://yourdomain.com/api
 DOMAIN_NAME=yourdomain.com
-AWS_S3_ENDPOINT_URL=https://yourdomain.com
+AWS_S3_ENDPOINT_URL=http://yourdomain.com:9000/
 ```
+
+!!! note
+    `AWS_S3_ENDPOINT_URL` must point to MinIO, which listens on port `9000` (`MINIO_PORT` in `.env`). To use `https://yourdomain.com` without a port, see [Secure Minio](#securing-codabench-and-minio) or the [port 443 workaround](#workaround-minio-and-django-on-the-same-machine-with-only-the-port-443-opened-to-the-external-network).
 
 !!! tip "If you are deploying on an azure machine, then AWS_S3_ENDPOINT_URL needs to be set to an IP address that is accessible on the external network"
 
@@ -79,13 +82,56 @@ FLOWER_BASIC_AUTH=root:password-you-should-change
 [...]
 MINIO_ACCESS_KEY=testkey
 MINIO_SECRET_KEY=testsecret
-# or
+[...]
 AWS_ACCESS_KEY_ID=testkey
 AWS_SECRET_ACCESS_KEY=testsecret
 ```
+
 !!! note "RabbitMQ credentials are only applied the first time RabbitMQ starts. To change them later, see [Change RabbitMQ username or password](Administrator-procedures.md#change-rabbitmq-username-or-password)."
 
+!!! note
+    `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY` are the MinIO credentials, and `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` are the credentials Codabench uses to access the storage. If you use the local MinIO container, both pairs must have the same values. If you use an external storage provider (e.g. AWS S3), only `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` are used.
 !!! warning "It is very important to set up an SSL certificate for Public deployement"
+
+### Configure email
+
+By default, Codabench does not send emails: they are only printed in the `django` container logs. To send real emails (account activation, password reset, competition notifications...), uncomment and fill in the email settings in `.env` with your SMTP server details:
+
+```ini title=".env"
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=smtp.yourprovider.com
+EMAIL_HOST_USER=user
+EMAIL_HOST_PASSWORD=pass
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+DEFAULT_FROM_EMAIL="Codabench <noreply@yourdomain.com>"
+SERVER_EMAIL=noreply@yourdomain.com
+
+CONTACT_EMAIL=info@yourdomain.com
+```
+
+- `DEFAULT_FROM_EMAIL`: sender address of all emails sent by Codabench
+- `SERVER_EMAIL`: sender address of error emails sent by Django
+- `CONTACT_EMAIL`: contact address displayed to users on the website
+
+!!! note
+    The sender addresses must be allowed by your SMTP provider, otherwise emails will be rejected.
+
+Restart the services after editing `.env` (`docker compose up -d`). To check that emails are sent, open a Django shell with `docker compose exec django ./manage.py shell` and run:
+
+```python
+from django.conf import settings
+from django.core.mail import send_mail
+
+send_mail(
+    subject="Codabench test email",
+    message="This is a test email from Codabench.",
+    from_email=settings.DEFAULT_FROM_EMAIL,
+    recipient_list=["you@example.com"],
+)
+```
+
+If the email is not received, check the error raised in the shell and the `django` container logs.
 
 ## Open Access Permissions for following port number
 
@@ -378,7 +424,7 @@ MINIO_PORT=9000
   # Minio local storage helper
   #-----------------------------------------------
   minio:
-    image: quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z
+    image: codalab/minio:RELEASE.2025-04-22T22-12-26Z
     command: server /export --certs-dir /root/.minio/certs
     volumes:
       - ./var/minio:/export
@@ -392,7 +438,7 @@ MINIO_PORT=9000
       interval: 5s
       retries: 5
   createbuckets:
-    image: quay.io/minio/mc:RELEASE.2025-07-21T05-28-08Z
+    image: codalab/mc:RELEASE.2025-07-21T05-28-08Z
     depends_on:
       minio:
         condition: service_healthy
@@ -404,7 +450,7 @@ MINIO_PORT=9000
       /bin/sh -c "
       set -x;
       if [ -n \"$MINIO_ACCESS_KEY\" ] && [ -n \"$MINIO_SECRET_KEY\" ] && [ -n \"$MINIO_PORT\" ]; then
-        until /usr/bin/mc config host add minio_docker https://minio:$MINIO_PORT $MINIO_ACCESS_KEY $MINIO_SECRET_KEY && break; do
+        until /usr/bin/mc alias set minio_docker https://minio:$MINIO_PORT $MINIO_ACCESS_KEY $MINIO_SECRET_KEY && break; do
           echo '...waiting...' && sleep 5;
         done;
         /usr/bin/mc mb minio_docker/$AWS_STORAGE_BUCKET_NAME || echo 'Bucket $AWS_STORAGE_BUCKET_NAME already exists.';
