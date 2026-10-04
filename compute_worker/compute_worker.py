@@ -327,7 +327,7 @@ def check_docker_image_update(run):
     """
     Compare local and remote compute worker Docker images and log the
     synchronization status along with relevant image metadata.
-    If the local image is not up to date, attach the status to the run
+    If the local image is not up to date, attach a generic warning to the run
     so it is added to the submission logs.
     """
     checker = DockerImageUpdateChecker(
@@ -387,8 +387,18 @@ def check_docker_image_update(run):
 
     logger.log(log_level, "\n".join(log_lines))
 
+    # Participants only get a generic warning, the details above stay in the compute worker logs
     if status != DockerImageStatus.UP_TO_DATE:
-        run.docker_image_warning = ("\n".join(log_lines) + "\n").encode()
+        warning_lines = [
+            "",
+            "=" * 60,
+            "CRITICAL WARNING",
+            "=" * 60,
+            "This compute worker is not running the latest Codabench compute worker image.",
+            "If your submission fails unexpectedly, please contact the competition organizers.",
+            "=" * 60,
+        ]
+        run.docker_image_warning = ("\n".join(warning_lines) + "\n").encode()
 
 
 # -----------------------------------------------------------------------------
