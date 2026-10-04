@@ -1037,3 +1037,180 @@ class SubmissionBulkDownloadTests(APITestCase):
 
         resp = self.download(url=self.prediction_results_url, pks=self.participant_pks)
         assert len(resp.data) == 1
+
+
+class SubmissionReRunTests(APITestCase):
+    """
+    Tests for the re_run_submission endpoint of SubmissionViewSet.
+    run_submission is mocked so that rerun submissions are not sent to Celery.
+    The mock also records its arguments, which lets the tests check which tasks a rerun is started on.
+    """
+
+    RUN_SUBMISSION = 'competitions.tasks.run_submission'
+
+    def setUp(self):
+        self.superuser = UserFactory(is_superuser=True, is_staff=True)
+        self.creator = UserFactory(username='creator')
+        self.collaborator = UserFactory(username='collab')
+        self.participant = UserFactory(username='participant')
+        self.other_user = UserFactory(username='other_user')
+
+        self.comp = CompetitionFactory(created_by=self.creator, collaborators=[self.collaborator])
+        self.phase = PhaseFactory(competition=self.comp)
+
+        # One submission of the participant for every status
+        self.submissions = [
+            SubmissionFactory(phase=self.phase, owner=self.participant, status=status)
+            for status, _ in Submission.STATUS_CHOICES
+        ]
+
+    def re_run(self, submission):
+        url = reverse('submission-re-run-submission', args=(submission.pk,))
+        return self.client.post(url)
+
+    def test_organizers_and_superuser_can_re_run_submission_in_any_status(self):
+        """
+        Competition creator, collaborator and superuser rerun a submission in every status.
+        Expect 200 and a new submission for each.
+        """
+        for user in [self.creator, self.collaborator, self.superuser]:
+            self.client.force_login(user)
+            for submission in self.submissions:
+                with mock.patch(self.RUN_SUBMISSION):
+                    resp = self.re_run(submission=submission)
+                assert resp.status_code == 200, f'{user.username} could not rerun a "{submission.status}" submission'
+                assert resp.data['id'] != submission.pk
+                assert Submission.objects.filter(pk=resp.data['id']).exists()
+
+    def test_re_run_submission_copies_submission_details(self):
+        """
+        Organizer reruns a submission made for an organization.
+        Expect the new submission to have the same owner, phase, task, data, organization
+        and fact sheet answers, and to be a fresh submission that is started.
+        """
+        organization = OrganizationFactory()
+        submission = SubmissionFactory(
+            phase=self.phase,
+            owner=self.participant,
+            status=Submission.FINISHED,
+            organization=organization,
+            fact_sheet_answers={'team_name': 'Team A'},
+        )
+
+        self.client.force_login(self.creator)
+        with mock.patch(self.RUN_SUBMISSION) as run_submission_mock:
+            resp = self.re_run(submission=submission)
+        assert resp.status_code == 200
+
+        new_sub = Submission.objects.get(pk=resp.data['id'])
+        assert new_sub.pk != submission.pk
+        assert new_sub.owner == self.participant
+        assert new_sub.phase == submission.phase
+        assert new_sub.task == submission.task
+        assert new_sub.data == submission.data
+        assert new_sub.organization == organization
+        assert new_sub.fact_sheet_answers == {'team_name': 'Team A'}
+        assert new_sub.queue == self.comp.queue
+        assert new_sub.has_children is False
+        assert new_sub.is_specific_task_re_run is False
+        assert new_sub.is_soft_deleted is False
+        assert new_sub.parent is None
+        assert new_sub.status == Submission.SUBMITTING
+
+        # The new submission is started on the task of the original submission
+        run_submission_mock.assert_called_once()
+        assert run_submission_mock.call_args.args[0] == new_sub.pk
+        assert list(run_submission_mock.call_args.kwargs['tasks']) == [submission.task]
+
+    def test_re_run_multi_task_submission(self):
+        """
+        Organizer reruns a parent submission whose children ran on two different tasks.
+        Expect a new parent submission with has_children set, started on the tasks of the original children.
+        """
+        tasks = [TaskFactory(), TaskFactory()]
+        self.phase.tasks.add(*tasks)
+
+        organization = OrganizationFactory()
+        parent = SubmissionFactory(
+            phase=self.phase,
+            owner=self.participant,
+            status=Submission.FINISHED,
+            has_children=True,
+            task=None,
+            organization=organization,
+        )
+        for task in tasks:
+            SubmissionFactory(
+                phase=self.phase,
+                owner=self.participant,
+                status=Submission.FINISHED,
+                parent=parent,
+                task=task,
+                data=parent.data,
+                organization=organization,
+            )
+
+        self.client.force_login(self.creator)
+        with mock.patch(self.RUN_SUBMISSION) as run_submission_mock:
+            resp = self.re_run(submission=parent)
+        assert resp.status_code == 200
+
+        new_sub = Submission.objects.get(pk=resp.data['id'])
+        assert new_sub.pk != parent.pk
+        assert new_sub.has_children is True
+        assert new_sub.task is None
+        assert new_sub.data == parent.data
+        assert new_sub.owner == self.participant
+        assert new_sub.organization == organization
+        assert new_sub.is_specific_task_re_run is False
+
+        # The new submission is started on the tasks of the original children
+        run_submission_mock.assert_called_once()
+        assert run_submission_mock.call_args.args[0] == new_sub.pk
+        started_task_pks = sorted(task.pk for task in run_submission_mock.call_args.kwargs['tasks'])
+        assert started_task_pks == sorted(task.pk for task in tasks)
+
+    def test_cannot_re_run_soft_deleted_submission(self):
+        """Organizer and superuser rerun a soft-deleted submission. Expect 403 and no new submission."""
+        submission = SubmissionFactory(
+            phase=self.phase,
+            owner=self.participant,
+            status=Submission.FINISHED,
+            is_soft_deleted=True,
+        )
+        submission_count = Submission.objects.count()
+
+        for user in [self.creator, self.superuser]:
+            self.client.force_login(user)
+            with mock.patch(self.RUN_SUBMISSION) as run_submission_mock:
+                resp = self.re_run(submission=submission)
+            assert resp.status_code == 403
+            assert resp.data['detail'] == 'Cannot re-run a deleted submission'
+            run_submission_mock.assert_not_called()
+
+        assert Submission.objects.count() == submission_count
+
+    def test_submission_owner_cannot_re_run_submission(self):
+        """
+        Submission owner, who is not an organizer, reruns their own submission in every status.
+        Expect 403 for each and no new submissions created.
+        """
+        self.client.force_login(self.participant)
+        for submission in self.submissions:
+            resp = self.re_run(submission=submission)
+            assert resp.status_code == 403
+            assert resp.data['detail'] == 'You do not have permission to re-run submissions'
+        assert Submission.objects.count() == len(self.submissions)
+
+    def test_other_user_cannot_re_run_submission(self):
+        """User who is neither the owner nor an organizer reruns a submission. Expect 403 and no new submission."""
+        self.client.force_login(self.other_user)
+        resp = self.re_run(submission=self.submissions[0])
+        assert resp.status_code == 403
+        assert Submission.objects.count() == len(self.submissions)
+
+    def test_anonymous_user_cannot_re_run_submission(self):
+        """Anonymous user reruns a submission. Expect 403 and no new submission."""
+        resp = self.re_run(submission=self.submissions[0])
+        assert resp.status_code == 403
+        assert Submission.objects.count() == len(self.submissions)
