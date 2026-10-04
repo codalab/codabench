@@ -51,9 +51,17 @@ class DockerImageUpdateChecker:
             ),
         }
 
-    def get_local_info(self):
+    def get_local_info(self, container_id=None):
         try:
-            image = self.client.inspect_image(self.image_name)
+            if container_id:
+                try:
+                    container = self.client.inspect_container(container_id)
+                    image = self.client.inspect_image(container["Image"])
+                except docker.errors.DockerException:
+                    # container_id could not be resolved, fall back to image name
+                    image = self.client.inspect_image(self.image_name)
+            else:
+                image = self.client.inspect_image(self.image_name)
             return {
                 "id": image.get("Id"),
                 "digests": image.get("RepoDigests", []),
@@ -83,11 +91,11 @@ class DockerImageUpdateChecker:
 
         return DockerImageStatus.DIFFERENT
 
-    def compare_local_vs_remote_images(self):
+    def compare_local_vs_remote_images(self, container_id=None):
 
         try:
             remote = self.get_remote_info()
-            local = self.get_local_info()
+            local = self.get_local_info(container_id=container_id)
 
             if not remote:
                 return {
