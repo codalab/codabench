@@ -330,7 +330,7 @@ def check_docker_image_update():
         tag=Settings.DOCKER_IMAGE_TAG,
         docker_base_url=Settings.CONTAINER_SOCKET
     )
-    result = checker.compare_local_vs_remote_images()
+    result = checker.compare_local_vs_remote_images(container_id=socket.gethostname())
     status = result["status"]
 
     log_level = logging.INFO
@@ -338,7 +338,7 @@ def check_docker_image_update():
     log_lines = [
         "",
         "=" * 60,
-        "DOCKER IMAGE UPDATE CHECK",
+        "COMPUTE WORKER DOCKER IMAGE UPDATE CHECK",
         "=" * 60,
         f"Image: {result.get('image_name')}",
     ]
@@ -363,7 +363,7 @@ def check_docker_image_update():
         log_level = logging.ERROR
 
     elif status == DockerImageStatus.LOCAL_MISSING:
-        log_lines.append("Status: Local image is not present. Pull required")
+        log_lines.append("Status: Local image not found. Pull required")
         log_level = logging.ERROR
 
     elif status == DockerImageStatus.REMOTE_UNAVAILABLE:
@@ -381,6 +381,10 @@ def check_docker_image_update():
 
     logger.log(log_level, "\n".join(log_lines))
 
+    if status != DockerImageStatus.UP_TO_DATE:
+        return "\n".join(log_lines) + "\n"
+    return None
+
 
 # -----------------------------------------------------------------------------
 # The main compute worker entrypoint, this is how a job is ran at the highest
@@ -389,7 +393,7 @@ def check_docker_image_update():
 @shared_task(name="compute_worker_run")
 def run_wrapper(run_args):
     # Check for docker image update
-    check_docker_image_update()
+    docker_image_warning = check_docker_image_update()
 
     # We need to convert the UUID given by celery into a byte like object otherwise things will break
     run_args.update(secret=str(run_args["secret"]))
@@ -402,7 +406,8 @@ def run_wrapper(run_args):
     )
 
     run = Run(run_args)
-
+    if docker_image_warning:
+        run.docker_image_warning = docker_image_warning.encode()
     try:
         run.validate_hitl_configuration()
         run.prepare()
@@ -603,6 +608,7 @@ class Run:
         self.data_dir = os.path.join(Settings.BASE_DIR, "data")            # path inside the worker container
         self.reference_dir = os.path.join(Settings.BASE_DIR, "reference")  # path inside the worker container
         self.logs = {}
+        self.docker_image_warning = None
 
         # Details for submission
         self.is_scoring = run_args["is_scoring"]
@@ -707,6 +713,7 @@ class Run:
     def push_logs(self):
         """Upload any collected logs, even in case of crash.
         """
+<<<<<<< HEAD
         if not Settings.COMPUTE_WORKER_DISABLE_LOG_UPLOAD:
             try:
                 for kind, logs in (self.logs or {}).items():
@@ -737,6 +744,26 @@ class Run:
             except Exception as e:
                 logger.exception(f"Failed best-effort log file creation: {e}")
 
+<<<<<<< HEAD
+=======
+=======
+        try:
+            for kind, logs in (self.logs or {}).items():
+                for stream_key in ("stdout", "stderr"):
+                    entry = logs.get(stream_key) if isinstance(logs, dict) else None
+                    if not entry:
+                        continue
+                    location = entry.get("location")
+                    data = entry.get("data") or b""
+                    if self.docker_image_warning and stream_key == "stderr":
+                        data = self.docker_image_warning + data
+                    if location:
+                        self._put_file(location, raw_data=data)
+        except Exception as e:
+            logger.exception(f"Failed best-effort log upload: {e}")
+>>>>>>> 88fa830b (Return logs to the platform, check current container)
+
+>>>>>>> d3a46670 (merge conflict fixed)
     def get_detailed_results_file_path(self):
         default_detailed_results_path = os.path.join(
             self.output_dir, "detailed_results.html"
