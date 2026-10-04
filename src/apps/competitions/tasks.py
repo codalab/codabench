@@ -4,7 +4,7 @@ import os
 import re
 import traceback
 import zipfile
-from datetime import datetime, timedelta
+from datetime import timedelta
 from io import BytesIO
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 
@@ -614,8 +614,11 @@ def create_competition_dump(competition_pk, keys_instead_of_files=False):
         logger.info(f"Finding competition {competition_pk}")
         comp = Competition.objects.get(pk=competition_pk)
         zip_buffer = BytesIO()
-        current_date_time = datetime.today().strftime("%Y-%m-%d %H:%M:%S")
-        zip_name = f"{comp.title}-{current_date_time}.zip"
+        created_when = now()
+        dump_type = "keys" if keys_instead_of_files else "files"
+        # Zip name is kept short because uploaded file names are truncated to 35 characters
+        zip_name = f"comp-{comp.pk}-with_{dump_type}-{created_when.strftime('%Y%m%d-%H%M')}.zip"
+        dump_name = f"Competition {comp.pk} (with {dump_type}) - {created_when.strftime('%Y-%m-%d %H:%M:%S')} UTC"
         zip_file = zipfile.ZipFile(zip_buffer, "w")
 
         # -------- Main Competition Details -------
@@ -770,7 +773,7 @@ def create_competition_dump(competition_pk, keys_instead_of_files=False):
                         temp_date = getattr(phase, field)
                         if not temp_date:
                             continue
-                        temp_date = temp_date.strftime("%Y-%m-%d")
+                        temp_date = temp_date.strftime("%Y-%m-%d %H:%M:%S")
                         temp_phase_data[field] = temp_date
                     elif field == "max_submissions_per_person":
                         temp_phase_data["max_submissions"] = getattr(phase, field)
@@ -827,10 +830,9 @@ def create_competition_dump(competition_pk, keys_instead_of_files=False):
         logger.info("Creating ZIP file")
         competition_dump_file = ContentFile(zip_buffer.getvalue())
         logger.info("Creating new Data object with type competition_bundle")
-        bundle_count = CompetitionDump.objects.count() + 1
         temp_dataset_bundle = Data.objects.create(
             created_by=comp.created_by,
-            name=f"{comp.title} Dump #{bundle_count} Created {current_date_time}",
+            name=dump_name,
             type="competition_bundle",
             description="Automatically created competition dump",
             # 'data_file'=,
