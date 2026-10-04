@@ -83,6 +83,8 @@ MINIO_SECRET_KEY=testsecret
 AWS_ACCESS_KEY_ID=testkey
 AWS_SECRET_ACCESS_KEY=testsecret
 ```
+!!! note "RabbitMQ credentials are only applied the first time RabbitMQ starts. To change them later, see [Change RabbitMQ username or password](Administrator-procedures.md#change-rabbitmq-username-or-password)."
+
 !!! warning "It is very important to set up an SSL certificate for Public deployement"
 
 ## Open Access Permissions for following port number
