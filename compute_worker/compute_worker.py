@@ -579,7 +579,7 @@ class Run:
             max_retries=Retry(
                 total=3,
                 backoff_factor=1,
-                status_forcelist=[502, 503, 504],
+                status_forcelist=[500, 502, 503, 504],
                 allowed_methods=["PATCH", "GET", "PUT"],
             )
         )
@@ -760,7 +760,7 @@ class Run:
         url = f"{self.submissions_api_url}/submissions/{self.submission_id}/"
         data["secret"] = self.secret
 
-        logger.info(f"Updating submission @ {url}")
+        logger.info(f"Updating submission @ {url} with data = {data}")
 
         resp = self.requests_session.patch(url, data=data, timeout=150)
         if resp.status_code == 200:
