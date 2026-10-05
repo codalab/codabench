@@ -789,11 +789,18 @@ class PhaseViewSet(ModelViewSet):
 
         # error when user is not super user or admin of the competition
         if can_re_run_submissions:
-            # rerun all submissions
+            # rerun all submissions, skipping those whose tasks were deleted or removed from the phase
+            rerun_count = 0
+            skipped_count = 0
+            warned_count = 0
             for submission in submissions:
-                submission.re_run()
-            rerun_count = len(submissions)
-            return Response({"count": rerun_count})
+                if submission.re_run() is None:
+                    skipped_count += 1
+                    continue
+                rerun_count += 1
+                if submission.re_run_warning():
+                    warned_count += 1
+            return Response({"count": rerun_count, "skipped": skipped_count, "warned": warned_count})
         else:
             raise PermissionDenied(error_message)
 
