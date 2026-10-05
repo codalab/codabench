@@ -2,8 +2,7 @@
 
 {% block content %}
     <p>You have been invited to join {{ organization }}.</p>
-    <p>Click this link to accept or reject your invite. 
-        <a href="{{ protocol }}://{{ domain }}{{ invite_url }}">{{ protocol }}://{{ domain }}{{ invite_url }}</a>
-    </p>
+
+    <p>Click this link to accept or reject your invite. <a href="{{ protocol }}://{{ domain }}{{ invite_url }}">{{ protocol }}://{{ domain }}{{ invite_url }}</a></p>
 
 {% endblock %}

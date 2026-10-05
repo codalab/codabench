@@ -1,6 +1,4 @@
 import json
-
-from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
@@ -22,6 +20,7 @@ from api.serializers.profiles import MyProfileSerializer, UserSerializer, \
 from profiles.helpers import send_mail
 from profiles.models import Organization, Membership
 from profiles.views import send_delete_account_confirmation_mail
+from utils.email import get_link_context
 
 User = get_user_model()
 
@@ -188,8 +187,7 @@ class OrganizationViewSet(mixins.CreateModelMixin,
                         'user': member.user,
                         'invite_url': f'{reverse("profiles:organization_accept_invite")}?token={member.token}',
                         'organization': org.name,
-                        'domain': settings.DOMAIN_NAME,
-                        'protocol': 'https' if self.request.is_secure() else 'http'
+                        **get_link_context(request),
                     },
                     subject=f'You have been invited to join {org.name}',
                     html_file="profiles/emails/invite.html",
