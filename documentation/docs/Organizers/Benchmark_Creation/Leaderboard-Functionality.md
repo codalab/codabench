@@ -79,7 +79,7 @@ The submission rule set the behavior of the leaderboard regarding new submission
 - **Add And Delete Multiple**: Allow users to add multiple submissions and remove those submissions
 - **Force Last**: Force only the last submission
 - **Force Latest Multiple**: Force latest submission to be added to leaderboard (multiple)
-- **Force Best**: Force only the best submission to the leaderboard
+- **Force Best**: Force only the best submission to the leaderboard. The best submission is chosen by the primary column, then the other columns from left to right. If two submissions have exactly the same scores, the older one is kept, so a new submission only replaces the current one if it scores better.
 
 Here are the corresponding values for the YAML field `submission_rule`: "Add", "Add_And_Delete", "Add_And_Delete_Multiple", "Force_Last", "Force_Latest_Multiple" or "Force_Best".
 
