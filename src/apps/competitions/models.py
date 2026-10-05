@@ -626,7 +626,52 @@ class Submission(models.Model):
         self.start(tasks=tasks)
         return self
 
+    def _ran_on_task_ids(self):
+        """ids of the tasks this submission ran on, None for a deleted task"""
+        if self.has_children:
+            return set(self.children.values_list('task', flat=True))
+        return {self.task_id}
+
+    def re_run_error(self, task=None):
+        """Return why this submission cannot be re-run, or None if it can"""
+        # A specific task re-run runs only the given task and is not shown on the leaderboard
+        if task:
+            return None
+
+        # Tasks this submission ran on: its own task, or its children's tasks for a multi-task submission
+        ran_on_task_ids = self._ran_on_task_ids()
+
+        # A deleted task leaves the submission's task empty (None), so there is nothing to re-run it on
+        if None in ran_on_task_ids:
+            return "This submission cannot be re-run because a task it ran on has been deleted. Please make a new submission or contact the competition organizer."
+
+        # Every task the submission ran on must still be in the phase, otherwise the re-run would be
+        # scored on a task the leaderboard no longer shows and its scores would appear as n/a
+        phase_task_ids = set(self.phase.tasks.values_list('id', flat=True))
+        if not ran_on_task_ids.issubset(phase_task_ids):
+            return "This submission cannot be re-run because the phase tasks have changed since it was submitted. Please make a new submission or contact the competition organizer."
+
+        # Tasks added to the phase later do not block the re-run, they only give a warning (see re_run_warning)
+        return None
+
+    def re_run_warning(self, task=None):
+        """Return a warning when the phase has tasks this submission did not run on, or None"""
+        if task:
+            return None
+
+        phase_task_ids = set(self.phase.tasks.values_list('id', flat=True))
+        if phase_task_ids - self._ran_on_task_ids():
+            return "Submission re-run started. It will only run on the tasks it was originally submitted to, so scores for newly added tasks will show as n/a. Make a new submission to get scores for all tasks."
+
+        return None
+
     def re_run(self, task=None):
+
+        # Do not re-run when a task this submission ran on is deleted or no longer in the phase
+        error = self.re_run_error(task=task)
+        if error:
+            logger.error(f"Cannot rerun `{self}`: {error}")
+            return None
 
         # task to use in the new submission
         new_submission_task = task or self.task
@@ -638,16 +683,6 @@ class Submission(models.Model):
         # Check if this submission needs to rerun on specific children or has no children
         if not self.has_children or is_specific_task_re_run:
             flag_rerun_specific_task_or_has_no_children = True
-
-        # Check if task exists in case of specific task rerun or no children
-        if flag_rerun_specific_task_or_has_no_children and new_submission_task is None:
-            logger.error(f"Cannot rerun `{self}` because the task is None (deleted)")
-            return None
-        else:
-            children_tasks = self.children.values_list('task', flat=True)
-            if None in children_tasks:
-                logger.error(f"Cannot rerun `{self}` because one or more children submission tasks are None (deleted)")
-                return None
 
         # Create a new submission
         submission_arg_dict = {

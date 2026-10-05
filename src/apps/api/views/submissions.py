@@ -371,22 +371,28 @@ class SubmissionViewSet(ModelViewSet):
         else:
             rerun_kwargs = {}
 
+        # Do not re-run when a task this submission ran on is deleted or no longer in the phase
+        error_msg = submission.re_run_error(**rerun_kwargs)
+        if error_msg:
+            return Response({"error_msg": error_msg}, status=status.HTTP_400_BAD_REQUEST)
+
         new_sub = submission.re_run(**rerun_kwargs)
-        if new_sub is None:
-            # return error
-            return Response({
-                "error_msg": "You cannot rerun this submission because one or more tasks this submission was running are deleted, resubmit the submission or contact the competition organizer!"},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        else:
-            return Response({'id': new_sub.id})
+        return Response({'id': new_sub.id, 'warning_msg': submission.re_run_warning(**rerun_kwargs)})
 
     @action(detail=False, methods=('POST',))
     def re_run_many_submissions(self, request):
         qs = self.get_queryset()
+        rerun_count = 0
+        skipped_count = 0
+        warned_count = 0
         for submission in qs:
-            submission.re_run()
-        return Response({})
+            if submission.re_run() is None:
+                skipped_count += 1
+                continue
+            rerun_count += 1
+            if submission.re_run_warning():
+                warned_count += 1
+        return Response({"count": rerun_count, "skipped": skipped_count, "warned": warned_count})
 
     @action(detail=False, methods=('POST',))
     def download_many_submissions(self, request):
