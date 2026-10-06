@@ -99,4 +99,4 @@ def test_loginIntoActivatedAccount(page: Page):
     page.get_by_role("textbox", name="password").click()
     page.get_by_role("textbox", name="password").fill(test_password)
     page.get_by_role("button", name="Log In").click()
-    expect(page.get_by_text(test_user)).to_be_visible()
+    expect(page.locator("#user_dropdown").get_by_text(test_user)).to_be_visible()

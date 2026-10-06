@@ -31,7 +31,7 @@ def test_competition_upload(page: Page):
 
 def task_creation(page):
     page.goto("/")
-    page.get_by_text("codabench Admin management").click()
+    page.locator("#user_dropdown").click()
     page.get_by_role("link", name=" Resources").click()
     page.get_by_text("Datasets and programs").first.click()
     page.get_by_role("button", name=" Add Dataset/Program").click()

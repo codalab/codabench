@@ -66,7 +66,7 @@ class HomePageAnnouncementTests(TestCase):
         plain_block = content.split('class="announcement announcement-plain"')[1].split("plain text")[0]
         assert "announcement-icon" not in plain_block
 
-    def test_announcement_box_hidden_without_announcements(self):
+    def test_announcement_section_hidden_without_announcements(self):
         """
         Creates only an inactive announcement and loads the home page.
         Expects the announcements wrapper not to be rendered at all.

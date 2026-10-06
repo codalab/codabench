@@ -18,9 +18,21 @@
                 {% endif %}
             </h3>
             {% if post.text %}
-                {# Clamped to 3 lines in CSS, "Read more" is shown only when the text is longer #}
+                {# Clamped to 3 lines in CSS #}
                 <p class="news-card-text">{{ post.text|striptags }}</p>
-                <a class="news-card-link" href="{% if post.link %}{{ post.link }}{% else %}/news/{% endif %}" {% if post.link %}target="_blank"{% endif %} hidden>Read more <i class="arrow right icon"></i></a>
+            {% endif %}
+            {% if post.text or post.link %}
+                <div class="news-card-actions">
+                    {% if post.text %}
+                        {# Shows the full text in the card, only visible when the text is cut off #}
+                        <button type="button" class="news-card-toggle" hidden>
+                            <span class="news-card-toggle-label">Read more</span> <i class="angle down icon"></i>
+                        </button>
+                    {% endif %}
+                    {% if post.link %}
+                        <a class="news-card-link" href="{{ post.link }}" target="_blank">Open link <i class="external alternate icon"></i></a>
+                    {% endif %}
+                </div>
             {% endif %}
         </div>
         {% endfor %}
@@ -28,17 +40,31 @@
 </div>
 
 <script>
-    // Show "Read more" only on cards whose text is cut off after 3 lines
-    function showNewsReadMore() {
+    // Show "Read more" only on cards whose text is cut off after 3 lines (or that are expanded)
+    function updateNewsReadMore() {
         document.querySelectorAll('.news-card').forEach(function (card) {
             var text = card.querySelector('.news-card-text')
-            var link = card.querySelector('.news-card-link')
-            if (text && link) {
-                link.hidden = text.scrollHeight <= text.clientHeight + 1
+            var toggle = card.querySelector('.news-card-toggle')
+            if (text && toggle) {
+                var expanded = card.classList.contains('news-card-expanded')
+                toggle.hidden = !expanded && text.scrollHeight <= text.clientHeight + 1
             }
         })
     }
-    window.addEventListener('load', showNewsReadMore)
-    window.addEventListener('resize', showNewsReadMore)
+
+    // Expand or collapse the text of a card
+    document.querySelector('.news-cards').addEventListener('click', function (event) {
+        var toggle = event.target.closest('.news-card-toggle')
+        if (!toggle) {
+            return
+        }
+        var card = toggle.closest('.news-card')
+        var expanded = card.classList.toggle('news-card-expanded')
+        toggle.querySelector('.news-card-toggle-label').textContent = expanded ? 'Show less' : 'Read more'
+        toggle.querySelector('.icon').className = expanded ? 'angle up icon' : 'angle down icon'
+    })
+
+    window.addEventListener('load', updateNewsReadMore)
+    window.addEventListener('resize', updateNewsReadMore)
 </script>
 {% endif %}
