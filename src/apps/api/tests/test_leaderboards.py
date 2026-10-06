@@ -153,7 +153,7 @@ class PhaseLeaderboardRowIdTests(APITestCase):
           not put on the leaderboard, because the platform puts only the children on it.
         - Single-task submission or child of a parent: put on the leaderboard with one score.
         """
-        submission =factories.SubmissionFactory(
+        submission = factories.SubmissionFactory(
             owner=self.participant,
             phase=phase,
             task=task,
