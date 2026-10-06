@@ -345,9 +345,9 @@ def create_detailed_output_file(detail_name, submission):
     return make_url_sassy(new_details.data_file.name, permission="w")
 
 
-def run_submission(submission_pk, tasks=None, is_scoring=False):
+def run_submission(submission_pk, tasks=None, is_scoring=False, group_ids=None):
     task_ids = [t.id for t in tasks] if tasks else None
-    return _run_submission.apply_async((submission_pk, task_ids, is_scoring))
+    return _run_submission.apply_async((submission_pk, task_ids, is_scoring, group_ids))
 
 
 def send_submission_message(submission, data):
@@ -473,10 +473,6 @@ def _run_submission(submission_pk, task_pks=None, is_scoring=False, group_ids=No
 
         _send_to_compute_worker(submission, is_scoring)
 
-
-def run_submission(submission_pk, tasks=None, is_scoring=False, group_ids=None):
-    task_ids = [t.id for t in tasks] if tasks else None
-    return _run_submission.apply_async((submission_pk, task_ids, is_scoring, group_ids))
 
 @app.task(queue="site-worker", soft_time_limit=60 * 60)  # 1 hour timeout
 def unpack_competition(status_pk):
