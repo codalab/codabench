@@ -63,7 +63,7 @@
                                 <div class="grouped fields">
                                     <div each="{group in available_groups}" class="field">
                                         <div class="ui checkbox">
-                                            <input type="checkbox" name="group-{group.id}" id="group-{group.id}" checked>
+                                            <input type="checkbox" name="group-{group.id}" id="group-{group.id}" checked="{group._checked !== false}" onclick="{toggle_group_checkbox.bind(this, group)}">
                                             <label for="group-{group.id}">{group.name}</label>
                                         </div>
                                     </div>
@@ -218,9 +218,13 @@
 
             CODALAB.api.get_user_participant_groups(self.opts.competition.id)
                 .done((data) => {
-                    self.available_groups = data
+                    self.available_groups = (data || []).map(g => Object.assign({}, g, { _checked: true }))
                     self.update()
                 })
+
+            self.toggle_group_checkbox = function (group, e) {
+                group._checked = e.target.checked
+            }
 
             $(self.refs.data_file.refs.file_input).on('change', self.check_can_upload)
             self.setup_autoscroll()
@@ -489,13 +493,9 @@
                 task_ids_to_run = [self.selected_tasks[0].id]
             }
 
-            let selected_group_ids = []
-            $('#select_groups_accordion input[type="checkbox"]:checked', self.root).each(function () {
-                let match = $(this).attr('name').match(/^group-(\d+)$/)
-                if (match) {
-                    selected_group_ids.push(_.toNumber(match[1]))
-                }
-            })
+            let selected_group_ids = self.available_groups
+                .filter(g => g._checked !== false)
+                .map(g => g.id)
 
             var data_file_metadata = {
                 type: 'submission',

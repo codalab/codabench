@@ -157,7 +157,7 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
         # Check if auto_run_submissions is enabled then run the submission
         # Otherwise organizer will run manually
         if sub.phase.competition.auto_run_submissions:
-            group_ids = [g.id for g in selected_groups] if selected_groups else None
+            group_ids = [g.id for g in selected_groups] if selected_groups is not None else None
             sub.start(tasks=tasks, group_ids=group_ids)
 
         return sub
