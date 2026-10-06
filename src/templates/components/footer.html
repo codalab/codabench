@@ -1,0 +1,50 @@
+{% load static %}
+
+<div id="footer" class="footer">
+    <div class="footer-inner">
+        <!-- Logo + tagline -->
+        <div class="footer-brand">
+            <a href="/">
+                <img class="footer-logo" src="{% static 'img/codabench.png' %}" alt="Codabench">
+            </a>
+            <p class="footer-tagline">Open-source platform for AI benchmarks and competitions</p>
+            <div class="footer-icons">
+                <a class="footer-icon" href="https://github.com/codalab/codabench" target="_blank" title="GitHub">
+                    <i class="github icon"></i>
+                </a>
+                <a class="footer-icon" href="mailto:{{ CONTACT_EMAIL }}" title="Email">
+                    <i class="envelope icon"></i>
+                </a>            </div>
+        </div>
+
+        <!-- Quick links -->
+        <div class="footer-column">
+            <h4 class="footer-title">Quick links</h4>
+            <a href="{% url "competitions:public" %}">Benchmarks/Competitions</a>
+            <a href="{% url "datasets:public" %}">Datasets</a>
+            <a href="https://docs.codabench.org/latest/Organizers/Benchmark_Creation/Getting-started-with-Codabench/" target="_blank">Organize a benchmark</a>
+        </div>
+
+        <!-- Resources -->
+        <div class="footer-column">
+            <h4 class="footer-title">Resources</h4>
+            <a href="https://docs.codabench.org" target="_blank">Documentation</a>
+            <a href="{% url 'schema-swagger-ui' %}">API Docs</a>
+            <a href="https://github.com/codalab/codabench" target="_blank">GitHub</a>
+            <a href="https://github.com/codalab/codabench/issues" target="_blank">Report an issue</a>
+        </div>
+
+        <!-- Legal & About -->
+        <div class="footer-column">
+            <h4 class="footer-title">Legal &amp; About</h4>
+            <a href="https://github.com/codalab/codabench/blob/master/documentation/PRIVACY.md" target="_blank">Privacy and Terms</a>
+            <a href="https://github.com/codalab/codabench/blob/develop/documentation/ABOUT.md" target="_blank">About</a>
+            <a href="mailto:{{ CONTACT_EMAIL }}">Contact us</a>
+        </div>
+    </div>
+
+    <!-- Bottom bar -->
+    <div class="footer-bottom">
+        &copy; {% now "Y" %} Codabench
+    </div>
+</div>

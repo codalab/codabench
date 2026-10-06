@@ -1,0 +1,57 @@
+/* --------------------------------------------------------------------------------------
+ Stats component (templates/components/stats.html)
+ Classes are prefixed with home- because stat-value / stat-label are used elsewhere.
+ */
+// Own section, same spacing and heading as About / Get Started
+.home-stats-section
+    width 100%
+    margin 3em 0
+
+#page_content .home-stats-title
+    margin 0 0 1em
+    color $cb-navy-900
+    font-size 1.6em
+    text-align left
+
+.home-stats
+    display grid
+    grid-template-columns repeat(5, 1fr)
+    width 100%
+    margin 0
+    padding 28px 0
+    // Same light blue as the Get Started cards
+    background-color $cb-blue-50
+    border 1px solid rgba($cb-blue-500, 0.25)
+    border-radius 10px
+    box-shadow 0 1px 2px rgba(0, 0, 0, 0.04)
+
+.home-stat
+    padding 0 12px
+    text-align center
+    border-left 1px solid rgba($cb-blue-500, 0.2)
+
+    &:first-child
+        border-left none
+
+.home-stat-value
+    color $cb-blue-500
+    font-size 2em
+    font-weight 700
+    line-height 1.1
+
+.home-stat-label
+    margin-top 6px
+    color $cb-navy-700
+    font-size 12px
+    letter-spacing 0.06em
+    text-transform uppercase
+
+/* Tablets and phones: two per row, dividers become row spacing */
+@media only screen and (max-width 767px)
+    .home-stats
+        grid-template-columns repeat(2, 1fr)
+        row-gap 24px
+        padding 24px 0
+
+    .home-stat
+        border-left none

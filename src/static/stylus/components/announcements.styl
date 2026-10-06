@@ -1,0 +1,78 @@
+/* --------------------------------------------------------------------------------------
+ Announcements component (templates/components/announcements.html)
+ */
+.announcements
+    display flex
+    flex-direction column
+    gap 12px
+    width 100%
+    margin 1em 0
+
+.announcement
+    display flex
+    align-items flex-start
+    gap 12px
+    padding 14px 18px
+    background-color #fff
+    border 1px solid #e3e7ec
+    border-left 4px solid transparent
+    border-radius 8px
+    box-shadow 0 1px 2px rgba(0, 0, 0, 0.04)
+    color #2e2e2e
+    text-align left
+
+.announcement-icon.icon
+    margin 2px 0 0
+    font-size 1.3em
+
+.announcement-content
+    flex 1
+    min-width 0
+
+.announcement-title
+    font-weight bold
+    font-size 1.05em
+
+.announcement-body
+    margin-top 4px
+    color #4a4a4a
+
+    p
+        margin 0 0 0.5em
+
+    p:last-child
+        margin-bottom 0
+
+    a, a:hover
+        color inherit
+        font-weight bold
+        text-decoration underline
+
+/* Levels */
+.announcement-plain
+    border-left-color $cb-navy-700
+
+// Border is a soft tint of the level color, with the full color on the left stripe
+.announcement-info
+    background-color $cb-info-bg
+    border-color rgba($cb-info, 0.3)
+    border-left-color $cb-info
+
+    .announcement-icon
+        color $cb-info
+
+.announcement-warning
+    background-color $cb-warning-bg
+    border-color rgba($cb-warning, 0.3)
+    border-left-color $cb-warning
+
+    .announcement-icon
+        color $cb-warning
+
+.announcement-critical
+    background-color $cb-danger-bg
+    border-color rgba($cb-danger, 0.3)
+    border-left-color $cb-danger
+
+    .announcement-icon
+        color $cb-danger
