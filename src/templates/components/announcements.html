@@ -1,0 +1,17 @@
+{# Active announcements, shown on the home page. Expects `announcements` in the context. #}
+
+{% if announcements %}
+<div class="announcements">
+    {% for a in announcements %}
+    <div class="announcement announcement-{{ a.level }}">
+        {% if a.level != 'plain' %}
+            <i class="announcement-icon {% if a.level == 'critical' %}exclamation circle{% elif a.level == 'warning' %}exclamation triangle{% else %}info circle{% endif %} icon"></i>
+        {% endif %}
+        <div class="announcement-content">
+            {% if a.title %}<div class="announcement-title">{{ a.title }}</div>{% endif %}
+            {% if a.text %}<div class="announcement-body">{{ a.text|safe }}</div>{% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}

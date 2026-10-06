@@ -43,6 +43,8 @@ def common_settings(request):
         home_page_counters_info = {
             "public_competitions": 0,
             "users": 0,
+            "organizers": 0,
+            "participants": 0,
             "submissions": 0
         }
 
