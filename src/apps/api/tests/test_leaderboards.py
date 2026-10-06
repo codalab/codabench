@@ -128,3 +128,72 @@ class HiddenLeaderboardTests(APITestCase):
         self.lb.save()
         resp = self.get_leaderboard()
         assert resp.status_code == 200
+
+
+class PhaseLeaderboardRowIdTests(APITestCase):
+    """Which submission ID each row of the phase leaderboard (Results tab) shows."""
+
+    def setUp(self):
+        self.creator = factories.UserFactory(username='creator', password='test')
+        self.participant = factories.UserFactory(username='participant', password='test')
+        self.comp = factories.CompetitionFactory(created_by=self.creator)
+        self.leaderboard = factories.LeaderboardFactory()
+        self.column = factories.ColumnFactory(leaderboard=self.leaderboard, index=0)
+        self.task1 = factories.TaskFactory()
+        self.task2 = factories.TaskFactory()
+
+    def make_phase(self, tasks):
+        """Create a phase in the test competition, using the test leaderboard and the given tasks."""
+        return factories.PhaseFactory(competition=self.comp, leaderboard=self.leaderboard, tasks=tasks)
+
+    def make_submission(self, phase, task, parent=None, has_children=False):
+        """Create a submission owned by the participant.
+
+        - Parent of a multi-task submission (has_children=True): created without scores and
+          not put on the leaderboard, because the platform puts only the children on it.
+        - Single-task submission or child of a parent: put on the leaderboard with one score.
+        """
+        submission =factories.SubmissionFactory(
+            owner=self.participant,
+            phase=phase,
+            task=task,
+            parent=parent,
+            has_children=has_children,
+            leaderboard=None if has_children else self.leaderboard,
+        )
+        if not has_children:
+            factories.SubmissionScoreFactory(column=self.column, submissions=[submission])
+        return submission
+
+    def get_rows(self, phase):
+        """Fetch the phase leaderboard as the creator and return its rows."""
+        self.client.force_login(self.creator)
+        resp = self.client.get(reverse('phases-get-leaderboard', kwargs={'pk': phase.pk}))
+        assert resp.status_code == 200
+        return resp.json()['submissions']
+
+    def test_multi_task_row_shows_parent_id(self):
+        """Children of a multi-task submission are shown as one row; expects the row ID to be the parent ID."""
+        phase = self.make_phase(tasks=[self.task1, self.task2])
+        parent = self.make_submission(phase=phase, task=None, has_children=True)
+        self.make_submission(phase=phase, task=self.task1, parent=parent)
+        self.make_submission(phase=phase, task=self.task2, parent=parent)
+
+        rows = self.get_rows(phase=phase)
+
+        assert len(rows) == 1
+        assert rows[0]['id'] == parent.id
+        assert {score['task_id'] for score in rows[0]['scores']} == {self.task1.id, self.task2.id}
+
+    def test_single_task_row_shows_submission_id(self):
+        """A submission without children is shown as one row; expects the row ID to be the submission's own ID."""
+        phase = self.make_phase(tasks=[self.task1])
+        submission = self.make_submission(phase=phase, task=self.task1)
+
+        rows = self.get_rows(phase=phase)
+
+        assert len(rows) == 1
+        assert rows[0]['id'] == submission.id
+
+    # TODO: add a test for a submission split into several rows by participant group queues
+    # (one row per group). Decide first which ID those rows should show.
