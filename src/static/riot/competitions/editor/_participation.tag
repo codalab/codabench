@@ -60,7 +60,7 @@
               </div>
               <span class="ui { group.is_selectable_by_participant ? 'red' : 'green' } small label participant-choice-badge">
                 <i class="{ group.is_selectable_by_participant ? 'unlock' : 'lock' } icon" 
-                  title="{ group.is_selectable_by_participant ? 'Participant can deactivate the group' : 'Group activated' }">
+                  title="{ group.is_selectable_by_participant ? 'Participant can deactivate the group' : 'Group always active' }">
                 </i>
               </span>
               <div class="members-chips" if="{ group.members && group.members.length }">
