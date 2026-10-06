@@ -912,7 +912,7 @@ class PhaseViewSet(ModelViewSet):
             if submission_key not in submissions_keys:
                 submissions_keys[submission_key] = len(response['submissions'])
                 response['submissions'].append({
-                    'id': submission['id'],
+                    'id': submission_parent_id,
                     'owner': submission['display_name'] or submission['owner'],
                     'scores': [],
                     'detailed_results': [],
