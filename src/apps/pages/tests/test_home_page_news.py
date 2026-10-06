@@ -32,26 +32,40 @@ class HomePageNewsTests(TestCase):
         """
         assert 'class="news-section"' not in self.get_home().content.decode()
 
-    def test_view_all_and_read_more_links(self):
+    def test_view_all_news_link(self):
         """
-        Creates a post with a link and a long text.
-        Expects the "View all news" link and a "Read more" link to the post's link.
+        Creates a post and loads the home page.
+        Expects the "View all news" link to the news page.
         """
-        NewsPost.objects.create(title="Release", link="https://example.com/release", text="word " * 200)
+        NewsPost.objects.create(title="Post", text="text")
+
+        assert 'class="news-view-all" href="/news/"' in self.get_home().content.decode()
+
+    def test_open_link_only_for_posts_with_a_link(self):
+        """
+        Creates one post with a link and one without.
+        Expects a single "Open link" to the post's link, opening in a new tab.
+        """
+        NewsPost.objects.create(title="With link", link="https://example.com/release", text="text")
+        NewsPost.objects.create(title="Without link", text="text")
 
         content = self.get_home().content.decode()
 
-        assert 'href="/news/"' in content
-        assert 'class="news-card-link" href="https://example.com/release"' in content
+        assert content.count('class="news-card-link"') == 1
+        assert 'class="news-card-link" href="https://example.com/release" target="_blank"' in content
 
-    def test_read_more_goes_to_news_page_without_link(self):
+    def test_read_more_is_a_button_not_a_link(self):
         """
-        Creates a post without a link.
-        Expects its "Read more" link to point to the news page.
+        Creates a post with text and loads the home page.
+        Expects "Read more" to be a hidden button (shown by the page script only when the
+        text is cut off) and not to link anywhere.
         """
-        NewsPost.objects.create(title="No link", text="text")
+        NewsPost.objects.create(title="Post", text="word " * 200)
 
-        assert 'class="news-card-link" href="/news/"' in self.get_home().content.decode()
+        content = self.get_home().content.decode()
+
+        assert '<button type="button" class="news-card-toggle" hidden>' in content
+        assert 'href="/news/">Read more' not in content
 
     def test_date_shown_as_pill_text(self):
         """

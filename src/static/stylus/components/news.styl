@@ -80,9 +80,41 @@
     font-size 14px
     line-height 1.55
 
+// Expanded card shows the full text
+.news-card-expanded .news-card-text
+    display block
+    -webkit-line-clamp unset
+    line-clamp unset
+
+// "Read more" on the left, "Open link" on the right, at the bottom of the card
+.news-card-actions
+    display flex
+    justify-content space-between
+    align-items center
+    gap 12px
+    margin-top auto
+    padding-top 10px
+
+// "Read more" / "Show less" (a button, it does not leave the page)
+.news-card-toggle
+    padding 0
+    border none
+    background none
+    color $cb-blue-500
+    font inherit
+    font-size 14px
+    font-weight 500
+    cursor pointer
+
+    &:hover
+        color $cb-blue-400
+
+    .icon
+        margin 0
+
+// Keeps "Open link" on the right when "Read more" is hidden
 .news-card-link
-    align-self flex-start
-    margin-top 6px
+    margin-left auto
     color $cb-blue-500
     font-size 14px
     font-weight 500
