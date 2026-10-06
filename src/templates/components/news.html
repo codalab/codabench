@@ -1,0 +1,44 @@
+{# Latest news on the home page. Expects `news_posts` (serialized latest posts) in the context. #}
+
+{% if news_posts %}
+<div class="news-section">
+    <div class="news-section-header">
+        <h2 class="news-section-title">Latest News</h2>
+        <a class="news-view-all" href="/news/">View all news <i class="arrow right icon"></i></a>
+    </div>
+    <div class="news-cards">
+        {% for post in news_posts %}
+        <div class="news-card">
+            <div class="news-card-date">{{ post.created_when }}</div>
+            <h3 class="news-card-title">
+                {% if post.link %}
+                    <a href="{{ post.link }}" target="_blank">{{ post.title }}</a>
+                {% else %}
+                    {{ post.title }}
+                {% endif %}
+            </h3>
+            {% if post.text %}
+                {# Clamped to 3 lines in CSS, "Read more" is shown only when the text is longer #}
+                <p class="news-card-text">{{ post.text|striptags }}</p>
+                <a class="news-card-link" href="{% if post.link %}{{ post.link }}{% else %}/news/{% endif %}" {% if post.link %}target="_blank"{% endif %} hidden>Read more <i class="arrow right icon"></i></a>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    // Show "Read more" only on cards whose text is cut off after 3 lines
+    function showNewsReadMore() {
+        document.querySelectorAll('.news-card').forEach(function (card) {
+            var text = card.querySelector('.news-card-text')
+            var link = card.querySelector('.news-card-link')
+            if (text && link) {
+                link.hidden = text.scrollHeight <= text.clientHeight + 1
+            }
+        })
+    }
+    window.addEventListener('load', showNewsReadMore)
+    window.addEventListener('resize', showNewsReadMore)
+</script>
+{% endif %}
