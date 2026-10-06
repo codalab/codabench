@@ -70,8 +70,8 @@ def test_manual_competition_creation(page: Page):
     page.goto("/")
     page.get_by_role("link", name=" Benchmarks/Competitions").click()
     page.get_by_role("link", name=" Create").click()
-    page.get_by_role("textbox").nth(1).click()
-    page.get_by_role("textbox").nth(1).fill("Test Title")
+    page.locator("competition-details input[type=text]").first.click()
+    page.locator("competition-details input[type=text]").first.fill("Test Title")
     with page.expect_file_chooser() as fc_info:
         page.get_by_role("button", name="").click()
     file_chooser = fc_info.value
