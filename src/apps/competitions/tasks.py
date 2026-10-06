@@ -27,7 +27,7 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.db import transaction
-from django.db.models import Case, Count, F, OuterRef, Subquery, Value, When
+from django.db.models import Q, Case, Count, F, OuterRef, Subquery, Value, When
 from django.utils.text import slugify
 from django.utils.timezone import now
 from leaderboards.models import Leaderboard
@@ -123,12 +123,15 @@ MAX_EXECUTION_TIME_LIMIT = int(
 )  # time limit of the default queue
 
 
-def _get_user_group_queues(user, competition):
-    all_user_groups = list(
-        competition.participant_groups.filter(user__pk=user.pk)
-        .select_related("queue")
-        .distinct()
-    )
+def _get_user_group_queues(user, competition, selected_group_ids=None):
+    qs = competition.participant_groups.filter(user__pk=user.pk).select_related("queue").distinct()
+
+    if selected_group_ids is not None:
+        qs = qs.filter(
+            Q(is_selectable_by_participant=False) | Q(id__in=selected_group_ids)
+        )
+
+    all_user_groups = list(qs)
 
     if not all_user_groups:
         return []
@@ -288,14 +291,15 @@ def _send_to_compute_worker(submission, is_scoring):
     if is_scoring and hitl_active:
         time_limit = 60 * 60 * 25
 
-    if (
-        submission.phase.competition.queue
-    ):  # if the competition is running on a custom queue, not the default queue
+    if submission.queue is None and submission.phase.competition.queue:
+        # if the competition is running on a custom queue, not the default queue,
+        # and no group-specific queue was already assigned
         submission.queue = submission.phase.competition.queue
         run_args["execution_time_limit"] = (
             submission.phase.execution_time_limit
-        )  # use the competition time limit
+        )
         submission.save(update_fields=["queue"])
+
     if submission.status == Submission.SUBMITTING:
         submission.status = Submission.SUBMITTED
         submission.save(update_fields=["status"])
@@ -341,9 +345,9 @@ def create_detailed_output_file(detail_name, submission):
     return make_url_sassy(new_details.data_file.name, permission="w")
 
 
-def run_submission(submission_pk, tasks=None, is_scoring=False):
+def run_submission(submission_pk, tasks=None, is_scoring=False, group_ids=None):
     task_ids = [t.id for t in tasks] if tasks else None
-    return _run_submission.apply_async((submission_pk, task_ids, is_scoring))
+    return _run_submission.apply_async((submission_pk, task_ids, is_scoring, group_ids))
 
 
 def send_submission_message(submission, data):
@@ -364,7 +368,7 @@ def send_submission_message(submission, data):
 
 
 def send_parent_status(submission):
-    """Helper function we can mock in tests, instead of having to do async mocks"""
+    """Helper function we can mock in tests, instead of having to do async mocks."""
     send_submission_message(submission, {"kind": "status_update", "status": "Running"})
 
 
@@ -374,9 +378,9 @@ def send_child_id(submission, child_id):
 
 
 @app.task(queue="site-worker", soft_time_limit=60)
-def _run_submission(submission_pk, task_pks=None, is_scoring=False):
-    """This function is wrapped so that when we run tests we can run this function not
-    via celery"""
+def _run_submission(submission_pk, task_pks=None, is_scoring=False, group_ids=None):
+    """Function wrapped so that when we run tests we can run this function without
+    via celery."""
     select_models = (
         "phase",
         "phase__competition",
@@ -411,7 +415,6 @@ def _run_submission(submission_pk, task_pks=None, is_scoring=False):
     # ── HITL SECURE (private CW only)
 
     if submission.is_specific_task_re_run:
-        # Should only be one task for a specified task submission
         tasks = Task.objects.filter(pk__in=task_pks)
     elif task_pks is None:
         tasks = submission.phase.tasks.all()
@@ -422,7 +425,7 @@ def _run_submission(submission_pk, task_pks=None, is_scoring=False):
 
     if submission.parent is None and not is_scoring:
         group_queues = _get_user_group_queues(
-            submission.owner, submission.phase.competition
+            submission.owner, submission.phase.competition, selected_group_ids=group_ids
         )
     else:
         group_queues = []
