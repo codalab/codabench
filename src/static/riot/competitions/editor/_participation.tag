@@ -58,8 +58,8 @@
                 <span class="ui grey label">Queue: { group.queue || "None" }</span>
                 <span class="ui grey label">Membres: { group.members && group.members.length > 0 ? group.members.length : 0 }</span>
               </div>
-              <span class="ui { group.is_selectable_by_participant ? 'red' : 'green' } small label participant-choice-badge">
-                <i class="{ group.is_selectable_by_participant ? 'unlock' : 'lock' } icon" 
+              <span class="ui { group.is_selectable_by_participant ? 'orange' : 'green' } small label participant-choice-badge">
+                <i class="{ group.is_selectable_by_participant ? 'open lock' : 'lock' } icon" 
                   title="{ group.is_selectable_by_participant ? 'Participant can deactivate the group' : 'Group always active' }">
                 </i>
               </span>
