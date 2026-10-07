@@ -639,15 +639,32 @@ class Submission(models.Model):
         if not self.has_children or is_specific_task_re_run:
             flag_rerun_specific_task_or_has_no_children = True
 
-        # Check if task exists in case of specific task rerun or no children
-        if flag_rerun_specific_task_or_has_no_children and new_submission_task is None:
-            logger.error(f"Cannot rerun `{self}` because the task is None (deleted)")
-            return None
+        # set tasks for rerunning (a deleted task shows up as None)
+        if flag_rerun_specific_task_or_has_no_children:
+            # in case of a submission with no children or specific task rerun
+            # submission with no children is same as submission with one task
+            task_ids = [new_submission_task.id if new_submission_task else None]
         else:
-            children_tasks = self.children.values_list('task', flat=True)
-            if None in children_tasks:
-                logger.error(f"Cannot rerun `{self}` because one or more children submission tasks are None (deleted)")
-                return None
+            # in case submission has multiple children or multiple task rerun
+            # tasks are gathered from the children submissions
+            task_ids = list(self.children.values_list('task', flat=True))
+
+        has_children = self.has_children
+        # If the original tasks are no longer in the phase (replaced or deleted),
+        # re-run on the current phase tasks, otherwise scores are attached to a task
+        # that is no longer on the leaderboard
+        if not is_specific_task_re_run:
+            phase_task_ids = set(self.phase.tasks.values_list('id', flat=True))
+            if not set(task_ids) <= phase_task_ids:
+                if not phase_task_ids:
+                    logger.error(f"Cannot rerun `{self}` because its phase has no tasks")
+                    return None
+                task_ids = phase_task_ids
+                # Let run_submission pick the task and create children if needed
+                new_submission_task = None
+                has_children = False
+
+        tasks = list(Task.objects.filter(pk__in=task_ids))
 
         # Create a new submission
         submission_arg_dict = {
@@ -655,7 +672,7 @@ class Submission(models.Model):
             'task': new_submission_task,
             'phase': self.phase,
             'data': self.data,
-            'has_children': self.has_children,
+            'has_children': has_children,
             'is_specific_task_re_run': is_specific_task_re_run,
             'fact_sheet_answers': self.fact_sheet_answers,
             'queue': self.phase.competition.queue,
@@ -663,16 +680,6 @@ class Submission(models.Model):
         }
         sub = Submission(**submission_arg_dict)
         sub.save(ignore_submission_limit=True)
-
-        # set tasks for rerunning
-        if flag_rerun_specific_task_or_has_no_children:
-            # in case of a submission with no children or specific task rerun
-            # submission with no children is same as submission with one task
-            tasks = [sub.task]
-        else:
-            # in case submission has multiple children or multiple task rerun
-            # tasks are gathered from the children submissions
-            tasks = Task.objects.filter(pk__in=self.children.values_list('task', flat=True))
 
         sub.start(tasks=tasks)
         return sub
