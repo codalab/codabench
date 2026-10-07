@@ -1,6 +1,6 @@
 import json
 import uuid
-
+from django.utils.timezone import now
 from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
@@ -427,7 +427,9 @@ class SubmissionViewSet(ModelViewSet):
             organization=submission.organization,
         )
         new_submission.save(ignore_submission_limit=True)
-        new_submission.start(tasks=tasks_to_migrate)
+
+        if destination_phase.start <= now():
+            new_submission.start(tasks=tasks_to_migrate)
 
         return Response({'id': new_submission.id})
 
