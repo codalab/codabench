@@ -498,6 +498,7 @@ class Submission(models.Model):
     scoring_worker_hostname = models.CharField(max_length=255, blank=True, null=True)
     queue = models.ForeignKey('queues.Queue', on_delete=models.SET_NULL, null=True, blank=True,
                               related_name='submissions')
+    selected_groups = models.ManyToManyField('profiles.CustomGroup', blank=True, related_name='submissions_selected_in')
     is_migrated = models.BooleanField(default=False)
     created_by_migration = models.ForeignKey(Phase, related_name='migrated_submissions', on_delete=models.CASCADE,
                                              null=True,
@@ -622,8 +623,9 @@ class Submission(models.Model):
     def run(self):
         # get tasks from the phase
         tasks = self.phase.tasks.all()
-        # start submission providing the tasks
-        self.start(tasks=tasks)
+        group_ids = list(self.selected_groups.values_list('id', flat=True))
+        # start submission providing the tasks and groups ids
+        self.start(tasks=tasks, group_ids=group_ids)
         return self
 
     def re_run(self, task=None):

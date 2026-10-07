@@ -116,6 +116,7 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
     selected_groups = serializers.PrimaryKeyRelatedField(queryset=CustomGroup.objects.all(), required=False, write_only=True, many=True)
     phase = serializers.PrimaryKeyRelatedField(queryset=Phase.objects.all(), required=True)
     queue = serializers.PrimaryKeyRelatedField(queryset=Queue.objects.all(), required=False, allow_null=True)
+    selected_groups = serializers.PrimaryKeyRelatedField(queryset=CustomGroup.objects.all(), required=False, write_only=True, many=True)
     created_when = serializers.DateTimeField(format="%Y-%m-%d %H:%M", required=False)
     scores = SubmissionScoreSerializer(many=True, required=False)
 
@@ -154,8 +155,11 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
         selected_groups = validated_data.pop('selected_groups', None)
         sub = super().create(validated_data)
 
-        # Check if auto_run_submissions is enabled then run the submission
-        # Otherwise organizer will run manually
+        # Persiste toujours la sélection du participant, qu'elle soit
+        # consommée immédiatement (auto_run) ou plus tard (run manuel / re-run)
+        if selected_groups is not None:
+            sub.selected_groups.set(selected_groups)
+
         if sub.phase.competition.auto_run_submissions:
             group_ids = [g.id for g in selected_groups] if selected_groups is not None else None
             sub.start(tasks=tasks, group_ids=group_ids)
