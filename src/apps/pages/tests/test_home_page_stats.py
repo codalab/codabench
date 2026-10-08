@@ -56,13 +56,13 @@ class HomePageStatsTests(TestCase):
 
         assert re.findall(r'class="home-stat-value">([^<]+)<', content) == ["0"] * 5
 
-    def test_section_has_title_and_labels(self):
+    def test_section_has_caption_and_labels(self):
         """
         Loads the home page.
-        Expects the "Codabench in Numbers" title and the 5 labels.
+        Expects the stats caption and the 5 labels.
         """
         content = self.client.get(reverse('pages:home')).content.decode()
 
-        assert "Codabench in Numbers" in content
+        assert "Trusted by researchers and organizers around the world" in content
         for label in ["Public Benchmarks", "Platform Users", "Organizers", "Participants", "Submissions"]:
             assert f'class="home-stat-label">{label}<' in content
