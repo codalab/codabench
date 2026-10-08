@@ -137,6 +137,9 @@ CODALAB.api = {
         return CODALAB.api.request('POST', URLS.API + "submissions/download_many_scoring_results/", { pks: pks });
     },
 
+    get_user_participant_groups: function (competition_id) {
+        return CODALAB.api.request('GET', `/competitions/${competition_id}/user_groups/`)
+    },
     /*---------------------------------------------------------------------
          Leaderboards
     ---------------------------------------------------------------------*/

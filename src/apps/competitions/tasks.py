@@ -127,6 +127,7 @@ def _get_user_group_queues(user, competition, selected_group_ids=None):
     qs = competition.participant_groups.filter(user__pk=user.pk).select_related("queue").distinct()
 
     if selected_group_ids is not None:
+
         qs = qs.filter(
             Q(is_selectable_by_participant=False) | Q(id__in=selected_group_ids)
         )
