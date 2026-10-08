@@ -4,8 +4,20 @@ from rest_framework.response import Response
 from datasets.models import Data
 from tasks.models import Task
 from competitions.models import Submission
+from competitions.submission_deletion import SubmissionDeleter
 import logging
 logger = logging.getLogger(__name__)
+
+
+def _failed_submissions(user):
+    """
+    Returns the user's failed submissions: the ones "Delete failed submissions" deletes.
+    The failed submissions counter uses it too, so the counter shows what the button deletes.
+
+    Only parents and submissions without children are returned.
+    Why: SubmissionDeleter deletes the children of each parent with it.
+    """
+    return Submission.objects.filter(owner=user, status=Submission.FAILED, parent__isnull=True)
 
 
 @api_view(['GET'])
@@ -39,10 +51,7 @@ def user_quota_cleanup(request):
     ).count()
 
     # Get Failed submissions count
-    failed_submissions = Submission.objects.filter(
-        Q(owner=request.user) &
-        Q(status=Submission.FAILED)
-    ).count()
+    failed_submissions = _failed_submissions(request.user).count()
 
     # Get unused starting kits count
     unused_starting_kits = Data.objects.filter(
@@ -151,10 +160,8 @@ def delete_unused_submissions(request):
 @api_view(['DELETE'])
 def delete_failed_submissions(request):
     try:
-        Submission.objects.filter(
-            Q(owner=request.user) &
-            Q(status=Submission.FAILED)
-        ).delete()
+        # Deletes the failed submissions with their children, logs, scores, zips and files
+        SubmissionDeleter(submissions=_failed_submissions(request.user)).delete()
 
         return Response({
             "success": True,
