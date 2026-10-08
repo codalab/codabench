@@ -155,7 +155,7 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
         selected_groups = validated_data.pop('selected_groups', None)
         sub = super().create(validated_data)
 
-        # Save the group(s) selected by the user, usefull for when Auto-Run Submission is unchecked 
+        # Save the group(s) selected by the user, usefull for when Auto-Run Submission is unchecked
         if selected_groups is not None:
             sub.selected_groups.set(selected_groups)
 
