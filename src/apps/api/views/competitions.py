@@ -28,7 +28,7 @@ from api.serializers.leaderboards import LeaderboardPhaseSerializer, Leaderboard
 from competitions.emails import send_participation_requested_emails, send_participation_accepted_emails, \
     send_participation_denied_emails, send_direct_participant_email
 from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant, Submission
-from competitions.deletion import CompetitionDeleter, CompetitionDeletionCollector, CompetitionDeletionPreview
+from competitions.competition_deletion import CompetitionDeleter, CompetitionDeletionCollector, CompetitionDeletionPreview
 from datasets.models import Data
 from competitions.tasks import batch_send_email, manual_migration, create_competition_dump
 from competitions.utils import get_popular_competitions, get_recent_competitions
