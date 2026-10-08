@@ -115,7 +115,7 @@ class FooterTests(TestCase):
         content = self.client.get(reverse('pages:home')).content.decode()
         footer = content.split('id="footer"')[1]
 
-        for title in ["Quick links", "Resources", "Legal &amp; About"]:
+        for title in ["Quick Links", "Organizers", "Community"]:
             assert f'<h4 class="footer-title">{title}</h4>' in footer
         assert 'class="footer-bottom"' in footer
         assert "Codabench" in footer.split('class="footer-bottom"')[1]

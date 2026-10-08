@@ -54,10 +54,26 @@
     text-transform uppercase
 
 /* Bottom bar */
+// Copyright on the left, policy links on the right
 .footer-bottom
+    display flex
+    flex-wrap wrap
+    align-items center
+    justify-content space-between
+    gap 8px 24px
     padding 14px 64px
     border-top 1px solid rgba(255, 255, 255, 0.08)
     font-size 13px
+
+.footer-bottom-links
+    display flex
+    flex-wrap wrap
+
+    // Why: a dot between links, not before the first one
+    a + a:before
+        content "·"
+        margin 0 8px
+        color $cb-text-muted-on-dark
 
 /* Small screens: columns stack */
 @media only screen and (max-width 625px)
@@ -68,5 +84,8 @@
     .footer-brand
         grid-column 1 / -1
 
+    // Why: links go below the copyright instead of squeezing next to it
     .footer-bottom
+        flex-direction column
+        align-items flex-start
         padding 14px 16px
