@@ -13,7 +13,7 @@
 
 .get-started-cards
     display grid
-    grid-template-columns repeat(4, 1fr)
+    grid-template-columns repeat(3, 1fr)
     gap 20px
 
 .get-started-card
@@ -72,12 +72,8 @@
     background-color darken($cb-blue-500, 12%)
     color #fff
 
-/* Tablets: 2 per row */
-@media only screen and (max-width 991px)
-    .get-started-cards
-        grid-template-columns repeat(2, 1fr)
-
-/* Phones: 1 per row */
-@media only screen and (max-width 625px)
+/* Phones and small tablets: 1 per row
+   Why: with 3 cards, 2 per row would leave the third card alone on its own row */
+@media only screen and (max-width 767px)
     .get-started-cards
         grid-template-columns 1fr
