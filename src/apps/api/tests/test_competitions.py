@@ -220,7 +220,7 @@ class CompetitionDeleteTests(CompetitionDeleteTestBase):
         url = reverse('competition-detail', kwargs={'pk': self.comp.pk})
         # The celery task is replaced by a mock: no file is deleted, and the mock records
         # the arguments it is called with, so tests can check which files would be deleted
-        with mock.patch('competitions.deletion.delete_storage_files') as delete_files:
+        with mock.patch('competitions.competition_deletion.delete_storage_files') as delete_files:
             # The delete queues the task with transaction.on_commit, which only runs after a real commit.
             # Tests run inside a transaction that is never committed (it is rolled back after each test),
             # so the callback would never run. captureOnCommitCallbacks(execute=True) runs it at the end
