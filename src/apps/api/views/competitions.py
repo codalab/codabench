@@ -32,7 +32,7 @@ from competitions.emails import send_participation_requested_emails, send_partic
 from competitions.models import Tag, Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant, Submission, PhaseTaskInstance
 from competitions.public_competitions import DEFAULT_FILTER_MODE, DEFAULT_ORDERING, FILTER_MODE_AND, FILTER_MODE_OR, \
     ORDERINGS, get_public_competitions, read_tag_ids, read_date
-from competitions.deletion import CompetitionDeleter, CompetitionDeletionCollector, CompetitionDeletionPreview
+from competitions.competition_deletion import CompetitionDeleter, CompetitionDeletionCollector, CompetitionDeletionPreview
 from datasets.models import Data
 from competitions.tasks import batch_send_email, manual_migration, create_competition_dump
 from leaderboards.models import Leaderboard, Column
