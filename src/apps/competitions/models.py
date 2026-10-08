@@ -521,63 +521,21 @@ class Submission(models.Model):
 
     def soft_delete(self):
         """
-        Soft delete the submission: remove files but keep record in DB.
-        Also deletes associated SubmissionDetails and cleans up storage.
-        Also removes organization reference from the submission
+        Soft deletes the submission and its children: their records stay and are marked as soft deleted,
+        everything else is deleted (logs, scores, zip and files). See SubmissionDeleter.
         """
-
-        # Remove related files from storage
-        # 'save=False' prevents a database save, which is handled later after marking the submission as soft-deleted.
-        self.prediction_result.delete(save=False)
-        self.prediction_result_file_size = 0
-        self.scoring_result.delete(save=False)
-        self.scoring_result_file_size = 0
-        self.detailed_result.delete(save=False)
-        self.detailed_result_file_size = 0
-
-        # Delete related SubmissionDetails files and records
-        for detail in self.details.all():
-            detail.data_file.delete(save=False)  # Delete file from storage
-            detail.delete()  # Remove record from DB
-
-        # Clear the data field if no other submissions are using it
-        if self.data:
-            other_submissions_using_data = Submission.objects.filter(data=self.data).exclude(pk=self.pk).exists()
-            if not other_submissions_using_data:
-                self.data.delete()
-
-        # Clear the data field for this submission
-        self.data = None
-
-        # Clear the organization field for this submission
-        self.organization = None
-
-        # Mark submission as deleted
-        self.is_soft_deleted = True
-        self.soft_deleted_when = now()
-        self.save()
+        # Imported here because submission_deletion imports this module
+        from competitions.submission_deletion import SubmissionDeleter
+        SubmissionDeleter(submissions=[self]).soft_delete()
 
     def delete(self, **kwargs):
-
-        # Check if any other submissions are using the same data
-        if self.data:
-            other_submissions_using_data = Submission.objects.filter(data=self.data).exclude(pk=self.pk).exists()
-
-            if not other_submissions_using_data:
-                # If no other submissions are using the same data, delete it
-                self.data.delete()
-
-        # Also clean up details on delete
-        self.details.all().delete()
-
-        # Decrement the submissions_count for the competition on submission deletion
-        # Fetching competition from the phase of this submission
-        competition = self.phase.competition
-        super().delete(**kwargs)
-        # Ensure submissions_count stays non-negative
-        if competition.submissions_count > 0:
-            competition.submissions_count -= 1
-            competition.save()
+        """
+        Deletes the submission with its children, logs, scores, zip and their files,
+        and lowers the competition's submission count (see SubmissionDeleter)
+        """
+        # Imported here because submission_deletion imports this module
+        from competitions.submission_deletion import SubmissionDeleter
+        SubmissionDeleter(submissions=[self]).delete()
 
     def save(self, ignore_submission_limit=False, **kwargs):
         is_new = self.pk is None

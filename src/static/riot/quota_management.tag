@@ -200,7 +200,7 @@
 
         // Delete failed submissions
         self.delete_failed_submissions = function(){
-            if (confirm(`Are you sure you want to permanently delete all failed submissions?`)) {
+            if (confirm(`Permanently delete all your failed submissions? This cannot be undone.`)) {
 
                 CODALAB.api.delete_failed_submissions()
                     .done(function (data) {
