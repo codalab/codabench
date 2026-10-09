@@ -87,9 +87,8 @@ class TaskViewSet(ModelViewSet):
         # Get task
         task = self.get_object()
 
-        # Raise error if user is not the creator of the task or not a super user
-        if request.user != task.created_by and not request.user.is_superuser:
-            raise PermissionDenied("Cannot update a task that is not yours")
+        if not self.can_update(request.user, task):
+            raise PermissionDenied("Cannot update a task that is not yours or not used by a competition you organize")
 
         # Check if 'is_public' is sent in the data
         # This means that from the front end the update is_public api is calle
@@ -340,6 +339,15 @@ class TaskViewSet(ModelViewSet):
             return Response({"error": f"An error occurred while creating the task.\n {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     # This function allows for multiple errors when deleting multiple objects
+    def can_update(self, user, task):
+        """Creator, superuser, users the task is shared with, and organizers of a competition that uses the task.
+        Lets a co-organizer fix a task in place instead of replacing it, which keeps existing scores comparable"""
+        if user.is_superuser or user == task.created_by or task.shared_with.filter(pk=user.pk).exists():
+            return True
+        return Phase.objects.filter(tasks=task).filter(
+            Q(competition__created_by=user) | Q(competition__collaborators=user)
+        ).exists()
+
     def check_delete_permissions(self, request, task):
         if request.user != task.created_by:
             return "Cannot delete a task that is not yours"
