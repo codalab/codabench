@@ -1,4 +1,5 @@
 {% load static %}
+{% load announcement_tags %}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -65,6 +66,8 @@
 {% include "components/mobile_menu.html" %}
 
 <div class="pusher">
+    <!-- Platform announcements -->
+    {% platform_announcements_banner %}
     <!-- Page Contents -->
     {% include "components/header.html" %}
     {% block below_header %}{% endblock %}

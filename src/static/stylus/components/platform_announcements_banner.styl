@@ -1,0 +1,66 @@
+/* --------------------------------------------------------------------------------------
+ Platform announcements banner (templates/components/platform_announcements_banner.html)
+ Shown above the header, on every page. One thin row per announcement.
+ */
+.platform-announcement
+    display flex
+    // Keep the icon next to the first line when the text wraps
+    align-items flex-start
+    gap 10px
+    // Same side padding as the header so it lines up with the logo
+    padding 8px 64px
+    color #fff
+    font-size 14px
+    line-height 20px
+
+    // Separate stacked announcements
+    & + &
+        border-top 1px solid rgba(255, 255, 255, 0.15)
+
+@media only screen and (max-width 625px)
+    .platform-announcement
+        padding 8px 16px
+
+// Why: Semantic UI icons have their own height and alignment, so the glyph
+// sits off center. Make the icon one text line tall and center the glyph in it.
+.platform-announcement-icon.icon
+    display flex
+    align-items center
+    justify-content center
+    flex-shrink 0
+    height 20px
+    margin 0
+    font-size 1.1em
+    line-height 1
+
+.platform-announcement-content
+    flex 1
+    min-width 0
+
+.platform-announcement-title
+    font-weight bold
+    margin-right 8px
+
+// Text may contain paragraphs, keep them on the same line as the title
+.platform-announcement-body
+    p
+        display inline
+        margin 0
+
+    a, a:hover
+        color inherit
+        font-weight bold
+        text-decoration underline
+
+/* Levels */
+.platform-announcement-plain
+    background-color $cb-navy-700
+
+.platform-announcement-info
+    background-color $cb-info
+
+.platform-announcement-warning
+    background-color $cb-warning
+
+.platform-announcement-critical
+    background-color $cb-danger

@@ -17,12 +17,12 @@ LEVEL_COLORS = {
 
 
 class AnnouncementExpansion(admin.ModelAdmin):
-    list_display = ["id", "level_badge", "title", "text_limited", "is_active", "priority"]
+    list_display = ["id", "level_badge", "title", "text_limited", "placement", "is_active", "priority"]
     list_display_links = ["id", "title", "text_limited"]
-    list_filter = ["level", "is_active"]
+    list_filter = ["level", "placement", "is_active"]
     search_fields = ["title", "text"]
     ordering = ('-id',)
-    fields = ("title", "level", "text", "is_active", "priority")
+    fields = ("title", "level", "placement", "text", "is_active", "priority")
 
     @admin.display(description="level", ordering="level")
     def level_badge(self, obj):
