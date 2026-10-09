@@ -677,6 +677,7 @@
                 CODALAB.api.re_run_phase_submissions(phase.id)
                     .done(function (response) {
                         toastr.success(`Rerunning ${response.count} submissions`)
+                        self.show_rerun_warnings(response)
                         self.update_submissions()
                     })
                     .fail(function (response) {
@@ -731,6 +732,9 @@
             CODALAB.api.re_run_submission(submission.id)
                 .done(function (response) {
                     toastr.success('Submission queued')
+                    if (response.warning_msg) {
+                        toastr.warning(response.warning_msg)
+                    }
                     self.update_submissions()
                 })
                 .fail(function (response) {
@@ -750,9 +754,19 @@
         self.rerun_selected_submissions = function () {
             CODALAB.api.re_run_many_submissions(self.checked_submissions)
                 .done(function (response) {
-                    toastr.success('Submissions queued')
+                    toastr.success(`Rerunning ${response.count} submissions`)
+                    self.show_rerun_warnings(response)
                     self.update_submissions()
                 })
+        }
+
+        self.show_rerun_warnings = function (response) {
+            if (response.skipped > 0) {
+                toastr.warning(`${response.skipped} submissions could not be rerun because their tasks were deleted or removed from the phase`)
+            }
+            if (response.warned > 0) {
+                toastr.warning(`${response.warned} submissions were rerun without the tasks added after they were submitted; those scores will show as n/a`)
+            }
         }
 
         self.cancel_submission = function (submission) {
