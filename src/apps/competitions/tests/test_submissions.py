@@ -304,6 +304,93 @@ class MultipleTasksPerPhaseTests(SubmissionTestCase):
             run_new_task_submission.assert_called_once()
 
 
+class ReRunAfterTaskChangeTests(SubmissionTestCase):
+    def start_submission(self, sub):
+        with mock.patch('competitions.tasks._send_to_compute_worker'):
+            sub.start()
+        return Submission.objects.get(pk=sub.pk)
+
+    def re_run(self, sub, task=None):
+        with mock.patch('competitions.tasks._send_to_compute_worker'):
+            new_sub = sub.re_run(task=task)
+        return Submission.objects.get(pk=new_sub.pk)
+
+    def test_re_run_keeps_task_when_phase_task_unchanged(self):
+        task = self.phase.tasks.get()
+        sub = self.start_submission(self.make_submission())
+        new_sub = self.re_run(sub)
+        assert new_sub.task == task
+        assert not new_sub.has_children
+
+    def test_re_run_uses_current_phase_task_after_task_was_replaced(self):
+        sub = self.start_submission(self.make_submission())
+        new_task = TaskFactory()
+        self.phase.tasks.set([new_task])
+        new_sub = self.re_run(sub)
+        assert new_sub.task == new_task
+        assert not new_sub.has_children
+
+    def test_re_run_multi_task_uses_current_phase_tasks_after_task_was_replaced(self):
+        task_a, task_b = TaskFactory(), TaskFactory()
+        phase = PhaseFactory(competition=self.competition, tasks=[task_a, task_b])
+        sub = self.start_submission(self.make_submission(phase=phase, task=None))
+        assert sub.has_children
+
+        task_c = TaskFactory()
+        phase.tasks.set([task_a, task_c])
+        new_sub = self.re_run(sub)
+        assert new_sub.has_children
+        assert set(new_sub.children.values_list('task', flat=True)) == {task_a.pk, task_c.pk}
+
+    def test_re_run_multi_task_to_single_task_phase_does_not_create_children(self):
+        task_a, task_b = TaskFactory(), TaskFactory()
+        phase = PhaseFactory(competition=self.competition, tasks=[task_a, task_b])
+        sub = self.start_submission(self.make_submission(phase=phase, task=None))
+
+        task_c = TaskFactory()
+        phase.tasks.set([task_c])
+        new_sub = self.re_run(sub)
+        assert not new_sub.has_children
+        assert new_sub.task == task_c
+
+    def test_re_run_uses_current_phase_task_after_task_was_deleted(self):
+        sub = self.start_submission(self.make_submission())
+        new_task = TaskFactory()
+        self.phase.tasks.add(new_task)
+        sub.task.delete()
+        sub.refresh_from_db()
+        assert sub.task is None
+
+        new_sub = self.re_run(sub)
+        assert new_sub.task == new_task
+
+    def test_re_run_multi_task_uses_current_phase_tasks_after_task_was_deleted(self):
+        task_a, task_b = TaskFactory(), TaskFactory()
+        phase = PhaseFactory(competition=self.competition, tasks=[task_a, task_b])
+        sub = self.start_submission(self.make_submission(phase=phase, task=None))
+
+        task_c = TaskFactory()
+        phase.tasks.add(task_c)
+        task_b.delete()
+        new_sub = self.re_run(sub)
+        assert new_sub.has_children
+        assert set(new_sub.children.values_list('task', flat=True)) == {task_a.pk, task_c.pk}
+
+    def test_re_run_fails_when_task_was_deleted_and_phase_has_no_tasks(self):
+        sub = self.start_submission(self.make_submission())
+        sub.task.delete()
+        sub.refresh_from_db()
+        with mock.patch('competitions.tasks._send_to_compute_worker'):
+            assert sub.re_run() is None
+
+    def test_specific_task_re_run_is_not_changed(self):
+        sub = self.start_submission(self.make_submission())
+        other_task = TaskFactory()
+        new_sub = self.re_run(sub, task=other_task)
+        assert new_sub.task == other_task
+        assert new_sub.is_specific_task_re_run
+
+
 class FactSheetTests(SubmissionTestCase):
     def setUp(self):
         super().setUp()
