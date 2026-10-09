@@ -403,8 +403,8 @@ CODALAB.api = {
     delete_unused_starting_kits: () => {
         return CODALAB.api.request('DELETE', `${URLS.API}delete_unused_starting_kits/`)
     },
-    delete_unused_competition_bundles: () => {
-        return CODALAB.api.request('DELETE', `${URLS.API}delete_unused_competition_bundles/`)
+    delete_unused_competition_bundles_and_dumps: () => {
+        return CODALAB.api.request('DELETE', `${URLS.API}delete_unused_competition_bundles_and_dumps/`)
     },
     /*---------------------------------------------------------------------
          User Account
