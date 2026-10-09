@@ -5,7 +5,7 @@
         <div class="active item" data-tab="submissions">Submissions</div>
         <div class="item" data-tab="datasets">Datasets and programs</div>
         <div class="item" data-tab="tasks">Tasks</div>
-        <div class="item" data-tab="bundles">Competition Bundles</div>
+        <div class="item" data-tab="bundles">Competition Bundles/Dumps</div>
         <div class="right menu">
             <div class="item">
                 <help_button href="https://docs.codabench.org/latest/Organizers/Running_a_benchmark/Resource-Management/"

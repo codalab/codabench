@@ -385,6 +385,45 @@ class DatasetDeleteTests(APITestCase):
         self.assertTrue(Data.objects.filter(pk=self.dataset1.pk).exists())
         self.assertTrue(Data.objects.filter(pk=self.other_dataset.pk).exists())
 
+    def test_delete_single_dataset_removes_file_from_storage(self):
+        """
+        Gives a dataset a file, then deletes it with the delete button of its row.
+        Expected: the dataset is deleted, and its file is deleted from storage.
+        """
+        # update() instead of save().
+        # Why: save() reads the file size from storage, and this test file doesn't exist there.
+        Data.objects.filter(pk=self.dataset1.pk).update(data_file='dataset/test/dataset1.zip')
+
+        storage = Data._meta.get_field('data_file').storage
+        # The file is deleted after the delete is saved, so we run that step here
+        with patch.object(storage, 'delete') as delete_file, self.captureOnCommitCallbacks(execute=True):
+            resp = self.client.delete(reverse("data-detail", args=[self.dataset1.pk]))
+
+        self.assertEqual(resp.status_code, 204)
+        self.assertFalse(Data.objects.filter(pk=self.dataset1.pk).exists())
+        delete_file.assert_called_once_with('dataset/test/dataset1.zip')
+
+    def test_delete_many_removes_files_from_storage(self):
+        """
+        Gives two datasets a file, then deletes both with "Delete Selected".
+        Expected: both datasets are deleted, and both files are deleted from storage.
+        """
+        # update() instead of save().
+        # Why: save() reads the file size from storage, and these test files don't exist there.
+        Data.objects.filter(pk=self.dataset1.pk).update(data_file='dataset/test/dataset1.zip')
+        Data.objects.filter(pk=self.dataset2.pk).update(data_file='dataset/test/dataset2.zip')
+
+        storage = Data._meta.get_field('data_file').storage
+        ids = [self.dataset1.pk, self.dataset2.pk]
+        # The files are deleted after the delete is saved, so we run that step here
+        with patch.object(storage, 'delete') as delete_file, self.captureOnCommitCallbacks(execute=True):
+            resp = self.client.post(reverse("data-delete-many"), ids, format="json")
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(Data.objects.filter(pk__in=ids).exists())
+        deleted_file_names = [call.args[0] for call in delete_file.call_args_list]
+        self.assertEqual(sorted(deleted_file_names), ['dataset/test/dataset1.zip', 'dataset/test/dataset2.zip'])
+
     def test_cannot_delete_dataset_associated_with_a_submission_in_competition(self):
         """If a dataset is a submission linked to a competition phase, it cannot be deleted."""
         # Setup a submission dataset

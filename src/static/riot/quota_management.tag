@@ -66,11 +66,11 @@
                 </tr>
                 <!--  Unused Competition Bundles  -->
                 <tr>
-                    <td>Unused Competition Bundles <span show="{unused_competition_bundles > 0}">(<b>{unused_competition_bundles}</b>)</span></td>
+                    <td>Unused Competition Bundles/Dumps <span show="{unused_competition_bundles_and_dumps > 0}">(<b>{unused_competition_bundles_and_dumps}</b>)</span></td>
                     <td>
-                        <button class="ui red right floated labeled icon button {disabled: unused_competition_bundles === 0}" onclick="{delete_unused_competition_bundles}">
+                        <button class="ui red right floated labeled icon button {disabled: unused_competition_bundles_and_dumps === 0}" onclick="{delete_unused_competition_bundles_and_dumps}">
                         <i class="icon trash"></i>
-                        Delete unused competition bundles
+                        Delete unused competition bundles/dumps
                     </button>
                     </td>
                 </tr>
@@ -87,7 +87,7 @@
         self.unused_submissions = 0
         self.failed_submissions = 0
         self.unused_starting_kits = 0
-        self.unused_competition_bundles = 0
+        self.unused_competition_bundles_and_dumps = 0
         self.quota = 0
         self.storage_used = 0
 
@@ -107,7 +107,7 @@
                     self.unused_submissions = data.unused_submissions
                     self.failed_submissions = data.failed_submissions
                     self.unused_starting_kits = data.unused_starting_kits
-                    self.unused_competition_bundles = data.unused_competition_bundles
+                    self.unused_competition_bundles_and_dumps = data.unused_competition_bundles_and_dumps
                     self.update()
                 })
                 .fail(function (response) {
@@ -242,14 +242,14 @@
             }
         }
 
-        // Delete unused competition bundles
-        self.delete_unused_competition_bundles = function(){
-            if (confirm(`Are you sure you want to permanently delete all unused competition bundles?`)) {
+        // Delete unused competition bundles and dumps
+        self.delete_unused_competition_bundles_and_dumps = function(){
+            if (confirm(`Are you sure you want to permanently delete all unused competition bundles/dumps?`)) {
 
-                CODALAB.api.delete_unused_competition_bundles()
+                CODALAB.api.delete_unused_competition_bundles_and_dumps()
                     .done(function (data) {
                         if(data.success){
-                            self.unused_competition_bundles = 0
+                            self.unused_competition_bundles_and_dumps = 0
                             toastr.success(data.message)
                             self.update()
                             CODALAB.events.trigger('reload_competition_bundles')
@@ -259,7 +259,7 @@
                         }
                     })
                     .fail(function (response) {
-                        toastr.error("Unused starting kits deletion failed!")
+                        toastr.error("Unused competition bundles/dumps deletion failed!")
                     })
             }
         }
