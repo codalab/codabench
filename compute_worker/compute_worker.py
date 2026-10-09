@@ -34,6 +34,7 @@ from celery import Celery, shared_task, utils, signals
 from billiard.exceptions import SoftTimeLimitExceeded
 
 from logs_loguru import configure_logging, colorize_run_args
+from docker_image_update_checker import DockerImageStatus, DockerImageUpdateChecker
 
 logger = logging.getLogger(__name__)
 
@@ -124,6 +125,10 @@ class Settings:
     COMPUTE_WORKER_DISABLE_LOG_UPLOAD = to_bool(get("COMPUTE_WORKER_DISABLE_LOG_UPLOAD", "False"))
     COMPUTE_WORKER_DISABLE_PREDICTION_UPLOAD = to_bool(get("COMPUTE_WORKER_DISABLE_PREDICTION_UPLOAD", "False"))
 
+    # Docker image config
+    DOCKER_IMAGE_NAMESPACE = get("DOCKER_IMAGE_NAMESPACE", "codalab")
+    DOCKER_IMAGE_REPOSITORY = get("DOCKER_IMAGE_REPOSITORY", "codabench-compute-worker")
+    DOCKER_IMAGE_TAG = get("DOCKER_IMAGE_TAG", "latest")
 
 
 # -----------------------------------------------
@@ -318,12 +323,91 @@ def rewrite_bundle_url_if_needed(url):
     return url
 
 
+def check_docker_image_update(run):
+    """
+    Compare local and remote compute worker Docker images and log the
+    synchronization status along with relevant image metadata.
+    If the local image is not up to date, attach a generic warning to the run
+    so it is added to the submission logs.
+    """
+    checker = DockerImageUpdateChecker(
+        namespace=Settings.DOCKER_IMAGE_NAMESPACE,
+        repository=Settings.DOCKER_IMAGE_REPOSITORY,
+        tag=Settings.DOCKER_IMAGE_TAG,
+        docker_base_url=Settings.CONTAINER_SOCKET
+    )
+    result = checker.compare_local_vs_remote_images(container_id=socket.gethostname())
+    status = result["status"]
+
+    log_level = logging.INFO
+
+    log_lines = [
+        "",
+        "=" * 60,
+        "COMPUTE WORKER DOCKER IMAGE UPDATE CHECK",
+        "=" * 60,
+        f"Image: {result.get('image_name')}",
+    ]
+
+    remote = result.get("remote")
+    local = result.get("local")
+
+    if remote:
+        log_lines.append(f"Remote: digest={remote.get('digest')}, date={remote.get('date')}")
+
+    if local:
+        log_lines.append(f"Local: id={local.get('id')}, date={local.get('date')}")
+
+    log_lines.append("-" * 60)
+
+    if status == DockerImageStatus.UP_TO_DATE:
+        log_lines.append("Status: Local image is synchronized with remote")
+        log_level = logging.INFO
+
+    elif status == DockerImageStatus.BEHIND:
+        log_lines.append("Status: Local image is behind remote version. For better submission processing and to avoid any submission errors, fetch the latest image!")
+        log_level = logging.ERROR
+
+    elif status == DockerImageStatus.LOCAL_MISSING:
+        log_lines.append("Status: Local image not found. Pull required")
+        log_level = logging.ERROR
+
+    elif status == DockerImageStatus.REMOTE_UNAVAILABLE:
+        log_lines.append("Status: Could not fetch remote image metadata")
+        log_level = logging.ERROR
+
+    elif status == "error":
+        log_lines.append(f"Status: Image check failed: {result.get('error')}")
+        log_level = logging.ERROR
+    else:
+        log_lines.append(f"Unknown image status: {status}")
+        log_level = logging.ERROR
+
+    log_lines.append("=" * 60)
+
+    logger.log(log_level, "\n".join(log_lines))
+
+    # Participants only get a generic warning, the details above stay in the compute worker logs
+    if status != DockerImageStatus.UP_TO_DATE:
+        warning_lines = [
+            "",
+            "=" * 60,
+            "CRITICAL WARNING",
+            "=" * 60,
+            "This compute worker is not running the latest Codabench compute worker image.",
+            "If your submission fails unexpectedly, please contact the competition organizers.",
+            "=" * 60,
+        ]
+        run.docker_image_warning = ("\n".join(warning_lines) + "\n").encode()
+
+
 # -----------------------------------------------------------------------------
 # The main compute worker entrypoint, this is how a job is ran at the highest
 # level.
 # -----------------------------------------------------------------------------
 @shared_task(name="compute_worker_run")
 def run_wrapper(run_args):
+
     # We need to convert the UUID given by celery into a byte like object otherwise things will break
     run_args.update(secret=str(run_args["secret"]))
 
@@ -335,6 +419,9 @@ def run_wrapper(run_args):
     )
 
     run = Run(run_args)
+
+    # Check for docker image update
+    check_docker_image_update(run=run)
 
     try:
         run.validate_hitl_configuration()
@@ -525,6 +612,7 @@ class Run:
         self.output_dir = os.path.join(self.root_dir, "output")
         self.data_dir = os.path.join(Settings.HOST_DIRECTORY, "data")  # absolute path to data in the host
         self.logs = {}
+        self.docker_image_warning = None
 
         # Details for submission
         self.is_scoring = run_args["is_scoring"]
@@ -627,6 +715,7 @@ class Run:
     def push_logs(self):
         """Upload any collected logs, even in case of crash.
         """
+
         if not Settings.COMPUTE_WORKER_DISABLE_LOG_UPLOAD:
             try:
                 for kind, logs in (self.logs or {}).items():
@@ -640,7 +729,6 @@ class Run:
                             self._put_file(location, raw_data=data)
             except Exception as e:
                 logger.exception(f"Failed best-effort log upload: {e}")
-
         else:
             try:
                 logs_path = os.path.join(self.root_dir, "logs")
@@ -656,7 +744,6 @@ class Run:
                                 f.write(str(data))
             except Exception as e:
                 logger.exception(f"Failed best-effort log file creation: {e}")
-
 
     def get_detailed_results_file_path(self):
         default_detailed_results_path = os.path.join(
@@ -818,11 +905,11 @@ class Run:
                             )
                         else:
                             raise DockerImagePullException(
-                                    f"Pull for {image_name} failed! Check the logs for more information"
-                                )
+                                f"Pull for {image_name} failed! Check the logs for more information"
+                            )
                     else:
                         logger.warning("Failed. Retrying in 5 seconds...")
-                        time.sleep(5) # Wait 5 seconds before retrying
+                        time.sleep(5)  # Wait 5 seconds before retrying
         else:
             logger.info("COMPETITION_ALLOW_IMAGE_PULL is set to False, using local image if it exists")
             try:
@@ -830,15 +917,14 @@ class Run:
                     logger.warning("Image found, continuing")
                 else:
                     logger.error("Image not found, aborting")
-            except Exception as e:
+            except Exception:
                 raise DockerImagePullException(f"Pull for {image_name} failed! COMPETITION_ALLOW_IMAGE_PULL is set to False, make sure the image is available locally")
                 docker_pull_fail_data = {
-                            "type": "Docker_Image_Pull_Fail",
-                            "error_message": "COMPETITION_ALLOW_IMAGE_PULL set to False but image is not present locally",
-                            "is_scoring": self.is_scoring,
+                    "type": "Docker_Image_Pull_Fail",
+                    "error_message": "COMPETITION_ALLOW_IMAGE_PULL set to False but image is not present locally",
+                    "is_scoring": self.is_scoring,
                 }
                 self._update_submission(docker_pull_fail_data)
-
 
     async def _send_data_through_socket(self, error_message):
         """
@@ -974,7 +1060,7 @@ class Run:
             "SYS_CHROOT",
         ]
 
-        # Configure whether or not we use the GPU. Also setting auto_remove to False because removing too fast 
+        # Configure whether or not we use the GPU. Also setting auto_remove to False because removing too fast
         # can bug out the worker (can't get the logs fast enough)
         if Settings.CONTAINER_ENGINE_EXECUTABLE == Settings.DOCKER:
             security_options = ["no-new-privileges"]
@@ -1048,7 +1134,7 @@ class Run:
 
         # To store on-going logs and avoid empty logs returning to the platform
         stdout_chunks = []
-        stderr_chunks = []
+        stderr_chunks = [self.docker_image_warning] if self.docker_image_warning else []
 
         # Create a websocket to send the logs in real time to the codabench instance
         # We need to set a timeout for the websocket connection otherwise the program will get stuck if he websocket does not connect.
@@ -1063,6 +1149,10 @@ class Run:
                     websockets.connect(websocket_url), timeout=10.0
                 )
                 logger.debug(f"connected to {websocket_url} for container {str(container.get('Id'))}")
+                if self.docker_image_warning:
+                    await websocket.send(
+                        json.dumps({"kind": kind, "message": self.docker_image_warning.decode()})
+                    )
 
             except Exception as e:
                 logger.error(
@@ -1537,7 +1627,7 @@ class Run:
 
             # Cleanup containers
             containers_to_kill = [
-                self.ingestion_program_container_name, 
+                self.ingestion_program_container_name,
                 self.scoring_program_container_name
             ]
             logger.debug("Trying to kill and remove container " + str(containers_to_kill))
@@ -1611,14 +1701,13 @@ class Run:
                     self.ingestion_program_exit_code = return_code
                     self.ingestion_program_elapsed_time = elapsed_time
                 logger.info(f"[exited with {logs['returncode']}]")
-                if Settings.COMPUTE_WORKER_DISABLE_LOG_UPLOAD == False:
+                if not Settings.COMPUTE_WORKER_DISABLE_LOG_UPLOAD:
                     for key, value in logs.items():
                         if key not in ["stdout", "stderr"]:
                             continue
                         if value["data"]:
                             logger.info(f"[{key}]\n{value['data']}")
                             self._put_file(value["location"], raw_data=value["data"])
-
 
                 # set logs of this kind to None, since we handled them already
                 logger.info("Program finished")
