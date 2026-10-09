@@ -220,3 +220,27 @@ class HiddenColumnScoreTests(APITestCase):
         keys = self.score_column_keys(resp)
         assert self.hidden_column.key not in keys
         assert self.visible_column.key in keys
+
+
+class LeaderboardOutdatedTaskTests(APITestCase):
+    def setUp(self):
+        self.creator = factories.UserFactory(username='creator', password='creator')
+        self.comp = factories.CompetitionFactory(created_by=self.creator)
+        self.leaderboard = factories.LeaderboardFactory(primary_index=0)
+        self.phase = factories.PhaseFactory(competition=self.comp, leaderboard=self.leaderboard)
+        factories.ColumnFactory(leaderboard=self.leaderboard, index=0, key='accuracy')
+        self.submission = factories.SubmissionFactory(phase=self.phase, leaderboard=self.leaderboard, task=self.phase.tasks.get())
+
+    def get_leaderboard_submission(self):
+        self.client.force_login(self.creator)
+        resp = self.client.get(reverse('phases-get-leaderboard', kwargs={'pk': self.phase.pk}))
+        assert resp.status_code == 200
+        [submission] = resp.json()['submissions']
+        return submission
+
+    def test_submission_on_current_task_is_not_outdated(self):
+        assert not self.get_leaderboard_submission().get('outdated_task')
+
+    def test_submission_is_outdated_when_phase_task_replaced(self):
+        self.phase.tasks.set([factories.TaskFactory()])
+        assert self.get_leaderboard_submission()['outdated_task'] is True

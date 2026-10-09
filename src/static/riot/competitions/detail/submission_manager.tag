@@ -148,6 +148,11 @@
                         <i if="{submission.status === 'Submitting' && !submission.auto_run}"
                             class="question circle icon"></i>
                     </sup>
+                    <sup if="{ is_outdated_task(submission) }"
+                        data-tooltip="Ran on a task that is no longer in this phase. Make a new submission to be scored on the current task."
+                        data-position="left center" data-inverted="">
+                        <i class="orange exclamation triangle icon"></i>
+                    </sup>
                 </td>
                 <td>{get_score(submission)}</td>
                 <td
@@ -251,7 +256,14 @@
                                 <td if="{ has_multiple_tasks(submission) }">{ child.task ? child.task.name : '' }</td>
                                 <td>{ child.participant_group_name || '-' }</td>
                                 <td>{ pretty_date(child.created_when) }</td>
-                                <td>{ child.status }</td>
+                                <td>
+                                    { child.status }
+                                    <sup if="{ is_outdated_task(child) }"
+                                        data-tooltip="Ran on a task that is no longer in this phase. Make a new submission to be scored on the current task."
+                                        data-position="left center" data-inverted="">
+                                        <i class="orange exclamation triangle icon"></i>
+                                    </sup>
+                                </td>
                                 <td>{ get_score(child) }</td>
 
                                 <td if="{ child.is_soft_deleted }">
@@ -430,6 +442,18 @@
             let children = self.get_children(submission)
             let task_ids = _.uniq(_.map(children, child => _.get(child, 'task.id')).filter(id => id != null))
             return task_ids.length > 1
+        }
+
+        // ran (or a child ran) on a task that was deleted or removed from the phase: scores show as n/a
+        self.is_outdated_task = function (submission) {
+            // admin view replaces submission.phase with the phase object
+            let phase = _.isObject(submission.phase) ? submission.phase : self.selected_phase
+            if (submission.status !== 'Finished' || !phase) {
+                return false
+            }
+            let phase_task_ids = _.map(_.get(phase, 'tasks', []), 'id')
+            let runs = submission.has_children ? self.get_children(submission) : [submission]
+            return _.some(runs, run => !_.includes(phase_task_ids, _.get(run, 'task.id')))
         }
 
         self.toggle_expand = function (submission, event) {
