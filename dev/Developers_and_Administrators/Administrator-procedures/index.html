@@ -2159,6 +2159,51 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="RabbitMQ Management">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#change-rabbitmq-username-or-password" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Change RabbitMQ username or password
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Change RabbitMQ username or password">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#option-1-new-instance-rabbitmq-data-can-be-deleted" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Option 1: New instance (RabbitMQ data can be deleted)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#option-2-instance-in-use-keep-rabbitmq-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Option 2: Instance in use (keep RabbitMQ data)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -3371,6 +3416,51 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="RabbitMQ Management">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#change-rabbitmq-username-or-password" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Change RabbitMQ username or password
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Change RabbitMQ username or password">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#option-1-new-instance-rabbitmq-data-can-be-deleted" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Option 1: New instance (RabbitMQ data can be deleted)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#option-2-instance-in-use-keep-rabbitmq-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Option 2: Instance in use (keep RabbitMQ data)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -3682,6 +3772,69 @@ You can create and edit news using the interface. Write the news using HTML to f
 <h2 id="rabbitmq-management">RabbitMQ Management</h2>
 <p>The RabbitMQ management tool allows you to see the status of various queues, virtual hosts, and jobs. By default, you can access it at: <code>http://&lt;your_codalab_instance&gt;:15672/</code>. The username/password is your RabbitMQ <code>.env</code> settings for username and password. The port is hard-set in <code>docker-compose.yml</code> to 15672, but you can always change this if needed. For more information, see:
 https://www.rabbitmq.com/management.html</p>
+<h4 id="change-rabbitmq-username-or-password">Change RabbitMQ username or password</h4>
+<p>RabbitMQ only reads <code>RABBITMQ_DEFAULT_USER</code> and <code>RABBITMQ_DEFAULT_PASS</code> from <code>.env</code> the first time it starts with an empty data folder (<code>var/rabbit</code>). After that, the users are loaded from <code>var/rabbit</code>, so changing <code>.env</code> and restarting is not enough: RabbitMQ keeps the old credentials while the other services try the new ones, and the logs show <code>login refused ... invalid credentials</code>. <code>docker compose down --volumes</code> does not help either, because <code>var/rabbit</code> is a folder on the host, not a Docker volume.</p>
+<p>Choose one of the two options below.</p>
+<h5 id="option-1-new-instance-rabbitmq-data-can-be-deleted">Option 1: New instance (RabbitMQ data can be deleted)</h5>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This deletes all RabbitMQ data: pending tasks, and the users and virtual hosts of custom queues. Custom queues created before will stop working. Only use this on a new instance or when you don't need this data.</p>
+</div>
+<ol>
+<li>Update <code>RABBITMQ_DEFAULT_USER</code> and <code>RABBITMQ_DEFAULT_PASS</code> in <code>.env</code></li>
+<li>Stop the services, delete the RabbitMQ data and start again:</li>
+</ol>
+<div class="language-bash highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>down
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>sudo<span class="w"> </span>rm<span class="w"> </span>-rf<span class="w"> </span>var/rabbit
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d
+</span></code></pre></div>
+<p>RabbitMQ starts empty and creates the user from <code>.env</code>.</p>
+<h5 id="option-2-instance-in-use-keep-rabbitmq-data">Option 2: Instance in use (keep RabbitMQ data)</h5>
+<p>Use this when the platform is already in use. The RabbitMQ data is kept, and the new credentials are applied directly in RabbitMQ.</p>
+<ol>
+<li>Update <code>RABBITMQ_DEFAULT_USER</code> and/or <code>RABBITMQ_DEFAULT_PASS</code> in <code>.env</code></li>
+<li>Recreate the containers so they use the new values:</li>
+</ol>
+<div class="language-bash highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d
+</span></code></pre></div>
+<p>At this point the workers cannot log in to RabbitMQ yet. This is expected and fixed by the next step.</p>
+<ol>
+<li>Apply the new credentials in RabbitMQ. The commands read the new values from the <code>rabbit</code> container, so the password does not need to be typed.</li>
+</ol>
+<p><strong>If only the password changed:</strong></p>
+<div class="language-bash highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>rabbit<span class="w"> </span>sh<span class="w"> </span>-c<span class="w"> </span><span class="s1">'rabbitmqctl change_password "$RABBITMQ_DEFAULT_USER" "$RABBITMQ_DEFAULT_PASS"'</span>
+</span></code></pre></div>
+<p><strong>If the username changed:</strong> create the new user and give it the same permissions as the old user. The old user has access to the main virtual host (<code>/</code>) and to the virtual host of every custom queue, so all of them are copied. Replace <code>&lt;old-username&gt;</code> with the previous <code>RABBITMQ_DEFAULT_USER</code>:</p>
+<div class="language-bash highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-e<span class="w"> </span><span class="nv">OLD_USER</span><span class="o">=</span>&lt;old-username&gt;<span class="w"> </span>rabbit<span class="w"> </span>sh<span class="w"> </span>-c<span class="w"> </span><span class="s1">'</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="s1">set -e</span>
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="s1">NEW_USER="$RABBITMQ_DEFAULT_USER"</span>
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="s1">rabbitmqctl add_user "$NEW_USER" "$RABBITMQ_DEFAULT_PASS"</span>
+</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="s1">rabbitmqctl set_user_tags "$NEW_USER" administrator</span>
+</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="s1">rabbitmqctl -q list_user_permissions "$OLD_USER" | tail -n +2 |</span>
+</span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="s1">while IFS="$(printf "\t")" read -r vhost perm_configure perm_write perm_read; do</span>
+</span><span id="__span-12-8"><a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="s1">  rabbitmqctl set_permissions -p "$vhost" "$NEW_USER" "$perm_configure" "$perm_write" "$perm_read"</span>
+</span><span id="__span-12-9"><a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="s1">done</span>
+</span><span id="__span-12-10"><a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="s1">'</span>
+</span></code></pre></div>
+<ol>
+<li>Restart the services that connect to RabbitMQ:</li>
+</ol>
+<div class="language-bash highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>restart<span class="w"> </span>django<span class="w"> </span>site_worker<span class="w"> </span>compute_worker<span class="w"> </span>flower
+</span></code></pre></div>
+<ol>
+<li>Check that the services can log in. The <code>rabbit</code> logs should show <code>user '&lt;new-username&gt;' authenticated</code> and no <code>login refused</code> errors:</li>
+</ol>
+<div class="language-bash highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>logs<span class="w"> </span>--since<span class="w"> </span>2m<span class="w"> </span>rabbit<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-E<span class="w"> </span><span class="s2">"authenticated|refused"</span>
+</span></code></pre></div>
+<ol>
+<li>Update <code>BROKER_URL</code> on any compute worker running on another machine that connects to the default queue with these credentials (see <a href="../How-to-deploy-Codabench-on-your-server/#link-compute-workers-to-default-queue">Link compute workers to default queue</a>). Workers on custom queues use their own RabbitMQ users and don't need any change.</li>
+</ol>
+<div class="admonition note">
+<p class="admonition-title">Delete the old user</p>
+<p>If the username changed, the old user is kept in RabbitMQ but is no longer used. If you want to delete it, run this command once everything works (replace <code>&lt;old-username&gt;</code> with the previous <code>RABBITMQ_DEFAULT_USER</code>):</p>
+<div class="language-bash highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>rabbit<span class="w"> </span>rabbitmqctl<span class="w"> </span>delete_user<span class="w"> </span>&lt;old-username&gt;
+</span></code></pre></div>
+</div>
 <h2 id="flower-management">Flower Management</h2>
 <p>Flower is a web based tool for monitoring and administrating Celery clusters. By default, you can access the Flower web portal at <code>http://&lt;your_codalab_instance&gt;:5555/</code>. The username/password is your Flower <code>.env</code> settings for username and password. 5555 is the default port, and cannot be changed without editing the <code>docker-compose.yml</code> file.</p>
 <p>For more information on flower, please visit:
@@ -3713,11 +3866,11 @@ What it does:</p>
 <ul>
 <li>Start codabench <code>docker compose up -d</code></li>
 <li>Bash into the django container and start a python console:
-<div class="language-sh highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>django<span class="w"> </span>./manage.py<span class="w"> </span>shell_plus
+<div class="language-sh highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>django<span class="w"> </span>./manage.py<span class="w"> </span>shell_plus
 </span></code></pre></div></li>
 <li>Manually start the task:
-<div class="language-python highlight"><span class="filename">Python</span><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">analytics.tasks</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_storage_analytics_snapshot</span>
-</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="n">eager_results</span> <span class="o">=</span> <span class="n">create_storage_analytics_snapshot</span><span class="o">.</span><span class="n">apply_async</span><span class="p">()</span>
+<div class="language-python highlight"><span class="filename">Python</span><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">analytics.tasks</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_storage_analytics_snapshot</span>
+</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="n">eager_results</span> <span class="o">=</span> <span class="n">create_storage_analytics_snapshot</span><span class="o">.</span><span class="n">apply_async</span><span class="p">()</span>
 </span></code></pre></div></li>
 <li>If you check the logs (<code>docker compose logs -f</code>) of the app you should see "Task create_storage_analytics_snapshot started" coming from the site_worker container</li>
 <li>If you have to restart the task, don't worry, it will only compute the size of the files that hasn't been computed yet.</li>
@@ -3726,19 +3879,19 @@ What it does:</p>
 <h2 id="homepage-counters">Homepage counters</h2>
 <p>There is also a daily background task counting users, competitions and submissions, in order to display it on the homepage.</p>
 <p>You can manually run it:</p>
-<div class="language-bash highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>django<span class="w"> </span>./manage.py<span class="w"> </span>shell_plus
+<div class="language-bash highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>django<span class="w"> </span>./manage.py<span class="w"> </span>shell_plus
 </span></code></pre></div>
-<div class="language-python highlight"><span class="filename">Python</span><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">analytics.tasks</span><span class="w"> </span><span class="kn">import</span> <span class="n">update_home_page_counters</span>
-</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="n">eager_results</span> <span class="o">=</span> <span class="n">update_home_page_counters</span><span class="o">.</span><span class="n">apply_async</span><span class="p">()</span>
+<div class="language-python highlight"><span class="filename">Python</span><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">analytics.tasks</span><span class="w"> </span><span class="kn">import</span> <span class="n">update_home_page_counters</span>
+</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="n">eager_results</span> <span class="o">=</span> <span class="n">update_home_page_counters</span><span class="o">.</span><span class="n">apply_async</span><span class="p">()</span>
 </span></code></pre></div>
 <h2 id="user-quota-management">User Quota management</h2>
 <h4 id="increase-user-quota">Increase user quota</h4>
 <h6 id="using-the-django-shell">Using the Django Shell</h6>
-<div class="language-python highlight"><span class="filename">Python</span><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="n">docker</span><span class="o">-</span><span class="n">compose</span> <span class="n">exec</span> <span class="n">django</span> <span class="o">./</span><span class="n">manage</span><span class="o">.</span><span class="n">py</span> <span class="n">shell_plus</span>
+<div class="language-python highlight"><span class="filename">Python</span><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="n">docker</span><span class="o">-</span><span class="n">compose</span> <span class="n">exec</span> <span class="n">django</span> <span class="o">./</span><span class="n">manage</span><span class="o">.</span><span class="n">py</span> <span class="n">shell_plus</span>
 </span></code></pre></div>
-<div class="language-python highlight"><span class="filename">Python</span><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="n">u</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s1">'&lt;USERNAME&gt;'</span><span class="p">)</span> <span class="c1">## can also use email</span>
-</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="n">u</span><span class="o">.</span><span class="n">quota</span> <span class="o">=</span> <span class="n">u</span><span class="o">.</span><span class="n">quota</span> <span class="o">*</span> <span class="mi">3</span> <span class="c1"># We multiply the quota by 3 in this example</span>
-</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="n">u</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+<div class="language-python highlight"><span class="filename">Python</span><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="n">u</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s1">'&lt;USERNAME&gt;'</span><span class="p">)</span> <span class="c1">## can also use email</span>
+</span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="n">u</span><span class="o">.</span><span class="n">quota</span> <span class="o">=</span> <span class="n">u</span><span class="o">.</span><span class="n">quota</span> <span class="o">*</span> <span class="mi">3</span> <span class="c1"># We multiply the quota by 3 in this example</span>
+</span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="n">u</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
 </span></code></pre></div>
 <h6 id="using-the-django-admin-interface">Using the Django Admin Interface</h6>
 <ul>
@@ -3756,14 +3909,14 @@ What it does:</p>
 </ul>
 <p>Follow the steps below to create the statistics</p>
 <h4 id="start-codabench">Start codabench</h4>
-<div class="language-bash highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d
+<div class="language-bash highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d
 </span></code></pre></div>
 <h4 id="bash-into-the-django-container-and-start-a-python-console">Bash into the django container and start a python console:</h4>
-<div class="language-bash highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>django<span class="w"> </span>./manage.py<span class="w"> </span>shell_plus
+<div class="language-bash highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>django<span class="w"> </span>./manage.py<span class="w"> </span>shell_plus
 </span></code></pre></div>
 <h4 id="for-overall-platform-statistics">For overall platform statistics</h4>
-<div class="language-python highlight"><span class="filename">Python</span><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">competitions.statistics</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_codabench_statistics</span>
-</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="n">create_codabench_statistics</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="mi">2024</span><span class="p">)</span>
+<div class="language-python highlight"><span class="filename">Python</span><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">competitions.statistics</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_codabench_statistics</span>
+</span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="n">create_codabench_statistics</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="mi">2024</span><span class="p">)</span>
 </span></code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -3773,8 +3926,8 @@ What it does:</p>
 </ul>
 </div>
 <h4 id="for-overall-published-competitions-statistics">For overall published competitions statistics</h4>
-<div class="language-python highlight"><span class="filename">Python</span><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">competitions.statistics</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_codabench_statistics_published_comps</span>
-</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="n">create_codabench_statistics_published_comps</span><span class="p">()</span>
+<div class="language-python highlight"><span class="filename">Python</span><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">competitions.statistics</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_codabench_statistics_published_comps</span>
+</span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="n">create_codabench_statistics_published_comps</span><span class="p">()</span>
 </span></code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
