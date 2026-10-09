@@ -1,6 +1,6 @@
 import logging
 
-from django.db.models import Sum, Q
+from django.db.models import F, Sum, Q
 from rest_framework.generics import get_object_or_404
 
 from competitions.models import Submission
@@ -82,7 +82,7 @@ class BestModeStrategy(BaseModeStrategy):
     def _choose_best_submission(self, leaderboard, owner, phase):
         """choose best submission"""
         primary_col = leaderboard.columns.get(index=leaderboard.primary_index)
-        ordering = [f'{"-" if primary_col.sorting == "desc" else ""}primary_col']
+        ordering = [self._null_last_order(name='primary_col', sorting=primary_col.sorting)]
 
         submissions = Submission.objects.filter(phase=phase,
                                                 owner=owner,
@@ -93,14 +93,19 @@ class BestModeStrategy(BaseModeStrategy):
 
         for column in leaderboard.columns.exclude(id=primary_col.id).order_by('index'):
             col_name = f'col{column.index}'
-            ordering.append(f'{"-" if column.sorting == "desc" else ""}{col_name}')
+            ordering.append(self._null_last_order(name=col_name, sorting=column.sorting))
             kwargs = {
                 col_name: Sum('scores__score', filter=Q(scores__column__index=column.index))
             }
             submissions = submissions.annotate(**kwargs)
 
+        # On equal scores the oldest submission wins, so a new submission only replaces the current best if it scores better
         submissions = submissions.order_by(*ordering, 'created_when')
         return submissions[0]
+
+    def _null_last_order(self, name, sorting):
+        """order by an annotated column, keeping submissions without a score at the end"""
+        return F(name).desc(nulls_last=True) if sorting == "desc" else F(name).asc(nulls_last=True)
 
     def __str__(self):
         return "BestModeStrategy"
