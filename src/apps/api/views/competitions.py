@@ -28,6 +28,7 @@ from api.serializers.leaderboards import LeaderboardPhaseSerializer, Leaderboard
 from competitions.emails import send_participation_requested_emails, send_participation_accepted_emails, \
     send_participation_denied_emails, send_direct_participant_email
 from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant, Submission
+from competitions.competition_deletion import CompetitionDeleter, CompetitionDeletionCollector, CompetitionDeletionPreview
 from datasets.models import Data
 from competitions.tasks import batch_send_email, manual_migration, create_competition_dump
 from competitions.utils import get_popular_competitions, get_recent_competitions
@@ -343,9 +344,35 @@ class CompetitionViewSet(ModelViewSet):
         return Response(serializer.data)
 
     def destroy(self, request, *args, **kwargs):
-        if request.user != self.get_object().created_by:
+        """
+        Deletes the competition with everything that belongs to it, records and files:
+        submissions (parents and children) with their scores, prediction, scoring and detailed results,
+        logs and submission zips, leaderboards with their columns, the competition bundle, dumps, the logo,
+        phases, pages, participants, participant groups and forum (threads and posts).
+
+        Query param `delete_tasks=true` also deletes the tasks used only by this competition, with their
+        solutions and datasets (ingestion program, scoring program, input data, reference data).
+        Query param `delete_phase_datasets=true` also deletes the phase public data and starting kits.
+        Anything still used by another competition, task, phase or submission is kept.
+        """
+        competition = self.get_object()
+        if request.user != competition.created_by:
             raise PermissionDenied("You cannot delete competitions that you didn't create")
-        return super().destroy(request, *args, **kwargs)
+        CompetitionDeleter(
+            collector=CompetitionDeletionCollector(competition=competition),
+            delete_tasks=request.query_params.get('delete_tasks') == 'true',
+            delete_phase_datasets=request.query_params.get('delete_phase_datasets') == 'true',
+        ).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=True, methods=('GET',))
+    def delete_preview(self, request, pk):
+        """Returns the details of what deleting the competition removes, shown in the delete dialog"""
+        competition = self.get_object()
+        if request.user != competition.created_by:
+            raise PermissionDenied("You cannot delete competitions that you didn't create")
+        preview = CompetitionDeletionPreview(collector=CompetitionDeletionCollector(competition=competition))
+        return Response(preview.to_dict())
 
     @action(detail=True, methods=('POST',))
     def toggle_publish(self, request, pk):

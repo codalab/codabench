@@ -23,6 +23,7 @@ from competitions.unpackers.utils import CompetitionUnpackingException
 from competitions.unpackers.v1 import V15Unpacker
 from competitions.unpackers.v2 import V2Unpacker
 from datasets.models import Data
+from django.apps import apps
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
@@ -993,3 +994,43 @@ def submission_status_cleanup():
                 sub.parent.cancel(status=Submission.FAILED)
             else:
                 sub.cancel(status=Submission.FAILED)
+
+
+@app.task(queue="site-worker", soft_time_limit=60 * 60)
+def delete_storage_files(competition_id, competition_title, files):
+    """
+    Deletes the files of a deleted competition from storage, after its records were deleted.
+    `files` maps a file type to a list of [model label, field name, file name];
+    the model field gives the storage of the file.
+    """
+    # The whole report is logged at once at the end, so it is not mixed with other logs
+    total_count = sum(len(entries) for entries in files.values())
+    total_failed = 0
+    report = [
+        "=" * 80,
+        f"Deleting files of competition {competition_id} \"{competition_title}\"",
+        f"Files to delete: {total_count}",
+        "=" * 80,
+    ]
+
+    for file_type, entries in files.items():
+        failed_files = []
+        for model_label, field_name, file_name in entries:
+            storage = apps.get_model(model_label)._meta.get_field(field_name).storage
+            try:
+                storage.delete(file_name)
+            except Exception as e:
+                failed_files.append(f"Failed to delete {file_name}: {e}")
+        deleted_count = len(entries) - len(failed_files)
+        failed_text = f", {len(failed_files)} failed" if failed_files else ""
+        report.append(f"{file_type:<28} {deleted_count} of {len(entries)} deleted{failed_text}")
+        report.extend(f"    {failed_file}" for failed_file in failed_files)
+        total_failed += len(failed_files)
+
+    report += [
+        "=" * 80,
+        f"Total: {total_count - total_failed} deleted, {total_failed} failed",
+        "=" * 80,
+    ]
+    log = logger.error if total_failed else logger.info
+    log("\n" + "\n".join(report))
