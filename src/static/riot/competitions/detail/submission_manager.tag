@@ -22,6 +22,7 @@
             <option value="download_scoring_results">Download scoring results of selected submissions</option>
             <option value="delete">Delete selected submissions</option>
             <option value="rerun">Rerun selected submissions</option>
+            <option value="resubmit">Resubmit selected submissions on current tasks</option>
             </select>
 
             <button type="button" class="ui button" disabled="{checked_submissions.length === 0}" onclick="{submission_handling.bind(this)}">
@@ -178,6 +179,12 @@
                             onclick="{ submission.status === 'Submitting' && !submission.auto_run ? run_submission.bind(this, submission) : rerun_submission.bind(this, submission) }">
                             <i
                                 class="icon { submission.status === 'Submitting' && !submission.auto_run ? 'green play' : 'blue redo' }"></i>
+                        </span>
+                        <!-- resubmit on current tasks (re-run keeps the original task) -->
+                        <span if="{ _.includes(['Finished', 'Failed', 'Cancelled'], submission.status) }"
+                            data-tooltip="Resubmit on current tasks" data-inverted=""
+                            onclick="{ resubmit_submission.bind(this, submission) }">
+                            <i class="icon blue sync alternate"></i>
                         </span>
                         <!-- delete submission -->
                         <span data-tooltip="Delete Submission" data-inverted=""
@@ -747,6 +754,26 @@
             event.stopPropagation()
         }
 
+        self.resubmit_submission = function (submission) {
+            CODALAB.api.resubmit_submission(submission.id)
+                .done(function (response) {
+                    toastr.success('Submission resubmitted on current tasks')
+                    self.update_submissions()
+                })
+                .fail(function (response) {
+                    toastr.error(_.get(response, 'responseJSON.detail', response.responseText))
+                })
+            event.stopPropagation()
+        }
+
+        self.resubmit_selected_submissions = function () {
+            CODALAB.api.resubmit_many_submissions(self.checked_submissions)
+                .done(function (response) {
+                    toastr.success('Submissions resubmitted on current tasks')
+                    self.update_submissions()
+                })
+        }
+
         self.rerun_selected_submissions = function () {
             CODALAB.api.re_run_many_submissions(self.checked_submissions)
                 .done(function (response) {
@@ -1094,6 +1121,9 @@
                         break;
                     case "rerun":
                         self.rerun_selected_submissions()
+                        break
+                    case "resubmit":
+                        self.resubmit_selected_submissions()
                         break
                     default:
                         console.log("should never be in this state of default..")
