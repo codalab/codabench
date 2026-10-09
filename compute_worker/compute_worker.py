@@ -27,6 +27,8 @@ from urllib.request import urlretrieve
 from zipfile import ZipFile, BadZipFile
 from urllib3 import Retry
 
+from submission_update import patch_submission, should_retry_submission_status
+
 from rich.pretty import pprint
 from rich.progress import Progress
 from kombu import Queue, Exchange
@@ -584,6 +586,14 @@ class Run:
         self.requests_session.mount("http://", adapter)
         self.requests_session.mount("https://", adapter)
 
+        # Status updates use a dedicated session without adapter-level retries.
+        # This keeps the application-level retry bound exact and avoids stacking
+        # the existing transport retries with the status retry loop.
+        self.status_requests_session = requests.Session()
+        status_adapter = requests.adapters.HTTPAdapter(max_retries=0)
+        self.status_requests_session.mount("http://", status_adapter)
+        self.status_requests_session.mount("https://", status_adapter)
+
     async def watch_detailed_results(self):
         """Watches files alongside scoring + program containers, currently only used
         for detailed_results.html"""
@@ -754,13 +764,20 @@ class Run:
             ]
         return [run_args[name] for name in DETAILED_OUTPUT_NAMES]
 
-    def _update_submission(self, data):
+    def _update_submission(self, data, retry=False):
         url = f"{self.submissions_api_url}/submissions/{self.submission_id}/"
         data["secret"] = self.secret
 
         logger.info(f"Updating submission @ {url} with data = {data}")
 
-        resp = self.requests_session.patch(url, data=data, timeout=150)
+        session = self.status_requests_session if retry else self.requests_session
+        resp = patch_submission(
+            session,
+            url,
+            data,
+            timeout=150,
+            retry=retry,
+        )
         if resp.status_code == 200:
             logger.info("Submission updated successfully!")
         else:
@@ -777,7 +794,10 @@ class Run:
             )
         data = {"status": status, "status_details": extra_information}
         try:
-            self._update_submission(data)
+            self._update_submission(
+                data,
+                retry=should_retry_submission_status(status),
+            )
         except Exception as e:
             # Always catch exception and never raise error
             logger.exception(f"Failed to update submission status to {status}: {e}")
