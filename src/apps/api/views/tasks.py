@@ -345,3 +345,6 @@ class TaskViewSet(ModelViewSet):
             return "Cannot delete a task that is not yours"
         if task.phases.exists():
             return 'Cannot delete task: task is being used by a phase'
+        # Submission.task is SET_NULL: deleting the task would erase which task the submissions were scored on
+        if task.submissions.exists():
+            return 'Cannot delete task: submissions have been run on it. Remove it from the phase instead.'
