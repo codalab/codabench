@@ -3,7 +3,7 @@ from django.urls import reverse
 from rest_framework.test import APITestCase
 from rest_framework import status
 
-from factories import UserFactory, DataFactory
+from factories import UserFactory, DataFactory, TaskFactory, PhaseFactory, CompetitionFactory
 
 # Removed this test because of the changes of this PR : https://github.com/codalab/codabench/pull/1963
 # class TestTasks(APITestCase):
@@ -185,3 +185,35 @@ class TestUploadTask(APITestCase):
             response = self.client.post(reverse('tasks:upload_task'), {'file': zip_file}, format='multipart')
         assert response.status_code == status.HTTP_201_CREATED
         assert "Task 'Iris Task' created successfully!" == response.data['message']
+
+
+class TestUpdateTaskPermissions(APITestCase):
+    def setUp(self):
+        self.owner = UserFactory()
+        self.collaborator = UserFactory()
+        self.stranger = UserFactory()
+        self.task = TaskFactory(created_by=self.owner)
+        self.scoring_program = DataFactory(created_by=self.owner, type='scoring_program')
+        competition = CompetitionFactory(created_by=self.owner, collaborators=[self.collaborator])
+        PhaseFactory(competition=competition, tasks=[self.task])
+
+    def update_task(self, user):
+        self.client.force_login(user)
+        return self.client.put(
+            reverse('task-detail', kwargs={'pk': self.task.pk}),
+            {'name': 'Updated', 'description': self.task.description, 'scoring_program': self.scoring_program.key},
+            format='json',
+        )
+
+    def test_competition_collaborator_can_update_task_used_by_the_competition(self):
+        """A co-organizer must be able to fix a task in place instead of replacing it and losing existing scores"""
+        resp = self.update_task(self.collaborator)
+        assert resp.status_code == status.HTTP_200_OK
+        self.task.refresh_from_db()
+        assert self.task.name == 'Updated'
+
+    def test_user_who_is_not_organizer_cannot_update_task(self):
+        resp = self.update_task(self.stranger)
+        assert resp.status_code == status.HTTP_403_FORBIDDEN
+        self.task.refresh_from_db()
+        assert self.task.name != 'Updated'
