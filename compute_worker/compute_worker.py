@@ -524,7 +524,7 @@ class Run:
         self.input_dir = os.path.join(self.root_dir, "input")
         self.output_dir = os.path.join(self.root_dir, "output")
         self.data_dir = os.path.join(Settings.HOST_DIRECTORY, "data")  # absolute path to data in the host
-        self.reference_dir = os.path.join(Settings.HOST_DIRECTORY, "reference")
+        self.reference_dir = os.path.join(Settings.BASE_DIR, "reference")  # path inside the worker container
         self.logs = {}
 
         # Details for submission
