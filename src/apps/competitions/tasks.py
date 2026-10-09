@@ -616,9 +616,13 @@ def create_competition_dump(competition_pk, keys_instead_of_files=False):
         zip_buffer = BytesIO()
         created_when = now()
         dump_type = "keys" if keys_instead_of_files else "files"
-        # Zip name is kept short because uploaded file names are truncated to 35 characters
-        zip_name = f"comp-{comp.pk}-with_{dump_type}-{created_when.strftime('%Y%m%d-%H%M')}.zip"
-        dump_name = f"Competition {comp.pk} (with {dump_type}) - {created_when.strftime('%Y-%m-%d %H:%M:%S')} UTC"
+        # Uploaded file names are truncated to 35 characters (see utils.data.PathWrapper),
+        # so the title only gets the room left after the id, dump type and timestamp
+        zip_suffix = f"{comp.pk}-{dump_type}-{created_when.strftime('%Y%m%d-%H%M')}"
+        title_max_length = max(0, 35 - len(zip_suffix) - 1)
+        title_slug = slugify(comp.title)[:title_max_length].strip("-")
+        zip_name = f"{title_slug}-{zip_suffix}.zip" if title_slug else f"{zip_suffix}.zip"
+        dump_name = f"{title_slug} - competition {comp.pk} (with {dump_type}) - {created_when.strftime('%Y-%m-%d %H:%M:%S')} UTC"
         zip_file = zipfile.ZipFile(zip_buffer, "w")
 
         # -------- Main Competition Details -------
