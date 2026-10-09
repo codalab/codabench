@@ -1,0 +1,61 @@
+{% load static %}
+
+<div id="header" class="ui inverted vertical segment">
+    <div class="header-inner">
+        <!-- Logo + tagline -->
+        <div class="header-brand">
+            <div class="header-logo-row">
+                <a href="/">
+                    <img id="header-logo" src="{% static 'img/codabench.png' %}" alt="Codabench">
+                </a>
+                {% if VERSION_INFO.tag_name != 'invalid' and VERSION_INFO.tag_name != 'unknown' %}
+                    <a class="header-version" href="{{ VERSION_INFO.html_url }}" target="_blank">{{ VERSION_INFO.tag_name }}</a>
+                {% endif %}
+            </div>
+            <p class="header-tagline">Open-source platform for AI benchmarks and competitions</p>
+        </div>
+
+        <!-- Menu -->
+        <div id="topleft_menu" class="ui secondary inverted menu">
+            <div class="right menu item">
+                <a class="item" href="{% url "competitions:public" %}">
+                    <i class="ui small trophy icon"></i>
+                    Benchmarks/Competitions
+                </a>
+                <a class="item" href="{% url "datasets:public" %}">
+                    <i class="ui small database icon"></i>
+                    Datasets
+                </a>
+                {% if user.is_authenticated %}
+                    <div selenium="user_dropdown" id="user_dropdown" class="ui dropdown item">
+                        <div class="text">
+                            <i class="icon user outline"></i>
+                            {{ request.user.username }}
+                        </div>
+                        <i class="dropdown icon"></i>
+                        <div class="menu">
+                            {% include "components/user_menu_items.html" %}
+                        </div>
+                    </div>
+                {% else %}
+                    <a href="{% url 'accounts:login' %}" class="ui button style_button item">Login</a>
+                    {% if ENABLE_SIGN_UP %}
+                        <a href="{% url 'accounts:signup' %}" class="ui button style_button item">Sign-up</a>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Mobile menu button (opens components/mobile_menu.html) -->
+        <div id="hamburger_button">
+            <div class="ui icon button">
+                <i class="bars icon"></i>
+            </div>
+        </div>
+    </div>
+
+    {% if user.is_authenticated %}
+        <!-- Used by the Logout links in components/user_menu_items.html -->
+        <form id="logout-form" method="post" action="{% url 'accounts:logout' %}" style="display:none;">{% csrf_token %}</form>
+    {% endif %}
+</div>

@@ -1,4 +1,5 @@
 {% load static %}
+{% load announcement_tags %}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -62,109 +63,14 @@
 {% endif %}
 
 <!-- Sidebar Menu -->
-<div class="ui thin sidebar left inverted vertical overlay menu">
-    <div class="ui container">
-        <a href="{% url "pages:home" %}" class="item">Competitions</a>
-        <a class="item">Chahub</a>
-        <a href="https://chagrade.lri.fr/" class="item">Chagrade</a>
-    </div>
-</div>
+{% include "components/mobile_menu.html" %}
 
 <div class="pusher">
-    <div id="hamburger_button">
-        <div class="ui icon button">
-            <i class="bars icon"></i>
-        </div>
-    </div>
+    <!-- Platform announcements -->
+    {% platform_announcements_banner %}
     <!-- Page Contents -->
-    <div id="header" class="ui inverted vertical center aligned segment masthead
-        {% block top_div_extra_class %}{% endblock %}">
-        <div id="bg"></div>
-        <div class="ui container">
-            <div id="topleft_menu" class="ui secondary inverted menu">
-                <span class="left item">
-                    <a href="/" id="home-logo">
-                        <img class="ui mini image" src="{% static 'img/Cha_Logo.png' %}">
-                    </a>
-                    <div class="ui search" id="site-wide-competition-search">
-                        <div class="ui left icon input search-width">
-                            <input id="competition-search" class="prompt" type="text" placeholder="Search Competitions">
-                            <i class="search icon"></i>
-                        </div>
-                        <div class="results search-width scrollable-height-limit"></div>
-                    </div>
-                </span>
-                <div class="right menu item">
-                    <a class="item" href="{% url "competitions:public" %}">
-                        <i class="ui small trophy icon"></i>
-                        Benchmarks/Competitions
-                    </a>
-                    <a class="item" href="{% url "datasets:public" %}">
-                        <i class="ui small database icon"></i>
-                        Datasets
-                    </a>
-                    {% if user.is_authenticated %}
-                        <div selenium="user_dropdown" id="user_dropdown" class="ui dropdown item">
-                            <div class="text">
-                                <i class="icon user outline"></i>
-                                {{ request.user.username }}
-                            </div>
-                            <i class="dropdown icon"></i>
-                            <div class="menu">
-                                <!-- Admin management -->
-                                <div class="header">Admin management</div>
-                                    <a class="item" href="{% url "pages:server_status" %}">Server Status</a>
-                                    {% if request.user.is_staff %}
-                                        <a class="item" href="{% url "pages:monitor_queues" %}">Monitor Queues</a>
-                                        <a class="item" href="{% url "admin:index" %}">Django Admin</a>
-                                        <a class="item" href="{% url "su_login" %}">Change User</a>
-                                        <a class="item" href="{% url "analytics:analytics" %}">Analytics</a>
-                                    {% endif %}
-                                <div class="ui divider"></div>
-                                <!-- My Resources -->
-                                <div class="header">My Resources</div>
-                                <a class="item" href="{% url 'competitions:management' %}"><i class="icon bi bi-trophy"></i>Competitions</a>
-                                <a selenium="resources" class="item" href="{% url 'tasks:task_management' %}"><i class="icon bi bi-folder"></i>Resources</a>
-                                <a class="item" href="{% url 'queues:management' %}"><i class="icon bi bi-hourglass"></i>Queues</a>
-                                <div class="ui divider"></div>
-                                <!-- Account -->
-                                <div class="header">Account</div>
-                                <a class="item" href="{% url 'profiles:user_profile' username=user.username %}"><i class="icon bi bi-person"></i>View Profile</a>
-                                <a class="item" href="{% url 'profiles:user_edit' username=user.username %}"></i><i class="icon bi bi-pencil-square"></i>Edit profile</a>
-                                <a class="item" href="{% url 'accounts:user_account' username=user.username %}"><i class="icon bi bi-gear"></i>Settings</a>
-                                <a class="item" href="{% url 'profiles:user_notifications' username=user.username %}"></i><i class="icon bi bi-bell"></i>Notifications</a>
-                                <a class="item" href="{% url 'accounts:password_reset' %}"><i class="icon bi bi-lock"></i>Change Password</a>
-
-                                <a class="item" href="{% url 'accounts:logout' %}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();"><i class="icon bi bi-door-open"></i>Logout</a>
-                                <form id="logout-form" method="post" action="{% url 'accounts:logout' %}" style="display:none;">{% csrf_token %}</form>
-                                <div class="ui divider"></div>
-
-                                <div class="header">Organizations</div>
-                            {% for org in user.organizations.all %}
-                                {% if user in org.user_record.all %}
-                                <a class="item" href="{% url 'profiles:organization_profile' pk=org.id %}">
-                                    <i class="users icon"></i>
-                                    {{ org.name }}
-                                </a>
-                                {% endif %}
-                            {% endfor %}
-                                <a class="item" href="{% url 'profiles:organization_create' %}">
-                                    <i class="plus icon"></i>
-                                    Create Organization
-                                </a>
-                            </div>
-                        </div>
-                    {% else %}
-                        <a href="{% url 'accounts:login' %}" class="ui button style_button item">Login</a>
-                        {% if ENABLE_SIGN_UP %}
-                            <a href="{% url 'accounts:signup' %}" class="ui button style_button item">Sign-up</a>
-                        {% endif %}
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        {% block top_div_extra_content %}{% endblock %}
-    </div>
+    {% include "components/header.html" %}
+    {% block below_header %}{% endblock %}
 </div>
 {% block sticky_button %}
 
@@ -175,42 +81,7 @@
         {% endblock %}
     </div>
 </div>
-<div class="ui inverted vertical footer segment">
-    <div class="ui container">
-        <div class="ui stackable inverted equal height stackable grid">
-            <div class="three wide column">
-                <h4 class="ui inverted header">Chasuite</h4>
-                <div class="ui inverted link list">
-                    <a href="https://codalab.lisn.fr/" class="item">Competitions v1.6</a>
-                    <a href="http://chahub.org/" class="item">Chahub</a>
-                    <a href="https://chagrade.lri.fr/" class="item">Chagrade</a>
-                </div>
-            </div>
-            <div class="three wide column">
-                <h4 class="ui inverted header">About</h4>
-                <div class="ui inverted link list">
-                    <a href="https://github.com/codalab/codalab-competitions/wiki/Project_About_CodaLab" class="item">About</a>
-                    <a href="https://github.com/codalab/codabench" class="item">Github</a>
-                    <a href="https://github.com/codalab/codabench/blob/master/documentation/PRIVACY.md" class="item">Privacy and Terms</a>
-                    <a href="{% url 'schema-swagger-ui' %}" class="item">API Docs</a>
-                </div>
-            </div>
-            <div class="three wide column">
-                {# Empty for now, can add a list of links here if needed! #}
-            </div>
-            <div class="seven wide column">
-                <h4 class="ui inverted header">CodaBench</h4>
-                <p>Join us on <a href="https://github.com/codalab/codabench" target="_blank">Github</a> for contact &amp; bug reports</p>
-                <p>Questions about the platform? See our <a href="https://docs.codabench.org" target="_blank">Docs</a> for more information.</p>
-            </div>
-        </div>
-    </div>
-    {% if VERSION_INFO.tag_name != 'invalid' and VERSION_INFO.tag_name != 'unknown' %}
-        <div id="version">
-            <a href="{{ VERSION_INFO.html_url }}" target="_blank">{{ VERSION_INFO.tag_name }}</a>
-        </div>
-    {% endif %}
-</div>
+{% include "components/footer.html" %}
     {# Admin only user switching #}
     <user_switch></user_switch>
 
@@ -220,7 +91,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/riot/3.13.2/riot+compiler.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <script src="{% static "js/calendar.min.js" %}"></script>
     <script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
@@ -265,9 +135,6 @@
 
         // Load in URLs or other django generated goodies
         URLS = {
-            assets: {
-                header_particles: "{% static "particles/header.json" %}"
-            },
             API: "/api/",
             STATIC: function (file_name) {
                 return `{{ STATIC_URL }}${file_name}`
@@ -338,22 +205,6 @@
         }
         // Django returns <input type="hidden" value="csrf-token-secret"> so we just grab the `value` attribute from this
         CSRF_TOKEN = $('{% csrf_token %}').attr('value')
-
-        $(document).ready( function () {
-            $('#site-wide-competition-search').search({
-                apiSettings: {
-                    onResponse: function(codalabResponse) {
-                        _.forEach(codalabResponse.results, (response) => {
-                            response.url = URLS.COMPETITION_DETAIL(response.id)
-                        })
-                        return {
-                            results: codalabResponse.results,
-                        }
-                    },
-                    url: `${URLS.API}competitions/?search={query}`
-                },
-            })
-        })
     </script>
 
     <script src="{% static "js/ours/client.js" %}"></script>

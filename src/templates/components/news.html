@@ -1,0 +1,70 @@
+{# Latest news on the home page. Expects `news_posts` (serialized latest posts) in the context. #}
+
+{% if news_posts %}
+<div class="news-section">
+    <div class="news-section-header">
+        <h2 class="news-section-title">Latest News</h2>
+        <a class="news-view-all" href="/news/">View all news <i class="arrow right icon"></i></a>
+    </div>
+    <div class="news-cards">
+        {% for post in news_posts %}
+        <div class="news-card">
+            <div class="news-card-date">{{ post.created_when }}</div>
+            <h3 class="news-card-title">
+                {% if post.link %}
+                    <a href="{{ post.link }}" target="_blank">{{ post.title }}</a>
+                {% else %}
+                    {{ post.title }}
+                {% endif %}
+            </h3>
+            {% if post.text %}
+                {# Clamped to 3 lines in CSS #}
+                <p class="news-card-text">{{ post.text|striptags }}</p>
+            {% endif %}
+            {% if post.text or post.link %}
+                <div class="news-card-actions">
+                    {% if post.text %}
+                        {# Shows the full text in the card, only visible when the text is cut off #}
+                        <button type="button" class="news-card-toggle" hidden>
+                            <span class="news-card-toggle-label">Read more</span> <i class="angle down icon"></i>
+                        </button>
+                    {% endif %}
+                    {% if post.link %}
+                        <a class="news-card-link" href="{{ post.link }}" target="_blank">Open link <i class="external alternate icon"></i></a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    // Show "Read more" only on cards whose text is cut off after 3 lines (or that are expanded)
+    function updateNewsReadMore() {
+        document.querySelectorAll('.news-card').forEach(function (card) {
+            var text = card.querySelector('.news-card-text')
+            var toggle = card.querySelector('.news-card-toggle')
+            if (text && toggle) {
+                var expanded = card.classList.contains('news-card-expanded')
+                toggle.hidden = !expanded && text.scrollHeight <= text.clientHeight + 1
+            }
+        })
+    }
+
+    // Expand or collapse the text of a card
+    document.querySelector('.news-cards').addEventListener('click', function (event) {
+        var toggle = event.target.closest('.news-card-toggle')
+        if (!toggle) {
+            return
+        }
+        var card = toggle.closest('.news-card')
+        var expanded = card.classList.toggle('news-card-expanded')
+        toggle.querySelector('.news-card-toggle-label').textContent = expanded ? 'Show less' : 'Read more'
+        toggle.querySelector('.icon').className = expanded ? 'angle up icon' : 'angle down icon'
+    })
+
+    window.addEventListener('load', updateNewsReadMore)
+    window.addEventListener('resize', updateNewsReadMore)
+</script>
+{% endif %}

@@ -18,13 +18,25 @@ class HomePageAnnouncementTests(TestCase):
         Expects only the active announcement in the context and the inactive
         announcement's text to be absent from the rendered page.
         """
-        active = Announcement.objects.create(title="Active", text="active text")
+        Announcement.objects.create(title="Active", text="active text")
         Announcement.objects.create(title="Inactive", text="inactive text", is_active=False)
 
         resp = self.get_home()
 
-        assert list(resp.context['announcements']) == [active]
+        assert [a['title'] for a in resp.context['announcements']] == ["Active"]
         assert "inactive text" not in resp.content.decode()
+
+    def test_only_home_page_announcements_are_shown(self):
+        """
+        Creates one home page announcement and one platform announcement and loads the home page.
+        Expects only the home page announcement in the home page announcements context.
+        """
+        Announcement.objects.create(title="Home page", placement=Announcement.PLACEMENT_HOME_PAGE)
+        Announcement.objects.create(title="Platform", placement=Announcement.PLACEMENT_PLATFORM)
+
+        resp = self.get_home()
+
+        assert [a['title'] for a in resp.context['announcements']] == ["Home page"]
 
     def test_announcements_ordered_by_priority_then_newest(self):
         """
@@ -34,20 +46,22 @@ class HomePageAnnouncementTests(TestCase):
         the newest to come first: [newer priority 0, older priority 0, priority 5].
         """
         current = now()
-        low_priority_old = Announcement.objects.create(title="A", priority=0, created_when=current - timedelta(days=2))
-        low_priority_new = Announcement.objects.create(title="B", priority=0, created_when=current)
-        high_priority = Announcement.objects.create(title="C", priority=5, created_when=current + timedelta(days=1))
+        Announcement.objects.create(title="Low priority old", priority=0, created_when=current - timedelta(days=2))
+        Announcement.objects.create(title="Low priority new", priority=0, created_when=current)
+        Announcement.objects.create(title="High priority", priority=5, created_when=current + timedelta(days=1))
 
         resp = self.get_home()
 
-        assert list(resp.context['announcements']) == [low_priority_new, low_priority_old, high_priority]
+        assert [a['title'] for a in resp.context['announcements']] == [
+            "Low priority new", "Low priority old", "High priority"
+        ]
 
     def test_levels_render_with_their_styles(self):
         """
         Creates one announcement of each level and loads the home page.
-        Expects critical, warning and info to render as Semantic UI messages with
-        the negative, warning and info classes, and plain to render as a
-        simple "announcement plain" block with no icon.
+        Expects each one to render as a card with its level class
+        (announcement-critical, -warning, -info, -plain), and the plain
+        announcement to have no icon.
         """
         Announcement.objects.create(level=Announcement.LEVEL_CRITICAL, text="critical text")
         Announcement.objects.create(level=Announcement.LEVEL_WARNING, text="warning text")
@@ -56,21 +70,21 @@ class HomePageAnnouncementTests(TestCase):
 
         content = self.get_home().content.decode()
 
-        assert 'class="ui icon message announcement negative"' in content
-        assert 'class="ui icon message announcement warning"' in content
-        assert 'class="ui icon message announcement info"' in content
-        assert 'class="announcement plain"' in content
+        assert 'class="announcement announcement-critical"' in content
+        assert 'class="announcement announcement-warning"' in content
+        assert 'class="announcement announcement-info"' in content
+        assert 'class="announcement announcement-plain"' in content
         # Plain announcements have no icon between their wrapper and content
-        plain_block = content.split('class="announcement plain"')[1].split("plain text")[0]
-        assert "icon" not in plain_block
+        plain_block = content.split('class="announcement announcement-plain"')[1].split("plain text")[0]
+        assert "announcement-icon" not in plain_block
 
-    def test_announcement_box_hidden_without_announcements(self):
+    def test_announcement_section_hidden_without_announcements(self):
         """
         Creates only an inactive announcement and loads the home page.
-        Expects the announcement box not to be rendered at all.
+        Expects the announcements wrapper not to be rendered at all.
         """
         Announcement.objects.create(text="hidden", is_active=False)
 
         content = self.get_home().content.decode()
 
-        assert "announcement-container" not in content
+        assert 'class="announcements"' not in content

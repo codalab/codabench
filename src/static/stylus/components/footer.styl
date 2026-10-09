@@ -1,0 +1,91 @@
+/* --------------------------------------------------------------------------------------
+ Footer component (templates/components/footer.html)
+ */
+#footer
+    color $cb-text-muted-on-dark
+    background-color $cb-navy-900
+
+    a
+        color $cb-text-muted-on-dark
+
+    a:hover
+        color $cb-text-on-dark
+
+.footer-inner
+    display grid
+    grid-template-columns 2fr 1fr 1fr 1fr
+    gap 2em
+    padding 40px 64px
+
+/* Logo + tagline */
+.footer-logo
+    display block
+    height 28px
+
+#footer .footer-tagline
+    margin 10px 0 14px
+    font-size 14px
+
+.footer-icons
+    display flex
+    align-items center
+    gap 14px
+
+.footer-icon
+    font-size 20px
+
+    .icon
+        margin 0
+
+/* Link columns */
+.footer-column
+    display flex
+    flex-direction column
+    gap 8px
+
+    a
+        font-size 14px
+
+#footer .footer-title
+    margin 0 0 6px
+    color $cb-text-on-dark
+    font-size 13px
+    letter-spacing 0.06em
+    text-transform uppercase
+
+/* Bottom bar */
+// Copyright on the left, policy links on the right
+.footer-bottom
+    display flex
+    flex-wrap wrap
+    align-items center
+    justify-content space-between
+    gap 8px 24px
+    padding 14px 64px
+    border-top 1px solid rgba(255, 255, 255, 0.08)
+    font-size 13px
+
+.footer-bottom-links
+    display flex
+    flex-wrap wrap
+
+    // Why: a dot between links, not before the first one
+    a + a:before
+        content "·"
+        margin 0 8px
+        color $cb-text-muted-on-dark
+
+/* Small screens: columns stack */
+@media only screen and (max-width 625px)
+    .footer-inner
+        grid-template-columns 1fr 1fr
+        padding 32px 16px
+
+    .footer-brand
+        grid-column 1 / -1
+
+    // Why: links go below the copyright instead of squeezing next to it
+    .footer-bottom
+        flex-direction column
+        align-items flex-start
+        padding 14px 16px
