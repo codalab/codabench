@@ -15,6 +15,7 @@ dependencies = [
     "docker>=7.1.0,<8",
     "rich>=14.2.0,<15",
     "setuptools>=82.0.0",
+    "kubernetes==35.0.0",
 ]
 
 name = "compute-worker"

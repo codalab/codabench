@@ -38,14 +38,18 @@ compute_worker:
     repository: <compute-worker-image-repository>
     tag: <compute-worker-image-tag>
     pullPolicy: Always
+  container_engine_executable: "kubernetes"
+  kubernetesVerifySsl: "false"
   podCreationRetries:
-    numberOfRetries: 30
-    sleepTimeBetweenRetries: 10
+    totalTimeToWaitForPod: 300
+    sleepTimeBetweenRetries: 0.5
   submissionPods:
     securityContext:
       runAsUser: 1000
       runAsGroup: 1000
       fsGroup: 1000
+    metadata:
+      labels: {}
   resources:
     requests:
       memory: 256Mi
@@ -53,6 +57,7 @@ compute_worker:
       memory: 512Mi
   volumes:
     pvcName: shared-job-pvc
+  codalabIgnoreCleanupStep: "0"
   brokers:
     - name: "default"
       gpu:
