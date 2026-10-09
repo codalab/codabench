@@ -15,13 +15,16 @@ def send_participation_requested_emails(participant, request):
         **get_link_context(request),
     }
     # Notify Organizers
-    codalab_send_mail(
-        context_data=context,
-        subject=f'{participant.user.username} applied to your competition',
-        html_file="emails/participation/organizer/participation_requested.html",
-        text_file="emails/participation/organizer/participation_requested.txt",
-        to_email=get_organizer_emails(participant.competition)
-    )
+    for organizer in participant.competition.all_organizers:
+        if organizer.is_deleted:
+            continue
+        codalab_send_mail(
+            context_data={**context, 'user': organizer},
+            subject=f'{participant.user.username} applied to your competition',
+            html_file="emails/participation/organizer/participation_requested.html",
+            text_file="emails/participation/organizer/participation_requested.txt",
+            to_email=organizer.email
+        )
 
     # Notify User
     codalab_send_mail(
