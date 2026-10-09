@@ -149,9 +149,6 @@ CODALAB.api = {
     remove_submission_from_leaderboard: function (submission_pk) {
         return CODALAB.api.request('DELETE', URLS.API + "submissions/" + submission_pk + '/submission_leaderboard_connection/')
     },
-    get_leaderboard_for_render: function (phase_pk) {
-        return CODALAB.api.request('GET', `${URLS.API}phases/${phase_pk}/get_leaderboard/`)
-    },
     get_leaderboard_for_render: function (phase_pk, params = {}) {
         return CODALAB.api.request('GET', `${URLS.API}phases/${phase_pk}/get_leaderboard/`, params)
     },
