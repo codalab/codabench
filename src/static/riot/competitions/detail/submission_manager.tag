@@ -97,7 +97,6 @@
                 <th class="center aligned">Actions</th>
             </tr>
         </thead>
-
         <tbody>
             <tr if="{ _.isEmpty(submissions) && !loading }" class="center aligned">
                 <td colspan="100%"><em>No submissions found! Please make a submission</em></td>
@@ -224,6 +223,34 @@
                         onclick="{ soft_delete_submission.bind(this, submission) }">
                         <i class="icon red trash"></i>
                     </span>
+                    <!-- Atomic Migration -->
+                    <span if="{ can_migrate(submission) }" class="migrate-wrapper" onclick="{ do_nothing }">
+                        <span data-tooltip="Migrate to another phase" data-inverted=""
+                            style="cursor:pointer;"
+                            onclick="{ toggle_migrate_menu.bind(this, submission) }">
+                            <i class="icon blue copy outline"></i>
+                        </span>
+                        <div if="{ migrate_menu_open === submission.id }" class="migrate-menu">
+                            <div class="migrate-header">
+                                Migrate submission #{ submission.id } to…
+                            </div>
+                            <div each="{ phase in get_future_phases(submission) }"
+                                class="migrate-item { disabled: migrating }"
+                                onclick="{ migrate_submission.bind(this, submission, phase) }">
+                                <div class="migrate-item-title">
+                                    <span>{ phase.name }</span>
+                                    <i class="angle right icon"></i>
+                                </div>
+                                <small class="migrate-item-meta">
+                                    { phase.status || 'Upcoming' } · starts { pretty_date(phase.start) }
+                                </small>
+                            </div>
+                            <div class="migrate-footer">
+                                <i class="info circle icon"></i>
+                                Only successfully finished tasks are re-run.
+                            </div>
+                        </div>
+                    </span>
                 </td>
             </tr>
 
@@ -345,6 +372,7 @@
             <div style="margin-right: 10px; color: #8c8c8c;">
                 <small>{ total_count || 0 } total</small>
             </div>
+        </div>
     </div>
 
     <div class="ui large modal" ref="modal">
@@ -397,6 +425,14 @@
         self.previous = null
 
         self.expanded_submissions = {}
+        self.migrating = false
+
+        self.close_migrate_menu = function () {
+            if (self.migrate_menu_open !== null) {
+                self.migrate_menu_open = null
+                self.update()
+            }
+        }
 
         self.on("mount", function () {
             $(self.refs.search).dropdown()
@@ -404,6 +440,16 @@
             $(self.refs.phase).dropdown()
             $(self.refs.rerun_button).dropdown()
             $(self.refs.submission_handling_operation).dropdown()
+            $(document).on('click.migrate_menu', self.close_migrate_menu)
+            $(document).on('keydown.migrate_menu', function (e) {
+            if (e.key === 'Escape') self.close_migrate_menu()
+        })
+
+        })
+
+        self.on("unmount", function () {
+            $(document).off('click.migrate_menu', self.close_migrate_menu)
+            $(document).off('keydown.migrate_menu')
         })
 
         self.pretty_date = function (date_string) {
@@ -489,6 +535,75 @@
 
         self.is_hitl_failure = function (submission) {
             return !!(submission.status_details && submission.status_details.indexOf('Human in the Loop') !== -1)
+        }
+
+        self.migrate_menu_open = null
+
+        self.is_organizer = function () {
+            return !!opts.admin
+                || !!_.get(opts, 'competition.admin')
+                || !!_.get(opts, 'competition.is_admin')
+        }
+
+        self.can_migrate = function (submission) {
+            return self.is_organizer()
+                && !submission.parent
+                && !submission.is_soft_deleted
+                && submission.status === 'Finished'
+                && self.get_future_phases(submission).length > 0
+        }
+
+        self.toggle_migrate_menu = function (submission, event) {
+            if (event) event.stopPropagation()
+            self.migrate_menu_open = (self.migrate_menu_open === submission.id) ? null : submission.id
+            self.update()
+        }
+
+        self.error_message = function (response, fallback) {
+            let json = response && response.responseJSON
+            if (Array.isArray(json)) return json.join(' ')
+            if (json && json.detail) return json.detail
+            if (json && json.error_msg) return json.error_msg
+            if (json && json.error) return json.error
+            return fallback
+        }
+
+        self.migrate_submission = function (submission, phase, event) {
+            if (event) event.stopPropagation()
+            if (self.migrating) return
+            if (!confirm(`Migrate submission #${submission.id} to phase "${phase.name}"?`)) {
+                return
+            }
+            self.migrating = true
+            self.update()
+            CODALAB.api.migrate_submission(submission.id, phase.id)
+                .done(function () {
+                    toastr.success(`Submission #${submission.id} migrated to "${phase.name}"`)
+                    self.migrate_menu_open = null
+                    self.update_submissions()
+                })
+                .fail(function (response) {
+                    toastr.error(self.error_message(response, 'Error migrating submission'))
+                })
+                .always(function () {
+                    self.migrating = false
+                    self.update()
+                })
+        }
+
+        self.get_future_phases = function (submission) {
+            if (!submission || !submission.phase) return []
+
+            const phase = _.isObject(submission.phase)
+                ? submission.phase
+                : _.find(opts.competition.phases, p => p.id === submission.phase)
+
+            if (!phase) return []
+
+            return _.filter(
+                opts.competition.phases,
+                p => p.index > phase.index
+            )
         }
 
         self.update_submissions = function (filters) {
@@ -631,7 +746,6 @@
             } else {
                 const val = parseInt(raw, 10)
                 if (isNaN(val) || val <= 0) return
-                // n'autorise que 50,100,500
                 if (![50, 100, 500].includes(val)) return
                 self.page_size = val
             }
@@ -642,7 +756,6 @@
 
         self.handle_page_enter = function (ev) {
             if (ev.key === 'Enter') {
-                // value du champ input
                 let v = ev.target.value
                 let requested = parseInt(v, 10)
                 if (isNaN(requested)) return
@@ -1166,5 +1279,109 @@
             table tbody tr:hover
                 cursor pointer
                 background-color rgba(0,0,0,0.03)
+        .migrate-wrapper
+            position relative
+            display inline-block
+
+        .migrate-menu
+            position absolute
+            z-index 1000
+            right 0
+            top 26px
+            min-width 240px
+            background white
+            border 1px solid #ddd
+            border-radius 4px
+            box-shadow 0 4px 12px rgba(0, 0, 0, 0.15)
+            text-align left
+
+        .migrate-header
+            padding 8px 12px
+            font-weight bold
+            font-size 0.9em
+            color #555
+            background #f7f7f7
+            border-bottom 1px solid #eee
+            border-radius 4px 4px 0 0
+
+        .migrate-item
+            padding 8px 12px
+            cursor pointer
+            border-bottom 1px solid #f0f0f0
+            &:hover
+                background #eef6ff
+            &.disabled
+                opacity 0.5
+                pointer-events none
+
+        .migrate-item-title
+            display flex
+            justify-content space-between
+            align-items center
+            font-weight 600
+
+        .migrate-item-meta
+            color #8c8c8c
+
+        .migrate-footer
+            padding 6px 12px
+            font-size 0.8em
+            color #8c8c8c
+            background #fafafa
+            border-radius 0 0 4px 4px
+        .child-submissions-row
+            td
+                padding-top 0
+                padding-bottom 0
+        .migrate-wrapper
+            position relative
+            display inline-block
+
+        .migrate-menu
+            position absolute
+            z-index 1000
+            right 0
+            top 26px
+            min-width 240px
+            background white
+            border 1px solid #ddd
+            border-radius 4px
+            box-shadow 0 4px 12px rgba(0, 0, 0, 0.15)
+            text-align left
+
+        .migrate-header
+            padding 8px 12px
+            font-weight bold
+            font-size 0.9em
+            color #555
+            background #f7f7f7
+            border-bottom 1px solid #eee
+            border-radius 4px 4px 0 0
+
+        .migrate-item
+            padding 8px 12px
+            cursor pointer
+            border-bottom 1px solid #f0f0f0
+            &:hover
+                background #eef6ff
+            &.disabled
+                opacity 0.5
+                pointer-events none
+
+        .migrate-item-title
+            display flex
+            justify-content space-between
+            align-items center
+            font-weight 600
+
+        .migrate-item-meta
+            color #8c8c8c
+
+        .migrate-footer
+            padding 6px 12px
+            font-size 0.8em
+            color #8c8c8c
+            background #fafafa
+            border-radius 0 0 4px 4px
     </style>
 </submission-manager>

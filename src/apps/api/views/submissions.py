@@ -1,6 +1,6 @@
 import json
 import uuid
-
+from django.utils.timezone import now
 from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
@@ -91,7 +91,7 @@ class SubmissionViewSet(ModelViewSet):
                     except SubmissionDetails.DoesNotExist:
                         logger.error("SubmissionDetails object not found.")
 
-            if self.action in ['update_fact_sheet', 'run_submission', 're_run_submission']:
+            if self.action in ['update_fact_sheet', 'run_submission', 're_run_submission', 'migrate_to_phase']:
                 # get_queryset will stop us from re-running something we're not supposed to
                 pass
             else:
@@ -427,7 +427,9 @@ class SubmissionViewSet(ModelViewSet):
             organization=submission.organization,
         )
         new_submission.save(ignore_submission_limit=True)
-        new_submission.start(tasks=tasks_to_migrate)
+
+        if destination_phase.start <= now():
+            new_submission.start(tasks=tasks_to_migrate)
 
         return Response({'id': new_submission.id})
 
