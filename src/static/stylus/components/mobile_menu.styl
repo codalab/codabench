@@ -1,0 +1,31 @@
+/* --------------------------------------------------------------------------------------
+ Mobile menu component (templates/components/mobile_menu.html)
+ */
+#mobile_menu
+    z-index 3
+    width 280px !important
+    max-width 85vw
+    background-color $cb-navy-900 !important
+
+    .item
+        color $cb-text-on-dark !important
+
+    a.item:hover
+        background-color rgba(255, 255, 255, .08) !important
+
+    // Section titles from components/user_menu_items.html
+    .header
+        padding 1em 1.14285714em 0.5em
+        color $cb-text-muted-on-dark
+        font-size 12px
+        letter-spacing 0.06em
+        text-transform uppercase
+
+    .ui.divider
+        margin 0.5em 0
+        border-top-color rgba(255, 255, 255, .1) !important
+        border-bottom none !important
+
+    .mobile-menu-user
+        font-weight bold
+        border-top 1px solid rgba(255, 255, 255, .1)

@@ -1,0 +1,34 @@
+/* --------------------------------------------------------------------------------------
+ Supported-by banner component (templates/components/supported_by_banner.html)
+ Shown just below the header, on the home page only.
+ */
+.supported-by-banner
+    // Sit flush against the header (which has a bottom margin)
+    margin-top -20px
+    margin-bottom 20px
+    padding 10px 0
+    background-color $cb-navy-900
+    border-top 1px solid rgba(255, 255, 255, 0.08)
+
+// Same side padding as the header so it lines up with the logo
+.supported-by
+    display flex
+    align-items center
+    justify-content flex-start
+    flex-wrap wrap
+    gap 10px 20px
+    padding 0 64px
+
+@media only screen and (max-width 625px)
+    .supported-by
+        padding 0 16px
+
+.supported-by-label
+    color $cb-text-muted-on-dark
+    font-size 12px
+    letter-spacing 0.06em
+    text-transform uppercase
+
+.organization-logo
+    display block
+    height 24px

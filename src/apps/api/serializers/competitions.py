@@ -527,11 +527,6 @@ class CompetitionParticipantSerializer(serializers.ModelSerializer):
         )
 
 
-class FrontPageCompetitionsSerializer(serializers.Serializer):
-    popular_comps = CompetitionSerializerSimple(many=True)
-    recent_comps = CompetitionSerializerSimple(many=True)
-
-
 class PhaseResultsSubmissionSerializer(serializers.Serializer):
     owner = serializers.CharField()
     scores = SubmissionScoreSerializer(many=True)
