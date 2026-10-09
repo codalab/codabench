@@ -1,0 +1,9 @@
+{% extends 'emails/base_email.html' %}
+
+{% block content %}
+<p>You are receiving this notice because you are an administrator of the platform.</p>
+<p>
+    The user <strong>{{ owner.username }}</strong> ({{ owner.email }}) has deleted their consulting listing
+    <strong>{{ title }}</strong>.
+</p>
+{% endblock %}

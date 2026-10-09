@@ -1,0 +1,10 @@
+{% extends 'emails/base_email.txt' %}
+
+{% block content %}
+    Your consulting listing "{{ listing.title }}" has been rejected.
+
+    Reason: {{ listing.rejection_reason }}
+
+    You can edit your listing and submit it for review again:
+    {{ protocol }}://{{ domain }}{% url 'consulting:my_listing' %}
+{% endblock %}
