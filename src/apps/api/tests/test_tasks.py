@@ -3,7 +3,9 @@ from django.urls import reverse
 from rest_framework.test import APITestCase
 from rest_framework import status
 
-from factories import UserFactory, DataFactory
+from tasks.models import Task
+
+from factories import UserFactory, DataFactory, TaskFactory, PhaseFactory, SubmissionFactory
 
 # Removed this test because of the changes of this PR : https://github.com/codalab/codabench/pull/1963
 # class TestTasks(APITestCase):
@@ -185,3 +187,36 @@ class TestUploadTask(APITestCase):
             response = self.client.post(reverse('tasks:upload_task'), {'file': zip_file}, format='multipart')
         assert response.status_code == status.HTTP_201_CREATED
         assert "Task 'Iris Task' created successfully!" == response.data['message']
+
+
+class TestDeleteTask(APITestCase):
+    def setUp(self):
+        self.user = UserFactory()
+        self.task = TaskFactory(created_by=self.user)
+        self.client.force_login(self.user)
+
+    def delete_task(self):
+        return self.client.delete(reverse('task-detail', kwargs={'pk': self.task.pk}))
+
+    def test_task_without_submissions_can_be_deleted(self):
+        assert self.delete_task().status_code == status.HTTP_204_NO_CONTENT
+
+    def test_task_with_submissions_cannot_be_deleted(self):
+        """Replacing a phase task then deleting the old one would set task=None on every submission scored on it"""
+        phase = PhaseFactory(tasks=[self.task])
+        SubmissionFactory(phase=phase, task=self.task)
+        phase.tasks.set([TaskFactory()])
+
+        resp = self.delete_task()
+        assert resp.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'submissions have been run on it' in resp.json()['error']
+        assert Task.objects.filter(pk=self.task.pk).exists()
+
+    def test_delete_many_refuses_task_with_submissions(self):
+        phase = PhaseFactory(tasks=[self.task])
+        SubmissionFactory(phase=phase, task=self.task)
+        phase.tasks.set([TaskFactory()])
+
+        resp = self.client.post(reverse('task-delete-many'), [self.task.pk], format='json')
+        assert resp.status_code == status.HTTP_400_BAD_REQUEST
+        assert Task.objects.filter(pk=self.task.pk).exists()
