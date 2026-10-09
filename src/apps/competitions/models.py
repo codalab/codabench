@@ -628,6 +628,21 @@ class Submission(models.Model):
         self.start(tasks=tasks, group_ids=group_ids)
         return self
 
+    def resubmit(self):
+        """New submission with the same upload, run on the current phase tasks as if the participant submitted it again"""
+        sub = Submission(
+            owner=self.owner,
+            participant=self.participant,
+            phase=self.phase,
+            data=self.data,
+            fact_sheet_answers=self.fact_sheet_answers,
+            queue=self.phase.competition.queue,
+            organization=self.organization,
+        )
+        sub.save(ignore_submission_limit=True)
+        sub.selected_groups.set(self.selected_groups.all())
+        return sub.run()
+
     def re_run(self, task=None):
 
         # task to use in the new submission

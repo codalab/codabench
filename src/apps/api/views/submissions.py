@@ -149,7 +149,7 @@ class SubmissionViewSet(ModelViewSet):
                 'scores__column',
                 'task',
             )
-        elif self.action in ['delete_many', 're_run_many_submissions']:
+        elif self.action in ['delete_many', 're_run_many_submissions', 'resubmit_many_submissions']:
             try:
                 pks = list(self.request.data)
             except TypeError as err:
@@ -162,7 +162,7 @@ class SubmissionViewSet(ModelViewSet):
                     Q(phase__competition__collaborators__in=[self.request.user.pk])
                 ) is not qs:
                     raise ValidationError("Request Contained Submissions you don't have authorization for")
-            if self.action in ['re_run_many_submissions']:
+            if self.action in ['re_run_many_submissions', 'resubmit_many_submissions']:
                 qs = qs.filter(status__in=[Submission.FINISHED, Submission.FAILED, Submission.CANCELLED])
         return qs
 
@@ -386,6 +386,22 @@ class SubmissionViewSet(ModelViewSet):
         qs = self.get_queryset()
         for submission in qs:
             submission.re_run()
+        return Response({})
+
+    @action(detail=True, methods=('POST',))
+    def resubmit_submission(self, request, pk):
+        """Unlike re-run, which keeps the original task, this runs the same upload on the current phase tasks"""
+        submission = self.get_object()
+        if not self.has_admin_permission(request.user, submission):
+            raise PermissionDenied('You do not have permission to resubmit submissions')
+        if submission.status not in (Submission.FINISHED, Submission.FAILED, Submission.CANCELLED):
+            raise PermissionDenied('Cannot resubmit a submission that has not finished processing.')
+        return Response({'id': submission.resubmit().id})
+
+    @action(detail=False, methods=('POST',))
+    def resubmit_many_submissions(self, request):
+        for submission in self.get_queryset():
+            submission.resubmit()
         return Response({})
 
     @action(detail=True, methods=('POST',))
