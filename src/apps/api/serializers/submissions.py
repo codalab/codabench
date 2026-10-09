@@ -3,6 +3,7 @@ from os.path import basename
 
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
+from profiles.models import CustomGroup
 from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied
 
@@ -11,6 +12,7 @@ from api.serializers import leaderboards
 from api.serializers.tasks import TaskSerializer
 from api.serializers.submission_leaderboard import SubmissionScoreSerializer
 from competitions.models import Submission, SubmissionDetails, CompetitionParticipant, Phase
+from competitions.views import _group_display_name
 from datasets.models import Data
 from utils.data import make_url_sassy
 
@@ -19,7 +21,7 @@ from queues.models import Queue
 
 
 class SubmissionSerializer(serializers.ModelSerializer):
-    scores = SubmissionScoreSerializer(many=True)
+    scores = serializers.SerializerMethodField(read_only=True)
     filename = serializers.SerializerMethodField(read_only=True)
     owner = serializers.CharField(source='owner.username')
     phase_name = serializers.CharField(source='phase.name')
@@ -28,6 +30,7 @@ class SubmissionSerializer(serializers.ModelSerializer):
     created_when = serializers.DateTimeField()
     auto_run = serializers.SerializerMethodField(read_only=True)
     can_make_submissions_public = serializers.SerializerMethodField(read_only=True)
+    participant_group_name = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Submission
@@ -56,6 +59,7 @@ class SubmissionSerializer(serializers.ModelSerializer):
             'auto_run',
             'can_make_submissions_public',
             'is_soft_deleted',
+            'participant_group_name',
         )
         read_only_fields = (
             'pk',
@@ -72,6 +76,10 @@ class SubmissionSerializer(serializers.ModelSerializer):
         # NOTE: if submission data is None, it means it is soft deleted
         return "Deleted File"
 
+    def get_scores(self, instance):
+        scores = [score for score in instance.scores.all() if not score.column.hidden]
+        return SubmissionScoreSerializer(scores, many=True, context=self.context).data
+
     def get_auto_run(self, instance):
         # returns this submission's competition auto_run_submissions Flag
         return instance.phase.competition.auto_run_submissions
@@ -80,14 +88,35 @@ class SubmissionSerializer(serializers.ModelSerializer):
         # returns this submission's competition can_participants_make_submissions_public Flag
         return instance.phase.competition.can_participants_make_submissions_public
 
+    def get_participant_group_name(self, instance):
+        if not instance.queue_id or not instance.phase_id:
+            return None
+
+        competition = instance.phase.competition
+
+        groups = competition.participant_groups.filter(
+            queue_id=instance.queue_id
+        )
+
+        group = groups.filter(
+            user__username=instance.owner.username
+        ).first()
+
+        if group:
+            return _group_display_name(group.name, competition.pk)
+
+        return None
+
 
 class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSerializer):
     """Used for creation _and_ status updates..."""
     data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
     filename = serializers.SerializerMethodField(read_only=True)
     tasks = serializers.PrimaryKeyRelatedField(queryset=Task.objects.all(), required=False, write_only=True, many=True)
+    selected_groups = serializers.PrimaryKeyRelatedField(queryset=CustomGroup.objects.all(), required=False, write_only=True, many=True)
     phase = serializers.PrimaryKeyRelatedField(queryset=Phase.objects.all(), required=True)
     queue = serializers.PrimaryKeyRelatedField(queryset=Queue.objects.all(), required=False, allow_null=True)
+    selected_groups = serializers.PrimaryKeyRelatedField(queryset=CustomGroup.objects.all(), required=False, write_only=True, many=True)
     created_when = serializers.DateTimeField(format="%Y-%m-%d %H:%M", required=False)
     scores = SubmissionScoreSerializer(many=True, required=False)
 
@@ -105,6 +134,7 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
             'secret',
             'md5',
             'tasks',
+            'selected_groups',
             'fact_sheet_answers',
             'organization',
             'queue',
@@ -118,16 +148,22 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
         }
 
     def get_filename(self, instance):
-        return basename(instance.data.data_file.name)
+        if instance.data and instance.data.data_file:
+            return basename(instance.data.data_file.name)
+        return None
 
     def create(self, validated_data):
         tasks = validated_data.pop('tasks', None)
+        selected_groups = validated_data.pop('selected_groups', None)
         sub = super().create(validated_data)
 
-        # Check if auto_run_submissions is enabled then run the submission
-        # Otherwise organizer will run manually
+        # Save the group(s) selected by the user, usefull for when Auto-Run Submission is unchecked
+        if selected_groups is not None:
+            sub.selected_groups.set(selected_groups)
+
         if sub.phase.competition.auto_run_submissions:
-            sub.start(tasks=tasks)
+            group_ids = [g.id for g in selected_groups] if selected_groups is not None else None
+            sub.start(tasks=tasks, group_ids=group_ids)
 
         return sub
 
@@ -147,12 +183,20 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
                 elif not value and fact_sheet[key]['is_required'] == 'true' and not isinstance(value, bool):
                     raise ValidationError(f'{fact_sheet[key]["title"]}({key}) requires an answer')
 
-        # Make sure selected tasks are part of the phase
         if attrs.get('tasks'):
             if not all(_ in attrs['phase'].tasks.all() for _ in attrs['tasks']):
                 raise ValidationError("All tasks must be part of the current phase.")
 
-        # Only on create (when we don't have instance set) check permissions
+        if attrs.get('selected_groups'):
+            competition = data['phase'].competition
+            user = self.context['request'].user
+            valid_group_ids = set(
+                competition.participant_groups.filter(user=user).values_list('id', flat=True)
+            )
+            submitted_ids = set(g.id for g in attrs['selected_groups'])
+            if not submitted_ids.issubset(valid_group_ids):
+                raise ValidationError("You can only submit to groups you are a member of.")
+
         if not self.instance:
             is_in_competition = data["phase"].competition.participants.filter(
                 user=self.context["request"].user,
@@ -273,6 +317,8 @@ class SubmissionFilesSerializer(serializers.ModelSerializer):
 
     def get_detailed_result(self, instance):
         if instance.detailed_result.name:
+            if not instance.phase.competition.enable_detailed_results:
+                return None
             return make_url_sassy(instance.detailed_result.name)
 
     def get_scoring_result(self, instance):

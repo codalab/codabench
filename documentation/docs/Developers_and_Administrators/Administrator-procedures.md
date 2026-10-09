@@ -95,16 +95,34 @@ Once you log in an account with superuser privileges, you have access to the "Dj
 
 From this interface, you can change a user's quota, change their staff and superuser status, change the featured competitions displayed on the homepage, manage user accounts and more.
 
-#### Edit announcement and news
+#### Edit announcements
 
-In the Django admin interface, click on `Announcements` or `New posts`:
+In the Django admin interface, click on `Announcements`:
 
-![](_attachments/de2a053f-c804-4c2a-a7ff-0df189c1d79c_17534366434691174.jpg)
+![](_attachments/announcements.png)
 
-For announcement, only the first announcement is read by the front page. For news, all objects are read as separate news.
-You can create and edit objects using the interface. Write the announcement and news using HTML to format the text, add links, and more:
+Every announcement marked **Is active** is shown on the front page, inside the "Announcement" box. Each announcement has:
 
-![](_attachments/38c0d1ce-9b27-44bb-804b-c4eed55613df_17534366434285173.jpg)
+- **Title** (optional): shown in bold above the text.
+- **Level**: controls the style.
+    - `Critical`: red with an exclamation icon
+    - `Warning`: yellow with a warning icon
+    - `Info`: blue with an info icon
+    - `Plain`: plain text with no background or icon
+- **Text**: the body, written in HTML. Links are shown bold and underlined in the announcement's color.
+- **Is active**: untick to hide an announcement without deleting it.
+- **Priority**: controls the order. Lower numbers are shown first; announcements with the same priority are shown newest first.
+
+You can create and edit announcements using the interface. Write the text using HTML to format it, add links, and more:
+
+#### Edit news
+
+In the Django admin interface, click on `News posts`:
+
+![](_attachments/news.png)
+
+All news objects are read by the front page as separate news.
+You can create and edit news using the interface. Write the news using HTML to format the text, add links, and more.
 
 
 #### Delete a user
@@ -131,6 +149,85 @@ Search for user using the search bar, or use the filter on the right side. Click
 ## RabbitMQ Management
 The RabbitMQ management tool allows you to see the status of various queues, virtual hosts, and jobs. By default, you can access it at: `http://<your_codalab_instance>:15672/`. The username/password is your RabbitMQ `.env` settings for username and password. The port is hard-set in `docker-compose.yml` to 15672, but you can always change this if needed. For more information, see:
 https://www.rabbitmq.com/management.html
+
+#### Change RabbitMQ username or password
+
+RabbitMQ only reads `RABBITMQ_DEFAULT_USER` and `RABBITMQ_DEFAULT_PASS` from `.env` the first time it starts with an empty data folder (`var/rabbit`). After that, the users are loaded from `var/rabbit`, so changing `.env` and restarting is not enough: RabbitMQ keeps the old credentials while the other services try the new ones, and the logs show `login refused ... invalid credentials`. `docker compose down --volumes` does not help either, because `var/rabbit` is a folder on the host, not a Docker volume.
+
+Choose one of the two options below.
+
+##### Option 1: New instance (RabbitMQ data can be deleted)
+
+!!! warning
+    This deletes all RabbitMQ data: pending tasks, and the users and virtual hosts of custom queues. Custom queues created before will stop working. Only use this on a new instance or when you don't need this data.
+
+1. Update `RABBITMQ_DEFAULT_USER` and `RABBITMQ_DEFAULT_PASS` in `.env`
+2. Stop the services, delete the RabbitMQ data and start again:
+
+```bash
+docker compose down
+sudo rm -rf var/rabbit
+docker compose up -d
+```
+
+RabbitMQ starts empty and creates the user from `.env`.
+
+##### Option 2: Instance in use (keep RabbitMQ data)
+
+Use this when the platform is already in use. The RabbitMQ data is kept, and the new credentials are applied directly in RabbitMQ.
+
+1. Update `RABBITMQ_DEFAULT_USER` and/or `RABBITMQ_DEFAULT_PASS` in `.env`
+2. Recreate the containers so they use the new values:
+
+```bash
+docker compose up -d
+```
+
+At this point the workers cannot log in to RabbitMQ yet. This is expected and fixed by the next step.
+
+3. Apply the new credentials in RabbitMQ. The commands read the new values from the `rabbit` container, so the password does not need to be typed.
+
+**If only the password changed:**
+
+```bash
+docker compose exec rabbit sh -c 'rabbitmqctl change_password "$RABBITMQ_DEFAULT_USER" "$RABBITMQ_DEFAULT_PASS"'
+```
+
+**If the username changed:** create the new user and give it the same permissions as the old user. The old user has access to the main virtual host (`/`) and to the virtual host of every custom queue, so all of them are copied. Replace `<old-username>` with the previous `RABBITMQ_DEFAULT_USER`:
+
+```bash
+docker compose exec -e OLD_USER=<old-username> rabbit sh -c '
+set -e
+NEW_USER="$RABBITMQ_DEFAULT_USER"
+rabbitmqctl add_user "$NEW_USER" "$RABBITMQ_DEFAULT_PASS"
+rabbitmqctl set_user_tags "$NEW_USER" administrator
+rabbitmqctl -q list_user_permissions "$OLD_USER" | tail -n +2 |
+while IFS="$(printf "\t")" read -r vhost perm_configure perm_write perm_read; do
+  rabbitmqctl set_permissions -p "$vhost" "$NEW_USER" "$perm_configure" "$perm_write" "$perm_read"
+done
+'
+```
+
+4. Restart the services that connect to RabbitMQ:
+
+```bash
+docker compose restart django site_worker compute_worker flower
+```
+
+5. Check that the services can log in. The `rabbit` logs should show `user '<new-username>' authenticated` and no `login refused` errors:
+
+```bash
+docker compose logs --since 2m rabbit | grep -E "authenticated|refused"
+```
+
+6. Update `BROKER_URL` on any compute worker running on another machine that connects to the default queue with these credentials (see [Link compute workers to default queue](How-to-deploy-Codabench-on-your-server.md#link-compute-workers-to-default-queue)). Workers on custom queues use their own RabbitMQ users and don't need any change.
+
+!!! note "Delete the old user"
+    If the username changed, the old user is kept in RabbitMQ but is no longer used. If you want to delete it, run this command once everything works (replace `<old-username>` with the previous `RABBITMQ_DEFAULT_USER`):
+
+    ```bash
+    docker compose exec rabbit rabbitmqctl delete_user <old-username>
+    ```
 
 ## Flower Management
 Flower is a web based tool for monitoring and administrating Celery clusters. By default, you can access the Flower web portal at `http://<your_codalab_instance>:5555/`. The username/password is your Flower `.env` settings for username and password. 5555 is the default port, and cannot be changed without editing the `docker-compose.yml` file.

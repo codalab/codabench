@@ -8,7 +8,7 @@ from rest_framework.test import APITestCase
 
 from competitions.models import Submission, CompetitionParticipant
 from factories import UserFactory, CompetitionFactory, PhaseFactory, CompetitionParticipantFactory, SubmissionFactory, \
-    TaskFactory, OrganizationFactory, DataFactory, LeaderboardFactory
+    TaskFactory, OrganizationFactory, DataFactory, LeaderboardFactory, ColumnFactory, SubmissionScoreFactory
 
 from datasets.models import Data
 from profiles.models import Membership
@@ -422,6 +422,36 @@ class SubmissionGetDetailsAPITests(APITestCase):
         resp = self.client.get(url)
         assert resp.status_code == 200
 
+    def test_get_details_returns_detailed_result_when_detailed_results_enabled(self):
+        """
+        Uses a submission that has a detailed result file, with enable_detailed_results set.
+        Expect the detailed result url in the response.
+        """
+        self.comp.enable_detailed_results = True
+        self.comp.save()
+        Submission.objects.filter(pk=self.existing_submission.pk).update(detailed_result='detailed_result/test.html')
+        url = reverse('submission-get-details', args=(self.existing_submission.pk,))
+
+        self.client.force_login(self.participant)
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+        assert resp.data['detailed_result'] is not None
+
+    def test_get_details_does_not_return_detailed_result_when_detailed_results_disabled(self):
+        """
+        Uses a submission that has a detailed result file, with enable_detailed_results not set.
+        Expect no detailed result url in the response.
+        """
+        self.comp.enable_detailed_results = False
+        self.comp.save()
+        Submission.objects.filter(pk=self.existing_submission.pk).update(detailed_result='detailed_result/test.html')
+        url = reverse('submission-get-details', args=(self.existing_submission.pk,))
+
+        self.client.force_login(self.participant)
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+        assert resp.data['detailed_result'] is None
+
 
 class SubmissionUpdateTest(APITestCase):
     def setUp(self):
@@ -757,3 +787,366 @@ class PhaseActiveSubmissionTests(APITestCase):
         )
         resp = self.post_submission(phase)
         assert resp.status_code == 201
+
+
+def fake_make_url_sassy(path):
+    return f"https://storage/{path}"
+
+
+@mock.patch('api.serializers.submissions.make_url_sassy', fake_make_url_sassy)
+class SubmissionBulkDownloadTests(APITestCase):
+    """
+    Tests for the bulk download endpoints of SubmissionViewSet:
+    download_many_submissions, download_many_prediction_results and download_many_scoring_results.
+    make_url_sassy is mocked so that each URL is predictable and contains the file path.
+    """
+
+    def setUp(self):
+        self.superuser = UserFactory(is_superuser=True, is_staff=True)
+        self.creator = UserFactory(username='creator')
+        self.collaborator = UserFactory(username='collab')
+        self.participant = UserFactory(username='participant')
+        self.other_user = UserFactory(username='other_user')
+
+        self.comp = CompetitionFactory(created_by=self.creator, collaborators=[self.collaborator])
+        self.phase = PhaseFactory(competition=self.comp)
+
+        # Result files are only referenced by path, they don't exist in the storage.
+        # File sizes are set so that Submission.save() doesn't try to read them from the storage.
+        # Finished submission with both result files
+        self.finished_submission = SubmissionFactory(
+            phase=self.phase,
+            owner=self.participant,
+            status=Submission.FINISHED,
+            prediction_result='prediction_result/finished_prediction.zip',
+            prediction_result_file_size=1,
+            scoring_result='scoring_result/finished_scoring.zip',
+            scoring_result_file_size=1,
+        )
+        # Failed submission with result files, which must not be included in results downloads
+        self.failed_submission = SubmissionFactory(
+            phase=self.phase,
+            owner=self.participant,
+            status=Submission.FAILED,
+            prediction_result='prediction_result/failed_prediction.zip',
+            prediction_result_file_size=1,
+            scoring_result='scoring_result/failed_scoring.zip',
+            scoring_result_file_size=1,
+        )
+        # Finished submission without any result files
+        self.no_results_submission = SubmissionFactory(
+            phase=self.phase,
+            owner=self.participant,
+            status=Submission.FINISHED,
+        )
+        # Submission of another user in another competition
+        self.other_submission = SubmissionFactory(owner=self.other_user, status=Submission.FINISHED)
+
+        self.participant_pks = [
+            self.finished_submission.pk,
+            self.failed_submission.pk,
+            self.no_results_submission.pk,
+        ]
+
+        self.submissions_url = reverse('submission-download-many-submissions')
+        self.prediction_results_url = reverse('submission-download-many-prediction-results')
+        self.scoring_results_url = reverse('submission-download-many-scoring-results')
+        self.all_urls = [self.submissions_url, self.prediction_results_url, self.scoring_results_url]
+
+    def download(self, url, pks):
+        return self.client.post(url, {'pks': pks}, format='json')
+
+    # ------------------------------------------------------------------
+    # Validation and permissions (shared by all three endpoints)
+    # ------------------------------------------------------------------
+
+    def test_anonymous_user_cannot_download(self):
+        """Anonymous user calls all three bulk download endpoints. Expect 403 from each."""
+        for url in self.all_urls:
+            resp = self.download(url=url, pks=self.participant_pks)
+            assert resp.status_code == 403
+
+    def test_pks_is_required(self):
+        """Request with an empty `pks` list. Expect 400 with a "`pks` field is required" error."""
+        self.client.force_login(self.participant)
+        resp = self.download(url=self.submissions_url, pks=[])
+        assert resp.status_code == 400
+        assert resp.data['error'] == '`pks` field is required'
+
+    def test_pks_must_be_a_list(self):
+        """Request with a single id instead of a list. Expect 400 with a "`pks` must be a list" error."""
+        self.client.force_login(self.participant)
+        resp = self.download(url=self.submissions_url, pks=self.finished_submission.pk)
+        assert resp.status_code == 400
+        assert resp.data['error'] == '`pks` must be a list'
+
+    def test_invalid_submission_id_returns_404(self):
+        """Request with one valid and one non-existent submission id. Expect 404."""
+        self.client.force_login(self.participant)
+        resp = self.download(url=self.submissions_url, pks=[self.finished_submission.pk, 999999])
+        assert resp.status_code == 404
+
+    def test_owner_creator_collaborator_and_superuser_can_download(self):
+        """Submission owner, competition creator, collaborator and superuser download submissions. Expect 200 for each."""
+        for user in [self.participant, self.creator, self.collaborator, self.superuser]:
+            self.client.force_login(user)
+            resp = self.download(url=self.submissions_url, pks=self.participant_pks)
+            assert resp.status_code == 200
+
+    def test_other_user_cannot_download(self):
+        """User who is neither owner nor organizer calls all three endpoints. Expect 403 from each."""
+        self.client.force_login(self.other_user)
+        for url in self.all_urls:
+            resp = self.download(url=url, pks=self.participant_pks)
+            assert resp.status_code == 403
+
+    def test_cannot_download_if_any_submission_is_not_allowed(self):
+        """Participant requests their own submission together with another user's. Expect 403 for the whole request."""
+        self.client.force_login(self.participant)
+        resp = self.download(
+            url=self.submissions_url,
+            pks=[self.finished_submission.pk, self.other_submission.pk],
+        )
+        assert resp.status_code == 403
+
+    def test_organizer_cannot_download_files_of_another_competition(self):
+        """Competition creator calls all three endpoints for a submission from a competition they don't organize. Expect 403 from each."""
+        self.client.force_login(self.creator)
+        for url in self.all_urls:
+            resp = self.download(url=url, pks=[self.other_submission.pk])
+            assert resp.status_code == 403
+
+    # ------------------------------------------------------------------
+    # Downloaded files
+    # ------------------------------------------------------------------
+
+    def test_download_submissions_includes_all_statuses(self):
+        """
+        Participant downloads finished, failed and result-less submissions.
+        Expect all 3 submission files, each named with the `sub_` prefix and pointing to its data file.
+        """
+        self.client.force_login(self.participant)
+        resp = self.download(url=self.submissions_url, pks=self.participant_pks)
+        assert resp.status_code == 200
+        assert len(resp.data) == 3
+
+        files_by_id = {int(f['name'].split('_')[1]): f for f in resp.data}
+        assert set(files_by_id) == set(self.participant_pks)
+        for sub in [self.finished_submission, self.failed_submission, self.no_results_submission]:
+            file = files_by_id[sub.pk]
+            assert file['name'].startswith(f"sub_{sub.pk}_")
+            assert file['url'] == f"https://storage/{sub.data.data_file.name}"
+
+    def test_download_prediction_results_only_includes_finished_submissions_with_a_file(self):
+        """
+        Participant downloads prediction results of finished, failed and result-less submissions.
+        Expect only the finished submission's prediction result, named with the `pred_res_` prefix.
+        """
+        self.client.force_login(self.participant)
+        resp = self.download(url=self.prediction_results_url, pks=self.participant_pks)
+        assert resp.status_code == 200
+        assert len(resp.data) == 1
+
+        file = resp.data[0]
+        assert file['name'].startswith(f"pred_res_{self.finished_submission.pk}_")
+        assert file['name'].endswith('finished_prediction.zip')
+        assert file['url'] == 'https://storage/prediction_result/finished_prediction.zip'
+
+    def test_download_scoring_results_only_includes_finished_submissions_with_a_file(self):
+        """
+        Participant downloads scoring results of finished, failed and result-less submissions.
+        Expect only the finished submission's scoring result, named with the `sco_res_` prefix.
+        """
+        self.client.force_login(self.participant)
+        resp = self.download(url=self.scoring_results_url, pks=self.participant_pks)
+        assert resp.status_code == 200
+        assert len(resp.data) == 1
+
+        file = resp.data[0]
+        assert file['name'].startswith(f"sco_res_{self.finished_submission.pk}_")
+        assert file['name'].endswith('finished_scoring.zip')
+        assert file['url'] == 'https://storage/scoring_result/finished_scoring.zip'
+
+    # ------------------------------------------------------------------
+    # Phase output visibility
+    # ------------------------------------------------------------------
+
+    def test_hide_output_hides_results_from_participant_but_not_submissions(self):
+        """
+        Phase has hide_output set and the participant downloads all three file types.
+        Expect empty lists for prediction and scoring results, but all 3 submission files.
+        """
+        self.phase.hide_output = True
+        self.phase.save()
+        self.client.force_login(self.participant)
+
+        resp = self.download(url=self.prediction_results_url, pks=self.participant_pks)
+        assert resp.status_code == 200
+        assert resp.data == []
+
+        resp = self.download(url=self.scoring_results_url, pks=self.participant_pks)
+        assert resp.status_code == 200
+        assert resp.data == []
+
+        # The submitted files themselves are never hidden from their owner
+        resp = self.download(url=self.submissions_url, pks=self.participant_pks)
+        assert resp.status_code == 200
+        assert len(resp.data) == 3
+
+    def test_hide_output_does_not_hide_results_from_organizers(self):
+        """
+        Phase has hide_output set and creator, collaborator and superuser download results.
+        Expect each of them to still get the finished submission's prediction and scoring result.
+        """
+        self.phase.hide_output = True
+        self.phase.save()
+
+        for user in [self.creator, self.collaborator, self.superuser]:
+            self.client.force_login(user)
+            resp = self.download(url=self.prediction_results_url, pks=self.participant_pks)
+            assert len(resp.data) == 1
+            resp = self.download(url=self.scoring_results_url, pks=self.participant_pks)
+            assert len(resp.data) == 1
+
+    def test_hide_prediction_output_only_hides_prediction_results(self):
+        """
+        Phase has hide_prediction_output set and the participant downloads results.
+        Expect no prediction results, but the scoring result is still returned.
+        """
+        self.phase.hide_prediction_output = True
+        self.phase.save()
+        self.client.force_login(self.participant)
+
+        resp = self.download(url=self.prediction_results_url, pks=self.participant_pks)
+        assert resp.data == []
+
+        resp = self.download(url=self.scoring_results_url, pks=self.participant_pks)
+        assert len(resp.data) == 1
+
+    def test_hide_score_output_only_hides_scoring_results(self):
+        """
+        Phase has hide_score_output set and the participant downloads results.
+        Expect no scoring results, but the prediction result is still returned.
+        """
+        self.phase.hide_score_output = True
+        self.phase.save()
+        self.client.force_login(self.participant)
+
+        resp = self.download(url=self.scoring_results_url, pks=self.participant_pks)
+        assert resp.data == []
+
+        resp = self.download(url=self.prediction_results_url, pks=self.participant_pks)
+        assert len(resp.data) == 1
+
+
+class HiddenColumnSubmissionScoreTests(APITestCase):
+    """
+    Column.hidden is meant to hide a score from everyone
+    (e.g. so participants can't tune submissions against it), so a hidden
+    column's score must never appear in the submission-list
+    (`/api/submissions/?phase=<id>`) or submission-detail
+    (`/api/submissions/<pk>/`) responses, for any viewer - the submission's
+    own owner, or organizer/admin alike - consistent with how hidden columns
+    are already excluded from leaderboard column metadata.
+    (Previously SubmissionSerializer.scores serialized every SubmissionScore
+    row with no awareness of Column.hidden, so hidden-column values leaked
+    to anyone who could see the submission at all.)
+
+    Anonymous viewers aren't covered here: SubmissionViewSet.get_queryset
+    returns nothing at all to them, tested separately by
+    test_anonymous_cannot_list_or_retrieve_submissions.
+    """
+
+    def setUp(self):
+        self.creator = UserFactory(username='hcss_creator', password='test')
+        self.superuser = UserFactory(username='hcss_admin', password='test', is_superuser=True, is_staff=True)
+        self.owner = UserFactory(username='hcss_owner', password='test')
+        self.comp = CompetitionFactory(created_by=self.creator)
+        self.leaderboard = LeaderboardFactory(primary_index=0)
+        self.phase = PhaseFactory(competition=self.comp, leaderboard=self.leaderboard)
+
+        CompetitionParticipantFactory(user=self.owner, competition=self.comp, status=CompetitionParticipant.APPROVED)
+
+        self.visible_column = ColumnFactory(leaderboard=self.leaderboard, index=0, key='visible_col', hidden=False)
+        self.hidden_column = ColumnFactory(leaderboard=self.leaderboard, index=1, key='hidden_col', hidden=True)
+
+        # status=FINISHED and leaderboard=self.leaderboard put the submission in
+        # its most-exposed state (on a leaderboard, done running); what must stay
+        # hidden is the hidden column's score within it, not the submission itself.
+        self.submission = SubmissionFactory(
+            phase=self.phase,
+            owner=self.owner,
+            leaderboard=self.leaderboard,
+            status=Submission.FINISHED,
+        )
+        SubmissionScoreFactory(submissions=[self.submission], column=self.visible_column)
+        SubmissionScoreFactory(submissions=[self.submission], column=self.hidden_column)
+
+    def score_column_keys_from_list(self, resp):
+        body = resp.json()
+        submissions = body.get('results', body)
+        matching = [s for s in submissions if s['id'] == self.submission.id]
+        assert len(matching) == 1
+        return {score['column_key'] for score in matching[0]['scores']}
+
+    def score_column_keys_from_detail(self, resp):
+        return {score['column_key'] for score in resp.json()['scores']}
+
+    def test_submission_owner_does_not_see_hidden_column_score_in_submission_list(self):
+        """
+        A GET on submission-list as the submission owner, filtered to the
+        submission's phase, must not include the hidden column's score.
+        Expected: only the visible column's score is present in the
+        submission's scores array.
+        """
+        self.client.force_login(self.owner)
+        url = reverse('submission-list')
+        resp = self.client.get(url, {'phase': self.phase.id})
+        assert resp.status_code == 200
+        keys = self.score_column_keys_from_list(resp)
+        assert self.hidden_column.key not in keys
+        assert self.visible_column.key in keys
+
+    def test_submission_owner_does_not_see_hidden_column_score(self):
+        """
+        The submission owner is exactly the kind of participant an organizer
+        wants to keep a hidden metric from, so even the owner viewing their
+        own submission must not see the hidden column's score. Expected: only
+        the visible column's score is present.
+        """
+        self.client.force_login(self.owner)
+        url = reverse('submission-detail', args=(self.submission.pk,))
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+        keys = self.score_column_keys_from_detail(resp)
+        assert self.hidden_column.key not in keys
+        assert self.visible_column.key in keys
+
+    def test_competition_creator_does_not_see_hidden_column_score(self):
+        """
+        For consistency with how hidden columns are excluded from leaderboard
+        column metadata for everyone, the competition creator must not see
+        the hidden column's score via submission-detail either. Expected:
+        only the visible column's score is present.
+        """
+        self.client.force_login(self.creator)
+        url = reverse('submission-detail', args=(self.submission.pk,))
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+        keys = self.score_column_keys_from_detail(resp)
+        assert self.hidden_column.key not in keys
+        assert self.visible_column.key in keys
+
+    def test_superuser_does_not_see_hidden_column_score(self):
+        """
+        Even a superuser/site-admin must not see the hidden column's score
+        via submission-detail, for the same consistency reason. Expected:
+        only the visible column's score is present.
+        """
+        self.client.force_login(self.superuser)
+        url = reverse('submission-detail', args=(self.submission.pk,))
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+        keys = self.score_column_keys_from_detail(resp)
+        assert self.hidden_column.key not in keys
+        assert self.visible_column.key in keys

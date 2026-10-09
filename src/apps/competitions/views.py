@@ -5,7 +5,7 @@ from django.views.generic import TemplateView, DetailView
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Q
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
 from django.shortcuts import get_object_or_404
 
 from profiles.models import CustomGroup, User
@@ -65,6 +65,7 @@ class CompetitionUpdateForm(LoginRequiredMixin, DetailView):
                 'queue': g.queue.name if g.queue else None,
                 'queue_id': g.queue.pk if g.queue else None,
                 'members': [u.username for u in g.user_set.all() if u.pk in participant_user_ids],
+                'is_selectable_by_participant': g.is_selectable_by_participant,
             }
             for g in groups_qs
         ], cls=DjangoJSONEncoder)
@@ -194,12 +195,14 @@ def competition_create_group(request, pk):
         name = (payload.get('name') or '').strip()
         queue_id = payload.get('queue_id')
         user_ids = payload.get('user_ids') or []
+        is_selectable_by_participant = bool(payload.get('is_selectable_by_participant'))
     else:
         name = (request.POST.get('name') or '').strip()
         queue_id = request.POST.get('queue_id') or None
         user_ids = request.POST.getlist('user_ids[]') or []
         if not user_ids and request.POST.get('user_ids'):
             user_ids = [u.strip() for u in request.POST.get('user_ids').split(',') if u.strip()]
+        is_selectable_by_participant = request.POST.get('is_selectable_by_participant') in ('true', 'on', '1')
 
     if not name:
         return HttpResponseBadRequest("Missing name")
@@ -217,7 +220,7 @@ def competition_create_group(request, pk):
 
     try:
         with transaction.atomic():
-            group = CustomGroup(name=stored_name)
+            group = CustomGroup(name=stored_name, is_selectable_by_participant=is_selectable_by_participant)
 
             if queue_id:
                 try:
@@ -255,6 +258,7 @@ def competition_create_group(request, pk):
                 'queue': group.queue.name if group.queue else None,
                 'queue_id': group.queue.pk if group.queue else None,
                 'members': members,
+                'is_selectable_by_participant': group.is_selectable_by_participant,
             }
 
     except ValueError as e:
@@ -294,12 +298,14 @@ def competition_update_group(request, pk, group_id):
         name = (payload.get('name') or '').strip()
         queue_id = payload.get('queue_id')
         user_ids = payload.get('user_ids', []) or []
+        is_selectable_by_participant = bool(payload.get('is_selectable_by_participant'))
     else:
         name = (request.POST.get('name') or '').strip()
         queue_id = request.POST.get('queue_id') or None
         user_ids = request.POST.getlist('user_ids[]') or []
         if not user_ids and request.POST.get('user_ids'):
             user_ids = [u.strip() for u in request.POST.get('user_ids').split(',') if u.strip()]
+        is_selectable_by_participant = request.POST.get('is_selectable_by_participant') in ('true', 'on', '1')
 
     if not name:
         return HttpResponseBadRequest("Missing name")
@@ -318,6 +324,7 @@ def competition_update_group(request, pk, group_id):
     try:
         with transaction.atomic():
             group.name = stored_name
+            group.is_selectable_by_participant = is_selectable_by_participant
 
             if queue_id:
                 try:
@@ -359,6 +366,7 @@ def competition_update_group(request, pk, group_id):
             'queue': group.queue.name if group.queue else None,
             'queue_id': group.queue.pk if group.queue else None,
             'members': list(group.user_set.values_list('username', flat=True)),
+            'is_selectable_by_participant': group.is_selectable_by_participant,
         }
     }
 
@@ -422,3 +430,22 @@ def _group_display_name(stored_name, competition_pk):
     if stored_name.startswith(prefix):
         return stored_name[len(prefix):]
     return stored_name
+
+
+@login_required
+@require_GET
+def competition_user_groups(request, pk):
+    competition = get_object_or_404(Competition, pk=pk)
+    user = request.user
+    groups = competition.participant_groups.filter(
+        user=user, is_selectable_by_participant=True
+    ).distinct()
+    data = [
+        {
+            'id': g.id,
+            'name': _group_display_name(g.name, competition.pk),
+            'queue': g.queue.pk if g.queue else None,
+        }
+        for g in groups
+    ]
+    return JsonResponse(data, safe=False)
