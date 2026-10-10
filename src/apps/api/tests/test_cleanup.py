@@ -180,7 +180,6 @@ class CleanUpTests(APITestCase):
         content = json.loads(resp.content)
         assert content["unused_competition_bundles_and_dumps"] == 0
 
-
     def test_delete_unused_datasets_keeps_solution_datasets(self):
         """
         Adds a solution linked to a used task, then counts and deletes unused datasets.
