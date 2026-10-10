@@ -14,6 +14,7 @@ from rest_framework.permissions import AllowAny
 from api.pagination import BasicPagination, LargePagination
 from api.serializers import datasets as serializers
 from datasets.models import Data
+from datasets.dataset_deletion import DatasetDeleter
 from competitions.models import CompetitionCreationTaskStatus
 from utils.data import make_url_sassy, pretty_bytes, gb_to_bytes
 
@@ -164,7 +165,7 @@ class DataViewSet(ModelViewSet):
                 errors[dataset.name] = error
 
         if not errors:
-            qs.delete()
+            DatasetDeleter(qs).delete()
 
         return Response(
             errors if errors else {'detail': 'Datasets deleted successfully'},

@@ -93,8 +93,14 @@ class Data(models.Model):
         return super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        self.data_file.delete()
-        super().delete(*args, **kwargs)
+        """
+        Deletes this dataset and its file with DatasetDeleter.
+        Why: so a single delete and a bulk delete work the same way.
+        """
+        # Imported here, not at the top.
+        # Because dataset_deletion imports Data, so an import at the top would be circular.
+        from datasets.dataset_deletion import DatasetDeleter
+        DatasetDeleter(Data.objects.filter(pk=self.pk)).delete()
 
     @property
     def in_use(self):
