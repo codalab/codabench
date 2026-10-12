@@ -1,10 +1,21 @@
 from types import SimpleNamespace
 from unittest import mock
 
-from competitions.emails import send_participation_requested_emails
+import pytest
+
+from competitions.emails import (
+    send_participation_accepted_emails,
+    send_participation_denied_emails,
+    send_participation_requested_emails,
+)
 
 
-def test_participation_request_uses_each_recipient_as_email_user():
+@pytest.mark.parametrize('send_emails', [
+    send_participation_requested_emails,
+    send_participation_accepted_emails,
+    send_participation_denied_emails,
+])
+def test_participation_emails_use_each_recipient_as_email_user(send_emails):
     participant_user = SimpleNamespace(
         username='participant', email='participant@example.com', is_deleted=False
     )
@@ -18,8 +29,9 @@ def test_participation_request_uses_each_recipient_as_email_user():
         competition=SimpleNamespace(title='Competition', all_organizers=organizers),
     )
 
-    with mock.patch('competitions.emails.codalab_send_mail') as send_mail:
-        send_participation_requested_emails(participant)
+    with mock.patch('competitions.emails.codalab_send_mail') as send_mail, \
+            mock.patch('competitions.emails.get_link_context', return_value={}):
+        send_emails(participant, request=mock.Mock())
 
     assert [call.kwargs['to_email'] for call in send_mail.call_args_list] == [
         'owner@example.com',
