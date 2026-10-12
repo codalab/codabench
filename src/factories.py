@@ -100,8 +100,11 @@ class CompetitionFactory(DjangoModelFactory):
         if not created:
             return
         if extracted:
-            for tag in extracted:
-                self.tags.add(tag)
+            if isinstance(extracted, Tag):
+                self.tags.add(extracted)
+            else:
+                for tag in extracted:
+                    self.tags.add(tag)
 
 
 class DataFactory(DjangoModelFactory):
