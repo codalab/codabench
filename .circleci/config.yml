@@ -60,8 +60,7 @@ jobs:
           command: docker compose exec django flake8 src/
 
       - run:
-          name: "Docker: Pull required images"
-          # not available without "not e2e" tests as they pull ahead of time
+          name: "Docker: Pull required images otherwise E2E tests fail"
           command: |
             docker pull codalab/codalab-legacy:py312
             docker pull codalab/codalab-legacy:py37
@@ -74,7 +73,6 @@ jobs:
           background: true
 
       # We give the name of the test files manually because we need test_auth.py to be run before the others for state.json file to be created
-      # CI="true" to skip some tests that fail in the CI for now
       - run:
           name: "Tests: Run end-to-end (E2E) tests"
           command: |
