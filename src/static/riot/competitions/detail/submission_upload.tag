@@ -52,6 +52,27 @@
                     </div>
                 </div>
 
+                <div class="ui vertical accordion menu" style="width: 36%;" id="select_groups_accordion" if="{available_groups}" hide="{!available_groups || available_groups.length === 0}">
+                    <div class="item">
+                        <a class="title">
+                            <i class="dropdown icon"></i>
+                            Submit to Group
+                        </a>
+                        <div class="content">
+                            <div class="ui form">
+                                <div class="grouped fields">
+                                    <div each="{group in available_groups}" class="field">
+                                        <div class="ui checkbox">
+                                            <input type="checkbox" name="group-{group.id}" id="group-{group.id}" checked="{group._checked !== false}" onclick="{toggle_group_checkbox.bind(this, group)}">
+                                            <label for="group-{group.id}">{group.name}</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="ui six wide field">
                     <label>Submit as:
                     <span class="ui mini circular icon button"
@@ -177,6 +198,8 @@
         self.datasets = {}
         self.organizations = []
 
+        self.available_groups = []
+
         self.one('mount', function () {
             CODALAB.api.get_user_participant_organizations()
                 .done((data) => {
@@ -193,12 +216,21 @@
                 onClose: () => segment.hide(),
             })
 
-            // File upload handler
+            CODALAB.api.get_user_participant_groups(self.opts.competition.id)
+                .done((data) => {
+                    self.available_groups = (data || []).map(g => Object.assign({}, g, { _checked: true }))
+                    self.update()
+                })
+
+            self.toggle_group_checkbox = function (group, e) {
+                group._checked = e.target.checked
+            }
+
             $(self.refs.data_file.refs.file_input).on('change', self.check_can_upload)
             self.setup_autoscroll()
             self.setup_websocket()
-        }) 
-        
+        })
+
         // Function to capture change of `submit as` dropdown
         // Redirect to Add organization if selected option is Add Organizaiton
         $(document).on('change','#organization_dropdown',function(){
@@ -432,7 +464,7 @@
             let form_array = $(self.refs.form).serializeArray()
             let form_json = {}
             for (answer of form_array) {
-                if(!answer['name'].startsWith('task-')){
+                if(!answer['name'].startsWith('task-') && !answer['name'].startsWith('group-')){
                     if(answer['value'] === 'true'){
                         form_json[answer['name']] = true
                     }
@@ -460,6 +492,11 @@
             } else if(self.selected_tasks.length === 1){
                 task_ids_to_run = [self.selected_tasks[0].id]
             }
+
+            let selected_group_ids = self.available_groups
+                .filter(g => g._checked !== false)
+                .map(g => g.id)
+
             var data_file_metadata = {
                 type: 'submission',
                 competition: self.opts.competition.id
@@ -485,7 +522,8 @@
                         "fact_sheet_answers": self.get_fact_sheet_answers(),
                         "tasks": task_ids_to_run,
                         "organization": organization,
-                        "queue": self.opts.competition.queue ? self.opts.competition.queue.id : null
+                        "queue": self.opts.competition.queue ? self.opts.competition.queue.id : null,
+                        "selected_groups": selected_group_ids
                     })
                         .done(function (data) {
                             CODALAB.events.trigger('new_submission_created', data)

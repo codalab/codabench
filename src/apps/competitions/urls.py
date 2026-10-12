@@ -18,4 +18,5 @@ urlpatterns = [
     path('<int:pk>/groups/create/', views.competition_create_group, name='competition_create_group'),
     path('<int:pk>/groups/<int:group_id>/update/', views.competition_update_group),
     path('<int:pk>/groups/<int:group_id>/delete/', views.competition_delete_group),
+    path('<int:pk>/user_groups/', views.competition_user_groups, name='competition_user_groups'),
 ]
