@@ -20,7 +20,7 @@
 
         <div class="ui stackable grid" show="{ !loading }">
             <div class="four wide column">
-                <dashboard-filters p="{ this }"></dashboard-filters>
+                <competition-filter-panel show_visibility="{ isAdmin }" show_counts="{ true }" categories="{ categoryFilters }" onfilterchange="{ handleFilterChange }"></competition-filter-panel>
             </div>
 
             <div class="twelve wide column">
@@ -60,7 +60,7 @@
         // Filter and sort state
         self.state = {
             search: "",
-            searchField: "both",
+            filter_mode: "or",
             mode: "or",
             visibility: "public",
             type: "all",
@@ -68,7 +68,6 @@
             organizing: false,
             has_reward: false,
             selectedTags: {},
-            openCats: {},
             sortKey: "id",
             sortDir: 1,
             startDate: null,
@@ -180,20 +179,6 @@
                             self.allCompetitions = self.classifyCompetitions(allResults);
                             self.dataSource = "api";
                             self.onDataLoaded();
-                            // Init Semantic UI accordion and bind state to preserve open/close across Riot updates
-                            setTimeout(() => {
-                                $('.category-accordion').accordion({
-                                    exclusive: false,
-                                    onOpen: function() {
-                                        var catName = $(this).data('catname');
-                                        if (catName) self.state.openCats[catName] = true;
-                                    },
-                                    onClose: function() {
-                                        var catName = $(this).data('catname');
-                                        if (catName) self.state.openCats[catName] = false;
-                                    }
-                                });
-                            }, 50);
                         }
                     })
                     .fail(() => {
@@ -216,7 +201,6 @@
             self.applyFilters();
             self.update();
             setTimeout(() => {
-                self.initCalendars();
                 self.initOrUpdateCharts();
             }, 50);
         };
@@ -280,173 +264,18 @@
             return mapped;
         };
 
-        self.toggleTagHandler = (e) => {
-            var catName = e.target.getAttribute('data-cat');
-            var tagName = e.target.getAttribute('data-tag');
-            var checked = e.target.checked;
+        self.handleFilterChange = function (filters) {
+            self.state.search = (filters.search || "").toLowerCase();
+            self.state.mode = filters.filter_mode || filters.mode || "or";
+            self.state.filter_mode = self.state.mode;
+            self.state.visibility = filters.visibility || "public";
+            self.state.participating_in = Boolean(filters.participating_in);
+            self.state.organizing = Boolean(filters.organizing);
+            self.state.has_reward = Boolean(filters.has_reward);
+            self.state.startDate = filters.startDate || (filters.start_date ? new Date(filters.start_date) : null);
+            self.state.endDate = filters.endDate || (filters.end_date ? new Date(filters.end_date) : null);
+            self.state.selectedTags = filters.selected_tags_by_cat || {};
 
-            if (!self.state.selectedTags[catName]) {
-                self.state.selectedTags[catName] = {};
-            }
-            if (checked) {
-                self.state.selectedTags[catName][tagName] = true;
-            } else {
-                delete self.state.selectedTags[catName][tagName];
-            }
-            self.currentPage = 1;
-            self.applyFilters();
-            self.update();
-            setTimeout(self.initOrUpdateCharts, 50);
-        };
-
-        self.toggleParticipating = (e) => {
-            if (!self.isLoggedIn && e.target.checked) {
-                e.target.checked = false;
-                if (typeof toastr !== "undefined") {
-                    toastr.warning("Authentication required for filtering by participating in or organizing.");
-                }
-                return;
-            }
-            self.state.participating_in = e.target.checked;
-            self.currentPage = 1;
-            self.applyFilters();
-            self.update();
-            setTimeout(self.initOrUpdateCharts, 50);
-        };
-
-        self.toggleOrganizing = (e) => {
-            if (!self.isLoggedIn && e.target.checked) {
-                e.target.checked = false;
-                if (typeof toastr !== "undefined") {
-                    toastr.warning("Authentication required for filtering by participating in or organizing.");
-                }
-                return;
-            }
-            self.state.organizing = e.target.checked;
-            self.currentPage = 1;
-            self.applyFilters();
-            self.update();
-            setTimeout(self.initOrUpdateCharts, 50);
-        };
-
-        self.toggleHasReward = (e) => {
-            self.state.has_reward = e.target.checked;
-            self.currentPage = 1;
-            self.applyFilters();
-            self.update();
-            setTimeout(self.initOrUpdateCharts, 50);
-        };
-
-        self.resetFilters = () => {
-            self.state.search = "";
-            self.state.searchField = "both";
-            self.state.mode = "or";
-            self.state.visibility = "public";
-            self.state.type = "all";
-            self.state.participating_in = false;
-            self.state.organizing = false;
-            self.state.has_reward = false;
-            self.state.selectedTags = {};
-            if (self.refs.searchInput) self.refs.searchInput.value = "";
-            if (self.refs.start_calendar) $(self.refs.start_calendar).calendar('clear');
-            if (self.refs.end_calendar) $(self.refs.end_calendar).calendar('clear');
-            self.state.startDate = null;
-            self.state.endDate = null;
-            self.currentPage = 1;
-            self.applyFilters();
-            self.update();
-            setTimeout(self.initOrUpdateCharts, 50);
-        };
-
-        self.initCalendars = () => {
-            var general_calendar_options = {
-                type: 'date',
-                formatter: {
-                    date: function(date, settings) {
-                        if (!date) return '';
-                        var d = date.getDate(),
-                            m = date.getMonth() + 1,
-                            y = date.getFullYear();
-                        return y + '-' + (m <= 9 ? '0' + m : m) + '-' + (d <= 9 ? '0' + d : d);
-                    }
-                }
-            };
-
-            var start_options = Object.assign({}, general_calendar_options, {
-                endCalendar: $(self.refs.end_calendar),
-                onChange: function(date, text) {
-                    self.state.startDate = date ? new Date(date) : null;
-                    self.currentPage = 1;
-                    self.applyFilters();
-                    self.update();
-                    setTimeout(self.initOrUpdateCharts, 50);
-                }
-            });
-
-            var end_options = Object.assign({}, general_calendar_options, {
-                startCalendar: $(self.refs.start_calendar),
-                onChange: function(date, text) {
-                    self.state.endDate = date ? new Date(date) : null;
-                    self.currentPage = 1;
-                    self.applyFilters();
-                    self.update();
-                    setTimeout(self.initOrUpdateCharts, 50);
-                }
-            });
-
-            $(self.refs.start_calendar).calendar(start_options);
-            $(self.refs.end_calendar).calendar(end_options);
-        };
-
-        self.updateSearch = (e) => {
-            self.state.search = e.target.value.toLowerCase();
-
-            if (self.search_timer) {
-                clearTimeout(self.search_timer);
-            }
-
-            self.search_timer = setTimeout(() => {
-                self.currentPage = 1;
-                self.applyFilters();
-                self.update();
-                setTimeout(self.initOrUpdateCharts, 50);
-            }, 400); // Debounce to prevent UI freeze while typing
-        };
-
-        self.updateSearchField = (e) => {
-            self.state.searchField = e.target.value;
-            self.currentPage = 1;
-            self.applyFilters();
-            self.update();
-            setTimeout(self.initOrUpdateCharts, 50);
-        };
-
-        self.setModeOr = () => {
-            self.state.mode = 'or';
-            self.currentPage = 1;
-            self.applyFilters();
-            self.update();
-            setTimeout(self.initOrUpdateCharts, 50);
-        };
-
-        self.setVisibility = (val) => {
-            self.state.visibility = val;
-            self.currentPage = 1;
-            self.applyFilters();
-            self.update();
-            setTimeout(self.initOrUpdateCharts, 50);
-        };
-
-        self.setType = (val) => {
-            self.state.type = val;
-            self.currentPage = 1;
-            self.applyFilters();
-            self.update();
-            setTimeout(self.initOrUpdateCharts, 50);
-        };
-
-        self.setModeAnd = () => {
-            self.state.mode = 'and';
             self.currentPage = 1;
             self.applyFilters();
             self.update();
@@ -579,10 +408,7 @@
                 if (s) {
                     var matchTitle = c.title.toLowerCase().indexOf(s) !== -1;
                     var matchOrg = c.organizer.toLowerCase().indexOf(s) !== -1;
-
-                    if (self.state.searchField === 'title' && !matchTitle) return false;
-                    if (self.state.searchField === 'organizer' && !matchOrg) return false;
-                    if (self.state.searchField === 'both' && !matchTitle && !matchOrg) return false;
+                    if (!matchTitle && !matchOrg) return false;
                 }
 
                 if (hasActiveFacet) {
@@ -686,19 +512,6 @@
             self.totalPages = Math.max(1, Math.ceil(self.filteredCompetitions.length / self.pageSize));
             self.currentPage = Math.min(self.currentPage, self.totalPages);
             self.updatePagination();
-            setTimeout(() => {
-                $('.category-accordion').accordion({
-                    exclusive: false,
-                    onOpen: function() {
-                        var catName = $(this).data('catname');
-                        if (catName) self.state.openCats[catName] = true;
-                    },
-                    onClose: function() {
-                        var catName = $(this).data('catname');
-                        if (catName) self.state.openCats[catName] = false;
-                    }
-                });
-            }, 50);
         };
 
         self.updatePagination = () => {
@@ -951,25 +764,6 @@
     </script>
 
     <style type="text/stylus" scoped>
-        .filter-panel
-            background #fff
-            border-radius 4px
-
-        .filter-scroll-list
-            max-height 170px
-            overflow-y auto
-            padding-right 4px
-
-        .filter-item
-            display block !important
-            margin-bottom 6px !important
-            font-size 12px
-
-        .filter-count
-            color #888
-            font-size 11px
-            margin-left 4px
-            
         .kpi-stats
             display flex !important
             justify-content space-around !important
