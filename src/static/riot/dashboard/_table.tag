@@ -13,9 +13,9 @@
             <table class="ui celled compact striped selectable table">
                 <thead>
                     <tr>
-                        <th onclick="{ sortTableId }" style="cursor: pointer; width: 60px;">ID <i class="sort icon"></i></th>
-                        <th onclick="{ sortTableTitle }" style="cursor: pointer;">Title <i class="sort icon"></i></th>
-                        <th onclick="{ sortTableOrg }" style="cursor: pointer; width: 140px;">Organizer <i class="sort icon"></i></th>
+                        <th onclick="{ sortTableId }" style="cursor: pointer; width: 60px;">ID <i class="{ opts.p.state.sortKey === 'id' ? (opts.p.state.sortDir === 1 ? 'sort down' : 'sort up') : 'sort' } icon"></i></th>
+                        <th onclick="{ sortTableTitle }" style="cursor: pointer;">Title <i class="{ opts.p.state.sortKey === 'title' ? (opts.p.state.sortDir === 1 ? 'sort down' : 'sort up') : 'sort' } icon"></i></th>
+                        <th onclick="{ sortTableOrg }" style="cursor: pointer; width: 140px;">Organizer <i class="{ opts.p.state.sortKey === 'organizer' ? (opts.p.state.sortDir === 1 ? 'sort down' : 'sort up') : 'sort' } icon"></i></th>
                         <th each="{ cat in opts.p.availableCategories }">{ cat }</th>
                         <th style="width: 70px; text-align: center;">Link</th>
                     </tr>
@@ -25,6 +25,7 @@
                         <td>{ comp.id }</td>
                         <td>
                             <strong><a href="{ comp.url }">{ comp.title }</a></strong>
+                            <i if="{ comp.has_reward }" class="trophy yellow icon" title="Reward: { comp.reward }"></i>
                         </td>
                         <td>{ comp.organizer }</td>
                         <td each="{ colStr in comp.categoryColumns }">
@@ -38,7 +39,7 @@
                         </td>
                     </tr>
                     <tr if="{ opts.p.filteredCompetitions.length === 0 }">
-                        <td colspan="10" class="center aligned">
+                        <td colspan="{ 4 + opts.p.availableCategories.length }" class="center aligned">
                             <em>No competitions match the selected filters.</em>
                         </td>
                     </tr>

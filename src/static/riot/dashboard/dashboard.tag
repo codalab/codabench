@@ -35,6 +35,7 @@
     <script>
         var self = this;
         self.isAdmin = typeof CODALAB !== "undefined" && CODALAB.state && CODALAB.state.user && (CODALAB.state.user.is_superuser || CODALAB.state.user.is_staff);
+        self.isLoggedIn = typeof CODALAB !== "undefined" && CODALAB.state && CODALAB.state.user && CODALAB.state.user.logged_in;
 
         self.loading = true;
         self.dataSource = "api";
@@ -63,6 +64,9 @@
             mode: "or",
             visibility: "public",
             type: "all",
+            participating_in: false,
+            organizing: false,
+            has_reward: false,
             selectedTags: {},
             openCats: {},
             sortKey: "id",
@@ -76,9 +80,59 @@
 
         var PALETTE = ["#2185d0", "#00b5ad", "#21ba45", "#fbbd08", "#f2711c", "#db2828", "#a333c8", "#e03997", "#767676"];
 
+        self.myOrganizingIds = new Set();
+        self.myParticipatingIds = new Set();
+
         self.on('mount', () => {
             self.fetchData();
+            self.fetchUserCompetitionIds();
         });
+
+        self.fetchUserCompetitionIds = () => {
+            if (!self.isLoggedIn) return;
+
+            const fetchAllIds = (initialUrl, onComplete) => {
+                var collectedIds = new Set();
+                const getPage = (url) => {
+                    CODALAB.api.request('GET', url)
+                        .done((resp) => {
+                            var items = (resp && resp.results) ? resp.results : [];
+                            items.forEach((c) => collectedIds.add(c.id));
+                            if (resp && resp.next) {
+                                var parser = document.createElement('a');
+                                parser.href = resp.next;
+                                var relativeUrl = parser.pathname + parser.search;
+                                getPage(relativeUrl);
+                            } else {
+                                onComplete(collectedIds);
+                            }
+                        })
+                        .fail(() => {
+                            onComplete(collectedIds);
+                        });
+                };
+                getPage(initialUrl);
+            };
+
+            var baseApi = (typeof URLS !== "undefined" && URLS.API) ? URLS.API : "/api/";
+            fetchAllIds(baseApi + "competitions/?mine=true&page_size=1000", (ids) => {
+                self.myOrganizingIds = ids;
+                if (self.state.organizing) {
+                    self.applyFilters();
+                    self.update();
+                    setTimeout(self.initOrUpdateCharts, 50);
+                }
+            });
+
+            fetchAllIds(baseApi + "competitions/?participating_in=true&page_size=1000", (ids) => {
+                self.myParticipatingIds = ids;
+                if (self.state.participating_in) {
+                    self.applyFilters();
+                    self.update();
+                    setTimeout(self.initOrUpdateCharts, 50);
+                }
+            });
+        };
 
         // Fetch all competitions using recursive pagination to enable client-side filtering
         self.fetchData = () => {
@@ -94,19 +148,20 @@
             }
 
             var tagsUrl = (typeof URLS !== "undefined" && URLS.API) ? URLS.API + "tags/" : "/api/tags/";
+            self.globalCategoryTags = self.globalCategoryTags || {};
             CODALAB.api.request('GET', tagsUrl)
                 .done((tagsData) => {
-                    self.globalCategoryTags = {};
-                    tagsData.forEach((tag) => {
-                        var cat = tag.category_name || "Other";
-                        if (!self.globalCategoryTags[cat]) self.globalCategoryTags[cat] = {};
-                        self.globalCategoryTags[cat][tag.name] = true;
-                    });
+                    if (Array.isArray(tagsData)) {
+                        tagsData.forEach((tag) => {
+                            var cat = tag.category_name || "Other";
+                            if (!self.globalCategoryTags[cat]) self.globalCategoryTags[cat] = {};
+                            self.globalCategoryTags[cat][tag.name] = true;
+                        });
+                    }
                     fetchPage(apiUrl);
                 })
                 .fail(() => {
-                    if (typeof toastr !== "undefined") toastr.error("Failed to load tag categories");
-                    self.globalCategoryTags = {};
+                    // Fall back to extracting tags from competitions data
                     fetchPage(apiUrl);
                 });
 
@@ -175,13 +230,15 @@
                 var comp = {
                     id: item.id,
                     title: item.title,
-                    organizer: item.created_by || item.owner_display_name || "organizer",
+                    organizer: item.created_by || item.owner_display_name || "Unknown",
                     url: compUrl,
                     published: item.published,
                     competition_type: item.competition_type || "competition",
                     participants_count: item.participants_count || 0,
                     submissions_count: item.submissions_count || 0,
                     created_when: item.created_when,
+                    reward: item.reward || "",
+                    has_reward: Boolean(item.reward && String(item.reward).trim().length > 0),
                     tagsByCategory: {}
                 };
 
@@ -190,6 +247,9 @@
                         var cat = tag.category || "Other";
                         if (!comp.tagsByCategory[cat]) comp.tagsByCategory[cat] = [];
                         comp.tagsByCategory[cat].push(tag.name);
+
+                        if (!self.globalCategoryTags[cat]) self.globalCategoryTags[cat] = {};
+                        self.globalCategoryTags[cat][tag.name] = true;
                     });
                 }
                 return comp;
@@ -239,9 +299,53 @@
             setTimeout(self.initOrUpdateCharts, 50);
         };
 
+        self.toggleParticipating = (e) => {
+            if (!self.isLoggedIn && e.target.checked) {
+                e.target.checked = false;
+                if (typeof toastr !== "undefined") {
+                    toastr.warning("Authentication required for filtering by participating in or organizing.");
+                }
+                return;
+            }
+            self.state.participating_in = e.target.checked;
+            self.currentPage = 1;
+            self.applyFilters();
+            self.update();
+            setTimeout(self.initOrUpdateCharts, 50);
+        };
+
+        self.toggleOrganizing = (e) => {
+            if (!self.isLoggedIn && e.target.checked) {
+                e.target.checked = false;
+                if (typeof toastr !== "undefined") {
+                    toastr.warning("Authentication required for filtering by participating in or organizing.");
+                }
+                return;
+            }
+            self.state.organizing = e.target.checked;
+            self.currentPage = 1;
+            self.applyFilters();
+            self.update();
+            setTimeout(self.initOrUpdateCharts, 50);
+        };
+
+        self.toggleHasReward = (e) => {
+            self.state.has_reward = e.target.checked;
+            self.currentPage = 1;
+            self.applyFilters();
+            self.update();
+            setTimeout(self.initOrUpdateCharts, 50);
+        };
+
         self.resetFilters = () => {
             self.state.search = "";
+            self.state.searchField = "both";
             self.state.mode = "or";
+            self.state.visibility = "public";
+            self.state.type = "all";
+            self.state.participating_in = false;
+            self.state.organizing = false;
+            self.state.has_reward = false;
             self.state.selectedTags = {};
             if (self.refs.searchInput) self.refs.searchInput.value = "";
             if (self.refs.start_calendar) $(self.refs.start_calendar).calendar('clear');
@@ -432,9 +536,24 @@
             }
         }
 
-        // Main filter pipeline: Text search -> Visibility -> Tag matching -> Rebuild UI counts
+        // Main filter pipeline: Text search -> Dates -> Visibility -> Type -> Facets (User Comps / Reward / Tags)
         self.applyFilters = () => {
             var s = self.state.search;
+            var isAndMode = self.state.mode === "and";
+            var userCompActive = Boolean(self.state.participating_in || self.state.organizing);
+            var rewardActive = Boolean(self.state.has_reward);
+
+            var tagsActive = false;
+            var tagCats = Object.keys(self.state.selectedTags);
+            for (var i = 0; i < tagCats.length; i++) {
+                if (Object.keys(self.state.selectedTags[tagCats[i]]).length > 0) {
+                    tagsActive = true;
+                    break;
+                }
+            }
+            var hasActiveFacet = userCompActive || rewardActive || tagsActive;
+            var myUsername = (CODALAB.state.user && CODALAB.state.user.username) || "";
+
             self.filteredCompetitions = self.allCompetitions.filter((c) => {
                 if (self.isAdmin) {
                     if (self.state.visibility === 'public' && !c.published) return false;
@@ -465,7 +584,30 @@
                     if (self.state.searchField === 'organizer' && !matchOrg) return false;
                     if (self.state.searchField === 'both' && !matchTitle && !matchOrg) return false;
                 }
-                return tagMatch(c.tagsByCategory, self.state.selectedTags);
+
+                if (hasActiveFacet) {
+                    var userCompMatch = false;
+                    if (userCompActive) {
+                        var isOrganizer = (self.myOrganizingIds && self.myOrganizingIds.has(c.id)) || Boolean(myUsername && c.organizer === myUsername);
+                        var isParticipant = Boolean(self.myParticipatingIds && self.myParticipatingIds.has(c.id));
+                        userCompMatch = (self.state.participating_in && self.state.organizing)
+                            ? (isParticipant || isOrganizer)
+                            : (self.state.participating_in ? isParticipant : isOrganizer);
+                    }
+
+                    var rewardMatch = rewardActive && Boolean(c.has_reward);
+                    var tagsMatch = tagsActive && tagMatch(c.tagsByCategory, self.state.selectedTags);
+
+                    if (isAndMode) {
+                        if (userCompActive && !userCompMatch) return false;
+                        if (rewardActive && !rewardMatch) return false;
+                        if (tagsActive && !tagsMatch) return false;
+                    } else {
+                        if (!userCompMatch && !rewardMatch && !tagsMatch) return false;
+                    }
+                }
+
+                return true;
             });
 
             self.filteredCompetitions.sort((a, b) => {
@@ -608,8 +750,8 @@
 
                 var canvasId = "chart_cat_" + idx;
 
-                var el = null;
-                if (self.refs.dynamicCharts) {
+                var el = document.getElementById(canvasId);
+                if (!el && self.refs.dynamicCharts) {
                     if (Array.isArray(self.refs.dynamicCharts)) {
                         el = self.refs.dynamicCharts[idx];
                     } else if (idx === 0) {
@@ -639,18 +781,17 @@
         self.renderHorizontalBarId = (id, pairs, color, elementObj) => {
             var el = elementObj || document.getElementById(id);
             if (!el) return;
-            var labels = pairs.map((p) => {
-                return p[0];
-            });
-            var dataVals = pairs.map((p) => {
-                return p[1];
-            });
+            var labels = pairs.map((p) => p[0]);
+            var dataVals = pairs.map((p) => p[1]);
 
-            if (self.charts[id]) {
+            if (self.charts[id] && self.charts[id].ctx && self.charts[id].ctx.canvas === el) {
                 self.charts[id].data.labels = labels;
                 self.charts[id].data.datasets[0].data = dataVals;
                 self.charts[id].update();
             } else {
+                if (self.charts[id]) {
+                    self.charts[id].destroy();
+                }
                 self.charts[id] = new Chart(el, {
                     type: "horizontalBar",
                     data: {
@@ -686,16 +827,12 @@
         };
 
         self.renderDoughnutId = (id, pairs, elementObj) => {
-            var el = elementObj || self.refs[id];
+            var el = elementObj || document.getElementById(id);
             if (!el) return;
-            var labels = pairs.map((p) => {
-                return p[0];
-            });
-            var dataVals = pairs.map((p) => {
-                return p[1];
-            });
+            var labels = pairs.map((p) => p[0]);
+            var dataVals = pairs.map((p) => p[1]);
 
-            if (self.charts[id]) {
+            if (self.charts[id] && self.charts[id].ctx && self.charts[id].ctx.canvas === el) {
                 self.charts[id].data.labels = labels;
                 self.charts[id].data.datasets[0].data = dataVals;
                 self.charts[id].data.datasets[0].backgroundColor = labels.map((_, i) => {
@@ -703,6 +840,9 @@
                 });
                 self.charts[id].update();
             } else {
+                if (self.charts[id]) {
+                    self.charts[id].destroy();
+                }
                 self.charts[id] = new Chart(el, {
                     type: "doughnut",
                     data: {
@@ -731,20 +871,19 @@
         };
 
         self.renderVerticalBarId = (id, pairs, color, elementObj) => {
-            var el = elementObj || self.refs[id];
+            var el = elementObj || document.getElementById(id);
             if (!el) return;
-            var labels = pairs.map((p) => {
-                return p[0];
-            });
-            var dataVals = pairs.map((p) => {
-                return p[1];
-            });
+            var labels = pairs.map((p) => p[0]);
+            var dataVals = pairs.map((p) => p[1]);
 
-            if (self.charts[id]) {
+            if (self.charts[id] && self.charts[id].ctx && self.charts[id].ctx.canvas === el) {
                 self.charts[id].data.labels = labels;
                 self.charts[id].data.datasets[0].data = dataVals;
                 self.charts[id].update();
             } else {
+                if (self.charts[id]) {
+                    self.charts[id].destroy();
+                }
                 self.charts[id] = new Chart(el, {
                     type: "bar",
                     data: {
@@ -785,13 +924,14 @@
             var esc = (v) => {
                 return '"' + String(v || '').replace(/"/g, '""') + '"';
             };
-            var headers = ["id", "title", "organizer", "url"].concat(self.availableCategories);
+            var headers = ["id", "title", "organizer", "reward", "url"].concat(self.availableCategories).map(esc);
             var lines = [headers.join(",")];
             rows.forEach((c) => {
                 var rowData = [
                     c.id,
                     esc(c.title),
                     esc(c.organizer),
+                    esc(c.reward),
                     esc(c.url)
                 ];
                 self.availableCategories.forEach((cat) => {
@@ -799,7 +939,7 @@
                 });
                 lines.push(rowData.join(","));
             });
-            var blob = new Blob([lines.join("\n")], {
+            var blob = new Blob(["\uFEFF" + lines.join("\r\n")], {
                 type: "text/csv;charset=utf-8;"
             });
             var link = document.createElement("a");

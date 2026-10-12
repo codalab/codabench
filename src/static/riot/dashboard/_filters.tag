@@ -12,7 +12,7 @@
                 </select>
             </div>
 
-            <h5 class="ui header" style="margin-top: 12px; margin-bottom: 6px;">Tag Match Mode</h5>
+            <h5 class="ui header" style="margin-top: 12px; margin-bottom: 6px;">Filter Match Mode</h5>
             <div class="ui mini fluid two buttons">
                 <button class="ui button { active: opts.p.state.mode === 'or', blue: opts.p.state.mode === 'or' }" onclick="{ setModeOr }">Any (OR)</button>
                 <button class="ui button { active: opts.p.state.mode === 'and', blue: opts.p.state.mode === 'and' }" onclick="{ setModeAnd }">All (AND)</button>
@@ -43,6 +43,28 @@
                     <i class="calendar icon"></i>
                     <input type="text" placeholder="End Date">
                 </div>
+            </div>
+        </div>
+
+        <!-- Your Competitions -->
+        <div class="ui segment">
+            <h5 class="ui header" style="margin-bottom: 8px;">Your Competitions</h5>
+            <div class="ui checkbox filter-item { disabled: !opts.p.isLoggedIn }" style="margin-bottom: 6px;">
+                <input type="checkbox" checked="{ opts.p.state.participating_in }" disabled="{ !opts.p.isLoggedIn }" onchange="{ toggleParticipating }">
+                <label>Participating In <span if="{ !opts.p.isLoggedIn }" class="filter-count">(Login required)</span></label>
+            </div>
+            <div class="ui checkbox filter-item { disabled: !opts.p.isLoggedIn }">
+                <input type="checkbox" checked="{ opts.p.state.organizing }" disabled="{ !opts.p.isLoggedIn }" onchange="{ toggleOrganizing }">
+                <label>Organizing <span if="{ !opts.p.isLoggedIn }" class="filter-count">(Login required)</span></label>
+            </div>
+        </div>
+
+        <!-- Other filters -->
+        <div class="ui segment">
+            <h5 class="ui header" style="margin-bottom: 8px;">Other filters</h5>
+            <div class="ui checkbox filter-item">
+                <input type="checkbox" checked="{ opts.p.state.has_reward }" onchange="{ toggleHasReward }">
+                <label>Has reward</label>
             </div>
         </div>
 
@@ -92,11 +114,17 @@
         self.setVisibility = (val, e) => {
             opts.p.setVisibility(val, e);
         };
-        self.clearDates = (e) => {
-            opts.p.clearDates(e);
-        };
         self.toggleTagHandler = (e) => {
             opts.p.toggleTagHandler(e);
+        };
+        self.toggleParticipating = (e) => {
+            opts.p.toggleParticipating(e);
+        };
+        self.toggleOrganizing = (e) => {
+            opts.p.toggleOrganizing(e);
+        };
+        self.toggleHasReward = (e) => {
+            opts.p.toggleHasReward(e);
         };
         self.resetFilters = (e) => {
             opts.p.resetFilters(e);

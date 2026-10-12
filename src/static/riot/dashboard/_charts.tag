@@ -47,7 +47,7 @@
             <div class="ui segment chart-card">
                 <h4 class="ui header">By { chart.catName }</h4>
                 <div class="canvas-wrap">
-                    <canvas ref="dynamicCharts"></canvas>
+                    <canvas id="{ chart.id }" ref="dynamicCharts"></canvas>
                 </div>
             </div>
         </div>
