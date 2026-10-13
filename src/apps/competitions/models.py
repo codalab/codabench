@@ -698,10 +698,41 @@ class Submission(models.Model):
         return False
 
     def check_child_submission_statuses(self):
+        """
+        Sets the status of this parent submission from the statuses of its children.
+
+        A parent has one child per task, in phases with more than one task.
+
+        Nothing changes until every child is done (Finished, Failed or Cancelled).
+        Then the parent gets one status for all its children:
+            - Finished: if at least one child finished.
+            - Failed: if no child finished, but at least one failed.
+            - Cancelled: if all children were cancelled.
+
+        Examples, with 2 or more children:
+            all Finished                    -> Finished
+            all Failed                      -> Failed
+            all Cancelled                   -> Cancelled
+            Finished + Failed               -> Finished
+            Finished + Cancelled            -> Finished
+            Failed + Cancelled              -> Failed
+            Finished + Failed + Cancelled   -> Finished
+            Failed + Running                -> no change (a child is not done yet)
+        """
+        statuses = list(self.children.values_list('status', flat=True))
         done_statuses = [self.FINISHED, self.FAILED, self.CANCELLED]
-        if all([status in done_statuses for status in self.children.values_list('status', flat=True)]):
-            self.status = 'Finished'
-            self.save()
+
+        # Wait until every child is done
+        if not all(status in done_statuses for status in statuses):
+            return
+
+        if self.FINISHED in statuses:
+            self.status = self.FINISHED
+        elif self.FAILED in statuses:
+            self.status = self.FAILED
+        else:
+            self.status = self.CANCELLED
+        self.save()
 
     def calculate_scores(self):
         # leaderboards = self.phase.competition.leaderboards.all()
