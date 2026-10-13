@@ -86,7 +86,7 @@
       </h5>
       <div class="content { open_cats[cat.name] !== false ? 'active' : '' }" data-catname="{ cat.name }" style="margin-top: 10px;">
         <div class="filter-scroll-list">
-          <div class="ui checkbox filter-item">
+          <div class="ui checkbox filter-item" if="{ cat.noTagsCount !== undefined }">
             <input type="checkbox" checked="{ is_cat_no_tags_checked(cat) }" onchange="{ toggle_category_no_tags.bind(this, cat) }">
             <label><i>None</i> <span if="{ opts.show_counts && (cat.noTagsCount !== undefined) }" class="filter-count">({ cat.noTagsCount })</span></label>
           </div>

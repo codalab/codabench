@@ -194,8 +194,6 @@
                         self.onDataLoaded();
                     });
             }
-
-            fetchPage(apiUrl);
         };
 
         self.onDataLoaded = () => {
@@ -401,8 +399,8 @@
                     }
                 }
                 if (s) {
-                    var matchTitle = c.title.toLowerCase().indexOf(s) !== -1;
-                    var matchOrg = c.organizer.toLowerCase().indexOf(s) !== -1;
+                    var matchTitle = (c.title || "").toLowerCase().indexOf(s) !== -1;
+                    var matchOrg = (c.organizer || "").toLowerCase().indexOf(s) !== -1;
                     if (!matchTitle && !matchOrg) return false;
                 }
 
@@ -766,7 +764,12 @@
         self.downloadCSV = () => {
             var rows = self.filteredCompetitions;
             var esc = (v) => {
-                return '"' + String(v || '').replace(/"/g, '""') + '"';
+                var s = String(v == null ? '' : v);
+                // Escape leading characters that could be interpreted as formulas in Excel
+                if (/^[=+\-@\t\r]/.test(s)) {
+                    s = "'" + s;
+                }
+                return '"' + s.replace(/"/g, '""') + '"';
             };
             var headers = ["id", "title", "organizer", "reward", "url"].concat(self.availableCategories).map(esc);
             var lines = [headers.join(",")];

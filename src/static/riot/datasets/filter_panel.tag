@@ -53,12 +53,24 @@
             ? Object.assign({}, opts.initial_filters)
             : {}
 
-        return {
+        var state = {
             search: initial.search || '',
             ordering: initial.ordering || '',
             has_license: Boolean(initial.has_license),
             is_verified: Boolean(initial.is_verified)
         }
+
+        if (!force_clean && !state.ordering && typeof window !== "undefined" && window.location) {
+            var urlParams = new URLSearchParams(window.location.search)
+            if (urlParams.has("ordering")) {
+                var ord = urlParams.get("ordering")
+                if (["most_downloaded", "recently_added"].includes(ord)) {
+                    state.ordering = ord
+                }
+            }
+        }
+
+        return state
     }
 
     self.filter_state = self.get_initial_filter_state(false)
