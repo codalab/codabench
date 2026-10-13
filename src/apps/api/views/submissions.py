@@ -438,10 +438,6 @@ class SubmissionViewSet(ModelViewSet):
         if destination_phase.index <= submission.phase.index:
             raise ValidationError('Destination phase must be a future phase relative to the current one')
 
-        tasks_to_migrate = submission.get_tasks_to_migrate()
-        if not tasks_to_migrate:
-            raise ValidationError('No successfully finished tasks to migrate for this submission')
-
         new_submission = Submission(
             created_by_migration=submission.phase,
             participant=submission.participant,
@@ -453,7 +449,7 @@ class SubmissionViewSet(ModelViewSet):
         new_submission.save(ignore_submission_limit=True)
 
         if destination_phase.start <= now():
-            new_submission.start(tasks=tasks_to_migrate)
+            new_submission.start()
 
         return Response({'id': new_submission.id})
 

@@ -252,10 +252,6 @@
                                     { phase.status || 'Upcoming' } · starts { pretty_date(phase.start) }
                                 </small>
                             </div>
-                            <div class="migrate-footer">
-                                <i class="info circle icon"></i>
-                                Only successfully finished tasks are re-run.
-                            </div>
                         </div>
                     </span>
                 </td>
