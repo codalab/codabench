@@ -17,7 +17,9 @@
             </a>
 
             <select class="ui dropdown" ref="submission_handling_operation">
-            <option value="download">Download selected submissions</option>
+            <option value="download_submissions">Download selected submissions</option>
+            <option value="download_prediction_results">Download prediction results of selected submissions</option>
+            <option value="download_scoring_results">Download scoring results of selected submissions</option>
             <option value="delete">Delete selected submissions</option>
             <option value="rerun">Rerun selected submissions</option>
             </select>
@@ -29,7 +31,6 @@
         <div id="downloadStatus" style="display:none; display: flex; flex-direction: column; align-items: flex-start;">
             <progress id="downloadProgress" value="0" max="100"  style="display:none; width: 150px;"></progress>
             <div id="progressText" style="margin-top: 4px;"></div>
-            <!-- -->
         </div>
     </div>
     <div class="ui icon input">
@@ -60,7 +61,7 @@
         onclick="{toggleShowSoftDeleted}">
         <label class="checkbox-label">Show soft-deleted submissions</label>
     </div>
-    <table class="ui celled selectable sortable table" ref="submission_table">
+    <table class="ui celled selectable table" ref="submission_table">
         <thead>
             <tr>
                 <th if="{opts.admin}">
@@ -69,19 +70,34 @@
                         <label>All</label>
                     </div>
                 </th>
-                <th class="sorted descending collapsing">ID #</th>
-                <th>File name</th>
-                <th if="{ opts.admin }">Owner</th>
-                <th if="{ opts.admin }">Phase</th>
-                <th>Date</th>
-                <th>Status</th>
-                <th>Score</th>
+                <th class="collapsing" style="cursor:pointer;" onclick="{ sort_by.bind(this, 'id') }">
+                    ID # <i if="{ sort_column === 'id' }" class="icon { sort_direction === 'asc' ? 'caret up' : 'caret down' }"></i>
+                </th>
+                <th style="cursor:pointer;" onclick="{ sort_by.bind(this, 'filename') }">
+                    File name <i if="{ sort_column === 'filename' }" class="icon { sort_direction === 'asc' ? 'caret up' : 'caret down' }"></i>
+                </th>
+                <th if="{ opts.admin }" style="cursor:pointer;" onclick="{ sort_by.bind(this, 'owner') }">
+                    Owner <i if="{ sort_column === 'owner' }" class="icon { sort_direction === 'asc' ? 'caret up' : 'caret down' }"></i>
+                </th>
+                <th if="{ opts.admin }" style="cursor:pointer;" onclick="{ sort_by.bind(this, 'phase') }">
+                    Phase <i if="{ sort_column === 'phase' }" class="icon { sort_direction === 'asc' ? 'caret up' : 'caret down' }"></i>
+                </th>
+                <th style="cursor:pointer;" onclick="{ sort_by.bind(this, 'created_when') }">
+                    Date <i if="{ sort_column === 'created_when' }" class="icon { sort_direction === 'asc' ? 'caret up' : 'caret down' }"></i>
+                </th>
+                <th style="cursor:pointer;" onclick="{ sort_by.bind(this, 'status') }">
+                    Status <i if="{ sort_column === 'status' }" class="icon { sort_direction === 'asc' ? 'caret up' : 'caret down' }"></i>
+                </th>
+                <th style="cursor:pointer;" onclick="{ sort_by.bind(this, 'score') }">
+                    Score <i if="{ sort_column === 'score' }" class="icon { sort_direction === 'asc' ? 'caret up' : 'caret down' }"></i>
+                </th>
                 <th if="{ opts.competition.enable_detailed_results && opts.competition.show_detailed_results_in_submission_panel}">
                     Detailed Results
                 </th>
                 <th class="center aligned">Actions</th>
             </tr>
         </thead>
+
         <tbody>
             <tr if="{ _.isEmpty(submissions) && !loading }" class="center aligned">
                 <td colspan="100%"><em>No submissions found! Please make a submission</em></td>
@@ -91,7 +107,10 @@
                     <em>Loading Submissions...</em>
                 </td>
             </tr>
-            <tr show="{!loading}" each="{ submission, index in filter_children(submissions) }"
+        </tbody>
+
+        <tbody each="{ submission, index in sorted_parents(submissions) }">
+            <tr show="{!loading}"
                 onclick="{ submission_clicked.bind(this, submission) }" class="submission_row {submission.is_soft_deleted ? 'soft-deleted' : ''}">
                 <td if="{ opts.admin }">
                     <div if="{ !submission.is_soft_deleted }" class="ui checkbox" onclick="{on_submission_checked.bind(this)}">
@@ -99,7 +118,22 @@
                         <label></label>
                     </div>
                 </td>
-                <td>{ submission.id }</td>
+                
+                <td>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <span style="display:inline-flex; width:16px; justify-content:center; flex-shrink:0;">
+                            <span if="{ submission.has_children }"
+                                data-tooltip="{ expanded_submissions[submission.id] ? 'Hide child submissions' : 'Show child submissions' }"
+                                data-inverted=""
+                                onclick="{ toggle_expand.bind(this, submission) }"
+                                style="cursor:pointer;">
+                                <i class="icon { expanded_submissions[submission.id] ? 'caret down' : 'caret right' }" style="margin:0;"></i>
+                            </span>
+                        </span>
+                        <span>{ submission.id }</span>
+                    </div>
+                </td>
+
                 <td>{ submission.filename }</td>
                 <td if="{ opts.admin }">{ submission.owner }</td>
                 <td if="{ opts.admin }">{ submission.phase.name }</td>
@@ -192,6 +226,93 @@
                     </span>
                 </td>
             </tr>
+
+            <tr if="{ submission.has_children && expanded_submissions[submission.id] }" class="child-submissions-row">
+                <td colspan="100%" style="padding: 0 0 0 40px; background:#fafafa;">
+                    <table class="ui very compact celled table">
+                        <thead>
+                            <tr>
+                                <th>ID #</th>
+                                <th if="{ opts.admin }">Owner</th>
+                                <th if="{ opts.admin }">Phase</th>
+                                <th if="{ has_multiple_tasks(submission) }">Task</th>
+                                <th>Group</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Score</th>
+                                <th class="center aligned">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr each="{ child in get_children(submission) }" onclick="{ submission_clicked.bind(this, child) }" class="submission_row">
+                                <td>{ child.id }</td>
+                                <td if="{ opts.admin }">{ child.owner }</td>
+                                <td if="{ opts.admin }">{ child.phase ? child.phase.name : '' }</td>
+                                <td if="{ has_multiple_tasks(submission) }">{ child.task ? child.task.name : '' }</td>
+                                <td>{ child.participant_group_name || '-' }</td>
+                                <td>{ pretty_date(child.created_when) }</td>
+                                <td>{ child.status }</td>
+                                <td>{ get_score(child) }</td>
+
+                                <td if="{ child.is_soft_deleted }">
+                                    <virtual if="{ opts.admin }">
+                                        <span data-tooltip="Delete Submission" data-inverted=""
+                                            onclick="{ delete_submission.bind(this, child) }">
+                                            <i class="icon red trash alternate"></i>
+                                        </span>
+                                    </virtual>
+                                </td>
+                                <td class="center aligned" if="{ !child.is_soft_deleted }">
+                                    <virtual if="{ opts.admin}">
+                                        <span
+                                            data-tooltip="{ child.status === 'Submitting' && !child.auto_run ? 'Run Submission' : 'Rerun Submission' }"
+                                            data-inverted=""
+                                            onclick="{ child.status === 'Submitting' && !child.auto_run ? run_submission.bind(this, child) : rerun_submission.bind(this, child) }">
+                                            <i
+                                                class="icon { child.status === 'Submitting' && !child.auto_run ? 'green play' : 'blue redo' }"></i>
+                                        </span>
+                                        <span data-tooltip="Delete Submission" data-inverted=""
+                                            onclick="{ delete_submission.bind(this, child) }">
+                                            <i class="icon red trash alternate"></i>
+                                        </span>
+                                    </virtual>
+                                    <span if="{!_.includes(['Finished', 'Cancelled', 'Unknown', 'Failed'], child.status)}"
+                                        data-tooltip="Cancel Submission" data-inverted=""
+                                        onclick="{ cancel_submission.bind(this, child) }">
+                                        <i class="grey minus circle icon"></i>
+                                    </span>
+                                    <span if="{!child.on_leaderboard && child.status === 'Finished'}"
+                                        data-tooltip="Add to Leaderboard" data-inverted=""
+                                        onclick="{ add_to_leaderboard.bind(this, child) }">
+                                        <i class="icon green columns"></i>
+                                    </span>
+                                    <span if="{ child.on_leaderboard }" data-tooltip="On the Leaderboard" data-inverted=""
+                                        onclick="{ remove_from_leaderboard.bind(this, child) }">
+                                        <i class="icon green check"></i>
+                                    </span>
+                                    <span
+                                        if="{!child.is_public && child.status === 'Finished' && child.can_make_submissions_public}"
+                                        data-tooltip="Make Public" data-inverted=""
+                                        onclick="{toggle_submission_is_public.bind(this, child)}">
+                                        <i class="icon share teal alternate"></i>
+                                    </span>
+                                    <span
+                                        if="{!!child.is_public && child.status === 'Finished' && child.can_make_submissions_public}"
+                                        data-tooltip="Make Private" data-inverted=""
+                                        onclick="{toggle_submission_is_public.bind(this, child)}">
+                                        <i class="icon share grey alternate"></i>
+                                    </span>
+                                    <span if="{ ((child.status === 'Finished' && !child.on_leaderboard) || child.status === 'Failed' || child.status === 'Cancelled')  && !opts.admin}"
+                                        data-tooltip="Delete Submission" data-inverted=""
+                                        onclick="{ soft_delete_submission.bind(this, child) }">
+                                        <i class="icon red trash"></i>
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
         </tbody>
     </table>
 
@@ -253,8 +374,6 @@
                         show_visualization="{opts.competition.enable_detailed_results}"
                         submission="{child}"></submission-modal>
                 </div>
-
-
             </div>
         </div>
     </div>
@@ -277,13 +396,14 @@
         self.next = null
         self.previous = null
 
+        self.expanded_submissions = {}
+
         self.on("mount", function () {
             $(self.refs.search).dropdown()
             $(self.refs.status).dropdown()
             $(self.refs.phase).dropdown()
             $(self.refs.rerun_button).dropdown()
             $(self.refs.submission_handling_operation).dropdown()
-            $(self.refs.submission_table).tablesort()
         })
 
         self.pretty_date = function (date_string) {
@@ -302,8 +422,63 @@
             event.stopPropagation()
         }
 
+        self.get_children = function (submission) {
+            return _.filter(self.submissions, sub => sub.parent === submission.id)
+        }
+
+        self.has_multiple_tasks = function (submission) {
+            let children = self.get_children(submission)
+            let task_ids = _.uniq(_.map(children, child => _.get(child, 'task.id')).filter(id => id != null))
+            return task_ids.length > 1
+        }
+
+        self.toggle_expand = function (submission, event) {
+            event.stopPropagation()
+            self.expanded_submissions[submission.id] = !self.expanded_submissions[submission.id]
+            self.update()
+        }
+
+        self.sort_column = 'created_when'
+        self.sort_direction = 'desc'  // or 'asc'
+
         self.filter_children = submissions => {
             return _.filter(submissions, sub => !sub.parent)
+        }
+
+        self.sort_by = function (column, event) {
+            if (event) event.stopPropagation()
+            if (self.sort_column === column) {
+                self.sort_direction = self.sort_direction === 'asc' ? 'desc' : 'asc'
+            } else {
+                self.sort_column = column
+                self.sort_direction = 'asc'
+            }
+            self.update()
+        }
+
+        self.get_sort_value = function (submission, column) {
+            switch (column) {
+                case 'id': return submission.id
+                case 'filename': return (submission.filename || '').toLowerCase()
+                case 'owner': return (submission.owner || '').toLowerCase()
+                case 'phase': return _.get(submission, 'phase.name', '').toLowerCase()
+                case 'created_when': return submission.created_when || ''
+                case 'status': return (submission.status || '').toLowerCase()
+                case 'score':
+                    let s = self.get_score(submission)
+                    return s === '' ? -Infinity : parseFloat(s)
+                default: return ''
+            }
+        }
+
+        self.sorted_parents = function (submissions) {
+            let parents = self.filter_children(submissions)
+            let sorted = _.orderBy(
+                parents,
+                [sub => self.get_sort_value(sub, self.sort_column)],
+                [self.sort_direction]
+            )
+            return sorted
         }
 
         self.toggleShowSoftDeleted = function () {
@@ -737,7 +912,15 @@
             CODALAB.events.trigger('submission_clicked')
         }
 
-        self.bulk_download = function () {
+        // file_type is one of "submissions", "predictions" or "results"
+        self.bulk_download = function (file_type) {
+            const download_options = {
+                submissions: {api: CODALAB.api.download_many_submissions, zip_name: "bulk_submissions.zip"},
+                prediction_results: {api: CODALAB.api.download_many_prediction_results, zip_name: "bulk_prediction_results.zip"},
+                scoring_results: {api: CODALAB.api.download_many_scoring_results, zip_name: "bulk_scoring_results.zip"},
+            }
+            const {api, zip_name} = download_options[file_type]
+
             const statusBox = document.getElementById('downloadStatus');
             const progressEl = document.getElementById('downloadProgress');
             const textEl = document.getElementById('progressText');
@@ -748,7 +931,7 @@
             textEl.textContent = "Preparing download...";
 
             // Kick the API request
-            const req = CODALAB.api.download_many_submissions(self.checked_submissions);
+            const req = api(self.checked_submissions);
 
             // Common error handler
             const handleError = (err) => {
@@ -858,7 +1041,7 @@
                 const blob = await zip.generateAsync({ type: "blob" });
                 const link = document.createElement("a");
                 link.href = URL.createObjectURL(blob);
-                link.download = "bulk_submissions.zip";
+                link.download = zip_name;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
@@ -900,14 +1083,14 @@
                     case "delete":
                         self.delete_selected_submissions()
                         break;
-                    case "download":
+                    case "download_submissions":
                         self.bulk_download("submissions")
                         break;
-                    case "download_results":
-                        self.bulk_download("results")
+                    case "download_scoring_results":
+                        self.bulk_download("scoring_results")
                         break;
-                    case "download_prediction":
-                        self.bulk_download("predictions")
+                    case "download_prediction_results":
+                        self.bulk_download("prediction_results")
                         break;
                     case "rerun":
                         self.rerun_selected_submissions()
@@ -960,7 +1143,7 @@
         .submission_row
             &:hover
                 cursor pointer
-            height 52px
+            height 42px
 
         table tbody .center.aligned td
             color #8c8c8c
@@ -973,5 +1156,15 @@
 
         .soft-deleted
             background-color #ffdede !important
+
+        .child-submissions-row
+            td
+                padding-top 0
+                padding-bottom 0
+                height 42px
+
+            table tbody tr:hover
+                cursor pointer
+                background-color rgba(0,0,0,0.03)
     </style>
 </submission-manager>

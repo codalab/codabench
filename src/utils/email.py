@@ -6,6 +6,21 @@ from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 
 
+def get_link_context(request=None):
+    """
+    Build the {domain, protocol} pair used for absolute links in email templates.
+
+    Pass `request` when one is available so the scheme matches how the user
+    actually connected (relevant behind a reverse proxy terminating TLS).
+    Omit it (e.g. from a model method with no request in scope) and it
+    defaults to 'https', since production is HTTPS-only.
+    """
+    return {
+        'domain': settings.DOMAIN_NAME,
+        'protocol': 'https' if request is None or request.is_secure() else 'http',
+    }
+
+
 def codalab_send_mail(context_data, to_email, html_file, text_file, subject, from_email=None):
     from_email = from_email if from_email else settings.DEFAULT_FROM_EMAIL
 

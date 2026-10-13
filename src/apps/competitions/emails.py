@@ -1,26 +1,28 @@
-from utils.email import codalab_send_mail, codalab_send_markdown_email
+from utils.email import codalab_send_mail, codalab_send_markdown_email, get_link_context
 
 
-def get_organizer_emails(competition):
-    return [user.email for user in competition.all_organizers if not user.is_deleted]
+def get_active_organizers(competition):
+    return [user for user in competition.all_organizers if not user.is_deleted]
 
 
-def send_participation_requested_emails(participant):
+def send_participation_requested_emails(participant, request):
     if participant.user.is_deleted:
         return
 
     context = {
         'participant': participant,
-        'user': participant.user
+        'user': participant.user,
+        **get_link_context(request),
     }
     # Notify Organizers
-    codalab_send_mail(
-        context_data=context,
-        subject=f'{participant.user.username} applied to your competition',
-        html_file="emails/participation/organizer/participation_requested.html",
-        text_file="emails/participation/organizer/participation_requested.txt",
-        to_email=get_organizer_emails(participant.competition)
-    )
+    for organizer in get_active_organizers(participant.competition):
+        codalab_send_mail(
+            context_data={**context, 'user': organizer},
+            subject=f'{participant.user.username} applied to your competition',
+            html_file="emails/participation/organizer/participation_requested.html",
+            text_file="emails/participation/organizer/participation_requested.txt",
+            to_email=organizer.email
+        )
 
     # Notify User
     codalab_send_mail(
@@ -32,21 +34,25 @@ def send_participation_requested_emails(participant):
     )
 
 
-def send_participation_accepted_emails(participant):
+def send_participation_accepted_emails(participant, request):
     if participant.user.is_deleted:
         return
 
     context = {
         'participant': participant,
-        'user': participant.user
+        'user': participant.user,
+        **get_link_context(request),
     }
-    codalab_send_mail(
-        context_data=context,
-        subject=f'{participant.user.username} was accepted in to your competition',
-        html_file="emails/participation/organizer/participation_accepted.html",
-        text_file="emails/participation/organizer/participation_accepted.txt",
-        to_email=get_organizer_emails(participant.competition)
-    )
+    # Notify Organizers
+    for organizer in get_active_organizers(participant.competition):
+        codalab_send_mail(
+            context_data={**context, 'user': organizer},
+            subject=f'{participant.user.username} was accepted in to your competition',
+            html_file="emails/participation/organizer/participation_accepted.html",
+            text_file="emails/participation/organizer/participation_accepted.txt",
+            to_email=organizer.email
+        )
+
     # Notify User
     codalab_send_mail(
         context_data=context,
@@ -57,22 +63,25 @@ def send_participation_accepted_emails(participant):
     )
 
 
-def send_participation_denied_emails(participant):
+def send_participation_denied_emails(participant, request):
     if participant.user.is_deleted:
         return
 
     context = {
         'participant': participant,
-        'user': participant.user
+        'user': participant.user,
+        **get_link_context(request),
     }
     # Notify Organizers
-    codalab_send_mail(
-        context_data=context,
-        subject=f'{participant.user.username} was denied from your competition',
-        html_file="emails/participation/organizer/participation_denied.html",
-        text_file="emails/participation/organizer/participation_denied.txt",
-        to_email=get_organizer_emails(participant.competition)
-    )
+    for organizer in get_active_organizers(participant.competition):
+        codalab_send_mail(
+            context_data={**context, 'user': organizer},
+            subject=f'{participant.user.username} was denied from your competition',
+            html_file="emails/participation/organizer/participation_denied.html",
+            text_file="emails/participation/organizer/participation_denied.txt",
+            to_email=organizer.email
+        )
+
     # Notify User
     codalab_send_mail(
         context_data=context,

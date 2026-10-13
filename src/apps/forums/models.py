@@ -3,6 +3,8 @@ import datetime
 from django.db import models
 from django.urls import reverse
 
+from utils.email import get_link_context
+
 from .helpers import send_mail
 
 
@@ -63,7 +65,8 @@ class Thread(models.Model):
                 context={
                     'thread': self,
                     'user': user,
-                    'new_post': self.posts.last() if post is None else post
+                    'new_post': self.posts.last() if post is None else post,
+                    **get_link_context(),
                 },
                 subject='New post in %s' % self.title,
                 html_file="forums/emails/new_post.html",

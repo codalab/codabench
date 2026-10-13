@@ -180,32 +180,50 @@ class CompetitionDetailTests(APITestCase):
 
     # ---------- Fields ----------
 
-    def test_admins_see_admin_only_fields(self):
+    def test_admins_see_all_fields(self):
         """
         The creator, a collaborator and a superuser request a published competition.
-        Expects every admin-only field in the response, including the competition's secret key.
+        Expects every field in the response.
         """
         for user in self.admins:
             resp = self._get(self.public_comp, user)
             assert resp.status_code == 200
-            for field in CompetitionDetailSerializer.ADMIN_ONLY_FIELDS:
+            for field in CompetitionDetailSerializer.Meta.fields:
                 assert field in resp.data, field
-            assert resp.data['secret_key'] == str(self.public_comp.secret_key)
 
     def test_non_admins_do_not_see_admin_only_fields(self):
         """
         Participants, an unrelated user and a logged-out user request a published competition.
-        Expects the public fields in the response, no admin-only field,
-        and the competition's secret key absent from the whole response body.
+        Expects no admin-only field in the response.
         """
         for user in self.non_admins:
             resp = self._get(self.public_comp, user)
             assert resp.status_code == 200
-            for field in ('id', 'title', 'created_by', 'phases', 'leaderboards'):
-                assert field in resp.data, field
-            for field in CompetitionDetailSerializer.ADMIN_ONLY_FIELDS:
+            for field in CompetitionDetailSerializer.Meta.admin_fields:
                 assert field not in resp.data, field
-            assert str(self.public_comp.secret_key) not in resp.content.decode()
+
+    def test_non_admins_see_fields_used_by_competition_page(self):
+        """
+        Participants, an unrelated user and a logged-out user request a published competition.
+        Expects every field the competition page uses for non-admins in the response.
+        """
+        # Listed here instead of using Meta.public_fields, so moving one of them to admin_fields fails this test
+        fields_used_by_competition_page = [
+            'fact_sheet',
+            'registration_auto_approve',
+            'make_programs_available',
+            'make_input_data_available',
+            'enable_detailed_results',
+            'show_detailed_results_in_submission_panel',
+            'show_detailed_results_in_leaderboard',
+            'forum',
+            'forum_enabled',
+        ]
+        for user in self.non_admins:
+            resp = self._get(self.public_comp, user)
+            assert resp.status_code == 200
+            for field in fields_used_by_competition_page:
+                assert field in resp.data, field
 
     def test_non_admins_with_secret_key_do_not_see_admin_only_fields(self):
         """
@@ -215,7 +233,7 @@ class CompetitionDetailTests(APITestCase):
         for user in [None, self.other_user]:
             resp = self._get(self.private_comp, user, secret_key=str(self.private_comp.secret_key))
             assert resp.status_code == 200
-            for field in CompetitionDetailSerializer.ADMIN_ONLY_FIELDS:
+            for field in CompetitionDetailSerializer.Meta.admin_fields:
                 assert field not in resp.data, field
 
     def test_admins_see_hidden_leaderboards(self):

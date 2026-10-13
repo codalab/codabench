@@ -3,7 +3,26 @@ from django.utils.timezone import now
 
 
 class Announcement(models.Model):
+    LEVEL_CRITICAL = "critical"
+    LEVEL_WARNING = "warning"
+    LEVEL_INFO = "info"
+    LEVEL_PLAIN = "plain"
+    LEVELS = [
+        (LEVEL_CRITICAL, "Critical"),
+        (LEVEL_WARNING, "Warning"),
+        (LEVEL_INFO, "Info"),
+        (LEVEL_PLAIN, "Plain"),
+    ]
+
+    title = models.CharField(max_length=200, blank=True)
     text = models.TextField(null=True, blank=True)
+    level = models.CharField(max_length=10, choices=LEVELS, default=LEVEL_INFO)
+    is_active = models.BooleanField(default=True)
+    priority = models.PositiveIntegerField(default=0, help_text="Lower priority is shown first.")
+    created_when = models.DateTimeField(default=now)
+
+    def __str__(self):
+        return self.title or f"Announcement {self.pk}"
 
 
 class NewsPost(models.Model):

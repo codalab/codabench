@@ -3,7 +3,7 @@
 {% block content %}
     <p>
         Thank you for your interest in the
-        <a href="http://{{ site.domain }}{{ participant.competition.get_absolute_url }}">{{ participant.competition.title }}</a>
+        <a href="{{ protocol }}://{{ domain }}{{ participant.competition.get_absolute_url }}">{{ participant.competition.title }}</a>
         competition. We have received your request to participate.
     </p>
     <p>

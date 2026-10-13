@@ -35,15 +35,25 @@
 {% block content %}
 
     <!-- Annoucement  -->
-    {% if announcement %}
-    <div style="margin:auto;" class="segment-container ui segment full-width">
+    {% if announcements %}
+    <div style="margin:auto;" class="segment-container ui segment full-width announcement-container">
         <div class="ui header">
             <p>Announcement</p>
         </div>
-        <div class="container-content">
-            <div class="center aligned column">
-                {{ announcement | safe }}
+        <div class="container-content announcements">
+        {% for a in announcements %}
+            {% if a.level == 'plain' %}
+            <div class="announcement plain">
+            {% else %}
+            <div class="ui icon message announcement {% if a.level == 'critical' %}negative{% elif a.level == 'warning' %}warning{% else %}info{% endif %}">
+                <i class="{% if a.level == 'critical' %}exclamation circle{% elif a.level == 'warning' %}exclamation triangle{% else %}info circle{% endif %} icon"></i>
+            {% endif %}
+                <div class="content">
+                    {% if a.title %}<div class="header">{{ a.title }}</div>{% endif %}
+                    {% if a.text %}<div class="announcement-body">{{ a.text|safe }}</div>{% endif %}
+                </div>
             </div>
+        {% endfor %}
         </div>
     </div>
     {% endif %}
