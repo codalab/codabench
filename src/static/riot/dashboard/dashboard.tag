@@ -50,6 +50,8 @@
         self.categoryFilters = [];
         self.chartCards = [];
         self.categoryTagsCounts = {};
+        self.showOrgsChart = false;
+        self.showCompsChart = false;
 
         self.kpis = {
             distinctOrganizers: 0,
@@ -244,16 +246,9 @@
             self.state.selectedTags = {};
             self.chartCards = [];
 
-            // Re-bind charts, using refs array for dynamically rendered canvas elements
-            self.availableCategories.forEach((cat, idx) => {
+            self.availableCategories.forEach((cat) => {
                 self.state.selectedTags[cat] = {};
-                self.chartCards.push({
-                    catName: cat,
-                    id: "chart_cat_" + idx
-                });
             });
-
-            self.kpis.categoriesPresent = self.availableCategories.length;
 
             mapped.forEach((comp) => {
                 comp.categoryColumns = self.availableCategories.map((cat) => {
@@ -509,6 +504,32 @@
                 });
             });
 
+            var oPairs = countOrgs(self.filteredCompetitions, 10);
+            self.showOrgsChart = oPairs.length > 0;
+
+            var cPairs = self.filteredCompetitions
+                .filter((c) => (c.participants_count || 0) > 0)
+                .map((c) => {
+                    var shortTitle = c.title.length > 25 ? c.title.substring(0, 25) + '...' : c.title;
+                    return [shortTitle, c.participants_count || 0];
+                })
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10);
+            self.showCompsChart = cPairs.length > 0;
+
+            self.chartCards = [];
+            self.availableCategories.forEach((cat, catIdx) => {
+                var counts = self.categoryTagsCounts[cat] || {};
+                var hasData = Object.keys(counts).some((k) => counts[k] > 0);
+                if (hasData) {
+                    self.chartCards.push({
+                        catName: cat,
+                        id: "chart_cat_" + cat.replace(/[^a-zA-Z0-9]/g, "_"),
+                        typeIdx: catIdx
+                    });
+                }
+            });
+
             self.totalPages = Math.max(1, Math.ceil(self.filteredCompetitions.length / self.pageSize));
             self.currentPage = Math.min(self.currentPage, self.totalPages);
             self.updatePagination();
@@ -537,21 +558,39 @@
         self.initOrUpdateCharts = () => {
             var rows = self.filteredCompetitions;
 
-            var oPairs = countOrgs(rows, 10);
-            self.renderHorizontalBar("chOrgs", oPairs, "#21ba45");
+            var visibleIds = new Set();
+            if (self.showOrgsChart) visibleIds.add("chOrgs");
+            if (self.showCompsChart) visibleIds.add("chComps");
+            self.chartCards.forEach((c) => visibleIds.add(c.id));
 
-            var cPairs = rows.map((c) => {
-                var shortTitle = c.title.length > 25 ? c.title.substring(0, 25) + '...' : c.title;
-                return [shortTitle, c.participants_count || 0];
+            Object.keys(self.charts).forEach((id) => {
+                if (!visibleIds.has(id)) {
+                    if (self.charts[id]) {
+                        self.charts[id].destroy();
+                        delete self.charts[id];
+                    }
+                }
             });
-            cPairs.sort((a, b) => {
-                return b[1] - a[1];
-            });
-            cPairs = cPairs.slice(0, 10);
-            self.renderHorizontalBar("chComps", cPairs, "#fbbd08");
 
-            // Re-bind charts, using refs array for dynamically rendered canvas elements
-            self.availableCategories.forEach((cat, idx) => {
+            if (self.showOrgsChart) {
+                var oPairs = countOrgs(rows, 10);
+                self.renderHorizontalBar("chOrgs", oPairs, "#21ba45");
+            }
+
+            if (self.showCompsChart) {
+                var cPairs = rows
+                    .filter((c) => (c.participants_count || 0) > 0)
+                    .map((c) => {
+                        var shortTitle = c.title.length > 25 ? c.title.substring(0, 25) + '...' : c.title;
+                        return [shortTitle, c.participants_count || 0];
+                    })
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 10);
+                self.renderHorizontalBar("chComps", cPairs, "#fbbd08");
+            }
+
+            self.chartCards.forEach((chart) => {
+                var cat = chart.catName;
                 var counts = self.categoryTagsCounts[cat] || {};
                 var pairs = Object.keys(counts).map((k) => {
                     return [k, counts[k]];
@@ -561,22 +600,14 @@
                 });
                 pairs = pairs.slice(0, 15);
 
-                var canvasId = "chart_cat_" + idx;
-
+                var canvasId = chart.id;
                 var el = document.getElementById(canvasId);
-                if (!el && self.refs.dynamicCharts) {
-                    if (Array.isArray(self.refs.dynamicCharts)) {
-                        el = self.refs.dynamicCharts[idx];
-                    } else if (idx === 0) {
-                        el = self.refs.dynamicCharts;
-                    }
-                }
-                var color = PALETTE[idx % PALETTE.length];
+                var color = PALETTE[chart.typeIdx % PALETTE.length];
 
                 if (el) {
-                    if (idx % 3 === 0) {
+                    if (chart.typeIdx % 3 === 0) {
                         self.renderHorizontalBarId(canvasId, pairs, color, el);
-                    } else if (idx % 3 === 1) {
+                    } else if (chart.typeIdx % 3 === 1) {
                         self.renderDoughnutId(canvasId, pairs, el);
                     } else {
                         self.renderVerticalBarId(canvasId, pairs, color, el);
@@ -586,7 +617,7 @@
         };
 
         self.renderHorizontalBar = (refName, pairs, color) => {
-            var el = self.refs[refName];
+            var el = (self.refs && self.refs[refName]) || document.getElementById(refName);
             if (!el) return;
             self.renderHorizontalBarId(refName, pairs, color, el);
         };
@@ -761,6 +792,15 @@
             link.click();
             URL.revokeObjectURL(link.href);
         };
+
+        self.on('unmount', () => {
+            Object.keys(self.charts).forEach((id) => {
+                if (self.charts[id]) {
+                    self.charts[id].destroy();
+                }
+            });
+            self.charts = {};
+        });
     </script>
 
     <style type="text/stylus" scoped>

@@ -27,19 +27,19 @@
     </div>
 
     <div class="ui stackable two column grid">
-        <div class="column">
+        <div class="column" if="{ opts.p.showOrgsChart }">
             <div class="ui segment chart-card">
                 <h4 class="ui header">Top Organizers</h4>
                 <div class="canvas-wrap">
-                    <canvas ref="chOrgs"></canvas>
+                    <canvas id="chOrgs" ref="chOrgs"></canvas>
                 </div>
             </div>
         </div>
-        <div class="column">
+        <div class="column" if="{ opts.p.showCompsChart }">
             <div class="ui segment chart-card">
                 <h4 class="ui header">Most Popular Competitions</h4>
                 <div class="canvas-wrap">
-                    <canvas ref="chComps"></canvas>
+                    <canvas id="chComps" ref="chComps"></canvas>
                 </div>
             </div>
         </div>
@@ -54,14 +54,14 @@
     </div>
     <script>
         var self = this;
-        self.on('mount', () => {
-            opts.p.refs.chOrgs = self.refs.chOrgs;
-            opts.p.refs.chComps = self.refs.chComps;
-            opts.p.refs.dynamicCharts = self.refs.dynamicCharts;
-        });
-        self.on('updated', () => {
-            // Ensure refs are synced after updates (for dynamic array refs)
-            opts.p.refs.dynamicCharts = self.refs.dynamicCharts;
-        });
+        function syncRefs() {
+            if (opts.p && opts.p.refs) {
+                opts.p.refs.chOrgs = self.refs.chOrgs;
+                opts.p.refs.chComps = self.refs.chComps;
+                opts.p.refs.dynamicCharts = self.refs.dynamicCharts;
+            }
+        }
+        self.on('mount', syncRefs);
+        self.on('updated', syncRefs);
     </script>
 </dashboard-charts>
