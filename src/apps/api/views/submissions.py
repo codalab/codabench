@@ -356,12 +356,8 @@ class SubmissionViewSet(ModelViewSet):
         if not self.has_admin_permission(request.user, submission):
             raise PermissionDenied('You do not have permission to re-run submissions')
 
-        # We want to avoid re-running a submission that isn't finished yet, because the tasks associated
-        # with the submission and maybe other important details have not been finalized yet. I.e. if you
-        # rapidly click the "re-run submission" button, a submission may not have been processed by a
-        # site worker and be in a funky state (race condition) -- this should resolve that
-        if submission.status not in (Submission.FINISHED, Submission.FAILED, Submission.CANCELLED):
-            raise PermissionDenied('Cannot request a re-run on a submission that has not finished processing.')
+        if submission.is_soft_deleted:
+            raise PermissionDenied('Cannot re-run a deleted submission')
 
         # Rerun submission on different task. Will flag submission with is_specific_task_re_run=True
         if task_key:
