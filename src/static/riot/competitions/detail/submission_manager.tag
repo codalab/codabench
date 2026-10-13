@@ -769,7 +769,7 @@
         }
 
         self.delete_submission = function (submission) {
-            if (confirm(`Are you sure you want to delete submission: ${submission.filename}?`)) {
+            if (confirm(`Permanently delete submission '${submission.filename}'? This cannot be undone.`)) {
                 CODALAB.api.delete_submission(submission.id)
                     .done(function (response) {
                         toastr.success('Submission deleted')
@@ -780,7 +780,7 @@
         }
 
         self.soft_delete_submission = function (submission) {
-            if (confirm(`Are you sure you want to delete your submission: ${submission.filename}?`)) {
+            if (confirm(`Delete your submission '${submission.filename}'? Its results, logs, scores and submitted file will be deleted permanently. It will no longer appear in your submissions, but it still counts toward your submission limits. This cannot be undone.`)) {
                 CODALAB.api.soft_delete_submission(submission.id)
                     .done(function (response) {
                         toastr.success(response.message || 'Submission deleted successfully');
@@ -798,7 +798,7 @@
         }
 
         self.delete_selected_submissions = function () {
-            if (confirm(`Are you sure you want to delete the selected submissions?`)) {
+            if (confirm(`Permanently delete the ${self.checked_submissions.length} selected submissions? This cannot be undone.`)) {
                 CODALAB.api.delete_many_submissions(self.checked_submissions)
                     .done(function (response) {
                         toastr.success('Submissions deleted')
