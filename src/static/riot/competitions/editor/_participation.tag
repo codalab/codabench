@@ -58,6 +58,11 @@
                 <span class="ui grey label">Queue: { group.queue || "None" }</span>
                 <span class="ui grey label">Membres: { group.members && group.members.length > 0 ? group.members.length : 0 }</span>
               </div>
+              <span class="ui { group.is_selectable_by_participant ? 'grey' : 'grey' } tiny label participant-choice-badge">
+                <i class="{ group.is_selectable_by_participant ? 'open lock' : 'lock' } large icon" 
+                  title="{ group.is_selectable_by_participant ? 'Participant can deactivate the group' : 'Group always active' }">
+                </i>
+              </span>
               <div class="members-chips" if="{ group.members && group.members.length }">
                 <span class="ui tiny label" each="{m in group.members}">
                   { m }
@@ -113,6 +118,14 @@
             <small class="muted">You can search and select multiple participants</small>
           </div>
         </div>
+
+        <div class="field">
+          <div class="ui checkbox">
+            <input type="checkbox" ref="group_selectable" id="group_selectable">
+            <label for="group_selectable">Show group selection for participant</label>
+          </div>
+        </div>
+
         <div class="ui error message" ref="group_modal_error" style="display:none;"></div>
       </div>
     </div>
@@ -337,15 +350,16 @@
     })
 
     self.open_create_group = () => {
-      self.editing_group = null
-      clearModalError()
-      try { self.refs.group_name.value = '' } catch(e) {}
-      try { $(self.refs.group_queue).dropdown('clear') } catch(e) {}
-      try { $(self.refs.group_user_select).dropdown('clear') } catch(e) {}
-      try { self.refs.selected_count.textContent = '0' } catch(e) {}
-      self.group_queue_has_value = false
-      self.update()
-      try { $(self.refs.group_modal).modal({ closable: true }).modal('show') } catch(e) { self.refs.group_modal.style.display = 'block' }
+        self.editing_group = null
+        clearModalError()
+        try { self.refs.group_name.value = '' } catch(e) {}
+        try { $(self.refs.group_queue).dropdown('clear') } catch(e) {}
+        try { $(self.refs.group_user_select).dropdown('clear') } catch(e) {}
+        try { self.refs.selected_count.textContent = '0' } catch(e) {}
+        try { $(self.refs.group_selectable).closest('.ui.checkbox').checkbox('set unchecked') } catch(e) {}
+        self.group_queue_has_value = false
+        self.update()
+        try { $(self.refs.group_modal).modal({ closable: true }).modal('show') } catch(e) { self.refs.group_modal.style.display = 'block' }
     }
 
     self.open_edit_group = (group) => {
@@ -355,33 +369,41 @@
       try { self.refs.group_name.value = group.name || '' } catch(e) {}
 
       try {
-        let queueId = null
-        if (group.queue_id) queueId = group.queue_id
-        else if (group.queue) {
-          const qFound = (self.available_queues || []).find(x => x.name === group.queue)
-          if (qFound) queueId = qFound.id
-        }
-        if (queueId && group.queue) {
-            $(self.refs.group_queue).dropdown('set text', String(group.queue))
-            $(self.refs.group_queue).dropdown('set value', String(queueId))
-            self.group_queue_has_value = true
-        } else {
-            $(self.refs.group_queue).dropdown('clear')
-            self.group_queue_has_value = false   // NOUVEAU
-        }
+          let queueId = null
+          if (group.queue_id) queueId = group.queue_id
+          else if (group.queue) {
+              const qFound = (self.available_queues || []).find(x => x.name === group.queue)
+              if (qFound) queueId = qFound.id
+          }
+          if (queueId && group.queue) {
+              $(self.refs.group_queue).dropdown('set text', String(group.queue))
+              $(self.refs.group_queue).dropdown('set value', String(queueId))
+              self.group_queue_has_value = true
+          } else {
+              $(self.refs.group_queue).dropdown('clear')
+              self.group_queue_has_value = false
+          }
       } catch(e) {}
 
       try {
-        const memberIds = membersToIds(group.members || [])
-        if (memberIds.length) {
-          $(self.refs.group_user_select).dropdown('set selected', memberIds)
-          try { self.refs.selected_count.textContent = memberIds.length } catch(e) {}
-        } else {
-          $(self.refs.group_user_select).dropdown('clear')
-          try { self.refs.selected_count.textContent = '0' } catch(e) {}
-        }
+          const memberIds = membersToIds(group.members || [])
+          if (memberIds.length) {
+              $(self.refs.group_user_select).dropdown('set selected', memberIds)
+              try { self.refs.selected_count.textContent = memberIds.length } catch(e) {}
+          } else {
+              $(self.refs.group_user_select).dropdown('clear')
+              try { self.refs.selected_count.textContent = '0' } catch(e) {}
+          }
       } catch(e) { console.warn('prefill members failed', e) }
+
       self.update()
+      try {
+          const $checkboxDiv = $(self.refs.group_selectable).closest('.ui.checkbox')
+          $checkboxDiv.checkbox(group.is_selectable_by_participant ? 'set checked' : 'set unchecked')
+      } catch(e) {
+          try { self.refs.group_selectable.checked = !!group.is_selectable_by_participant } catch(e2) {}
+      }
+
       try { $(self.refs.group_modal).modal({ closable: true }).modal('show') } catch(e) { self.refs.group_modal.style.display = 'block' }
     }
 
@@ -403,6 +425,8 @@
       try { queue_id = $(self.refs.group_queue).dropdown('get value') || null } catch(e) {
         queue_id = (self.refs.group_queue && self.refs.group_queue.value) || null
       }
+
+      let is_selectable_by_participant = !!(self.refs.group_selectable && self.refs.group_selectable.checked)
 
       let user_ids = []
       try {
@@ -431,6 +455,7 @@
       const form = new FormData()
       form.append('name', name)
       if (queue_id) form.append('queue_id', queue_id)
+      form.append('is_selectable_by_participant', is_selectable_by_participant ? 'true' : 'false')
       for (let i = 0; i < user_ids.length; i++) form.append('user_ids[]', user_ids[i])
 
       fetch(url, {
@@ -658,6 +683,13 @@
     }
     .field help_button, .field help_button * {
       vertical-align: middle;
+    }
+    .participant-choice-badge {
+      margin-left: 0.5rem;
+      font-weight: 500;
+    }
+    .participant-choice-badge .icon {
+      margin-right: 0.3em;
     }
   </style>
 </competition-participation>

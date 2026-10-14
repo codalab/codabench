@@ -116,7 +116,7 @@ class LeaderboardEntriesSerializer(serializers.ModelSerializer):
             .prefetch_related(
                 Prefetch(
                     'scores',
-                    queryset=SubmissionScore.objects.select_related(
+                    queryset=SubmissionScore.objects.filter(column__hidden=False).select_related(
                         'column',
                         'column__leaderboard',
                     ),

@@ -356,12 +356,8 @@ class SubmissionViewSet(ModelViewSet):
         if not self.has_admin_permission(request.user, submission):
             raise PermissionDenied('You do not have permission to re-run submissions')
 
-        # We want to avoid re-running a submission that isn't finished yet, because the tasks associated
-        # with the submission and maybe other important details have not been finalized yet. I.e. if you
-        # rapidly click the "re-run submission" button, a submission may not have been processed by a
-        # site worker and be in a funky state (race condition) -- this should resolve that
-        if submission.status not in (Submission.FINISHED, Submission.FAILED, Submission.CANCELLED):
-            raise PermissionDenied('Cannot request a re-run on a submission that has not finished processing.')
+        if submission.is_soft_deleted:
+            raise PermissionDenied('Cannot re-run a deleted submission')
 
         # Rerun submission on different task. Will flag submission with is_specific_task_re_run=True
         if task_key:
@@ -388,6 +384,50 @@ class SubmissionViewSet(ModelViewSet):
             submission.re_run()
         return Response({})
 
+    @action(detail=True, methods=('POST',))
+    def migrate_to_phase(self, request, pk):
+        submission = self.get_object()
+
+        if not self.has_admin_permission(request.user, submission):
+            raise PermissionDenied('You do not have permission to migrate this submission')
+
+        if submission.parent_id is not None:
+            raise PermissionDenied('Only parent submissions can be migrated individually')
+
+        if submission.status != Submission.FINISHED:
+            raise PermissionDenied('Cannot migrate a submission that has not finished processing')
+
+        destination_phase_id = request.data.get('destination_phase_id')
+        if not destination_phase_id:
+            raise ValidationError('destination_phase_id is required')
+
+        destination_phase = get_object_or_404(
+            Phase,
+            pk=destination_phase_id,
+            competition=submission.phase.competition
+        )
+
+        if destination_phase.index <= submission.phase.index:
+            raise ValidationError('Destination phase must be a future phase relative to the current one')
+
+        tasks_to_migrate = submission.get_tasks_to_migrate()
+        if not tasks_to_migrate:
+            raise ValidationError('No successfully finished tasks to migrate for this submission')
+
+        new_submission = Submission(
+            created_by_migration=submission.phase,
+            participant=submission.participant,
+            phase=destination_phase,
+            owner=submission.owner,
+            data=submission.data,
+            organization=submission.organization,
+        )
+        new_submission.save(ignore_submission_limit=True)
+        new_submission.start(tasks=tasks_to_migrate)
+
+        return Response({'id': new_submission.id})
+
+    # TODO: The 3 functions download many should be bundled inside a genereic with the function like "get_prediction_result" as a parameter instead of the same code 3 times
     @action(detail=False, methods=('POST',))
     def download_many_submissions(self, request):
         return self._download_many_files(request=request, file_type='submission')
