@@ -126,6 +126,7 @@
                                 <a class="item" href="{% url 'competitions:management' %}"><i class="icon bi bi-trophy"></i>Competitions</a>
                                 <a selenium="resources" class="item" href="{% url 'tasks:task_management' %}"><i class="icon bi bi-folder"></i>Resources</a>
                                 <a class="item" href="{% url 'queues:management' %}"><i class="icon bi bi-hourglass"></i>Queues</a>
+                                <a class="item" href="{% url 'consulting:my_listing' %}"><i class="icon bi bi-briefcase"></i>Consulting Listing</a>
                                 <div class="ui divider"></div>
                                 <!-- Account -->
                                 <div class="header">Account</div>
@@ -314,6 +315,9 @@
             },
             // External Competitions - empty string when the feature is disabled
             EXTERNAL_COMPETITIONS_PUBLIC: "{% if EXTERNAL_COMPETITIONS_ENABLED %}{% url 'external_competitions:public' %}{% endif %}",
+            // Consulting
+            CONSULTING_PUBLIC: "{% url 'consulting:public' %}",
+            CONSULTING_MY_LISTING: "{% url 'consulting:my_listing' %}",
             // Forums
             FORUM: function (pk) {
                 return "{% url "forums:forum_detail" forum_pk=0 %}".replace(0, pk)

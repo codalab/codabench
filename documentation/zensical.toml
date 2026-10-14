@@ -37,7 +37,8 @@ nav = [
             {"Compute Worker Management with Podman" = "Organizers/Running_a_benchmark/Compute-worker-installation-with-Podman.md"},
             {"Server Status" = "Organizers/Running_a_benchmark/Server-status-page.md"},
             {"Human in the loop" = "Organizers/Running_a_benchmark/Competition-HITL.md"}
-        ]}
+        ]},
+        {"Consulting" = "Organizers/Consulting.md"}
     ]},
     {"Developers" = [
         {"Codabench Basic Installation Guide" = "Developers_and_Administrators/Codabench-Installation.md"},

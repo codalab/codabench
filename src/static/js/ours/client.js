@@ -418,4 +418,35 @@ CODALAB.api = {
     get_external_competition_platforms: function () {
         return CODALAB.api.request('GET', URLS.API + "external_competitions/platforms/")
     },
+    /*---------------------------------------------------------------------
+         Consulting
+    ---------------------------------------------------------------------*/
+    get_consulting_listings: function (query) {
+        return CODALAB.api.request('GET', URLS.API + "consulting/", query)
+    },
+    get_my_consulting_listing: function () {
+        return CODALAB.api.request('GET', URLS.API + "consulting/mine/")
+    },
+    // form_data is a FormData, so the picture is uploaded as a file
+    create_my_consulting_listing: function (form_data) {
+        return $.ajax({
+            type: 'POST',
+            url: URLS.API + "consulting/mine/",
+            data: form_data,
+            processData: false,
+            contentType: false
+        })
+    },
+    update_my_consulting_listing: function (form_data) {
+        return $.ajax({
+            type: 'PATCH',
+            url: URLS.API + "consulting/mine/",
+            data: form_data,
+            processData: false,
+            contentType: false
+        })
+    },
+    delete_my_consulting_listing: function () {
+        return CODALAB.api.request('DELETE', URLS.API + "consulting/mine/")
+    },
 }

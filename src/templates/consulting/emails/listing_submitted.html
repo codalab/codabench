@@ -1,0 +1,13 @@
+{% extends 'emails/base_email.html' %}
+
+{% block content %}
+<p>You are receiving this notice because you are an administrator of the platform.</p>
+<p>
+    The user <strong>{{ listing.owner.username }}</strong> ({{ listing.owner.email }}) has
+    {% if resubmitted %}updated{% else %}submitted{% endif %} the consulting listing
+    <strong>{{ listing.title }}</strong>. It is waiting for review.
+</p>
+<p>
+    <a href="{{ protocol }}://{{ domain }}{% url 'admin:consulting_consultinglisting_change' listing.pk %}">Review the listing</a>
+</p>
+{% endblock %}
