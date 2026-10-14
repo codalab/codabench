@@ -16,13 +16,19 @@
             <i class="icon download"></i>Download as CSV
             </a>
 
-            <select class="ui dropdown" ref="submission_handling_operation">
-            <option value="download_submissions">Download selected submissions</option>
-            <option value="download_prediction_results">Download prediction results of selected submissions</option>
-            <option value="download_scoring_results">Download scoring results of selected submissions</option>
-            <option value="delete">Delete selected submissions</option>
-            <option value="rerun">Rerun selected submissions</option>
-            <option value="resubmit">Resubmit selected submissions on current tasks</option>
+            <select class="ui dropdown" ref="submission_handling_operation" onchange="{ on_operation_changed }">
+                <option value="download_submissions">Download selected submissions</option>
+                <option value="download_prediction_results">Download prediction results of selected submissions</option>
+                <option value="download_scoring_results">Download scoring results of selected submissions</option>
+                <option value="delete">Delete selected submissions</option>
+                <option value="rerun">Rerun selected submissions</option>
+                <option value="resubmit">Resubmit selected submissions on current tasks</option>
+                    <option value="migrate">Migrate selected submissions</option>
+                </select>
+
+                <select if="{ selected_operation === 'migrate' }" class="ui dropdown" ref="migrate_target_phase">
+                    <option value="">Destination phase…</option>
+                    <option each="{ phase in opts.competition.phases }" value="{ phase.id }">{ phase.name }</option>
             </select>
 
             <button type="button" class="ui button" disabled="{checked_submissions.length === 0}" onclick="{submission_handling.bind(this)}">
@@ -591,6 +597,38 @@
                 .always(function () {
                     self.migrating = false
                     self.update()
+                })
+        }
+
+
+        self.selected_operation = 'download_submissions'
+
+        self.on_operation_changed = function (event) {
+            self.selected_operation = event.target.value
+            self.update()
+        }
+
+        self.migrate_selected_submissions = function () {
+            let phase_id = self.refs.migrate_target_phase && self.refs.migrate_target_phase.value
+            if (!phase_id) {
+                toastr.error('Select a destination phase first')
+                return
+            }
+            let phase = _.find(opts.competition.phases, p => String(p.id) === String(phase_id))
+            let count = self.checked_submissions.length
+            if (!confirm(`Migrate ${count} selected submission(s) to phase "${phase.name}"?`)) return
+
+            CODALAB.api.migrate_many_submissions(self.checked_submissions, phase.id)
+                .done(function (response) {
+                    let skipped = response.skipped || []
+                    toastr.success(`${response.migrated.length} submission(s) migrated`)
+                    if (skipped.length > 0) {
+                        toastr.warning(skipped.map(s => `#${s.id}: ${s.reason}`).join('<br>'))
+                    }
+                    self.update_submissions()
+                })
+                .fail(function (response) {
+                    toastr.error(self.error_message(response, 'Error migrating submissions'))
                 })
         }
 
@@ -1229,7 +1267,6 @@
         };
 
         self.submission_handling = function () {
-            // console.log(self.checked_submissions)
             if (self.checked_submissions.length === 0) {
                 console.log("no submission is selected");
             } else {
@@ -1252,6 +1289,9 @@
                         break
                     case "resubmit":
                         self.resubmit_selected_submissions()
+                        break
+                    case "migrate":
+                        self.migrate_selected_submissions()
                         break
                     default:
                         console.log("should never be in this state of default..")

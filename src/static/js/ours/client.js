@@ -151,6 +151,12 @@ CODALAB.api = {
             data: JSON.stringify({ destination_phase_id: destination_phase_id }),
         })
     },
+    migrate_many_submissions: function (pks, destination_phase_id) {
+        return CODALAB.api.request('POST', `${URLS.API}submissions/migrate_many_submissions/`, {
+            pks: pks,
+            destination_phase_id: destination_phase_id
+        })
+    },
 
     /*---------------------------------------------------------------------
          Leaderboards
