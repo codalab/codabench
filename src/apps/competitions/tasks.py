@@ -901,6 +901,7 @@ def do_phase_migrations():
         parent__isnull=True,
         status=Submission.SUBMITTING,
         created_by_migration__isnull=False,
+        phase__competition__is_migrating=False,
         phase__start__lte=now(),
         has_children=False,
     ).select_related('phase')
