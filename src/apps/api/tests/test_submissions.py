@@ -147,121 +147,6 @@ class SubmissionAPITests(APITestCase):
         assert resp.status_code == 403
         assert resp.data["detail"] == "You cannot delete a leaderboard submission!"
 
-    def test_no_one_can_see_detailed_result_when_visualization_is_false(self):
-        self.comp.enable_detailed_results = False
-        self.comp.save()
-        url = reverse('submission-get-detail-result', args=(self.existing_submission.pk,))
-
-        # Competition creator cannot see detail result
-        self.client.force_login(self.creator)
-        resp = self.client.get(url)
-        assert resp.status_code == 404
-
-        # Collaborator cannot see detail result
-        self.client.force_login(self.collaborator)
-        resp = self.client.get(url)
-        assert resp.status_code == 404
-
-        # Superuser cannot see detail result
-        self.client.force_login(self.superuser)
-        resp = self.client.get(url)
-        assert resp.status_code == 404
-
-        # Actual user cannot see their submission detail result
-        self.client.force_login(self.participant)
-        resp = self.client.get(url)
-        assert resp.status_code == 404
-
-        # Regular user cannot see submission detail result
-        self.client.force_login(self.other_user)
-        resp = self.client.get(url)
-        assert resp.status_code == 404
-
-    def test_who_can_see_detailed_result_when_visualization_is_true_and_competition_is_private(self):
-        self.comp.enable_detailed_results = True
-        self.comp.published = False
-        self.comp.save()
-
-        url = reverse("submission-get-detail-result", args=(self.existing_submission.pk,))
-
-        # Anonymous user cannot see submission detail result
-        resp = self.client.get(url)
-        assert resp.status_code == 403
-
-        # Competition creator can see detail result
-        self.client.force_login(self.creator)
-        resp = self.client.get(url)
-        assert resp.status_code == 200
-
-        # Collaborator can see detail result
-        self.client.force_login(self.collaborator)
-        resp = self.client.get(url)
-        assert resp.status_code == 200
-
-        # Superuser can see detail result
-        self.client.force_login(self.superuser)
-        resp = self.client.get(url)
-        assert resp.status_code == 200
-
-        # Approved user can see submission detail result
-        self.client.force_login(self.participant)
-        resp = self.client.get(url)
-        assert resp.status_code == 200
-
-        # Pending user cannot see submission detail result
-        self.client.force_login(self.pending_participant)
-        resp = self.client.get(url)
-        assert resp.status_code == 403
-
-        # Denied user cannot see submission detail result
-        self.client.force_login(self.denied_participant)
-        resp = self.client.get(url)
-        assert resp.status_code == 403
-
-        # Regular user cannot see submission detail result
-        self.client.force_login(self.other_user)
-        resp = self.client.get(url)
-        assert resp.status_code == 403
-
-    def test_who_can_see_detailed_result_when_visualization_is_true_and_competition_is_public(self):
-        self.comp.enable_detailed_results = True
-        self.comp.published = True
-        self.comp.save()
-
-        url = reverse("submission-get-detail-result", args=(self.existing_submission.pk,))
-
-        # Detailed results are publicly available
-        resp = self.client.get(url)
-        assert resp.status_code == 200
-
-        self.client.force_login(self.creator)
-        resp = self.client.get(url)
-        assert resp.status_code == 200
-
-        self.client.force_login(self.collaborator)
-        resp = self.client.get(url)
-        assert resp.status_code == 200
-
-        self.client.force_login(self.superuser)
-        resp = self.client.get(url)
-        assert resp.status_code == 200
-
-        self.client.force_login(self.participant)
-        resp = self.client.get(url)
-        assert resp.status_code == 200
-
-        self.client.force_login(self.pending_participant)
-        resp = self.client.get(url)
-        assert resp.status_code == 200
-
-        self.client.force_login(self.denied_participant)
-        resp = self.client.get(url)
-        assert resp.status_code == 200
-
-        self.client.force_login(self.other_user)
-        resp = self.client.get(url)
-        assert resp.status_code == 200
-
     def test_anonymous_cannot_list_or_retrieve_submissions(self):
         """
         SubmissionViewSet's general list/retrieve endpoints must not leak submission
@@ -451,6 +336,232 @@ class SubmissionGetDetailsAPITests(APITestCase):
         resp = self.client.get(url)
         assert resp.status_code == 200
         assert resp.data['detailed_result'] is None
+
+
+class SubmissionGetDetailResultAPITests(APITestCase):
+    """
+    Tests for the submission detailed result API, grouped by who is requesting:
+    admins (creator, collaborators, superusers), approved participants and everyone else.
+    """
+    def setUp(self):
+        self.creator = UserFactory(username='creator', password='creator')
+        self.collaborator = UserFactory(username='collab', password='collab')
+        self.superuser = UserFactory(is_superuser=True, is_staff=True)
+
+        # Public competition with detailed results enabled and shown in the leaderboard
+        self.comp = CompetitionFactory(
+            created_by=self.creator,
+            collaborators=[self.collaborator],
+            published=True,
+            enable_detailed_results=True,
+            show_detailed_results_in_leaderboard=True,
+        )
+        self.phase = PhaseFactory(competition=self.comp)
+        self.leaderboard = LeaderboardFactory()
+
+        # Approved participants: one owns the submissions, the other owns none
+        self.owner = UserFactory(username='participant_owner', password='other')
+        self.other_participant = UserFactory(username='participant_approved', password='other')
+        CompetitionParticipantFactory(user=self.owner, competition=self.comp, status=CompetitionParticipant.APPROVED)
+        CompetitionParticipantFactory(user=self.other_participant, competition=self.comp, status=CompetitionParticipant.APPROVED)
+
+        # Users who are not approved participants
+        self.pending_participant = UserFactory(username='participant_pending', password='other')
+        self.denied_participant = UserFactory(username='participant_denied', password='other')
+        self.other_user = UserFactory(username='other_user', password='other')
+        CompetitionParticipantFactory(user=self.pending_participant, competition=self.comp, status=CompetitionParticipant.PENDING)
+        CompetitionParticipantFactory(user=self.denied_participant, competition=self.comp, status=CompetitionParticipant.DENIED)
+
+        # Submission that is NOT on the leaderboard
+        self.submission = SubmissionFactory(
+            phase=self.phase,
+            owner=self.owner,
+            status=Submission.FINISHED,
+            leaderboard=None
+        )
+
+        # Submission that is on the leaderboard
+        self.leaderboard_submission = SubmissionFactory(
+            phase=self.phase,
+            owner=self.owner,
+            status=Submission.FINISHED,
+            leaderboard=self.leaderboard
+        )
+
+        # Submission that is soft-deleted
+        self.soft_deleted_submission = SubmissionFactory(
+            phase=self.phase,
+            owner=self.owner,
+            status=Submission.FINISHED,
+            is_soft_deleted=True,
+            leaderboard=None
+        )
+
+        # None means a logged-out user
+        self.admins = [self.creator, self.collaborator, self.superuser]
+        self.participants = [self.owner, self.other_participant]
+        self.non_participants = [None, self.pending_participant, self.denied_participant, self.other_user]
+
+    def _get(self, submission, user=None):
+        """Request the detailed result of `submission` as `user`, or logged out when `user` is None."""
+        self.client.logout()
+        if user:
+            self.client.force_login(user)
+        return self.client.get(reverse('submission-get-detail-result', args=(submission.pk,)))
+
+    # ---------- Everyone ----------
+
+    def test_no_one_can_see_detailed_result_when_detailed_results_are_disabled(self):
+        """
+        Admins, approved participants and everyone else request the detailed result of a leaderboard submission
+        of a competition that has detailed results disabled.
+        Expects a 404 response for all of them.
+        """
+        self.comp.enable_detailed_results = False
+        self.comp.save()
+
+        for user in self.admins + self.participants + self.non_participants:
+            assert self._get(self.leaderboard_submission, user).status_code == 404
+
+    def test_no_one_can_see_detailed_result_of_submission_that_does_not_exist(self):
+        """
+        Admins, approved participants and everyone else request the detailed result
+        with a submission id that does not exist.
+        Expects a 404 response for all of them.
+        """
+        # Unsaved submission with an id that is not in the database
+        invalid_id = Submission.objects.order_by('-pk').first().pk + 1
+        missing_submission = Submission(pk=invalid_id)
+
+        for user in self.admins + self.participants + self.non_participants:
+            assert self._get(missing_submission, user).status_code == 404
+
+    def test_no_one_can_see_detailed_result_of_soft_deleted_submission(self):
+        """
+        Admins, approved participants and everyone else request the detailed result
+        of a submission that is soft-deleted.
+        Expects a 404 response for all of them.
+        """
+        for user in self.admins + self.participants + self.non_participants:
+            assert self._get(self.soft_deleted_submission, user).status_code == 404
+
+    # ---------- Admins ----------
+
+    def test_admins_can_see_any_detailed_result(self):
+        """
+        The creator, a collaborator and a superuser request the detailed result of a submission that is on
+        the leaderboard and of one that is not, in a private competition that does not show detailed results
+        in the leaderboard and whose phase hides output.
+        Expects a 200 response for all of them on both submissions.
+        """
+        self.comp.published = False
+        self.comp.show_detailed_results_in_leaderboard = False
+        self.comp.save()
+        self.phase.hide_output = True
+        self.phase.save()
+
+        for user in self.admins:
+            assert self._get(self.submission, user).status_code == 200
+            assert self._get(self.leaderboard_submission, user).status_code == 200
+
+    # ---------- Approved participants ----------
+
+    def test_participant_can_see_detailed_result_of_own_submission(self):
+        """
+        An approved participant requests the detailed result of their own submission
+        that is not on the leaderboard, in a phase that does not hide output.
+        Expects a 200 response.
+        """
+        assert self._get(self.submission, self.owner).status_code == 200
+
+    def test_participant_can_see_detailed_result_of_leaderboard_submission_of_private_competition(self):
+        """
+        An approved participant requests the detailed result of someone else's submission
+        that is on the leaderboard of a private competition.
+        Expects a 200 response.
+        """
+        self.comp.published = False
+        self.comp.save()
+
+        assert self._get(self.leaderboard_submission, self.other_participant).status_code == 200
+
+    def test_participant_cannot_see_detailed_result_of_other_submission_not_on_leaderboard(self):
+        """
+        An approved participant requests the detailed result of someone else's submission
+        that is not on the leaderboard.
+        Expects a 403 response.
+        """
+        assert self._get(self.submission, self.other_participant).status_code == 403
+
+    def test_participants_cannot_see_detailed_result_when_phase_hides_output(self):
+        """
+        The owner and another approved participant request the detailed result of a leaderboard submission
+        in a phase that hides output.
+        Expects a 403 response for both.
+        """
+        self.phase.hide_output = True
+        self.phase.save()
+
+        for user in self.participants:
+            assert self._get(self.leaderboard_submission, user).status_code == 403
+
+    # ---------- Everyone else ----------
+
+    def test_non_participants_can_see_detailed_result_of_leaderboard_submission_of_public_competition(self):
+        """
+        A logged-out user, a pending participant, a denied participant and an unrelated user request
+        the detailed result of a leaderboard submission of a public competition
+        that shows detailed results in the leaderboard.
+        Expects a 200 response for all of them.
+        """
+        for user in self.non_participants:
+            assert self._get(self.leaderboard_submission, user).status_code == 200
+
+    def test_non_participants_cannot_see_detailed_result_of_private_competition(self):
+        """
+        A logged-out user, a pending participant, a denied participant and an unrelated user request
+        the detailed result of a leaderboard submission of a private competition.
+        Expects a 403 response for all of them.
+        """
+        self.comp.published = False
+        self.comp.save()
+
+        for user in self.non_participants:
+            assert self._get(self.leaderboard_submission, user).status_code == 403
+
+    def test_non_participants_cannot_see_detailed_result_when_not_shown_in_leaderboard(self):
+        """
+        A logged-out user, a pending participant, a denied participant and an unrelated user request
+        the detailed result of a leaderboard submission of a public competition
+        that does not show detailed results in the leaderboard.
+        Expects a 403 response for all of them.
+        """
+        self.comp.show_detailed_results_in_leaderboard = False
+        self.comp.save()
+
+        for user in self.non_participants:
+            assert self._get(self.leaderboard_submission, user).status_code == 403
+
+    def test_non_participants_cannot_see_detailed_result_of_submission_not_on_leaderboard(self):
+        """
+        A logged-out user, a pending participant, a denied participant and an unrelated user request
+        the detailed result of a submission of a public competition that is not on the leaderboard.
+        Expects a 403 response for all of them.
+        """
+        for user in self.non_participants:
+            assert self._get(self.submission, user).status_code == 403
+
+    def test_non_participants_cannot_see_detailed_result_when_phase_hides_output(self):
+        """
+        A logged-out user, a pending participant, a denied participant and an unrelated user request
+        the detailed result of a leaderboard submission of a public competition in a phase that hides output.
+        Expects a 403 response for all of them.
+        """
+        self.phase.hide_output = True
+        self.phase.save()
+
+        for user in self.non_participants:
+            assert self._get(self.leaderboard_submission, user).status_code == 403
 
 
 class SubmissionUpdateTest(APITestCase):
