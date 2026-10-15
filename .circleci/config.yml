@@ -74,15 +74,6 @@ jobs:
     steps:
       - checkout
       - run:
-          name: "Docker: Pull required images otherwise E2E tests fail"
-          command: |
-            docker pull codalab/codalab-legacy:py312
-            docker pull codalab/codalab-legacy:py37
-            docker pull codalab/codalab-legacy:py3
-            docker pull vergilgxw/autotable:v2
-          background: true
-
-      - run:
           name: "Setup: Copy environment variables"
           command: |
             cp .env_circleci .env
@@ -108,11 +99,21 @@ jobs:
             curl -LsSf https://astral.sh/uv/install.sh | sh
             $HOME/.local/bin/uv sync --frozen
             $HOME/.local/bin/uv run playwright install
+          background: true
 
       - run:
           name: "Docker: Build containers and collect static files"
           command: |
             docker compose up -d
+          background: true
+
+      - run:
+          name: "Docker: Pull required images otherwise E2E tests fail"
+          command: |
+            docker pull codalab/codalab-legacy:py312
+            docker pull codalab/codalab-legacy:py37
+            docker pull codalab/codalab-legacy:py3
+            docker pull vergilgxw/autotable:v2
 
       # We give the name of the test files manually because we need test_auth.py to be run before the others for state.json file to be created
       - run:
