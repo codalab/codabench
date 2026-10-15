@@ -371,7 +371,7 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [os.environ.get("REDIS_URL", "redis://redis:6379")],
+            "hosts": [{"address": os.environ.get("REDIS_URL", "redis://redis:6379"), "socket_timeout": None}],
 
             # To hold large submission outputs
             "capacity": 1500,  # default 100
