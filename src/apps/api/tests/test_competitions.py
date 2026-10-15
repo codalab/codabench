@@ -5,13 +5,21 @@ import uuid
 from zipfile import ZipFile
 from io import StringIO, BytesIO
 from unittest import mock
+from urllib.parse import urlencode
 from django.urls import reverse
 from rest_framework.test import APITestCase
 
 from api.serializers.competitions import CompetitionSerializer, CompetitionDetailSerializer
-from competitions.models import CompetitionParticipant, Submission, Competition
+from competitions.models import CompetitionParticipant, Submission, Competition, CompetitionCreationTaskStatus, \
+    CompetitionDump, SubmissionDetails, Phase, PhaseTaskInstance, Page, CompetitionWhiteListEmail
+from datasets.models import Data
+from django.contrib.auth.models import Group
+from forums.models import Forum, Thread, Post
+from leaderboards.models import Leaderboard, Column, SubmissionScore
+from profiles.models import CustomGroup, User
+from tasks.models import Task, Solution
 from factories import UserFactory, CompetitionFactory, CompetitionParticipantFactory, PhaseFactory, LeaderboardFactory, \
-    ColumnFactory, SubmissionFactory, SubmissionScoreFactory, TaskFactory, QueueFactory
+    ColumnFactory, SubmissionFactory, SubmissionScoreFactory, TaskFactory, QueueFactory, DataFactory, SolutionFactory
 
 
 class CompetitionTests(APITestCase):
@@ -83,6 +91,339 @@ class CompetitionTests(APITestCase):
         resp = self.client.delete(url)
         assert resp.status_code == 204
         assert not Competition.objects.filter(pk=self.comp.pk).exists()
+
+
+class CompetitionDeleteTestBase(APITestCase):
+    """
+    Shared setup for the competition delete and delete preview tests: a competition with everything the delete
+    touches - a logo, two phases sharing a task with its four datasets and a solution, phase datasets,
+    a leaderboard, a bundle, a dump, a parent and a child submission with result files, logs and a score,
+    a zip uploaded without a submission, a participant, a participant group, a page, a forum with a thread
+    and a post, and a whitelist email.
+    """
+
+    def setUp(self):
+        self.creator = UserFactory(username='creator', password='creator')
+        self.other_user = UserFactory(username='other_user', password='other')
+        self.collaborator = UserFactory(username='collab', password='collab')
+        self.superuser = UserFactory(username='admin', password='admin', super_user=True)
+        self.comp = CompetitionFactory(created_by=self.creator, collaborators=[self.collaborator])
+
+        self.leaderboard = LeaderboardFactory()
+        self.column = ColumnFactory(leaderboard=self.leaderboard)
+
+        self.task = TaskFactory(
+            created_by=self.creator,
+            ingestion_program=self._data(Data.INGESTION_PROGRAM),
+            scoring_program=self._data(Data.SCORING_PROGRAM),
+            input_data=self._data(Data.INPUT_DATA),
+            reference_data=self._data(Data.REFERENCE_DATA),
+        )
+        self.solution = SolutionFactory(data=self._data(Data.SOLUTION))
+        self.solution.tasks.add(self.task)
+
+        self.public_data = self._data(Data.PUBLIC_DATA)
+        self.starting_kit = self._data(Data.STARTING_KIT)
+        self.phase = PhaseFactory(
+            competition=self.comp,
+            leaderboard=self.leaderboard,
+            tasks=[self.task],
+            public_data=self.public_data,
+            starting_kit=self.starting_kit,
+        )
+        # A second phase using the same task, as in a bundle where a task runs in several phases
+        self.phase_2 = PhaseFactory(competition=self.comp, leaderboard=self.leaderboard, tasks=[self.task])
+
+        self.bundle = self._data(Data.COMPETITION_BUNDLE)
+        CompetitionCreationTaskStatus.objects.create(
+            dataset=self.bundle, resulting_competition=self.comp, status=CompetitionCreationTaskStatus.FINISHED,
+        )
+        self.dump_data = self._data(Data.COMPETITION_BUNDLE)
+        self.dump = CompetitionDump.objects.create(competition=self.comp, dataset=self.dump_data)
+
+        self.submission = SubmissionFactory(
+            owner=self.creator,
+            phase=self.phase,
+            leaderboard=self.leaderboard,
+            task=self.task,
+            data=self._data(Data.SUBMISSION),
+            prediction_result='prediction_result/prediction_result.zip',
+            prediction_result_file_size=10,
+            scoring_result='scoring_result/scoring_result.zip',
+            scoring_result_file_size=10,
+            detailed_result='detailed_result/detailed_results.html',
+            detailed_result_file_size=10,
+        )
+        self.detail = SubmissionDetails.objects.create(
+            submission=self.submission, name='prediction_stdout',
+            data_file='submission_details/prediction_stdout.txt', file_size=10,
+        )
+        self.score = SubmissionScoreFactory(column=self.column, submissions=self.submission)
+        # A child submission (the run of one task) shares the parent's zip and has its own result files and log
+        self.child_submission = SubmissionFactory(
+            owner=self.creator,
+            phase=self.phase,
+            parent=self.submission,
+            leaderboard=None,
+            task=self.task,
+            data=self.submission.data,
+            prediction_result='prediction_result/child_prediction_result.zip',
+            prediction_result_file_size=10,
+            scoring_result='scoring_result/child_scoring_result.zip',
+            scoring_result_file_size=10,
+            detailed_result='detailed_result/child_detailed_results.html',
+            detailed_result_file_size=10,
+        )
+        self.child_detail = SubmissionDetails.objects.create(
+            submission=self.child_submission, name='prediction_stdout',
+            data_file='submission_details/child_prediction_stdout.txt', file_size=10,
+        )
+        # A zip uploaded through the competition's submit form whose submission was never created
+        self.uploaded_zip = DataFactory(
+            type=Data.SUBMISSION, created_by=self.other_user, competition=self.comp,
+            data_file='dataset/uploaded_submission.zip', file_size=10,
+        )
+
+        self.participant = CompetitionParticipantFactory(
+            user=self.other_user, competition=self.comp, status=CompetitionParticipant.APPROVED,
+        )
+        self.group = CustomGroup.objects.create(name='Delete test group')
+        self.group.user_set.add(self.other_user)
+        self.comp.participant_groups.add(self.group)
+        self.page = Page.objects.create(competition=self.comp, title='Overview', content='Overview', index=0)
+        self.forum = Forum.objects.create(competition=self.comp)
+        self.thread = Thread.objects.create(forum=self.forum, started_by=self.other_user, title='Question')
+        self.post = Post.objects.create(thread=self.thread, posted_by=self.other_user, content='Hello')
+        self.whitelist_email = CompetitionWhiteListEmail.objects.create(
+            competition=self.comp, email='invited@example.com',
+        )
+
+    def _data(self, data_type):
+        """Creates a dataset whose file name is only stored, not uploaded"""
+        return DataFactory(
+            type=data_type, created_by=self.creator, data_file=f'dataset/{data_type}.zip', file_size=10,
+        )
+
+    def _other_phase(self, **kwargs):
+        """Creates a phase in another competition, with no tasks unless given"""
+        kwargs.setdefault('tasks', [])
+        return PhaseFactory(competition=CompetitionFactory(), **kwargs)
+
+
+class CompetitionDeleteTests(CompetitionDeleteTestBase):
+    """Tests for deleting a competition: who can delete it, which records are deleted or kept and which files are queued"""
+
+    def _delete(self, user=None, **params):
+        """Deletes the competition as `user` and returns the response and the mocked file deletion task"""
+        if user:
+            self.client.force_login(user)
+        url = reverse('competition-detail', kwargs={'pk': self.comp.pk})
+        # The celery task is replaced by a mock: no file is deleted, and the mock records
+        # the arguments it is called with, so tests can check which files would be deleted
+        with mock.patch('competitions.competition_deletion.delete_storage_files') as delete_files:
+            # The delete queues the task with transaction.on_commit, which only runs after a real commit.
+            # Tests run inside a transaction that is never committed (it is rolled back after each test),
+            # so the callback would never run. captureOnCommitCallbacks(execute=True) runs it at the end
+            # of this block, as if the transaction had been committed.
+            with self.captureOnCommitCallbacks(execute=True):
+                resp = self.client.delete(f'{url}?{urlencode(params)}')
+        return resp, delete_files
+
+    @staticmethod
+    def _queued_file_names(delete_files, file_type=None):
+        """
+        Returns the names of the files passed to the file deletion task: of all file types,
+        or only of `file_type` (e.g. 'task datasets') when given
+        """
+        files = delete_files.delay.call_args.kwargs['files']
+        if file_type:
+            return {file_name for _, _, file_name in files.get(file_type, [])}
+        return {file_name for entries in files.values() for _, _, file_name in entries}
+
+    def test_non_creators_cannot_delete_competition(self):
+        """Other users, collaborators, superusers and anonymous users get 403 and the competition stays"""
+        for user in [None, self.other_user, self.collaborator, self.superuser]:
+            self.client.logout()
+            resp, delete_files = self._delete(user=user)
+            assert resp.status_code == 403
+            # Checks that the file deletion task was never queued: a refused request must not touch storage.
+            # If the mocked .delay was called even once, the assertion fails and so does the test.
+            delete_files.delay.assert_not_called()
+        assert Competition.objects.filter(pk=self.comp.pk).exists()
+
+    def test_delete_removes_competition_records(self):
+        """
+        Deleting removes the competition records: phases, submissions with their logs and scores, leaderboard,
+        columns, bundle, dump, submission zips, participants, participant group, page, forum and whitelist email.
+        User accounts are kept.
+        """
+        resp, _ = self._delete(user=self.creator)
+        assert resp.status_code == 204
+        assert not Competition.objects.filter(pk=self.comp.pk).exists()
+        assert not Phase.objects.filter(pk__in=[self.phase.pk, self.phase_2.pk]).exists()
+        assert not PhaseTaskInstance.objects.filter(task=self.task).exists()
+        assert not Submission.objects.filter(pk__in=[self.submission.pk, self.child_submission.pk]).exists()
+        assert not SubmissionDetails.objects.filter(pk__in=[self.detail.pk, self.child_detail.pk]).exists()
+        assert not SubmissionScore.objects.filter(pk=self.score.pk).exists()
+        assert not Leaderboard.objects.filter(pk=self.leaderboard.pk).exists()
+        assert not Column.objects.filter(pk=self.column.pk).exists()
+        assert not CompetitionDump.objects.filter(pk=self.dump.pk).exists()
+        assert not Data.objects.filter(
+            pk__in=[self.bundle.pk, self.dump_data.pk, self.submission.data_id, self.uploaded_zip.pk]
+        ).exists()
+        assert not CompetitionParticipant.objects.filter(competition_id=self.comp.pk).exists()
+        assert not CustomGroup.objects.filter(pk=self.group.pk).exists()
+        assert not Group.objects.filter(pk=self.group.pk).exists()
+        assert not Page.objects.filter(pk=self.page.pk).exists()
+        assert not Forum.objects.filter(pk=self.forum.pk).exists()
+        assert not Thread.objects.filter(pk=self.thread.pk).exists()
+        assert not Post.objects.filter(pk=self.post.pk).exists()
+        assert not CompetitionWhiteListEmail.objects.filter(pk=self.whitelist_email.pk).exists()
+        assert User.objects.filter(pk__in=[self.other_user.pk, self.collaborator.pk]).count() == 2
+
+    def test_delete_without_options_keeps_tasks_and_phase_datasets(self):
+        """Without query params, tasks, their datasets, solutions and phase datasets are kept"""
+        self._delete(user=self.creator)
+        assert Task.objects.filter(pk=self.task.pk).exists()
+        assert Solution.objects.filter(pk=self.solution.pk).exists()
+        task_data_ids = [self.task.ingestion_program_id, self.task.scoring_program_id,
+                         self.task.input_data_id, self.task.reference_data_id]
+        assert Data.objects.filter(pk__in=task_data_ids).count() == 4
+        assert Data.objects.filter(pk__in=[self.public_data.pk, self.starting_kit.pk]).count() == 2
+
+    def test_delete_queues_files_of_deleted_records(self):
+        """The logo, parent and child submission files and logs, bundle, dump and submission zips are queued for deletion"""
+        competition_id, competition_title = self.comp.pk, self.comp.title
+        _, delete_files = self._delete(user=self.creator)
+        assert delete_files.delay.call_args.kwargs['competition_id'] == competition_id
+        assert delete_files.delay.call_args.kwargs['competition_title'] == competition_title
+        file_names = self._queued_file_names(delete_files)
+        assert {
+            self.comp.logo.name,
+            self.comp.logo_icon.name,
+            'prediction_result/prediction_result.zip',
+            'scoring_result/scoring_result.zip',
+            'detailed_result/detailed_results.html',
+            'submission_details/prediction_stdout.txt',
+            'prediction_result/child_prediction_result.zip',
+            'scoring_result/child_scoring_result.zip',
+            'detailed_result/child_detailed_results.html',
+            'submission_details/child_prediction_stdout.txt',
+            self.bundle.data_file.name,
+            self.dump_data.data_file.name,
+            self.submission.data.data_file.name,
+            self.uploaded_zip.data_file.name,
+        } == file_names
+
+    def test_delete_tasks_deletes_tasks_solutions_and_task_datasets(self):
+        """With delete_tasks=true, the task, its solution and its four datasets are deleted with their files"""
+        task_data = [self.task.ingestion_program, self.task.scoring_program,
+                     self.task.input_data, self.task.reference_data]
+        solution_data = self.solution.data
+        _, delete_files = self._delete(user=self.creator, delete_tasks='true')
+        assert not Task.objects.filter(pk=self.task.pk).exists()
+        assert not Solution.objects.filter(pk=self.solution.pk).exists()
+        assert not Data.objects.filter(pk__in=[data.pk for data in task_data + [solution_data]]).exists()
+        assert self._queued_file_names(delete_files, file_type='task datasets') == \
+            {data.data_file.name for data in task_data}
+        assert self._queued_file_names(delete_files, file_type='solution datasets') == {solution_data.data_file.name}
+
+    def test_delete_tasks_keeps_task_used_by_other_competition(self):
+        """With delete_tasks=true, a task also used by another competition is kept with its datasets"""
+        self._other_phase(tasks=[self.task])
+        self._delete(user=self.creator, delete_tasks='true')
+        assert Task.objects.filter(pk=self.task.pk).exists()
+        assert Solution.objects.filter(pk=self.solution.pk).exists()
+        assert Data.objects.filter(pk=self.task.scoring_program_id).exists()
+
+    def test_delete_tasks_keeps_dataset_used_by_other_task(self):
+        """With delete_tasks=true, the task is deleted but a dataset also used by another task is kept"""
+        TaskFactory(created_by=self.creator, scoring_program=self.task.scoring_program)
+        _, delete_files = self._delete(user=self.creator, delete_tasks='true')
+        assert not Task.objects.filter(pk=self.task.pk).exists()
+        assert Data.objects.filter(pk=self.task.scoring_program_id).exists()
+        assert not Data.objects.filter(pk=self.task.ingestion_program_id).exists()
+        # Only the 3 datasets that no other task uses are queued
+        assert self._queued_file_names(delete_files, file_type='task datasets') == {
+            self.task.ingestion_program.data_file.name,
+            self.task.input_data.data_file.name,
+            self.task.reference_data.data_file.name,
+        }
+
+    def test_delete_phase_datasets_deletes_public_data_and_starting_kit(self):
+        """With delete_phase_datasets=true, the public data and starting kit are deleted with their files"""
+        _, delete_files = self._delete(user=self.creator, delete_phase_datasets='true')
+        assert not Data.objects.filter(pk__in=[self.public_data.pk, self.starting_kit.pk]).exists()
+        assert self._queued_file_names(delete_files, file_type='phase datasets') == \
+            {self.public_data.data_file.name, self.starting_kit.data_file.name}
+
+    def test_delete_phase_datasets_keeps_dataset_used_by_other_competition(self):
+        """With delete_phase_datasets=true, a starting kit used by another competition's phase is kept"""
+        self._other_phase(starting_kit=self.starting_kit)
+        self._delete(user=self.creator, delete_phase_datasets='true')
+        assert Data.objects.filter(pk=self.starting_kit.pk).exists()
+        assert not Data.objects.filter(pk=self.public_data.pk).exists()
+
+
+class CompetitionDeletePreviewTests(CompetitionDeleteTestBase):
+    """Tests for the delete preview: who can see it and what it lists as deleted or kept"""
+
+    def _preview(self, user=None):
+        """Gets the delete preview of the competition as `user`"""
+        if user:
+            self.client.force_login(user)
+        return self.client.get(reverse('competition-delete-preview', kwargs={'pk': self.comp.pk}))
+
+    def test_only_creator_can_preview_delete(self):
+        """Other users, collaborators, superusers and anonymous users get 403; the creator gets 200"""
+        for user in [None, self.other_user, self.collaborator, self.superuser]:
+            self.client.logout()
+            assert self._preview(user=user).status_code == 403
+        assert self._preview(user=self.creator).status_code == 200
+
+    def test_preview_does_not_delete_anything(self):
+        """Getting the preview leaves the competition, its submissions and tasks in place"""
+        self._preview(user=self.creator)
+        assert Competition.objects.filter(pk=self.comp.pk).exists()
+        assert Submission.objects.filter(pk=self.submission.pk).exists()
+        assert Task.objects.filter(pk=self.task.pk).exists()
+
+    def test_preview_shows_what_will_be_deleted(self):
+        """The preview lists the always-deleted items, and marks shared tasks and datasets as not deletable"""
+        shared_task = TaskFactory(created_by=self.creator, scoring_program=self.task.scoring_program)
+        self.phase.tasks.add(shared_task)
+        self._other_phase(tasks=[shared_task], starting_kit=self.starting_kit)
+
+        resp = self._preview(user=self.creator)
+        assert resp.status_code == 200
+        auto_delete = resp.data['auto_delete']
+        # Files: 3 results and 1 log for the parent and for the child, plus the submission zip and the uploaded zip
+        assert auto_delete['submissions'] == {
+            'parent_count': 1, 'child_count': 1, 'file_count': 10, 'total_size': 100.0,
+        }
+        assert auto_delete['leaderboards'] == [{'title': self.leaderboard.title, 'columns': [self.column.title]}]
+        assert auto_delete['phases'] == [self.phase.name, self.phase_2.name]
+        assert auto_delete['pages'] == ['Overview']
+        assert len(auto_delete['logo']) == 2
+        assert [data['file_name'] for data in auto_delete['bundle']] == ['competition_bundle.zip']
+        assert len(auto_delete['dumps']) == 1
+        # The creator and the collaborator are added as participants automatically, plus the participant
+        assert auto_delete['participants_count'] == 3
+        assert auto_delete['participant_groups'] == [{'name': 'Delete test group', 'members_count': 1}]
+        assert auto_delete['forum_threads_count'] == 1
+        assert auto_delete['forum_posts_count'] == 1
+
+        tasks = {task['name']: task for task in resp.data['tasks']}
+        assert tasks[self.task.name]['can_delete'] is True
+        assert tasks[shared_task.name]['can_delete'] is False
+        task_datasets = {data['type']: data['can_delete'] for data in tasks[self.task.name]['datasets']}
+        assert task_datasets == {
+            'Ingestion Program': True, 'Scoring Program': False, 'Input Data': True, 'Reference Data': True,
+        }
+        assert tasks[self.task.name]['solutions'][0]['can_delete'] is True
+
+        phase_datasets = {data['type']: data['can_delete'] for data in resp.data['phase_datasets']}
+        assert phase_datasets == {'Public Data': True, 'Starting Kit': False}
 
 
 class CompetitionDetailTests(APITestCase):
