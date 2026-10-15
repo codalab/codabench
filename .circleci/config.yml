@@ -47,7 +47,6 @@ jobs:
       - run:
           name: "Tests: Run unit/integration tests (excluding e2e)"
           command: docker compose exec -e CELERY_TASK_ALWAYS_EAGER=True django py.test src/
-          background: true
 
       - store_artifacts:
           path: tests/test-results
