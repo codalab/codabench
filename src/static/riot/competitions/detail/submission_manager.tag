@@ -149,9 +149,9 @@
                         <i if="{submission.status === 'Failed' && !is_hitl_failure(submission)}" class="failed question circle icon"></i>
                         <i if="{submission.status === 'Failed' && is_hitl_failure(submission)}" class="orange lock icon"></i>
                     </sup>
-                    <sup data-tooltip="An organizer will run your submission soon">
-                        <i if="{submission.status === 'Submitting' && !submission.auto_run}"
-                            class="question circle icon"></i>
+                    <sup if="{ pending_info(submission) }"
+                        data-tooltip="{ pending_info(submission).message }" data-inverted="">
+                        <i class="question circle icon" style="color: { pending_info(submission).color };"></i>
                     </sup>
                 </td>
                 <td>{get_score(submission)}</td>
@@ -638,6 +638,37 @@
                 opts.competition.phases,
                 p => p.index > phase.index
             )
+        }
+
+        self.get_submission_phase = function (submission) {
+            if (!submission || !submission.phase) return null
+            if (_.isObject(submission.phase)) return submission.phase
+            return _.find(opts.competition.phases, p => p.id === submission.phase) || null
+        }
+
+        self.is_waiting_for_phase = function (submission) {
+            if (!submission || submission.status !== 'Submitting') return false
+            let phase = self.get_submission_phase(submission)
+            if (!phase || !phase.start) return false
+            return Date.parse(phase.start) > Date.now()
+        }
+
+        self.waiting_message = function (submission) {
+            let phase = self.get_submission_phase(submission)
+            if (!phase) return ''
+            return 'Waiting for phase "' + phase.name + '" to start (' + self.pretty_date(phase.start) +
+                '). This submission will run automatically once the phase begins.'
+        }
+
+        self.pending_info = function (submission) {
+            if (!submission || submission.status !== 'Submitting') return null
+            if (self.is_waiting_for_phase(submission)) {
+                return { color: 'blue', message: self.waiting_message(submission) }
+            }
+            if (!submission.auto_run) {
+                return { color: 'black', message: 'An organizer will run your submission soon' }
+            }
+            return null
         }
 
         self.update_submissions = function (filters) {
