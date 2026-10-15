@@ -843,6 +843,7 @@ class PhaseViewSet(ModelViewSet):
         }
 
         columns = list(query['columns'])
+        current_task_ids = {task['id'] for task in query['tasks']}
         submissions_keys = {}
         submission_detailed_results = {}
 
@@ -925,6 +926,10 @@ class PhaseViewSet(ModelViewSet):
 
                 if queue_id or is_multi_group_null_queue:
                     response['has_group_queues'] = True
+
+            # task deleted (None) or removed from the phase: its scores show as n/a
+            if submission['task'] not in current_task_ids:
+                response['submissions'][submissions_keys[submission_key]]['outdated_task'] = True
 
             for score in submission['scores']:
                 column_found = False
