@@ -523,7 +523,7 @@ class Run:
         self.bundle_dir = os.path.join(self.root_dir, "bundles")
         self.input_dir = os.path.join(self.root_dir, "input")
         self.output_dir = os.path.join(self.root_dir, "output")
-        self.data_dir = os.path.join(Settings.HOST_DIRECTORY, "data")  # absolute path to data in the host
+        self.data_dir = os.path.join(Settings.BASE_DIR, "data")  # absolute path to data in the host
         self.reference_dir = os.path.join(Settings.BASE_DIR, "reference")  # path inside the worker container
         self.logs = {}
 
@@ -1259,7 +1259,7 @@ class Run:
         volumes_host = [
             self._get_host_path(program_dir),
             self._get_host_path(self.output_dir),
-            self.data_dir,
+            self._get_host_path(self.data_dir),
             self._get_host_path(self.root_dir, "submission")
         ]
         volumes_config = {
