@@ -57,14 +57,14 @@ class APIClient:
             "--no-mount", "hostfs,cwd,bind-paths",  # Disable automatic host/admin binds.
             "--pwd", working_dir,    # Set the program's working directory.
         ]
-        # Give this evaluation its own writable home, temporary files and shm
-        # directory. These binds are separate from the temporary root overlay.
-        for part in ("home", "tmp", "shm"):
+        # Give this evaluation its own writable home and temporary files.
+        # Let --containall supply container-local /dev/shm: binding a scratch
+        # directory there can leave it mounted and make cleanup fail with EBUSY.
+        for part in ("home", "tmp"):
             (root / part).mkdir()
         args += ["--home", f"{root}/home:/home/competition",
                  "--bind", f"{root}/tmp:/tmp",
-                 "--bind", f"{root}/tmp:/var/tmp",
-                 "--bind", f"{root}/shm:/dev/shm"]
+                 "--bind", f"{root}/tmp:/var/tmp"]
         # Translate Codabench volume mappings to src:destination:mode binds.
         for source, mount in host_config["binds"].items():
             # Resolve symlinks before checking the permitted source directory.
@@ -108,7 +108,9 @@ class APIClient:
         # APPTAINERENV_ explicitly injects the selected values into the payload
         # despite --cleanenv; values baked into the image remain available.
         values = dict(item.split("=", 1) for item in environment)
-        values.update(HOME="/home/competition", BENCHOPT_CACHE="/tmp/benchopt")
+        # HOME is controlled by --home; Apptainer rejects APPTAINERENV_HOME.
+        values.pop("HOME", None)
+        values.update(BENCHOPT_CACHE="/tmp/benchopt")
         if host_config.get("device_requests"):
             values["CUDA_VISIBLE_DEVICES"] = os.environ["CUDA_VISIBLE_DEVICES"]
         for key, value in values.items():
@@ -214,9 +216,16 @@ def self_check():
         container = client.create_container(
             "test:1", name="test", host_config={"binds": {}},
             command=["python", "-c", "pass"], working_dir="/app/program",
-            environment=[])
+            environment=["HOME=/ignored", "TEST_PAYLOAD=preserved"])
         state = client.containers[container["Id"]]
         assert not any("BROKER" in key for key in state["env"])
+        assert "APPTAINERENV_HOME" not in state["env"]
+        assert state["env"]["APPTAINERENV_TEST_PAYLOAD"] == "preserved"
+        assert state["args"][state["args"].index("--home") + 1].endswith(":/home/competition")
+        assert "--containall" in state["args"]
+        assert not any(":/dev/shm" in arg for arg in state["args"])
+        scratch_root = Path(state["scratch"].name)
+        assert not (scratch_root / "shm").exists()
         # 3. Substitute a local Python command to test actual pipes and exit status.
         state["args"] = [sys.executable, "-c",
                          "import sys; print('out'); print('err', file=sys.stderr); sys.exit(23)"]
@@ -230,6 +239,7 @@ def self_check():
         # 4. Repeated removal must remain safe after process and scratch cleanup.
         client.remove_container(container, force=True)
         client.remove_container(container, force=True)
+        assert not scratch_root.exists()
         # 5. Reject image references that are absent from the pre-staged map.
         try:
             client.inspect_image("unapproved:1")
