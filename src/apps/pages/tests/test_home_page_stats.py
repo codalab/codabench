@@ -23,8 +23,8 @@ class HomePageStatsTests(TestCase):
 
     def test_shows_counters_with_separators(self):
         """
-        Uses counters for all 5 stats.
-        Expects them in order (benchmarks, users, organizers, participants, submissions)
+        Uses counters for all 3 stats, plus organizers and participants which are not shown.
+        Expects only the 3 shown stats in order (benchmarks, users, submissions)
         with thousands separators.
         """
         values = self.get_stat_values({
@@ -35,34 +35,34 @@ class HomePageStatsTests(TestCase):
             "submissions": 1532870,
         })
 
-        assert values == ["1,204", "48,213", "2,875", "31,560", "1,532,870"]
+        assert values == ["1,204", "48,213", "1,532,870"]
 
     def test_missing_counters_show_zero(self):
         """
-        Uses an old counters file without organizers and participants.
-        Expects those two stats to show 0.
+        Uses a counters file without users.
+        Expects that stat to show 0.
         """
-        values = self.get_stat_values({"public_competitions": 3, "users": 10, "submissions": 25})
+        values = self.get_stat_values({"public_competitions": 3, "submissions": 25})
 
-        assert values == ["3", "10", "0", "0", "25"]
+        assert values == ["3", "0", "25"]
 
     def test_unreadable_file_shows_zero(self):
         """
         Points the counters file to a path that does not exist.
-        Expects all 5 stats to show 0.
+        Expects all 3 stats to show 0.
         """
         with mock.patch('utils.context_processors.HOME_PAGE_COUNTERS_FILE_PATH', '/does/not/exist.json'):
             content = self.client.get(reverse('pages:home')).content.decode()
 
-        assert re.findall(r'class="home-stat-value">([^<]+)<', content) == ["0"] * 5
+        assert re.findall(r'class="home-stat-value">([^<]+)<', content) == ["0"] * 3
 
     def test_section_has_caption_and_labels(self):
         """
         Loads the home page.
-        Expects the stats caption and the 5 labels.
+        Expects the stats caption and the 3 labels.
         """
         content = self.client.get(reverse('pages:home')).content.decode()
 
         assert "Trusted by researchers and organizers around the world" in content
-        for label in ["Public Benchmarks", "Platform Users", "Organizers", "Participants", "Submissions"]:
+        for label in ["Public Benchmarks", "Users", "Submissions"]:
             assert f'class="home-stat-label">{label}<' in content
