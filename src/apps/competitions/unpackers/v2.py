@@ -10,6 +10,7 @@ class V2Unpacker(BaseUnpacker):
         super().__init__(*args, **kwargs)
         self.competition = {
             "title": self.competition_yaml.get('title'),
+            "tags": self.competition_yaml.get('tags', []),
             "logo": None,
             "registration_auto_approve": self.competition_yaml.get('registration_auto_approve', False),
             "docker_image": self.competition_yaml.get('docker_image', 'codalab/codalab-legacy:py37'),

@@ -1,9 +1,11 @@
 from rest_framework.test import APIClient
 from django.test import TestCase
+
 from factories import (
     UserFactory,
     CompetitionFactory,
     CompetitionParticipantFactory,
+    TagFactory,
 )
 
 
@@ -234,3 +236,57 @@ class PublicCompetitionsTests(TestCase):
 
         # Check that competition without a reward is not included
         self.assertNotIn(self.competition2.id, returned_ids)
+
+    def test_universal_search(self):
+        # Search by organizer username
+        response = self.client.get(f"/api/competitions/public/?search={self.organizer.username}")
+        self.assertEqual(response.status_code, 200)
+        returned_ids = [comp["id"] for comp in response.data["results"]]
+        self.assertIn(self.competition1.id, returned_ids)
+        self.assertNotIn(self.competition2.id, returned_ids)
+
+        # Search by title
+        response = self.client.get("/api/competitions/public/?search=AI Challenge")
+        self.assertEqual(response.status_code, 200)
+        returned_ids = [comp["id"] for comp in response.data["results"]]
+        self.assertIn(self.competition1.id, returned_ids)
+
+    def test_filter_mode_or_and_across_facets(self):
+        tag = TagFactory(name="nlp")
+        self.competition2.tags.add(tag)
+
+        # In OR mode: match competition with tag (competition2) OR reward (competition1, competition3)
+        response = self.client.get(f"/api/competitions/public/?tags={tag.id}&has_reward=true&filter_mode=or")
+        self.assertEqual(response.status_code, 200)
+        returned_ids = [comp["id"] for comp in response.data["results"]]
+        self.assertIn(self.competition1.id, returned_ids)
+        self.assertIn(self.competition2.id, returned_ids)
+        self.assertIn(self.competition3.id, returned_ids)
+
+        # In AND mode: requires both tag AND reward (none match initially)
+        response = self.client.get(f"/api/competitions/public/?tags={tag.id}&has_reward=true&filter_mode=and")
+        self.assertEqual(response.status_code, 200)
+        returned_ids = [comp["id"] for comp in response.data["results"]]
+        self.assertEqual(len(returned_ids), 0)
+
+        # Add tag to competition1 which has a reward: now competition1 matches both
+        self.competition1.tags.add(tag)
+        response = self.client.get(f"/api/competitions/public/?tags={tag.id}&has_reward=true&filter_mode=and")
+        self.assertEqual(response.status_code, 200)
+        returned_ids = [comp["id"] for comp in response.data["results"]]
+        self.assertEqual(returned_ids, [self.competition1.id])
+
+    def test_no_tags_parameter_is_ignored(self):
+        tag = TagFactory(name="vision-tag")
+        self.competition1.tags.add(tag)
+        response = self.client.get("/api/competitions/public/?no_tags=true")
+        self.assertEqual(response.status_code, 200)
+        returned_ids = [comp["id"] for comp in response.data["results"]]
+        self.assertIn(self.competition1.id, returned_ids)
+
+    def test_filter_by_date_range(self):
+        created_str = self.competition1.created_when.strftime("%Y-%m-%d")
+        response = self.client.get(f"/api/competitions/public/?start_date={created_str}&end_date={created_str}")
+        self.assertEqual(response.status_code, 200)
+        returned_ids = [comp["id"] for comp in response.data["results"]]
+        self.assertIn(self.competition1.id, returned_ids)

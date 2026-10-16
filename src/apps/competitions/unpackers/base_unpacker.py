@@ -10,7 +10,7 @@ from django.utils import timezone
 from api.serializers.competitions import CompetitionSerializer
 from api.serializers.leaderboards import LeaderboardSerializer
 from api.serializers.tasks import TaskSerializer, SolutionSerializer
-from competitions.models import Phase
+from competitions.models import Phase, Tag
 from datasets.models import Data
 from queues.models import Queue
 from tasks.models import Task, Solution
@@ -332,6 +332,34 @@ class BaseUnpacker:
                 phase['starting_kit'] = Data.objects.filter(key=starting_kit_key)[0].id
 
         self.competition.pop('leaderboards')
+
+        # Process Tags
+        yaml_tags = self.competition.get('tags', [])
+        tag_pks = []
+        if isinstance(yaml_tags, list):
+            for tag_data in yaml_tags:
+                if not isinstance(tag_data, dict):
+                    continue
+                try:
+                    tag = Tag.objects.filter(
+                        name=str(tag_data['name']).strip(),
+                        category__name=str(tag_data['category']).strip()
+                    ).first()
+                    
+                    if not tag:
+                        raise Tag.DoesNotExist
+                        
+                    if tag.pk in tag_pks:
+                        raise CompetitionUnpackingException(
+                            f"Duplicate tag found in the yaml: '{tag_data.get('name')}' (Category: {tag_data.get('category')})"
+                        )
+                    tag_pks.append(tag.pk)
+                except (Tag.DoesNotExist, KeyError):
+                    raise CompetitionUnpackingException(
+                        f"Could not find tag: '{tag_data.get('name')}' (Category: {tag_data.get('category')})"
+                    )
+                    
+        self.competition['tags'] = tag_pks
 
         serializer = CompetitionSerializer(
             data=self.competition,

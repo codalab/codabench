@@ -13,6 +13,11 @@
                             <div class="competition-name underline">
                                 {competition.title}
                             </div>
+                            <div if="{ resolved_tags && resolved_tags.length > 0 }" class="ui labels" style="margin-top: 8px; margin-bottom: 0;">
+                                <div each="{ tag in resolved_tags }" class="ui label" style="{ getCategoryStyle(tag.category) }">
+                                    { tag.name }
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="row">
@@ -209,6 +214,15 @@
         let self = this
 
         self.competition = {}
+
+        self.getCategoryStyle = function(categoryId) {
+            if (!categoryId) {
+                return `background-color: hsl(0, 0%, 95%); border: 1px solid hsl(0, 0%, 85%); color: hsl(0, 0%, 40%);`;
+            }
+            const hue = ((categoryId + 45)  * 137.5) % 360;
+            return `background-color: hsl(${hue}, 85%, 90%); border: 1px solid hsl(${hue}, 85%, 75%); color: hsl(${hue}, 85%, 25%);`;
+        }
+
         self.files = []
 
         self.tr_show = false
@@ -217,6 +231,15 @@
             competition.admin = CODALAB.state.user.has_competition_admin_privileges(competition)
             self.competition = competition
             self.update()
+            
+            if (competition.tags && competition.tags.length > 0) {
+                CODALAB.api.request('GET', URLS.API + 'tags/')
+                    .done(function (tags) {
+                        const tagMap = _.keyBy(tags, 'id');
+                        self.resolved_tags = competition.tags.map(id => tagMap[id]).filter(Boolean);
+                        self.update();
+                    });
+            }
             if (self.competition.admin) {
                 self.update_files()
             }
