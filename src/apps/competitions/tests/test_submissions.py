@@ -229,6 +229,117 @@ class SubmissionManagerTests(SubmissionTestCase):
         assert resp.status_code == 403
 
 
+class ReRunTaskCheckTests(SubmissionTestCase):
+    def setUp(self):
+        super().setUp()
+        self.task = self.phase.tasks.first()
+
+    def re_run(self, submission, **kwargs):
+        """Re-run a submission without sending anything to a compute worker"""
+        with mock.patch('competitions.tasks._send_to_compute_worker'):
+            return submission.re_run(**kwargs)
+
+    def test_re_run_allowed_when_tasks_match_phase(self):
+        """Submission ran on the phase's only task; re-run has no error or warning and creates a new submission"""
+        sub = self.make_submission(task=self.task, status=Submission.FINISHED)
+
+        assert sub.re_run_error() is None
+        assert sub.re_run_warning() is None
+        assert self.re_run(submission=sub) is not None
+        assert Submission.objects.count() == 2
+
+    def test_re_run_refused_when_task_deleted(self):
+        """Submission's task was deleted; re-run returns the deleted-task error and no new submission is created"""
+        sub = self.make_submission(task=self.task, status=Submission.FINISHED)
+        self.task.delete()
+        sub.refresh_from_db()
+
+        assert 'has been deleted' in sub.re_run_error()
+        assert self.re_run(submission=sub) is None
+        assert Submission.objects.count() == 1
+
+    def test_re_run_refused_when_task_removed_from_phase(self):
+        """Phase task was replaced by a new one; re-run returns the tasks-changed error and no new submission is created"""
+        sub = self.make_submission(task=self.task, status=Submission.FINISHED)
+        self.phase.tasks.set([TaskFactory()])
+
+        assert 'phase tasks have changed' in sub.re_run_error()
+        assert self.re_run(submission=sub) is None
+        assert Submission.objects.count() == 1
+
+    def test_re_run_refused_when_child_task_removed_from_phase(self):
+        """One task of a multi-task submission was removed from the phase; re-run returns the tasks-changed error"""
+        other_task = TaskFactory()
+        self.phase.tasks.add(other_task)
+        parent = self.make_submission(has_children=True, status=Submission.FINISHED)
+        self.make_submission(parent=parent, task=self.task, status=Submission.FINISHED)
+        self.make_submission(parent=parent, task=other_task, status=Submission.FINISHED)
+        self.phase.tasks.remove(other_task)
+
+        assert 'phase tasks have changed' in parent.re_run_error()
+        assert self.re_run(submission=parent) is None
+
+    def test_re_run_warns_when_task_added_to_phase(self):
+        """A task was added to the phase after submitting; re-run goes ahead with a warning about n/a scores"""
+        sub = self.make_submission(task=self.task, status=Submission.FINISHED)
+        self.phase.tasks.add(TaskFactory())
+
+        assert sub.re_run_error() is None
+        assert 'newly added tasks' in sub.re_run_warning()
+        assert self.re_run(submission=sub) is not None
+
+    def test_specific_task_re_run_is_not_checked(self):
+        """Submission's task was removed from the phase; a re-run on a specific task still goes ahead without error"""
+        sub = self.make_submission(task=self.task, status=Submission.FINISHED)
+        new_task = TaskFactory()
+        self.phase.tasks.set([new_task])
+
+        assert sub.re_run_error(task=new_task) is None
+        assert self.re_run(submission=sub, task=new_task) is not None
+
+    def test_re_run_api_returns_error_when_task_removed_from_phase(self):
+        """Re-run endpoint on a submission whose task left the phase returns 400 with the error message"""
+        sub = self.make_submission(task=self.task, status=Submission.FINISHED)
+        self.phase.tasks.set([TaskFactory()])
+
+        self.client.force_login(self.user)
+        url = reverse('submission-re-run-submission', kwargs={'pk': sub.pk})
+        resp = self.client.post(url)
+
+        assert resp.status_code == 400
+        assert 'phase tasks have changed' in resp.json()['error_msg']
+        assert Submission.objects.count() == 1
+
+    def test_re_run_api_returns_warning_when_task_added_to_phase(self):
+        """Re-run endpoint on a submission missing a newly added phase task returns 200 with the warning message"""
+        sub = self.make_submission(task=self.task, status=Submission.FINISHED)
+        self.phase.tasks.add(TaskFactory())
+
+        self.client.force_login(self.user)
+        url = reverse('submission-re-run-submission', kwargs={'pk': sub.pk})
+        with mock.patch('competitions.tasks._send_to_compute_worker'):
+            resp = self.client.post(url)
+
+        assert resp.status_code == 200
+        assert 'newly added tasks' in resp.json()['warning_msg']
+
+    def test_phase_re_run_reports_skipped_submissions(self):
+        """Phase re-run with one valid and one task-removed submission re-runs one and reports one skipped"""
+        new_task = TaskFactory()
+        self.make_submission(task=self.task, status=Submission.FINISHED)
+        self.phase.tasks.add(new_task)
+        self.phase.tasks.remove(self.task)
+        self.make_submission(task=new_task, status=Submission.FINISHED)
+
+        self.client.force_login(self.user)
+        url = reverse('phases-rerun_submissions', kwargs={'pk': self.phase.pk})
+        with mock.patch('competitions.tasks._send_to_compute_worker'):
+            resp = self.client.get(url)
+
+        assert resp.status_code == 200
+        assert resp.json() == {'count': 1, 'skipped': 1, 'warned': 0}
+
+
 class MultipleTasksPerPhaseTests(SubmissionTestCase):
     def setUp(self):
         self.user = UserFactory()
