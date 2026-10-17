@@ -7,14 +7,6 @@
     width 100%
     margin 1.5em 0 0
 
-// Small muted line instead of a heading
-// Why: two selectors so it wins over the About section's paragraph margin
-.home-stats-section .home-stats-caption
-    margin 0 0 10px
-    color #6b7785
-    font-size 14px
-    text-align left
-
 .home-stats
     display grid
     grid-template-columns repeat(3, 1fr)
@@ -37,7 +29,7 @@
 
 // Why: a fixed size, so it does not change with the About section's font size
 .home-stat-value
-    color $cb-blue-500
+    color $cb-navy-900
     font-size 28px
     font-weight 700
     line-height 1.1
@@ -48,12 +40,16 @@
     color #5a5a5a
     font-size 13px
 
-/* Tablets and phones: two per row, dividers become row spacing */
+/* Tablets and phones: one stat per row, dividers go between rows */
+// Why: two columns would leave the last stat alone on its own row, and three are too narrow for big numbers
 @media only screen and (max-width 767px)
     .home-stats
-        grid-template-columns repeat(2, 1fr)
-        row-gap 24px
-        padding 24px 0
+        grid-template-columns 1fr
+        gap 20px
 
     .home-stat
         border-left none
+
+        &:not(:first-child)
+            padding-top 20px
+            border-top 1px solid #e3e7ec
