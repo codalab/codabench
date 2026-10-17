@@ -20,11 +20,11 @@ def platform_announcements_banner():
     A context processor would run the query for every template rendered with a request,
     including pages like the Django admin that never show the banner.
     """
-    # Only active announcements meant for all pages.
+    # Only active announcements meant for all pages, or for the home page and all pages.
     # Lower priority first, then newest first. Same order as the home page announcements.
     announcements = Announcement.objects.filter(
         is_active=True,
-        placement=Announcement.PLACEMENT_PLATFORM,
+        placement__in=[Announcement.PLACEMENT_PLATFORM, Announcement.PLACEMENT_HOME_PAGE_AND_PLATFORM],
     ).order_by("priority", "-created_when")
 
     # The key becomes a variable in the banner template.

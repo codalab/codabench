@@ -34,6 +34,21 @@ class PlatformAnnouncementsBannerTests(TestCase):
         assert 'class="platform-announcements-banner"' in content
         assert "platform text" in content
 
+    def test_home_page_and_platform_announcement_shown_in_banner(self):
+        """
+        Creates one announcement for the home page and all pages, and loads the search page.
+        Expects the banner with the announcement text to be rendered there.
+        """
+        Announcement.objects.create(
+            text="home page and platform text",
+            placement=Announcement.PLACEMENT_HOME_PAGE_AND_PLATFORM,
+        )
+
+        content = self.client.get(reverse('pages:search')).content.decode()
+
+        assert 'class="platform-announcements-banner"' in content
+        assert "home page and platform text" in content
+
     def test_home_page_announcement_not_shown_in_banner(self):
         """
         Creates only an active home page announcement and loads the search page.
