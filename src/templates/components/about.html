@@ -1,0 +1,103 @@
+{# About section on the home page #}
+
+<div class="about">
+    <h2 class="about-title">About Codabench</h2>
+    <p class="about-intro">
+        Codabench is a free, <a href="https://github.com/codalab/codabench" target="_blank">open-source</a> platform for running AI benchmarks and competitions.
+        Organizers set up tasks, datasets and scoring programs, and participants submit code or results.
+        Each submission is evaluated automatically and reproducibly inside a Docker image, and results appear on live leaderboards.
+    </p>
+    <p class="about-intro">
+        Submissions run on Codabench's shared compute workers by default. Organizers who need more power, such as GPUs,
+        can connect their own workers through a private queue and keep full control over their hardware and data.
+    </p>
+
+    <!-- Stats -->
+    {% include "components/stats.html" %}
+
+    <div class="about-columns">
+        <!-- Features -->
+        <div class="about-column">
+            <h3 class="about-subtitle">Features</h3>
+            <div class="about-features">
+                <div class="about-feature">
+                    <div class="about-feature-icon"><i class="cogs icon"></i></div>
+                    <div>
+                        <div class="about-feature-heading">Fully customizable setup</div>
+                        <p class="about-feature-text">Pages, phases, tasks and scoring for any problem.</p>
+                    </div>
+                </div>
+                <div class="about-feature">
+                    <div class="about-feature-icon"><i class="upload icon"></i></div>
+                    <div>
+                        <div class="about-feature-heading">Code and result submissions</div>
+                        <p class="about-feature-text">Participants submit code or predictions, scored by your own program.</p>
+                    </div>
+                </div>
+                <div class="about-feature">
+                    <div class="about-feature-icon"><i class="exchange icon"></i></div>
+                    <div>
+                        <div class="about-feature-heading">Inverted benchmarks</div>
+                        <p class="about-feature-text">Participants submit datasets, and organizers provide the reference algorithms.</p>
+                    </div>
+                </div>
+                <div class="about-feature">
+                    <div class="about-feature-icon"><i class="chart bar icon"></i></div>
+                    <div>
+                        <div class="about-feature-heading">Live leaderboards</div>
+                        <p class="about-feature-text">Real-time rankings and detailed results after every submission.</p>
+                    </div>
+                </div>
+                <div class="about-feature">
+                    <div class="about-feature-icon"><i class="docker icon"></i></div>
+                    <div>
+                        <div class="about-feature-heading">Reproducible by design</div>
+                        <p class="about-feature-text">Every submission runs in a Docker image chosen by the organizer.</p>
+                    </div>
+                </div>
+                <div class="about-feature">
+                    <div class="about-feature-icon"><i class="server icon"></i></div>
+                    <div>
+                        <div class="about-feature-heading">Free storage and compute</div>
+                        <p class="about-feature-text">Free storage and shared compute workers, or connect your own workers and GPUs.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- History -->
+        <div class="about-column">
+            <h3 class="about-subtitle">From CodaLab to Codabench</h3>
+            <div class="about-timeline">
+                <div class="about-timeline-item">
+                    <span class="about-timeline-year">2013</span>
+                    <div class="about-timeline-heading">CodaLab is born</div>
+                    <p class="about-timeline-text">Created by Microsoft and Stanford University to make computational research more efficient, reproducible and collaborative.</p>
+                </div>
+                <div class="about-timeline-item">
+                    <span class="about-timeline-year">2014</span>
+                    <div class="about-timeline-heading">ChaLearn joins</div>
+                    <p class="about-timeline-text"><a href="http://www.chalearn.org/" target="_blank">ChaLearn</a> co-develops CodaLab Competitions.</p>
+                </div>
+                <div class="about-timeline-item">
+                    <span class="about-timeline-year">2015</span>
+                    <div class="about-timeline-heading">Université Paris-Saclay takes the lead</div>
+                    <p class="about-timeline-text">The community is led by Université Paris-Saclay under the direction of Professor Isabelle Guyon.</p>
+                </div>
+                <div class="about-timeline-item">
+                    <span class="about-timeline-year">2022</span>
+                    <div class="about-timeline-heading">Codabench paper published</div>
+                    <p class="about-timeline-text">The platform is presented in <a href="https://doi.org/10.1016/j.patter.2022.100543" target="_blank"><em>Patterns</em></a>.</p>
+                </div>
+                <div class="about-timeline-item">
+                    <span class="about-timeline-year">Today</span>
+                    <div class="about-timeline-heading">Codabench</div>
+                    <p class="about-timeline-text">
+                        The next generation of CodaLab Competitions, built for flexible and reproducible benchmarking.
+                        Both platforms are administered by <a href="https://www.lisn.upsaclay.fr/" target="_blank">LISN</a>.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

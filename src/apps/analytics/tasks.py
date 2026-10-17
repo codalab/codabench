@@ -24,7 +24,7 @@ from analytics.models import (
     UserStorageDataPoint,
     AdminStorageDataPoint,
 )
-from competitions.models import Competition
+from competitions.models import Competition, CompetitionParticipant
 from profiles.models import User
 
 from utils.data import pretty_bytes
@@ -560,8 +560,19 @@ def update_home_page_counters():
     # Count public competitions
     public_competitions = Competition.objects.filter(published=True).count()
 
-    # Count active users
-    users = User.objects.filter(is_deleted=False).count()
+    # Count active users (deleted users are also left out of organizers and participants)
+    active_users = User.objects.filter(is_deleted=False)
+    users = active_users.count()
+
+    # Count users who created or collaborate on at least one competition
+    organizers = active_users.filter(
+        Q(competitions__isnull=False) | Q(collaborations__isnull=False)
+    ).distinct().count()
+
+    # Count users approved in at least one competition
+    participants = active_users.filter(
+        competitions_im_in__status=CompetitionParticipant.APPROVED
+    ).distinct().count()
 
     # Count all submissions
     submissions = Submission.objects.all().count()
@@ -570,6 +581,8 @@ def update_home_page_counters():
     counters_data = {
         "public_competitions": public_competitions,
         "users": users,
+        "organizers": organizers,
+        "participants": participants,
         "submissions": submissions,
         "last_updated": datetime.now(timezone.utc).isoformat()
     }

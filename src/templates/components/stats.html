@@ -1,0 +1,33 @@
+{% load humanize %}
+{# Platform statistics, shown inside the About section. Counts come from home_page_counters.json (updated daily). #}
+
+<div class="home-stats-section">
+<p class="home-stats-caption">Trusted by researchers and organizers around the world</p>
+<div class="home-stats">
+    <!-- Public Benchmarks -->
+    <div class="home-stat">
+        <div class="home-stat-value">{{ HOME_PAGE_COUNTERS_INFO.public_competitions|default:0|intcomma }}</div>
+        <div class="home-stat-label">Public Benchmarks</div>
+    </div>
+    <!-- Platform Users -->
+    <div class="home-stat">
+        <div class="home-stat-value">{{ HOME_PAGE_COUNTERS_INFO.users|default:0|intcomma }}</div>
+        <div class="home-stat-label">Platform Users</div>
+    </div>
+    <!-- Organizers -->
+    <div class="home-stat">
+        <div class="home-stat-value">{{ HOME_PAGE_COUNTERS_INFO.organizers|default:0|intcomma }}</div>
+        <div class="home-stat-label">Organizers</div>
+    </div>
+    <!-- Participants -->
+    <div class="home-stat">
+        <div class="home-stat-value">{{ HOME_PAGE_COUNTERS_INFO.participants|default:0|intcomma }}</div>
+        <div class="home-stat-label">Participants</div>
+    </div>
+    <!-- Submissions -->
+    <div class="home-stat">
+        <div class="home-stat-value">{{ HOME_PAGE_COUNTERS_INFO.submissions|default:0|intcomma }}</div>
+        <div class="home-stat-label">Submissions</div>
+    </div>
+</div>
+</div>
