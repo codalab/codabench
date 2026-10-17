@@ -23,14 +23,13 @@ from api.renderers import ZipRenderer
 from rest_framework.viewsets import ModelViewSet
 from api.serializers.competitions import CompetitionSerializerSimple, PhaseSerializer, \
     CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer, CompetitionParticipantSerializer, \
-    FrontPageCompetitionsSerializer, PhaseResultsSerializer, CompetitionUpdateSerializer, CompetitionCreateSerializer
+    PhaseResultsSerializer, CompetitionUpdateSerializer, CompetitionCreateSerializer
 from api.serializers.leaderboards import LeaderboardPhaseSerializer, LeaderboardSerializer
 from competitions.emails import send_participation_requested_emails, send_participation_accepted_emails, \
     send_participation_denied_emails, send_direct_participant_email
 from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant, Submission
 from datasets.models import Data
 from competitions.tasks import batch_send_email, manual_migration, create_competition_dump
-from competitions.utils import get_popular_competitions, get_recent_competitions
 from leaderboards.models import Leaderboard, Column
 from leaderboards.ranking import inject_average_ranks
 from utils.data import make_url_sassy
@@ -543,19 +542,6 @@ class CompetitionViewSet(ModelViewSet):
         serializer = CompetitionCreationTaskStatusSerializer(competition_creation_status)
 
         return Response(serializer.data)
-
-    # @swagger_auto_schema(responses={200: FrontPageCompetitionsSerializer()})
-    @extend_schema(responses={200: FrontPageCompetitionsSerializer})
-    @action(detail=False, methods=('GET',), permission_classes=(AllowAny,))
-    def front_page(self, request):
-        popular_comps = get_popular_competitions()
-        recent_comps = get_recent_competitions(exclude_comps=popular_comps)
-        popular_comps_serializer = CompetitionSerializerSimple(popular_comps, many=True)
-        recent_comps_serializer = CompetitionSerializerSimple(recent_comps, many=True)
-        return Response(data={
-            "popular_comps": popular_comps_serializer.data,
-            "recent_comps": recent_comps_serializer.data
-        })
 
     # @swagger_auto_schema(request_body=no_body, responses={201: CompetitionCreationTaskStatusSerializer()})
     @extend_schema(request=None, responses={201: CompetitionCreationTaskStatusSerializer})
