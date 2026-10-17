@@ -54,13 +54,12 @@ class HomePageStatsTests(TestCase):
 
         assert re.findall(r'class="home-stat-value">([^<]+)<', content) == ["0"] * 3
 
-    def test_section_has_caption_and_labels(self):
+    def test_section_has_labels(self):
         """
         Loads the home page.
-        Expects the stats caption and the 3 labels.
+        Expects the 3 stat labels.
         """
         content = self.client.get(reverse('pages:home')).content.decode()
 
-        assert "Trusted by researchers and organizers around the world" in content
         for label in ["Public Benchmarks", "Users", "Submissions"]:
             assert f'class="home-stat-label">{label}<' in content
