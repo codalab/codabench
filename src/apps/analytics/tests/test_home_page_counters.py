@@ -11,7 +11,7 @@ from profiles.models import User
 class HomePageCountersTaskTests(TestCase):
 
     def setUp(self):
-        # Organizers: creator_a, creator_b and collaborator (also auto-approved participants)
+        # Competition creators and a collaborator
         self.creator_a = UserFactory()
         self.creator_b = UserFactory()
         self.collaborator = UserFactory()
@@ -38,29 +38,15 @@ class HomePageCountersTaskTests(TestCase):
 
     def test_counts(self):
         """
-        Uses 2 competitions (1 published), 3 organizers (2 creators and a collaborator),
+        Uses 2 competitions (1 published), 2 creators and a collaborator,
         an approved, a pending and a deleted participant, and one inactive user.
-        Expects 1 public competition, 6 users (deleted left out), 3 organizers and
-        4 participants (the 3 organizers are auto-approved, plus the approved user;
-        pending and deleted are left out).
+        Expects 1 public competition, 6 users (deleted left out) and 0 submissions.
         """
         counters = self.run_task()
 
         assert counters["public_competitions"] == 1
         assert counters["users"] == 6
-        assert counters["organizers"] == 3
-        assert counters["participants"] == 4
         assert counters["submissions"] == 0
-
-    def test_organizer_with_many_competitions_counted_once(self):
-        """
-        Creates 2 more competitions for an existing organizer.
-        Expects the organizer count to stay at 3.
-        """
-        CompetitionFactory(created_by=self.creator_a)
-        CompetitionFactory(created_by=self.creator_a)
-
-        assert self.run_task()["organizers"] == 3
 
     def test_writes_all_counters(self):
         """
@@ -68,5 +54,5 @@ class HomePageCountersTaskTests(TestCase):
         Expects the written data to have every counter plus last_updated.
         """
         assert set(self.run_task().keys()) == {
-            "public_competitions", "users", "organizers", "participants", "submissions", "last_updated"
+            "public_competitions", "users", "submissions", "last_updated"
         }

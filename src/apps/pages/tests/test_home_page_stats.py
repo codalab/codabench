@@ -23,15 +23,13 @@ class HomePageStatsTests(TestCase):
 
     def test_shows_counters_with_separators(self):
         """
-        Uses counters for all 3 stats, plus organizers and participants which are not shown.
-        Expects only the 3 shown stats in order (benchmarks, users, submissions)
+        Uses counters for all 3 stats.
+        Expects the 3 stats in order (benchmarks, users, submissions)
         with thousands separators.
         """
         values = self.get_stat_values({
             "public_competitions": 1204,
             "users": 48213,
-            "organizers": 2875,
-            "participants": 31560,
             "submissions": 1532870,
         })
 
