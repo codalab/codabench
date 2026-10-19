@@ -52,6 +52,26 @@ class ManualModeStrategy(BaseModeStrategy):
 
 class LastestModeStrategy(BaseModeStrategy):
 
+    def put_on_leaderboard(self, request, submission_pk):
+        """
+        Put the latest submission on the leaderboard.
+        For a multi-task submission, wait until every task has sent its scores.
+        Why: each task sends its scores separately. Replacing the row earlier removes
+        the other tasks and shows n/a for them.
+        """
+        submission, phase, leaderboard = self.get_submission_and_phase_and_leaderboard(submission_pk=submission_pk)
+
+        if submission.parent is None:
+            super().put_on_leaderboard(request=request, submission_pk=submission_pk)
+            return
+
+        children = Submission.objects.filter(parent=submission.parent)
+        if children.filter(scores__isnull=True).exists():
+            return
+
+        self.do_execute(phase=phase, request=request, submission=submission)
+        children.update(leaderboard=leaderboard)
+
     def do_execute(self, phase, request, submission):
         """add latest submission in leaderboard"""
         Submission.objects.filter(phase=phase, owner=submission.owner).update(leaderboard=None)
