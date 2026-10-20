@@ -163,6 +163,7 @@ You can then launch the worker by running this command in the terminal where the
 ```bash
 docker compose up -d
 ```
+
 !!! tip
     Make sure to add the necessary packages inside the competition image to allow the use of the connected GPU
 
@@ -215,6 +216,8 @@ The folder `$HOST_DIRECTORY/data`, usually `/codabench/data`, is shared between 
 ### Reference Data
 You can also add your reference data, used during the scoring phase, inside a folder on the compute worker. This folder, `$HOST_DIRECTORY/reference`, will be mounted during the scoring phase as `/app/reference` inside the container. Contrary to `$HOST_DIRECTORY/data`, this folder is only mounted during the scoring phase. 
 
+!!! warning "Do not put reference data in `$HOST_DIRECTORY/data`"
+    `/app/data` is also mounted during ingestion, where participant code runs, so anything in it can be read by submissions. Use `$HOST_DIRECTORY/reference` for anything participants must not see.
 
 !!! warning 
     Make sure to make the owner of the folder(s) and file(s) the same as the one launching the compute worker.  
