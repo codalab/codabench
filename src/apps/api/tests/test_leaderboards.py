@@ -292,7 +292,7 @@ class PhaseLeaderboardRowIdTests(APITestCase):
         """Create a phase in the test competition, using the test leaderboard and the given tasks."""
         return factories.PhaseFactory(competition=self.comp, leaderboard=self.leaderboard, tasks=tasks)
 
-    def make_submission(self, phase, task, parent=None, has_children=False):
+    def make_submission(self, phase, task, parent=None, has_children=False, queue=None):
         """Create a submission owned by the participant.
 
         - Parent of a multi-task submission (has_children=True): created without scores and
@@ -306,6 +306,7 @@ class PhaseLeaderboardRowIdTests(APITestCase):
             parent=parent,
             has_children=has_children,
             leaderboard=None if has_children else self.leaderboard,
+            queue=queue,
         )
         if not has_children:
             factories.SubmissionScoreFactory(column=self.column, submissions=[submission])
@@ -341,5 +342,18 @@ class PhaseLeaderboardRowIdTests(APITestCase):
         assert len(rows) == 1
         assert rows[0]['id'] == submission.id
 
-    # TODO: add a test for a submission split into several rows by participant group queues
-    # (one row per group). Decide first which ID those rows should show.
+    def test_group_queue_rows_show_parent_id(self):
+        """Children of a submission sent to several group queues are shown as one row per group;
+        expects every row ID to be the parent ID, with the group telling the rows apart."""
+        phase = self.make_phase(tasks=[self.task1])
+        queue_a = factories.QueueFactory(name='comp__GroupA')
+        queue_b = factories.QueueFactory(name='comp__GroupB')
+        parent = self.make_submission(phase=phase, task=None, has_children=True)
+        self.make_submission(phase=phase, task=self.task1, parent=parent, queue=queue_a)
+        self.make_submission(phase=phase, task=self.task1, parent=parent, queue=queue_b)
+
+        rows = self.get_rows(phase=phase)
+
+        assert len(rows) == 2
+        assert [row['id'] for row in rows] == [parent.id, parent.id]
+        assert {row['queue_name'] for row in rows} == {f'{parent.id}_GroupA', f'{parent.id}_GroupB'}
