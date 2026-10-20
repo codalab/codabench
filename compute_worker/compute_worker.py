@@ -523,7 +523,7 @@ class Run:
         self.bundle_dir = os.path.join(self.root_dir, "bundles")
         self.input_dir = os.path.join(self.root_dir, "input")
         self.output_dir = os.path.join(self.root_dir, "output")
-        self.data_dir = os.path.join(Settings.BASE_DIR, "data")  # absolute path to data in the host
+        self.data_dir = os.path.join(Settings.BASE_DIR, "data")            # path inside the worker container
         self.reference_dir = os.path.join(Settings.BASE_DIR, "reference")  # path inside the worker container
         self.logs = {}
 
