@@ -3001,10 +3001,6 @@ Make sure to use the username of the user running the podman container.</p>
 <div class="language-ini highlight"><span class="filename">.env</span><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="na">USE_GPU</span><span class="o">=</span><span class="s">True</span>
 </span></code></pre></div></p>
 <h2 id="compute-worker-installation">Compute worker installation</h2>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Starting from <code>codalab/competitions-v2-compute-worker:v1.22</code> the images are now unifed for Podman and Docker CPU/GPU and has been renamed to <code>codalab/codabench-compute-worker:latest</code></p>
-</div>
 <p>Create a <code>run_podman.sh</code> file with the following content:</p>
 <div class="language-bash highlight"><span class="filename">run_podman.sh</span><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>podman<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span><span class="se">\</span>
 </span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w"> </span>--volume<span class="w"> </span>/run/user/<span class="k">$(</span>id<span class="w"> </span>-u<span class="k">)</span>/podman/podman.sock:/run/user/1000/podman/podman.sock:U<span class="w"> </span><span class="se">\</span>
