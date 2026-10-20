@@ -53,32 +53,39 @@ window.delay = (function () {
 /* ----------------------------------------------------------------------------
  Time Utils
  ----------------------------------------------------------------------------*/
+// Returns how long ago a date was, as text like "5 minutes" or "1 day".
+// The pages add " ago" after it.
+// date: a timestamp in milliseconds, for example from Date.parse().
 function timeSince(date) {
 
     var seconds = Math.floor((new Date() - date) / 1000);
 
-    var interval = Math.floor(seconds / 31536000);
-
-    if (interval > 1) {
-        return interval + " years";
+    // Units from largest to smallest, with their length in seconds.
+    // A month is counted as 30 days and a year as 365 days.
+    var units = [
+        ["year", 31536000],
+        ["month", 2592000],
+        ["day", 86400],
+        ["hour", 3600],
+        ["minute", 60],
+    ];
+    // Use the largest unit that fits at least once.
+    // Why: 90 minutes should show as "1 hour", not "90 minutes".
+    // More examples:
+    //   45 seconds -> "45 seconds"
+    //   90 seconds -> "1 minute"
+    //   30 hours   -> "1 day"
+    //   45 days    -> "1 month"
+    //   400 days   -> "1 year"
+    for (var i = 0; i < units.length; i++) {
+        var interval = Math.floor(seconds / units[i][1]);
+        if (interval >= 1) {
+            // Add "s" for every count except 1, so "1 hour" but "2 hours".
+            return interval + " " + units[i][0] + (interval === 1 ? "" : "s");
+        }
     }
-    interval = Math.floor(seconds / 2592000);
-    if (interval > 1) {
-        return interval + " months";
-    }
-    interval = Math.floor(seconds / 86400);
-    if (interval > 1) {
-        return interval + " days";
-    }
-    interval = Math.floor(seconds / 3600);
-    if (interval > 1) {
-        return interval + " hours";
-    }
-    interval = Math.floor(seconds / 60);
-    if (interval > 1) {
-        return interval + " minutes";
-    }
-    return Math.floor(seconds) + " seconds";
+    // Less than a minute: show seconds.
+    return seconds + " " + (seconds === 1 ? "second" : "seconds");
 }
 
 function pretty_date(date_string) {

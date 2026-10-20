@@ -1,0 +1,49 @@
+{% load humanize %}
+{# One benchmark card. Expects `benchmark` (serialized by HomePageBenchmarkSerializer) and optional `featured`. #}
+
+<div class="bc-card{% if featured %} bc-featured{% endif %}">
+    <!-- Makes the whole card clickable -->
+    <a class="bc-stretched" href="/competitions/{{ benchmark.id }}/" target="_blank" aria-label="{{ benchmark.title }}"></a>
+
+    <div class="bc-top">
+        <div class="bc-logo">
+            {% if benchmark.logo_url %}
+                <img src="{{ benchmark.logo_url }}" alt="">
+            {% else %}
+                {# First letter of the title when there is no logo #}
+                <span>{{ benchmark.title|first|upper }}</span>
+            {% endif %}
+        </div>
+        <div class="bc-head">
+            <div class="bc-tags">
+                {% if featured %}<span class="bc-featured-pill">Featured</span>{% endif %}
+                <span class="bc-type">{{ benchmark.competition_type }}</span>
+            </div>
+            <h3 class="bc-title">{{ benchmark.title }}</h3>
+        </div>
+    </div>
+
+    <p class="bc-desc">{{ benchmark.description|default:"" }}</p>
+
+    <div class="bc-meta">
+        <!-- Line 1: organizer, date and prize -->
+        <div class="bc-meta-row bc-meta-row-first">
+            {% if benchmark.owner_display_name %}
+                <span class="bc-pill bc-organizer">
+                    <i class="user icon"></i>by <span class="bc-organizer-name">{{ benchmark.owner_display_name }}</span>
+                </span>
+            {% endif %}
+            {% if benchmark.first_phase_start %}
+                <span class="bc-pill bc-date"><i class="calendar alternate icon"></i>{{ benchmark.first_phase_start }}</span>
+            {% endif %}
+            {% if benchmark.reward %}
+                <span class="bc-pill bc-prize"><i class="trophy icon"></i>Prize</span>
+            {% endif %}
+        </div>
+        <!-- Line 2: participants and submissions -->
+        <div class="bc-meta-row">
+            <span class="bc-pill"><i class="users icon"></i>{{ benchmark.participants_count|intcomma }} participants</span>
+            <span class="bc-pill"><i class="paper plane icon"></i>{{ benchmark.submissions_count|intcomma }} submissions</span>
+        </div>
+    </div>
+</div>

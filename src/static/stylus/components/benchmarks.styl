@@ -1,0 +1,227 @@
+/* --------------------------------------------------------------------------------------
+ Benchmarks components (templates/components/benchmarks.html and benchmark_card.html)
+ */
+
+/* Sections */
+.hb-section
+    width 100%
+    margin 3em 0
+    text-align left
+
+.hb-header
+    display flex
+    justify-content space-between
+    align-items baseline
+    flex-wrap wrap
+    gap 8px
+    margin-bottom 1em
+
+#page_content .hb-title
+    margin 0
+    color $cb-navy-900
+    font-size 1.6em
+
+.hb-view-all
+    color $cb-blue-500
+    font-weight 500
+
+    &:hover
+        color $cb-blue-400
+
+    .icon
+        margin 0 0 0 2px
+
+// minmax(0, 1fr) keeps columns equal even with long content
+.hb-grid
+    display grid
+    grid-template-columns repeat(3, minmax(0, 1fr))
+    gap 20px
+
+.hb-empty
+    margin 0
+    color #6b7785
+    font-size 14px
+
+/* Card */
+.bc-card
+    position relative
+    display flex
+    flex-direction column
+    gap 10px
+    min-width 0
+    height 100%
+    padding 20px
+    background-color #fff
+    border 1px solid #e3e7ec
+    border-radius 10px
+    box-shadow 0 1px 2px rgba(0, 0, 0, 0.04)
+    text-align left
+    transition transform 150ms ease, box-shadow 150ms ease
+
+    &:hover
+        border-color $cb-blue-500
+        transform translateY(-3px)
+        box-shadow 0 8px 20px rgba(27, 47, 64, 0.12)
+
+// Featured: blue stripe on top (kept on hover)
+.bc-featured,
+.bc-featured:hover
+    border-top 3px solid $cb-blue-500
+
+// Makes the whole card clickable
+.bc-stretched
+    position absolute
+    inset 0
+    z-index 1
+    border-radius 10px
+
+.bc-top
+    display flex
+    gap 12px
+    align-items flex-start
+
+.bc-logo
+    flex none
+    display flex
+    align-items center
+    justify-content center
+    width 52px
+    height 52px
+    overflow hidden
+    border-radius 10px
+    border 1px solid rgba($cb-blue-500, 0.25)
+    background linear-gradient(135deg, $cb-blue-500, $cb-blue-400)
+    color #fff
+    font-size 20px
+    font-weight 700
+
+    // Fill the whole square (edges of non-square logos are cropped)
+    img
+        width 100%
+        height 100%
+        object-fit cover
+        background-color #fff
+
+.bc-head
+    flex 1
+    min-width 0
+
+.bc-tags
+    display flex
+    flex-wrap wrap
+    gap 6px
+    margin-bottom 6px
+
+.bc-type,
+.bc-featured-pill
+    padding 2px 8px
+    border-radius 999px
+    font-size 11px
+    font-weight 600
+    letter-spacing 0.05em
+    text-transform uppercase
+
+.bc-type
+    background-color $cb-blue-50
+    color $cb-blue-500
+
+.bc-featured-pill
+    background-color $cb-blue-500
+    color #fff
+
+// Always 2 lines, longer titles end with "..."
+#page_content .bc-title
+    display -webkit-box
+    -webkit-box-orient vertical
+    -webkit-line-clamp 2
+    overflow hidden
+    min-height 2.6em
+    margin 0
+    color $cb-navy-900
+    font-size 16px
+    font-weight 700
+    line-height 1.3
+
+.bc-desc
+    display -webkit-box
+    -webkit-box-orient vertical
+    -webkit-line-clamp 2
+    overflow hidden
+    margin 0
+    color #4a4a4a
+    font-size 14px
+    line-height 1.55
+
+/* Pills under the description */
+.bc-meta
+    display flex
+    flex-direction column
+    gap 6px
+    margin-top auto
+
+.bc-meta-row
+    display flex
+    flex-wrap wrap
+    gap 6px
+
+// Organizer, date and prize stay on one line, a long organizer name is cut with "..."
+.bc-meta-row-first
+    flex-wrap nowrap
+
+.bc-pill
+    display inline-flex
+    align-items center
+    gap 4px
+    max-width 100%
+    padding 3px 9px
+    border-radius 999px
+    background-color #f1f4f7
+    color $cb-navy-700
+    font-size 12px
+    font-weight 500
+    white-space nowrap
+
+    // Semantic icons have a fixed 1em box that sits off-center, reset it so flex can center them
+    .icon
+        display inline-flex
+        align-items center
+        justify-content center
+        width auto
+        height auto
+        margin 0
+        font-size 11px
+        line-height 1
+
+.bc-organizer
+    overflow hidden
+    color #6b7785
+
+    .icon
+        color $cb-blue-500
+
+.bc-organizer-name
+    overflow hidden
+    text-overflow ellipsis
+    color $cb-blue-500
+    font-weight 600
+
+.bc-date
+    flex none
+
+// Prize stands out in amber (after .bc-pill so its colors win)
+.bc-prize
+    flex none
+    background-color $cb-warning-bg
+    color #a8691f
+
+    .icon
+        color $cb-warning
+
+/* Tablets: 2 per row, phones: 1 per row */
+@media only screen and (max-width 991px)
+    .hb-grid
+        grid-template-columns repeat(2, minmax(0, 1fr))
+
+@media only screen and (max-width 625px)
+    .hb-grid
+        grid-template-columns minmax(0, 1fr)

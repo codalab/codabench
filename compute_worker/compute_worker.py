@@ -523,7 +523,8 @@ class Run:
         self.bundle_dir = os.path.join(self.root_dir, "bundles")
         self.input_dir = os.path.join(self.root_dir, "input")
         self.output_dir = os.path.join(self.root_dir, "output")
-        self.data_dir = os.path.join(Settings.HOST_DIRECTORY, "data")  # absolute path to data in the host
+        self.data_dir = os.path.join(Settings.BASE_DIR, "data")            # path inside the worker container
+        self.reference_dir = os.path.join(Settings.BASE_DIR, "reference")  # path inside the worker container
         self.logs = {}
 
         # Details for submission
@@ -579,6 +580,8 @@ class Run:
             max_retries=Retry(
                 total=3,
                 backoff_factor=1,
+                status_forcelist=[500, 502, 503, 504],
+                allowed_methods=["PATCH", "GET", "PUT"],
             )
         )
         self.requests_session.mount("http://", adapter)
@@ -779,8 +782,10 @@ class Run:
         try:
             self._update_submission(data)
         except Exception as e:
-            # Always catch exception and never raise error
+            # Re-raise only for terminal statuses so Celery marks the task as failed.
             logger.exception(f"Failed to update submission status to {status}: {e}")
+            if status in ("Finished", "Failed"):
+                raise
 
     def _get_container_image(self, image_name):
         logger.info("Running pull for image: {}".format(image_name))
@@ -1258,7 +1263,7 @@ class Run:
         volumes_host = [
             self._get_host_path(program_dir),
             self._get_host_path(self.output_dir),
-            self.data_dir,
+            self._get_host_path(self.data_dir),
             self._get_host_path(self.root_dir, "submission")
         ]
         volumes_config = {
@@ -1277,6 +1282,10 @@ class Run:
             # Input dir for scoring program
             volumes_host.extend([self._get_host_path(self.input_dir)])
             volumes_config.update({volumes_host[-1]: {"bind": "/app/input"}})
+
+            # Reference data, only for the scoring phase.
+            volumes_host.extend([self._get_host_path(self.reference_dir)])
+            volumes_config.update({volumes_host[-1]: {"bind": "/app/reference", "mode": "ro"}})
 
         # During Ingestion: Add `/app/input_data` to volumes_host and update volumes_config
         if kind == ProgramKind.INGESTION_PROGRAM:

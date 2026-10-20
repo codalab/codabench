@@ -129,7 +129,11 @@ class LeaderboardEntriesSerializer(serializers.ModelSerializer):
             ordering = ['created_when']
             submissions = submissions_qs
         else:
-            ordering = [f'{"-" if primary_col.sorting == "desc" else ""}primary_col']
+            ordering = [
+                F('primary_col').desc(nulls_last=True)
+                if primary_col.sorting == 'desc'
+                else F('primary_col').asc(nulls_last=True)
+            ]
             submissions = submissions_qs.annotate(primary_col=Sum('scores__score', filter=Q(scores__column=primary_col)))
 
         for column in instance.columns.exclude(id=primary_col.id).order_by('index'):
@@ -198,7 +202,11 @@ class LeaderboardPhaseSerializer(serializers.ModelSerializer):
             ordering = ['created_when']
             submissions = submissions_qs
         else:
-            ordering = [f'{"-" if primary_col.sorting == "desc" else ""}primary_col']
+            ordering = [
+                F('primary_col').desc(nulls_last=True)
+                if primary_col.sorting == 'desc'
+                else F('primary_col').asc(nulls_last=True)
+            ]
             submissions = submissions_qs.annotate(primary_col=Sum('scores__score', filter=Q(scores__column=primary_col)))
         for column in (
             instance.leaderboard.columns
