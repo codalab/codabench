@@ -16,7 +16,12 @@ class HomeView(TemplateView):
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
 
-        announcements = Announcement.objects.filter(is_active=True).order_by("priority", "-created_when")
+        # Home page announcements, plus the ones meant for the home page and all pages.
+        # Platform only announcements are shown in the banner above the header, not here.
+        announcements = Announcement.objects.filter(
+            is_active=True,
+            placement__in=[Announcement.PLACEMENT_HOME_PAGE, Announcement.PLACEMENT_HOME_PAGE_AND_PLATFORM],
+        ).order_by("priority", "-created_when")
         context['announcements'] = HomePageAnnouncementSerializer(announcements, many=True).data
 
         # Only the latest posts are shown on the home page, the rest are on the news page

@@ -26,6 +26,32 @@ class HomePageAnnouncementTests(TestCase):
         assert [a['title'] for a in resp.context['announcements']] == ["Active"]
         assert "inactive text" not in resp.content.decode()
 
+    def test_only_home_page_announcements_are_shown(self):
+        """
+        Creates one home page announcement and one platform announcement and loads the home page.
+        Expects only the home page announcement in the home page announcements context.
+        """
+        Announcement.objects.create(title="Home page", placement=Announcement.PLACEMENT_HOME_PAGE)
+        Announcement.objects.create(title="Platform", placement=Announcement.PLACEMENT_PLATFORM)
+
+        resp = self.get_home()
+
+        assert [a['title'] for a in resp.context['announcements']] == ["Home page"]
+
+    def test_home_page_and_platform_announcement_shown_on_home_page(self):
+        """
+        Creates one announcement for the home page and all pages, and loads the home page.
+        Expects it in the home page announcements context.
+        """
+        Announcement.objects.create(
+            title="Home page and platform",
+            placement=Announcement.PLACEMENT_HOME_PAGE_AND_PLATFORM,
+        )
+
+        resp = self.get_home()
+
+        assert [a['title'] for a in resp.context['announcements']] == ["Home page and platform"]
+
     def test_announcements_ordered_by_priority_then_newest(self):
         """
         Creates two priority 0 announcements with different creation dates and
