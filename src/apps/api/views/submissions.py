@@ -91,7 +91,7 @@ class SubmissionViewSet(ModelViewSet):
                     except SubmissionDetails.DoesNotExist:
                         logger.error("SubmissionDetails object not found.")
 
-            if self.action in ['update_fact_sheet', 'run_submission', 're_run_submission']:
+            if self.action in ['update_fact_sheet', 'run_submission', 're_run_submission', 'resubmit_submission']:
                 # get_queryset will stop us from re-running something we're not supposed to
                 pass
             else:
@@ -155,13 +155,13 @@ class SubmissionViewSet(ModelViewSet):
             except TypeError as err:
                 raise ValidationError(f'Error {err}')
             qs = qs.filter(pk__in=pks)
+            # Bulk actions are for competition organizers only
             if not self.request.user.is_superuser and not self.request.user.is_staff:
-                if qs.filter(
-                    Q(owner=self.request.user) |
+                if qs.exclude(
                     Q(phase__competition__created_by=self.request.user) |
                     Q(phase__competition__collaborators__in=[self.request.user.pk])
-                ) is not qs:
-                    raise ValidationError("Request Contained Submissions you don't have authorization for")
+                ).exists():
+                    raise PermissionDenied("Request Contained Submissions you don't have authorization for")
             if self.action in ['re_run_many_submissions', 'resubmit_many_submissions']:
                 qs = qs.filter(status__in=[Submission.FINISHED, Submission.FAILED, Submission.CANCELLED])
         return qs
@@ -379,26 +379,38 @@ class SubmissionViewSet(ModelViewSet):
 
     @action(detail=False, methods=('POST',))
     def re_run_many_submissions(self, request):
-        qs = self.get_queryset()
+        qs = self.get_queryset().filter(is_soft_deleted=False)
         for submission in qs:
             submission.re_run()
         return Response({})
 
+    def get_resubmittable(self, submission):
+        """Returns the submission to resubmit (the parent for a child), or raises if it cannot be resubmitted"""
+        submission = submission.parent or submission
+        if not self.has_admin_permission(self.request.user, submission):
+            raise PermissionDenied('You do not have permission to resubmit submissions')
+        if submission.is_soft_deleted or submission.data is None:
+            raise PermissionDenied('Cannot resubmit a deleted submission')
+        if submission.status not in (Submission.FINISHED, Submission.FAILED, Submission.CANCELLED):
+            raise PermissionDenied('Cannot resubmit a submission that has not finished processing.')
+        if not submission.phase.tasks.exists():
+            raise ValidationError('Cannot resubmit a submission on a phase without tasks')
+        return submission
+
     @action(detail=True, methods=('POST',))
     def resubmit_submission(self, request, pk):
         """Unlike re-run, which keeps the original task, this runs the same upload on the current phase tasks"""
-        submission = self.get_object()
-        if not self.has_admin_permission(request.user, submission):
-            raise PermissionDenied('You do not have permission to resubmit submissions')
-        if submission.status not in (Submission.FINISHED, Submission.FAILED, Submission.CANCELLED):
-            raise PermissionDenied('Cannot resubmit a submission that has not finished processing.')
+        submission = self.get_resubmittable(self.get_object())
         return Response({'id': submission.resubmit().id})
 
     @action(detail=False, methods=('POST',))
     def resubmit_many_submissions(self, request):
-        for submission in self.get_queryset():
+        # Set of parents, so selecting a parent and its children only resubmits once
+        # Everything is checked before resubmitting, so a refused request creates nothing
+        submissions = {self.get_resubmittable(submission) for submission in self.get_queryset()}
+        for submission in submissions:
             submission.resubmit()
-        return Response({})
+        return Response({'count': len(submissions)})
 
     @action(detail=True, methods=('POST',))
     def migrate_to_phase(self, request, pk):

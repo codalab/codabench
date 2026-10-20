@@ -1327,3 +1327,109 @@ class SubmissionReRunTests(APITestCase):
         resp = self.re_run(submission=self.submissions[0])
         assert resp.status_code == 403
         assert Submission.objects.count() == len(self.submissions)
+
+
+class SubmissionResubmitTests(APITestCase):
+    """
+    Tests for the resubmit_submission and resubmit_many_submissions endpoints of SubmissionViewSet.
+    run_submission is mocked so that resubmissions are not sent to Celery.
+    """
+
+    RUN_SUBMISSION = 'competitions.tasks.run_submission'
+
+    def setUp(self):
+        self.creator = UserFactory(username='creator')
+        self.collaborator = UserFactory(username='collab')
+        self.participant = UserFactory(username='participant')
+        self.comp = CompetitionFactory(created_by=self.creator, collaborators=[self.collaborator])
+        self.phase = PhaseFactory(competition=self.comp)
+        self.submission = SubmissionFactory(phase=self.phase, owner=self.participant, status=Submission.FINISHED)
+
+    def resubmit(self, submission):
+        return self.client.post(reverse('submission-resubmit-submission', args=(submission.pk,)))
+
+    def resubmit_many(self, submissions):
+        url = reverse('submission-resubmit-many-submissions')
+        return self.client.post(url, [s.pk for s in submissions], format='json')
+
+    def test_organizer_can_resubmit_on_current_tasks(self):
+        self.client.force_login(self.creator)
+        new_task = TaskFactory()
+        self.phase.tasks.set([new_task])
+        with mock.patch(self.RUN_SUBMISSION) as run_submission_mock:
+            resp = self.resubmit(self.submission)
+        assert resp.status_code == 200, resp.data
+        new_sub = Submission.objects.get(pk=resp.data['id'])
+        assert new_sub.resubmitted_from == self.submission
+        assert new_sub.owner == self.participant
+        assert new_sub.data == self.submission.data
+        assert new_sub.name == self.submission.name
+        assert list(run_submission_mock.call_args.kwargs['tasks']) == [new_task]
+
+    def test_non_organizer_cannot_resubmit(self):
+        self.client.force_login(self.participant)
+        with mock.patch(self.RUN_SUBMISSION) as run_submission_mock:
+            assert self.resubmit(self.submission).status_code == 403
+            assert self.resubmit_many([self.submission]).status_code == 403
+        run_submission_mock.assert_not_called()
+        assert Submission.objects.count() == 1
+
+    def test_cannot_resubmit_unfinished_submission(self):
+        submission = SubmissionFactory(phase=self.phase, owner=self.participant, status=Submission.RUNNING)
+        self.client.force_login(self.creator)
+        with mock.patch(self.RUN_SUBMISSION) as run_submission_mock:
+            resp = self.resubmit(submission)
+        assert resp.status_code == 403
+        run_submission_mock.assert_not_called()
+
+    def test_cannot_resubmit_soft_deleted_submission(self):
+        self.submission.soft_delete()
+        self.client.force_login(self.creator)
+        with mock.patch(self.RUN_SUBMISSION) as run_submission_mock:
+            assert self.resubmit(self.submission).status_code == 403
+            assert self.resubmit_many([self.submission]).status_code == 403
+        run_submission_mock.assert_not_called()
+
+    def test_cannot_resubmit_on_phase_without_tasks(self):
+        self.phase.tasks.clear()
+        self.client.force_login(self.creator)
+        with mock.patch(self.RUN_SUBMISSION) as run_submission_mock:
+            assert self.resubmit(self.submission).status_code == 400
+        run_submission_mock.assert_not_called()
+
+    def test_non_staff_organizers_can_resubmit_many(self):
+        other = SubmissionFactory(phase=self.phase, owner=self.participant, status=Submission.FAILED)
+        for user in [self.creator, self.collaborator]:
+            self.client.force_login(user)
+            with mock.patch(self.RUN_SUBMISSION) as run_submission_mock:
+                resp = self.resubmit_many([self.submission, other])
+            assert resp.status_code == 200, f'{user.username} could not resubmit many'
+            assert resp.data['count'] == 2
+            assert run_submission_mock.call_count == 2
+
+    def test_resubmitting_child_resubmits_parent_once(self):
+        parent = SubmissionFactory(phase=self.phase, owner=self.participant, status=Submission.FINISHED, has_children=True, task=None)
+        child = SubmissionFactory(phase=self.phase, owner=self.participant, status=Submission.FINISHED, parent=parent, data=parent.data)
+        self.client.force_login(self.creator)
+        with mock.patch(self.RUN_SUBMISSION):
+            resp = self.resubmit(child)
+        assert resp.status_code == 200, resp.data
+        assert Submission.objects.get(pk=resp.data['id']).resubmitted_from == parent
+        with mock.patch(self.RUN_SUBMISSION) as run_submission_mock:
+            resp = self.resubmit_many([parent, child])
+        assert resp.data['count'] == 1
+        run_submission_mock.assert_called_once()
+
+    def test_resubmissions_do_not_count_towards_submission_limit(self):
+        self.phase.has_max_submissions = True
+        self.phase.max_submissions_per_person = 1
+        self.phase.save()
+        self.client.force_login(self.creator)
+        with mock.patch(self.RUN_SUBMISSION):
+            assert self.resubmit(self.submission).status_code == 200
+        can_submit, _ = self.phase.can_user_make_submissions(self.participant)
+        assert not can_submit  # the original submission still counts
+        self.submission.status = Submission.FAILED
+        self.submission.save()
+        can_submit, _ = self.phase.can_user_make_submissions(self.participant)
+        assert can_submit

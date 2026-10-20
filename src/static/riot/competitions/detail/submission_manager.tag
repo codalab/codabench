@@ -182,9 +182,9 @@
                         </span>
                         <!-- resubmit on current tasks (re-run keeps the original task) -->
                         <span if="{ _.includes(['Finished', 'Failed', 'Cancelled'], submission.status) }"
-                            data-tooltip="Resubmit on current tasks" data-inverted=""
+                            data-tooltip="Resubmit (new submission on current tasks)" data-inverted=""
                             onclick="{ resubmit_submission.bind(this, submission) }">
-                            <i class="icon blue sync alternate"></i>
+                            <i class="icon purple clone outline { disabled: resubmitting }"></i>
                         </span>
                         <!-- delete submission -->
                         <span data-tooltip="Delete Submission" data-inverted=""
@@ -754,24 +754,43 @@
             event.stopPropagation()
         }
 
+        // Ignore clicks while a resubmit request is in progress, each request creates new submissions
+        self.resubmitting = false
+        self.resubmit_error = function (response) {
+            toastr.error(_.get(response, 'responseJSON.detail') || _.get(response, 'responseJSON[0]') || response.responseText)
+        }
+        self.resubmit_done = function () {
+            self.resubmitting = false
+            self.update()
+        }
+
         self.resubmit_submission = function (submission) {
+            event.stopPropagation()
+            if (self.resubmitting || !confirm(`Resubmit submission ${submission.id} as a new submission on the current tasks of the phase?`)) {
+                return
+            }
+            self.resubmitting = true
             CODALAB.api.resubmit_submission(submission.id)
                 .done(function (response) {
-                    toastr.success('Submission resubmitted on current tasks')
+                    toastr.success(`Created submission ${response.id} on current tasks. The leaderboard is not updated automatically.`)
                     self.update_submissions()
                 })
-                .fail(function (response) {
-                    toastr.error(_.get(response, 'responseJSON.detail', response.responseText))
-                })
-            event.stopPropagation()
+                .fail(self.resubmit_error)
+                .always(self.resubmit_done)
         }
 
         self.resubmit_selected_submissions = function () {
+            if (self.resubmitting || !confirm(`Resubmit the ${self.checked_submissions.length} selected submissions as new submissions on the current tasks of the phase?`)) {
+                return
+            }
+            self.resubmitting = true
             CODALAB.api.resubmit_many_submissions(self.checked_submissions)
                 .done(function (response) {
-                    toastr.success('Submissions resubmitted on current tasks')
+                    toastr.success(`Created ${response.count} submissions on current tasks. The leaderboard is not updated automatically.`)
                     self.update_submissions()
                 })
+                .fail(self.resubmit_error)
+                .always(self.resubmit_done)
         }
 
         self.rerun_selected_submissions = function () {
