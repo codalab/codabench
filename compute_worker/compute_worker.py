@@ -579,6 +579,8 @@ class Run:
             max_retries=Retry(
                 total=3,
                 backoff_factor=1,
+                status_forcelist=[500, 502, 503, 504],
+                allowed_methods=["PATCH", "GET", "PUT"],
             )
         )
         self.requests_session.mount("http://", adapter)
@@ -779,8 +781,10 @@ class Run:
         try:
             self._update_submission(data)
         except Exception as e:
-            # Always catch exception and never raise error
+            # Re-raise only for terminal statuses so Celery marks the task as failed.
             logger.exception(f"Failed to update submission status to {status}: {e}")
+            if status in ("Finished", "Failed"):
+                raise
 
     def _get_container_image(self, image_name):
         logger.info("Running pull for image: {}".format(image_name))
