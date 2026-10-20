@@ -210,7 +210,7 @@ class SignUpViewTests(TestCase):
 
     def test_sign_up_when_activation_email_fails_shows_error_message(self):
         """When sending the activation email fails, the user is still created and redirected, with an error that links to resend activation and the contact email."""
-        with mock.patch('profiles.views.EmailMessage.send', side_effect=smtplib.SMTPException('mail server down')):
+        with mock.patch('profiles.views.codalab_send_mail', side_effect=smtplib.SMTPException('mail server down')):
             resp = self.sign_up(email='newuser@example.com')
 
         assert resp.status_code == 302
