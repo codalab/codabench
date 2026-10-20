@@ -1,0 +1,117 @@
+/* --------------------------------------------------------------------------------------
+ Header component (templates/components/header.html)
+ */
+#header
+    margin-bottom 20px
+    padding 0
+    color $cb-text-on-dark
+    background-color $cb-navy-900
+    // Dot pattern on top of a navy gradient
+    background-image radial-gradient(rgba(255, 255, 255, 0.10) 1px, transparent 1px), linear-gradient(135deg, $cb-navy-900 0%, $cb-navy-800 55%, $cb-navy-700 100%)
+    background-size 20px 20px, cover
+
+    .ui.menu .ui.dropdown .menu>.item
+        color rgba(0, 0, 0, 0.6) !important
+
+    .icon.user.outline
+        margin-right 0
+
+.header-inner
+    display flex
+    justify-content space-between
+    align-items center
+    flex-wrap wrap
+    gap 1em
+    padding 20px 64px
+
+/* Logo + tagline */
+.header-brand
+    text-align left
+
+#header-logo
+    display block
+    height 36px
+
+.header-logo-row
+    display flex
+    align-items flex-end
+    gap 10px
+
+// Version tag next to the logo
+.header-version
+    padding 2px 8px
+    border 1px solid rgba(255, 255, 255, 0.2)
+    border-radius 999px
+    background-color rgba(255, 255, 255, 0.08)
+    color $cb-text-muted-on-dark
+    font-family monospace
+    font-size 12px
+    line-height 1.4
+
+.header-version:hover
+    color $cb-text-on-dark
+    background-color rgba(255, 255, 255, 0.16)
+
+#header .header-tagline
+    margin 8px 0 0
+    color $cb-text-muted-on-dark
+    font-size 14px
+    font-weight normal
+
+/* Menu */
+#topleft_menu
+    margin 0
+
+    .right.menu.item
+        display flex
+        align-items center
+        padding 0
+        flex-wrap wrap
+        gap 4px
+
+    // Links and buttons share the same box so they sit on one line
+    > .right.menu > .item
+        display flex
+        align-items center
+        margin 0 !important
+        padding 8px 12px !important
+        line-height 1.2
+        color $cb-text-on-dark !important
+
+    // Login / Sign-up buttons
+    .item.style_button
+        color $cb-text-on-dark !important
+        background-color rgba(255, 255, 255, .12) !important
+        font-weight 100
+
+    .item.style_button:hover
+        color #fff !important
+        background-color rgba(255, 255, 255, .25) !important
+
+/* Mobile menu button (shown on small screens only) */
+#hamburger_button
+    display none
+
+    .button
+        margin 0
+        color $cb-text-on-dark !important
+        background-color rgba(255, 255, 255, .12) !important
+
+    .button:hover
+        color #fff !important
+        background-color rgba(255, 255, 255, .25) !important
+
+    .icon
+        margin 0
+
+/* Small screens: menu moves into the mobile menu */
+@media only screen and (max-width 625px)
+    .header-inner
+        flex-wrap nowrap
+        padding 16px
+
+    #topleft_menu
+        display none !important
+
+    #hamburger_button
+        display block

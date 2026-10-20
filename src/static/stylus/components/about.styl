@@ -1,0 +1,143 @@
+/* --------------------------------------------------------------------------------------
+ About component (templates/components/about.html)
+ */
+.about
+    width 100%
+    margin 3em 0
+    color #4a4a4a
+    font-size 15px
+    line-height 1.65
+    text-align left
+
+    p
+        margin 0 0 1em
+
+#page_content .about-title
+    margin 0 0 0.6em
+    color $cb-navy-900
+    font-size 1.6em
+
+.about-intro
+    font-size 17px
+    color #2e2e2e
+
+.about-columns
+    display grid
+    grid-template-columns 1fr 1fr
+    gap 20px
+    margin 2em 0 20px
+
+// Each column is a white card, matching the stats panel below
+.about-column
+    padding 24px
+    background-color #fff
+    border 1px solid #e3e7ec
+    border-radius 10px
+    box-shadow 0 1px 2px rgba(0, 0, 0, 0.04)
+
+    p:last-child
+        margin-bottom 0
+
+#page_content .about-subtitle
+    margin 0 0 0.8em
+    color $cb-navy-900
+    font-size 1.1em
+
+// Features are stacked small cards, each with an icon, a heading and one line of text
+.about-features
+    display flex
+    flex-direction column
+    gap 10px
+
+.about-feature
+    display flex
+    align-items flex-start
+    gap 12px
+    padding 12px
+    background-color $cb-blue-50
+    border-radius 8px
+
+.about-feature-icon
+    flex none
+    display flex
+    align-items center
+    justify-content center
+    width 32px
+    height 32px
+    border-radius 8px
+    background-color $cb-blue-500
+    color #fff
+
+    // Why: Semantic UI gives icons a fixed size, and the section's 1.65 line height pushes the glyph down
+    .icon
+        width auto
+        height auto
+        margin 0
+        line-height 1
+
+.about-feature-heading
+    color $cb-navy-900
+    font-size 15px
+    font-weight bold
+
+.about .about-feature-text
+    margin 0
+    color #5a5a5a
+    font-size 14px
+
+// History is a vertical timeline: a thin line on the left with a dot for each entry
+.about-timeline
+    position relative
+    padding-left 22px
+
+    &:before
+        content ''
+        position absolute
+        top 6px
+        bottom 6px
+        left 5px
+        width 2px
+        background-color #e3e7ec
+
+.about-timeline-item
+    position relative
+    margin-bottom 20px
+
+    &:last-child
+        margin-bottom 0
+
+    &:before
+        content ''
+        position absolute
+        top 6px
+        left -21px
+        width 10px
+        height 10px
+        border-radius 50%
+        background-color $cb-blue-500
+        box-shadow 0 0 0 3px #fff
+
+.about-timeline-year
+    display inline-block
+    margin-bottom 4px
+    padding 1px 10px
+    border-radius 999px
+    background-color $cb-blue-50
+    color $cb-blue-500
+    font-size 12px
+    font-weight bold
+
+.about-timeline-heading
+    color $cb-navy-900
+    font-size 15px
+    font-weight bold
+
+.about .about-timeline-text
+    margin 0
+    color #5a5a5a
+    font-size 14px
+
+/* Phones: columns stack */
+@media only screen and (max-width 767px)
+    .about-columns
+        grid-template-columns 1fr
