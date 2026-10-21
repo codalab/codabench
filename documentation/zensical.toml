@@ -12,6 +12,7 @@ nav = [
     {"Organizers" = [
         {"Benchmark Creation" = [
             {"Getting Started Tutorial" = "Organizers/Benchmark_Creation/Getting-started-with-Codabench.md"},
+            {"Create your First Benchmark" = "Organizers/Benchmark_Creation/How-to-create-your-first-benchmark.md"},
             {"Advanced Tutorial" = "Organizers/Benchmark_Creation/Advanced-Tutorial.md"},
             {"How to Transition from Codalab to Codabench?" = "Organizers/Benchmark_Creation/How-to-transition-from-CodaLab-to-Codabench.md"},
             {"Competition Creation" = "Organizers/Benchmark_Creation/Competition-Creation.md"},
