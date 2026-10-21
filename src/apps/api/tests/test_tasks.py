@@ -197,11 +197,11 @@ class TestUpdateTaskPermissions(APITestCase):
         competition = CompetitionFactory(created_by=self.owner, collaborators=[self.collaborator])
         PhaseFactory(competition=competition, tasks=[self.task])
 
-    def update_task(self, user):
+    def update_task(self, user, **extra):
         self.client.force_login(user)
         return self.client.put(
             reverse('task-detail', kwargs={'pk': self.task.pk}),
-            {'name': 'Updated', 'description': self.task.description, 'scoring_program': self.scoring_program.key},
+            {'name': 'Updated', 'description': self.task.description, 'scoring_program': self.scoring_program.key, **extra},
             format='json',
         )
 
@@ -217,3 +217,43 @@ class TestUpdateTaskPermissions(APITestCase):
         assert resp.status_code == status.HTTP_403_FORBIDDEN
         self.task.refresh_from_db()
         assert self.task.name != 'Updated'
+
+    def test_user_cannot_update_task_by_attaching_it_to_their_own_competition(self):
+        """Otherwise anyone could edit a public task (scoring program, reference data) of another competition"""
+        competition = CompetitionFactory(created_by=self.stranger)
+        PhaseFactory(competition=competition, tasks=[self.task])
+        resp = self.update_task(self.stranger)
+        assert resp.status_code == status.HTTP_403_FORBIDDEN
+        self.task.refresh_from_db()
+        assert self.task.name != 'Updated'
+
+    def test_user_cannot_update_task_by_adding_its_creator_as_collaborator_of_their_competition(self):
+        """Collaborators can be added without their consent, so this must not grant edit rights"""
+        competition = CompetitionFactory(created_by=self.stranger, collaborators=[self.owner])
+        PhaseFactory(competition=competition, tasks=[self.task])
+        resp = self.update_task(self.stranger)
+        assert resp.status_code == status.HTTP_403_FORBIDDEN
+        self.task.refresh_from_db()
+        assert self.task.name != 'Updated'
+
+    def test_user_the_task_is_shared_with_cannot_update_task(self):
+        """Sharing a task lets a user see and reuse it, not edit it"""
+        self.task.shared_with.add(self.stranger)
+        resp = self.update_task(self.stranger)
+        assert resp.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_collaborator_cannot_change_is_public_or_shared_with(self):
+        assert self.update_task(self.collaborator, is_public=not self.task.is_public).status_code == status.HTTP_403_FORBIDDEN
+        assert self.update_task(self.collaborator, shared_with=[self.stranger.pk]).status_code == status.HTTP_403_FORBIDDEN
+        self.task.refresh_from_db()
+        assert self.task.name != 'Updated'
+        assert not self.task.shared_with.exists()
+        # The edit form always sends the current is_public value
+        assert self.update_task(self.collaborator, is_public=self.task.is_public).status_code == status.HTTP_200_OK
+
+    def test_collaborator_cannot_delete_task(self):
+        self.client.force_login(self.collaborator)
+        resp = self.client.delete(reverse('task-detail', kwargs={'pk': self.task.pk}))
+        assert resp.status_code == status.HTTP_400_BAD_REQUEST
+        assert resp.data['error'] == 'Cannot delete a task that is not yours'
+        self.task.refresh_from_db()

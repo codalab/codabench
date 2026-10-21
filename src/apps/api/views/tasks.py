@@ -82,6 +82,8 @@ class TaskViewSet(ModelViewSet):
 
         return context
 
+    # Atomic, so the fields cleared below are not lost if the update then fails validation
+    @transaction.atomic
     def update(self, request, *args, **kwargs):
 
         # Get task
@@ -89,6 +91,12 @@ class TaskViewSet(ModelViewSet):
 
         if not self.can_update(request.user, task):
             raise PermissionDenied("Cannot update a task that is not yours or not used by a competition you organize")
+
+        # Only the owner can share the task or change its visibility
+        # The edit form always sends is_public, so only a change of value is refused
+        is_owner = request.user == task.created_by or request.user.is_superuser
+        if not is_owner and ('shared_with' in request.data or request.data.get('is_public', task.is_public) != task.is_public):
+            raise PermissionDenied("Only the task owner can change who the task is shared with or whether it is public")
 
         # Check if 'is_public' is sent in the data
         # This means that from the front end the update is_public api is calle
@@ -338,16 +346,16 @@ class TaskViewSet(ModelViewSet):
             # catch all other unexpected errors here
             return Response({"error": f"An error occurred while creating the task.\n {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    # This function allows for multiple errors when deleting multiple objects
     def can_update(self, user, task):
-        """Creator, superuser, users the task is shared with, and organizers of a competition that uses the task.
-        Lets a co-organizer fix a task in place instead of replacing it, which keeps existing scores comparable"""
-        if user.is_superuser or user == task.created_by or task.shared_with.filter(pk=user.pk).exists():
+        """Creator, superuser, and organizers of a competition that uses the task and that was created by the task creator.
+        Lets a co-organizer fix a task in place instead of replacing it, which keeps existing scores comparable.
+        Requiring the task creator to have created the competition stops anyone from attaching a task to their own competition to edit it.
+        Being a collaborator is not enough, because a competition owner can add anyone as a collaborator without their consent"""
+        if user.is_superuser or user == task.created_by:
             return True
-        return Phase.objects.filter(tasks=task).filter(
-            Q(competition__created_by=user) | Q(competition__collaborators=user)
-        ).exists()
+        return Phase.objects.filter(tasks=task, competition__created_by=task.created_by, competition__collaborators=user).exists()
 
+    # This function allows for multiple errors when deleting multiple objects
     def check_delete_permissions(self, request, task):
         if request.user != task.created_by:
             return "Cannot delete a task that is not yours"
