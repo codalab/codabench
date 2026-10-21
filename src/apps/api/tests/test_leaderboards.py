@@ -223,6 +223,11 @@ class HiddenColumnScoreTests(APITestCase):
 
 
 class LeaderboardOutdatedTaskTests(APITestCase):
+    def setUp(self):
+        self.creator = factories.UserFactory(username='creator', password='creator')
+        self.comp = factories.CompetitionFactory(created_by=self.creator)
+        self.leaderboard = factories.LeaderboardFactory(primary_index=0)
+        self.phase = factories.PhaseFactory(competition=self.comp, leaderboard=self.leaderboard)
         factories.ColumnFactory(leaderboard=self.leaderboard, index=0, key='accuracy')
         self.submission = factories.SubmissionFactory(phase=self.phase, leaderboard=self.leaderboard, task=self.phase.tasks.get())
 
@@ -239,6 +244,7 @@ class LeaderboardOutdatedTaskTests(APITestCase):
     def test_submission_is_outdated_when_phase_task_replaced(self):
         self.phase.tasks.set([factories.TaskFactory()])
         assert self.get_leaderboard_submission()['outdated_task'] is True
+
 
 class LeaderboardMissingScoreOrderingTests(APITestCase):
     def setUp(self):
