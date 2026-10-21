@@ -13,6 +13,7 @@ from rest_framework.urlpatterns import format_suffix_patterns
 from .views import (
     analytics,
     competitions,
+    consulting,
     datasets,
     external_competitions,
     profiles,
@@ -69,6 +70,10 @@ urlpatterns = [
     path('analytics/delete_orphan_files/', analytics.delete_orphan_files, name="delete_orphan_files"),
     path('analytics/get_orphan_files/', analytics.get_orphan_files, name="get_orphan_files"),
     path('analytics/check_orphans_deletion_status/', analytics.check_orphans_deletion_status, name="check_orphans_deletion_status"),
+
+    # Consulting
+    path('consulting/', consulting.ConsultingListingListView.as_view(), name='consulting_listing_list'),
+    path('consulting/mine/', consulting.MyConsultingListingView.as_view(), name='my_consulting_listing'),
 
     # API Docs
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
