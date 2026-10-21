@@ -493,6 +493,28 @@ class SubmissionGetDetailResultAPITests(APITestCase):
         """
         assert self._get(self.submission, self.other_participant).status_code == 403
 
+    def test_participant_cannot_see_detailed_result_of_leaderboard_submission_when_not_shown_in_leaderboard(self):
+        """
+        An approved participant requests the detailed result of someone else's submission
+        that is on the leaderboard of a competition that does not show detailed results in the leaderboard.
+        Expects a 403 response.
+        """
+        self.comp.show_detailed_results_in_leaderboard = False
+        self.comp.save()
+
+        assert self._get(self.leaderboard_submission, self.other_participant).status_code == 403
+
+    def test_participant_can_see_detailed_result_of_own_leaderboard_submission_when_not_shown_in_leaderboard(self):
+        """
+        An approved participant requests the detailed result of their own submission
+        that is on the leaderboard of a competition that does not show detailed results in the leaderboard.
+        Expects a 200 response.
+        """
+        self.comp.show_detailed_results_in_leaderboard = False
+        self.comp.save()
+
+        assert self._get(self.leaderboard_submission, self.owner).status_code == 200
+
     def test_participants_cannot_see_detailed_result_when_phase_hides_output(self):
         """
         The owner and another approved participant request the detailed result of a leaderboard submission

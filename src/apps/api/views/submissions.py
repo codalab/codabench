@@ -583,15 +583,17 @@ class SubmissionViewSet(ModelViewSet):
                     status=status.HTTP_403_FORBIDDEN,
                 )
 
-            # Approved participants can see the detailed result of their own submissions
-            # and of leaderboard submissions, whether the competition is public or private
+            # Approved participants can see the detailed result of their own submissions,
+            # and of leaderboard submissions when detailed results are shown in the leaderboard,
+            # whether the competition is public or private
             is_approved_participant = user.is_authenticated and CompetitionParticipant.objects.filter(
                 competition=competition,
                 user=user,
                 status=CompetitionParticipant.APPROVED,
             ).exists()
             is_visible_to_participant = is_approved_participant and (
-                submission.owner == user or submission.on_leaderboard
+                submission.owner == user
+                or (competition.show_detailed_results_in_leaderboard and submission.on_leaderboard)
             )
 
             # Everyone else can only see the detailed result of a leaderboard submission
