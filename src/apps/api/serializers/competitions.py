@@ -17,6 +17,7 @@ from tasks.models import Task
 
 from api.serializers.queues import QueueSerializer, QueuePublicSerializer
 from datetime import datetime
+from django.db import transaction
 from django.utils.timezone import now
 
 
@@ -315,10 +316,18 @@ class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerialize
         if 'logo' not in validated_data:
             raise ValidationError("Competitions require a logo upon creation")
 
+        # Check if user explicitly provided tags at creation
+        user_provided_tags = validated_data.get('tags', [])
+
         instance = super().create(validated_data)
 
         # Ensure a forum is created for this competition
         Forum.objects.create(competition=instance)
+
+        # Trigger auto-tagging asynchronously only if user did not provide any tags
+        if not user_provided_tags:
+            from competitions.tasks import auto_tag_competition
+            transaction.on_commit(lambda: auto_tag_competition.delay(instance.id))
 
         return instance
 

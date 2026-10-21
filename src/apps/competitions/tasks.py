@@ -22,6 +22,8 @@ from competitions.models import (
 from competitions.unpackers.utils import CompetitionUnpackingException
 from competitions.unpackers.v1 import V15Unpacker
 from competitions.unpackers.v2 import V2Unpacker
+from competitions.tagging import auto_tag_competition as run_auto_tag
+
 from datasets.models import Data
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
@@ -1005,3 +1007,8 @@ def submission_status_cleanup():
                 sub.parent.cancel(status=Submission.FAILED)
             else:
                 sub.cancel(status=Submission.FAILED)
+
+
+@app.task(queue="site-worker", soft_time_limit=120)
+def auto_tag_competition(competition_id):
+    run_auto_tag(competition_id)
