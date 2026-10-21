@@ -3057,7 +3057,7 @@ So we sort the submissions by the primary column, (Max Accuracy) and then by col
 <li><strong>Add And Delete Multiple</strong>: Allow users to add multiple submissions and remove those submissions</li>
 <li><strong>Force Last</strong>: Force only the last submission</li>
 <li><strong>Force Latest Multiple</strong>: Force latest submission to be added to leaderboard (multiple)</li>
-<li><strong>Force Best</strong>: Force only the best submission to the leaderboard</li>
+<li><strong>Force Best</strong>: Force only the best submission to the leaderboard. The best submission is chosen by the primary column, then the other columns from left to right. If two submissions have exactly the same scores, the older one is kept, so a new submission only replaces the current one if it scores better.</li>
 </ul>
 <p>Here are the corresponding values for the YAML field <code>submission_rule</code>: "Add", "Add_And_Delete", "Add_And_Delete_Multiple", "Force_Last", "Force_Latest_Multiple" or "Force_Best".</p>
 <h2 id="hidden-leaderboard">Hidden Leaderboard</h2>
