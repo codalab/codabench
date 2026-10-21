@@ -7,6 +7,11 @@
         <label>Show Public Tasks</label>
         <input type="checkbox" ref="public">
     </div>
+    <div class="ui checkbox" onclick="{ filter.bind(this, undefined) }"
+         data-tooltip="Tasks of competitions you co-organize, created by the competition owner" data-inverted="">
+        <label>Show Co-organized Tasks</label>
+        <input type="checkbox" ref="collaborations" checked>
+    </div>
     <div class="ui blue right floated labeled icon button" onclick="{ show_upload_task_modal }"><i class="upload icon"></i>
         Upload Task
     </div>
@@ -42,11 +47,11 @@
                 <i class="checkmark box icon green" show="{ task.is_public }"></i>
             </td>
             <td>
-                <div if="{ task.created_by == CODALAB.state.user.username }">
-                    <button class="mini ui button blue icon" onclick="{show_edit_modal.bind(this, task)}">
+                <div>
+                    <button if="{ task.can_edit }" class="mini ui button blue icon" onclick="{show_edit_modal.bind(this, task)}">
                         <i class="icon pencil"></i>
                     </button>
-                    <button class="mini ui button red icon" onclick="{ delete_task.bind(this, task) }">
+                    <button if="{ task.created_by == CODALAB.state.user.username }" class="mini ui button red icon" onclick="{ delete_task.bind(this, task) }">
                         <i class="icon trash"></i>
                     </button>
                 </div>
@@ -751,6 +756,9 @@
             let show_public_tasks = $(self.refs.public).prop('checked')
             if (show_public_tasks) {
                 filters.public = true
+            }
+            if ($(self.refs.collaborations).prop('checked')) {
+                filters.collaborations = true
             }
             CODALAB.api.get_tasks(filters)
                 .done(function (data) {

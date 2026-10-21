@@ -84,6 +84,12 @@ class TaskSerializer(DefaultUserCreateMixin, WritableNestedModelSerializer):
         return getattr(instance, 'validated', False)
 
 
+def can_edit_task(context, task):
+    """Same rule as TaskViewSet.can_update, using the editable task ids computed once by the view"""
+    user = context['request'].user
+    return user.is_superuser or task.created_by_id == user.id or task.pk in context['editable_task_ids']
+
+
 class TaskDetailSerializer(WritableNestedModelSerializer):
     created_by = serializers.CharField(source='created_by.username', read_only=True)
     owner_display_name = serializers.SerializerMethodField()
@@ -95,6 +101,7 @@ class TaskDetailSerializer(WritableNestedModelSerializer):
     validated = serializers.SerializerMethodField(required=False)
     shared_with = serializers.SerializerMethodField()
     competitions = serializers.SerializerMethodField()
+    can_edit = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
@@ -109,6 +116,7 @@ class TaskDetailSerializer(WritableNestedModelSerializer):
             'validated',
             'shared_with',
             'competitions',
+            'can_edit',
 
             # Data pieces
             'input_data',
@@ -137,6 +145,9 @@ class TaskDetailSerializer(WritableNestedModelSerializer):
         shared_users = instance.shared_with.all()
         return [user.username for user in shared_users]
 
+    def get_can_edit(self, instance):
+        return can_edit_task(self.context, instance)
+
     def get_owner_display_name(self, instance):
         # Get the user's display name if not None, otherwise return username
         return instance.created_by.display_name if instance.created_by.display_name else instance.created_by.username
@@ -148,6 +159,7 @@ class TaskListSerializer(serializers.ModelSerializer):
     created_by = serializers.CharField(source='created_by.username', read_only=True)
     owner_display_name = serializers.SerializerMethodField()
     is_used_in_competitions = serializers.SerializerMethodField()
+    can_edit = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
@@ -165,6 +177,7 @@ class TaskListSerializer(serializers.ModelSerializer):
             'value',
             'is_public',
             'is_used_in_competitions',
+            'can_edit',
         )
 
     def get_is_used_in_competitions(self, instance):
@@ -176,6 +189,9 @@ class TaskListSerializer(serializers.ModelSerializer):
 
     def get_shared_with(self, instance):
         return self.context['shared_with'][instance.pk]
+
+    def get_can_edit(self, instance):
+        return can_edit_task(self.context, instance)
 
     def get_owner_display_name(self, instance):
         # Get the user's display name if not None, otherwise return username
