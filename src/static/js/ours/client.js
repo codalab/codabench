@@ -66,9 +66,6 @@ CODALAB.api = {
     email_all_participants: (pk, message) => {
         return CODALAB.api.request('POST', `${URLS.API}competitions/${pk}/email_all_participants/`, {message: message})
     },
-    get_front_page_competitions: function (data) {
-        return CODALAB.api.request('GET', `${URLS.API}competitions/front_page/`, data)
-    },
     get_competition_files: pk => {
         return CODALAB.api.request('GET', `${URLS.API}competitions/${pk}/get_files/`)
     },
@@ -114,6 +111,12 @@ CODALAB.api = {
     re_run_many_submissions: function (data) {
         return CODALAB.api.request('POST', `${URLS.API}submissions/re_run_many_submissions/`, data)
     },
+    resubmit_submission: function (id) {
+        return CODALAB.api.request('POST', `${URLS.API}submissions/${id}/resubmit_submission/`)
+    },
+    resubmit_many_submissions: function (data) {
+        return CODALAB.api.request('POST', `${URLS.API}submissions/resubmit_many_submissions/`, data)
+    },
     get_submission_csv_URL: function (filters) {
         filters.format = "csv"
         return `${URLS.API}submissions/?${$.param(filters)}`
@@ -148,9 +151,6 @@ CODALAB.api = {
     },
     remove_submission_from_leaderboard: function (submission_pk) {
         return CODALAB.api.request('DELETE', URLS.API + "submissions/" + submission_pk + '/submission_leaderboard_connection/')
-    },
-    get_leaderboard_for_render: function (phase_pk) {
-        return CODALAB.api.request('GET', `${URLS.API}phases/${phase_pk}/get_leaderboard/`)
     },
     get_leaderboard_for_render: function (phase_pk, params = {}) {
         return CODALAB.api.request('GET', `${URLS.API}phases/${phase_pk}/get_leaderboard/`, params)

@@ -1,0 +1,41 @@
+{# Citation section on the home page #}
+
+<div class="citation">
+    <h2 class="citation-title">Cite Codabench</h2>
+    <p class="citation-intro">
+        If you use Codabench in your research, please cite our paper:
+        <em>Codabench: Flexible, easy-to-use, and reproducible meta-benchmark platform</em>, Patterns, 2022.
+        <a href="https://doi.org/10.1016/j.patter.2022.100543" target="_blank">doi:10.1016/j.patter.2022.100543</a>
+    </p>
+    <div class="citation-box">
+        <button type="button" class="citation-copy" id="citation-copy">
+            <i class="copy outline icon"></i><span>Copy BibTeX</span>
+        </button>
+<pre id="citation-bibtex">@article{codabench,
+    title = {Codabench: Flexible, easy-to-use, and reproducible meta-benchmark platform},
+    author = {Zhen Xu and Sergio Escalera and Adrien Pavão and Magali Richard and
+              Wei-Wei Tu and Quanming Yao and Huan Zhao and Isabelle Guyon},
+    journal = {Patterns},
+    volume = {3},
+    number = {7},
+    pages = {100543},
+    year = {2022},
+    issn = {2666-3899},
+    doi = {https://doi.org/10.1016/j.patter.2022.100543},
+    url = {https://www.sciencedirect.com/science/article/pii/S2666389922001465}
+}</pre>
+    </div>
+</div>
+
+<script>
+    // Copy the BibTeX to the clipboard and briefly confirm
+    document.getElementById('citation-copy').addEventListener('click', function () {
+        var button = this
+        var label = button.querySelector('span')
+        var text = document.getElementById('citation-bibtex').textContent
+        navigator.clipboard.writeText(text).then(function () {
+            label.textContent = 'Copied!'
+            setTimeout(function () { label.textContent = 'Copy BibTeX' }, 2000)
+        })
+    })
+</script>

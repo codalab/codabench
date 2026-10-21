@@ -223,11 +223,6 @@ class HiddenColumnScoreTests(APITestCase):
 
 
 class LeaderboardOutdatedTaskTests(APITestCase):
-    def setUp(self):
-        self.creator = factories.UserFactory(username='creator', password='creator')
-        self.comp = factories.CompetitionFactory(created_by=self.creator)
-        self.leaderboard = factories.LeaderboardFactory(primary_index=0)
-        self.phase = factories.PhaseFactory(competition=self.comp, leaderboard=self.leaderboard)
         factories.ColumnFactory(leaderboard=self.leaderboard, index=0, key='accuracy')
         self.submission = factories.SubmissionFactory(phase=self.phase, leaderboard=self.leaderboard, task=self.phase.tasks.get())
 
@@ -244,3 +239,139 @@ class LeaderboardOutdatedTaskTests(APITestCase):
     def test_submission_is_outdated_when_phase_task_replaced(self):
         self.phase.tasks.set([factories.TaskFactory()])
         assert self.get_leaderboard_submission()['outdated_task'] is True
+
+class LeaderboardMissingScoreOrderingTests(APITestCase):
+    def setUp(self):
+        self.creator = factories.UserFactory(username='creator', password='creator')
+        self.comp = factories.CompetitionFactory(created_by=self.creator)
+        self.leaderboard = factories.LeaderboardFactory(primary_index=0)
+        self.phase = factories.PhaseFactory(competition=self.comp, leaderboard=self.leaderboard)
+        self.accuracy_column = factories.ColumnFactory(leaderboard=self.leaderboard, index=0, key='accuracy', sorting='desc')
+        self.time_column = factories.ColumnFactory(leaderboard=self.leaderboard, index=1, key='time', sorting='asc')
+
+        self.sub_low = self.make_submission(accuracy=0.8, time=10)
+        self.sub_high = self.make_submission(accuracy=0.9, time=12)
+        # Submission without an accuracy score, shown as n/a on the leaderboard
+        self.sub_missing = self.make_submission(accuracy=None, time=5)
+
+    def make_submission(self, accuracy, time):
+        submission = factories.SubmissionFactory(phase=self.phase, leaderboard=self.leaderboard)
+        if accuracy is not None:
+            factories.SubmissionScoreFactory(submissions=submission, column=self.accuracy_column, score=accuracy)
+        factories.SubmissionScoreFactory(submissions=submission, column=self.time_column, score=time)
+        return submission
+
+    def get_phase_leaderboard_ids(self):
+        self.client.force_login(self.creator)
+        resp = self.client.get(reverse('phases-get-leaderboard', kwargs={'pk': self.phase.pk}))
+        assert resp.status_code == 200
+        return [submission['id'] for submission in resp.json()['submissions']]
+
+    def get_leaderboard_entries_ids(self):
+        self.client.force_login(self.creator)
+        resp = self.client.get(reverse('leaderboard-detail', kwargs={'pk': self.leaderboard.pk}))
+        assert resp.status_code == 200
+        return [submission['id'] for submission in resp.json()['submissions']]
+
+    def test_missing_primary_score_ranked_last_on_phase_leaderboard_desc(self):
+        """Phase leaderboard with primary column sorted desc: expected order is 0.9, 0.8, then the submission without a primary score."""
+        assert self.get_phase_leaderboard_ids() == [self.sub_high.id, self.sub_low.id, self.sub_missing.id]
+
+    def test_missing_primary_score_ranked_last_on_phase_leaderboard_asc(self):
+        """Phase leaderboard with primary column sorted asc: expected order is 0.8, 0.9, then the submission without a primary score."""
+        self.accuracy_column.sorting = 'asc'
+        self.accuracy_column.save()
+        assert self.get_phase_leaderboard_ids() == [self.sub_low.id, self.sub_high.id, self.sub_missing.id]
+
+    def test_missing_primary_score_ranked_last_on_leaderboard_entries_desc(self):
+        """Leaderboard entries endpoint with primary column sorted desc: expected order is 0.9, 0.8, then the submission without a primary score."""
+        assert self.get_leaderboard_entries_ids() == [self.sub_high.id, self.sub_low.id, self.sub_missing.id]
+
+    def test_missing_primary_score_ranked_last_on_leaderboard_entries_asc(self):
+        """Leaderboard entries endpoint with primary column sorted asc: expected order is 0.8, 0.9, then the submission without a primary score."""
+        self.accuracy_column.sorting = 'asc'
+        self.accuracy_column.save()
+        assert self.get_leaderboard_entries_ids() == [self.sub_low.id, self.sub_high.id, self.sub_missing.id]
+
+
+class PhaseLeaderboardRowIdTests(APITestCase):
+    """Which submission ID each row of the phase leaderboard (Results tab) shows."""
+
+    def setUp(self):
+        self.creator = factories.UserFactory(username='creator', password='test')
+        self.participant = factories.UserFactory(username='participant', password='test')
+        self.comp = factories.CompetitionFactory(created_by=self.creator)
+        self.leaderboard = factories.LeaderboardFactory()
+        self.column = factories.ColumnFactory(leaderboard=self.leaderboard, index=0)
+        self.task1 = factories.TaskFactory()
+        self.task2 = factories.TaskFactory()
+
+    def make_phase(self, tasks):
+        """Create a phase in the test competition, using the test leaderboard and the given tasks."""
+        return factories.PhaseFactory(competition=self.comp, leaderboard=self.leaderboard, tasks=tasks)
+
+    def make_submission(self, phase, task, parent=None, has_children=False, queue=None):
+        """Create a submission owned by the participant.
+
+        - Parent of a multi-task submission (has_children=True): created without scores and
+          not put on the leaderboard, because the platform puts only the children on it.
+        - Single-task submission or child of a parent: put on the leaderboard with one score.
+        """
+        submission = factories.SubmissionFactory(
+            owner=self.participant,
+            phase=phase,
+            task=task,
+            parent=parent,
+            has_children=has_children,
+            leaderboard=None if has_children else self.leaderboard,
+            queue=queue,
+        )
+        if not has_children:
+            factories.SubmissionScoreFactory(column=self.column, submissions=[submission])
+        return submission
+
+    def get_rows(self, phase):
+        """Fetch the phase leaderboard as the creator and return its rows."""
+        self.client.force_login(self.creator)
+        resp = self.client.get(reverse('phases-get-leaderboard', kwargs={'pk': phase.pk}))
+        assert resp.status_code == 200
+        return resp.json()['submissions']
+
+    def test_multi_task_row_shows_parent_id(self):
+        """Children of a multi-task submission are shown as one row; expects the row ID to be the parent ID."""
+        phase = self.make_phase(tasks=[self.task1, self.task2])
+        parent = self.make_submission(phase=phase, task=None, has_children=True)
+        self.make_submission(phase=phase, task=self.task1, parent=parent)
+        self.make_submission(phase=phase, task=self.task2, parent=parent)
+
+        rows = self.get_rows(phase=phase)
+
+        assert len(rows) == 1
+        assert rows[0]['id'] == parent.id
+        assert {score['task_id'] for score in rows[0]['scores']} == {self.task1.id, self.task2.id}
+
+    def test_single_task_row_shows_submission_id(self):
+        """A submission without children is shown as one row; expects the row ID to be the submission's own ID."""
+        phase = self.make_phase(tasks=[self.task1])
+        submission = self.make_submission(phase=phase, task=self.task1)
+
+        rows = self.get_rows(phase=phase)
+
+        assert len(rows) == 1
+        assert rows[0]['id'] == submission.id
+
+    def test_group_queue_rows_show_parent_id(self):
+        """Children of a submission sent to several group queues are shown as one row per group;
+        expects every row ID to be the parent ID, with the group telling the rows apart."""
+        phase = self.make_phase(tasks=[self.task1])
+        queue_a = factories.QueueFactory(name='comp__GroupA')
+        queue_b = factories.QueueFactory(name='comp__GroupB')
+        parent = self.make_submission(phase=phase, task=None, has_children=True)
+        self.make_submission(phase=phase, task=self.task1, parent=parent, queue=queue_a)
+        self.make_submission(phase=phase, task=self.task1, parent=parent, queue=queue_b)
+
+        rows = self.get_rows(phase=phase)
+
+        assert len(rows) == 2
+        assert [row['id'] for row in rows] == [parent.id, parent.id]
+        assert {row['queue_name'] for row in rows} == {f'{parent.id}_GroupA', f'{parent.id}_GroupB'}

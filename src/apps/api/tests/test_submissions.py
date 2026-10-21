@@ -147,121 +147,6 @@ class SubmissionAPITests(APITestCase):
         assert resp.status_code == 403
         assert resp.data["detail"] == "You cannot delete a leaderboard submission!"
 
-    def test_no_one_can_see_detailed_result_when_visualization_is_false(self):
-        self.comp.enable_detailed_results = False
-        self.comp.save()
-        url = reverse('submission-get-detail-result', args=(self.existing_submission.pk,))
-
-        # Competition creator cannot see detail result
-        self.client.force_login(self.creator)
-        resp = self.client.get(url)
-        assert resp.status_code == 404
-
-        # Collaborator cannot see detail result
-        self.client.force_login(self.collaborator)
-        resp = self.client.get(url)
-        assert resp.status_code == 404
-
-        # Superuser cannot see detail result
-        self.client.force_login(self.superuser)
-        resp = self.client.get(url)
-        assert resp.status_code == 404
-
-        # Actual user cannot see their submission detail result
-        self.client.force_login(self.participant)
-        resp = self.client.get(url)
-        assert resp.status_code == 404
-
-        # Regular user cannot see submission detail result
-        self.client.force_login(self.other_user)
-        resp = self.client.get(url)
-        assert resp.status_code == 404
-
-    def test_who_can_see_detailed_result_when_visualization_is_true_and_competition_is_private(self):
-        self.comp.enable_detailed_results = True
-        self.comp.published = False
-        self.comp.save()
-
-        url = reverse("submission-get-detail-result", args=(self.existing_submission.pk,))
-
-        # Anonymous user cannot see submission detail result
-        resp = self.client.get(url)
-        assert resp.status_code == 403
-
-        # Competition creator can see detail result
-        self.client.force_login(self.creator)
-        resp = self.client.get(url)
-        assert resp.status_code == 200
-
-        # Collaborator can see detail result
-        self.client.force_login(self.collaborator)
-        resp = self.client.get(url)
-        assert resp.status_code == 200
-
-        # Superuser can see detail result
-        self.client.force_login(self.superuser)
-        resp = self.client.get(url)
-        assert resp.status_code == 200
-
-        # Approved user can see submission detail result
-        self.client.force_login(self.participant)
-        resp = self.client.get(url)
-        assert resp.status_code == 200
-
-        # Pending user cannot see submission detail result
-        self.client.force_login(self.pending_participant)
-        resp = self.client.get(url)
-        assert resp.status_code == 403
-
-        # Denied user cannot see submission detail result
-        self.client.force_login(self.denied_participant)
-        resp = self.client.get(url)
-        assert resp.status_code == 403
-
-        # Regular user cannot see submission detail result
-        self.client.force_login(self.other_user)
-        resp = self.client.get(url)
-        assert resp.status_code == 403
-
-    def test_who_can_see_detailed_result_when_visualization_is_true_and_competition_is_public(self):
-        self.comp.enable_detailed_results = True
-        self.comp.published = True
-        self.comp.save()
-
-        url = reverse("submission-get-detail-result", args=(self.existing_submission.pk,))
-
-        # Detailed results are publicly available
-        resp = self.client.get(url)
-        assert resp.status_code == 200
-
-        self.client.force_login(self.creator)
-        resp = self.client.get(url)
-        assert resp.status_code == 200
-
-        self.client.force_login(self.collaborator)
-        resp = self.client.get(url)
-        assert resp.status_code == 200
-
-        self.client.force_login(self.superuser)
-        resp = self.client.get(url)
-        assert resp.status_code == 200
-
-        self.client.force_login(self.participant)
-        resp = self.client.get(url)
-        assert resp.status_code == 200
-
-        self.client.force_login(self.pending_participant)
-        resp = self.client.get(url)
-        assert resp.status_code == 200
-
-        self.client.force_login(self.denied_participant)
-        resp = self.client.get(url)
-        assert resp.status_code == 200
-
-        self.client.force_login(self.other_user)
-        resp = self.client.get(url)
-        assert resp.status_code == 200
-
     def test_anonymous_cannot_list_or_retrieve_submissions(self):
         """
         SubmissionViewSet's general list/retrieve endpoints must not leak submission
@@ -451,6 +336,254 @@ class SubmissionGetDetailsAPITests(APITestCase):
         resp = self.client.get(url)
         assert resp.status_code == 200
         assert resp.data['detailed_result'] is None
+
+
+class SubmissionGetDetailResultAPITests(APITestCase):
+    """
+    Tests for the submission detailed result API, grouped by who is requesting:
+    admins (creator, collaborators, superusers), approved participants and everyone else.
+    """
+    def setUp(self):
+        self.creator = UserFactory(username='creator', password='creator')
+        self.collaborator = UserFactory(username='collab', password='collab')
+        self.superuser = UserFactory(is_superuser=True, is_staff=True)
+
+        # Public competition with detailed results enabled and shown in the leaderboard
+        self.comp = CompetitionFactory(
+            created_by=self.creator,
+            collaborators=[self.collaborator],
+            published=True,
+            enable_detailed_results=True,
+            show_detailed_results_in_leaderboard=True,
+        )
+        self.phase = PhaseFactory(competition=self.comp)
+        self.leaderboard = LeaderboardFactory()
+
+        # Approved participants: one owns the submissions, the other owns none
+        self.owner = UserFactory(username='participant_owner', password='other')
+        self.other_participant = UserFactory(username='participant_approved', password='other')
+        CompetitionParticipantFactory(user=self.owner, competition=self.comp, status=CompetitionParticipant.APPROVED)
+        CompetitionParticipantFactory(user=self.other_participant, competition=self.comp, status=CompetitionParticipant.APPROVED)
+
+        # Users who are not approved participants
+        self.pending_participant = UserFactory(username='participant_pending', password='other')
+        self.denied_participant = UserFactory(username='participant_denied', password='other')
+        self.other_user = UserFactory(username='other_user', password='other')
+        CompetitionParticipantFactory(user=self.pending_participant, competition=self.comp, status=CompetitionParticipant.PENDING)
+        CompetitionParticipantFactory(user=self.denied_participant, competition=self.comp, status=CompetitionParticipant.DENIED)
+
+        # Submission that is NOT on the leaderboard
+        self.submission = SubmissionFactory(
+            phase=self.phase,
+            owner=self.owner,
+            status=Submission.FINISHED,
+            leaderboard=None
+        )
+
+        # Submission that is on the leaderboard
+        self.leaderboard_submission = SubmissionFactory(
+            phase=self.phase,
+            owner=self.owner,
+            status=Submission.FINISHED,
+            leaderboard=self.leaderboard
+        )
+
+        # Submission that is soft-deleted
+        self.soft_deleted_submission = SubmissionFactory(
+            phase=self.phase,
+            owner=self.owner,
+            status=Submission.FINISHED,
+            is_soft_deleted=True,
+            leaderboard=None
+        )
+
+        # None means a logged-out user
+        self.admins = [self.creator, self.collaborator, self.superuser]
+        self.participants = [self.owner, self.other_participant]
+        self.non_participants = [None, self.pending_participant, self.denied_participant, self.other_user]
+
+    def _get(self, submission, user=None):
+        """Request the detailed result of `submission` as `user`, or logged out when `user` is None."""
+        self.client.logout()
+        if user:
+            self.client.force_login(user)
+        return self.client.get(reverse('submission-get-detail-result', args=(submission.pk,)))
+
+    # ---------- Everyone ----------
+
+    def test_no_one_can_see_detailed_result_when_detailed_results_are_disabled(self):
+        """
+        Admins, approved participants and everyone else request the detailed result of a leaderboard submission
+        of a competition that has detailed results disabled.
+        Expects a 404 response for all of them.
+        """
+        self.comp.enable_detailed_results = False
+        self.comp.save()
+
+        for user in self.admins + self.participants + self.non_participants:
+            assert self._get(self.leaderboard_submission, user).status_code == 404
+
+    def test_no_one_can_see_detailed_result_of_submission_that_does_not_exist(self):
+        """
+        Admins, approved participants and everyone else request the detailed result
+        with a submission id that does not exist.
+        Expects a 404 response for all of them.
+        """
+        # Unsaved submission with an id that is not in the database
+        invalid_id = Submission.objects.order_by('-pk').first().pk + 1
+        missing_submission = Submission(pk=invalid_id)
+
+        for user in self.admins + self.participants + self.non_participants:
+            assert self._get(missing_submission, user).status_code == 404
+
+    def test_no_one_can_see_detailed_result_of_soft_deleted_submission(self):
+        """
+        Admins, approved participants and everyone else request the detailed result
+        of a submission that is soft-deleted.
+        Expects a 404 response for all of them.
+        """
+        for user in self.admins + self.participants + self.non_participants:
+            assert self._get(self.soft_deleted_submission, user).status_code == 404
+
+    # ---------- Admins ----------
+
+    def test_admins_can_see_any_detailed_result(self):
+        """
+        The creator, a collaborator and a superuser request the detailed result of a submission that is on
+        the leaderboard and of one that is not, in a private competition that does not show detailed results
+        in the leaderboard and whose phase hides output.
+        Expects a 200 response for all of them on both submissions.
+        """
+        self.comp.published = False
+        self.comp.show_detailed_results_in_leaderboard = False
+        self.comp.save()
+        self.phase.hide_output = True
+        self.phase.save()
+
+        for user in self.admins:
+            assert self._get(self.submission, user).status_code == 200
+            assert self._get(self.leaderboard_submission, user).status_code == 200
+
+    # ---------- Approved participants ----------
+
+    def test_participant_can_see_detailed_result_of_own_submission(self):
+        """
+        An approved participant requests the detailed result of their own submission
+        that is not on the leaderboard, in a phase that does not hide output.
+        Expects a 200 response.
+        """
+        assert self._get(self.submission, self.owner).status_code == 200
+
+    def test_participant_can_see_detailed_result_of_leaderboard_submission_of_private_competition(self):
+        """
+        An approved participant requests the detailed result of someone else's submission
+        that is on the leaderboard of a private competition.
+        Expects a 200 response.
+        """
+        self.comp.published = False
+        self.comp.save()
+
+        assert self._get(self.leaderboard_submission, self.other_participant).status_code == 200
+
+    def test_participant_cannot_see_detailed_result_of_other_submission_not_on_leaderboard(self):
+        """
+        An approved participant requests the detailed result of someone else's submission
+        that is not on the leaderboard.
+        Expects a 403 response.
+        """
+        assert self._get(self.submission, self.other_participant).status_code == 403
+
+    def test_participant_cannot_see_detailed_result_of_leaderboard_submission_when_not_shown_in_leaderboard(self):
+        """
+        An approved participant requests the detailed result of someone else's submission
+        that is on the leaderboard of a competition that does not show detailed results in the leaderboard.
+        Expects a 403 response.
+        """
+        self.comp.show_detailed_results_in_leaderboard = False
+        self.comp.save()
+
+        assert self._get(self.leaderboard_submission, self.other_participant).status_code == 403
+
+    def test_participant_can_see_detailed_result_of_own_leaderboard_submission_when_not_shown_in_leaderboard(self):
+        """
+        An approved participant requests the detailed result of their own submission
+        that is on the leaderboard of a competition that does not show detailed results in the leaderboard.
+        Expects a 200 response.
+        """
+        self.comp.show_detailed_results_in_leaderboard = False
+        self.comp.save()
+
+        assert self._get(self.leaderboard_submission, self.owner).status_code == 200
+
+    def test_participants_cannot_see_detailed_result_when_phase_hides_output(self):
+        """
+        The owner and another approved participant request the detailed result of a leaderboard submission
+        in a phase that hides output.
+        Expects a 403 response for both.
+        """
+        self.phase.hide_output = True
+        self.phase.save()
+
+        for user in self.participants:
+            assert self._get(self.leaderboard_submission, user).status_code == 403
+
+    # ---------- Everyone else ----------
+
+    def test_non_participants_can_see_detailed_result_of_leaderboard_submission_of_public_competition(self):
+        """
+        A logged-out user, a pending participant, a denied participant and an unrelated user request
+        the detailed result of a leaderboard submission of a public competition
+        that shows detailed results in the leaderboard.
+        Expects a 200 response for all of them.
+        """
+        for user in self.non_participants:
+            assert self._get(self.leaderboard_submission, user).status_code == 200
+
+    def test_non_participants_cannot_see_detailed_result_of_private_competition(self):
+        """
+        A logged-out user, a pending participant, a denied participant and an unrelated user request
+        the detailed result of a leaderboard submission of a private competition.
+        Expects a 403 response for all of them.
+        """
+        self.comp.published = False
+        self.comp.save()
+
+        for user in self.non_participants:
+            assert self._get(self.leaderboard_submission, user).status_code == 403
+
+    def test_non_participants_cannot_see_detailed_result_when_not_shown_in_leaderboard(self):
+        """
+        A logged-out user, a pending participant, a denied participant and an unrelated user request
+        the detailed result of a leaderboard submission of a public competition
+        that does not show detailed results in the leaderboard.
+        Expects a 403 response for all of them.
+        """
+        self.comp.show_detailed_results_in_leaderboard = False
+        self.comp.save()
+
+        for user in self.non_participants:
+            assert self._get(self.leaderboard_submission, user).status_code == 403
+
+    def test_non_participants_cannot_see_detailed_result_of_submission_not_on_leaderboard(self):
+        """
+        A logged-out user, a pending participant, a denied participant and an unrelated user request
+        the detailed result of a submission of a public competition that is not on the leaderboard.
+        Expects a 403 response for all of them.
+        """
+        for user in self.non_participants:
+            assert self._get(self.submission, user).status_code == 403
+
+    def test_non_participants_cannot_see_detailed_result_when_phase_hides_output(self):
+        """
+        A logged-out user, a pending participant, a denied participant and an unrelated user request
+        the detailed result of a leaderboard submission of a public competition in a phase that hides output.
+        Expects a 403 response for all of them.
+        """
+        self.phase.hide_output = True
+        self.phase.save()
+
+        for user in self.non_participants:
+            assert self._get(self.leaderboard_submission, user).status_code == 403
 
 
 class SubmissionUpdateTest(APITestCase):
@@ -1150,3 +1283,286 @@ class HiddenColumnSubmissionScoreTests(APITestCase):
         keys = self.score_column_keys_from_detail(resp)
         assert self.hidden_column.key not in keys
         assert self.visible_column.key in keys
+
+
+class SubmissionReRunTests(APITestCase):
+    """
+    Tests for the re_run_submission endpoint of SubmissionViewSet.
+    run_submission is mocked so that rerun submissions are not sent to Celery.
+    The mock also records its arguments, which lets the tests check which tasks a rerun is started on.
+    """
+
+    RUN_SUBMISSION = 'competitions.tasks.run_submission'
+
+    def setUp(self):
+        self.superuser = UserFactory(is_superuser=True, is_staff=True)
+        self.creator = UserFactory(username='creator')
+        self.collaborator = UserFactory(username='collab')
+        self.participant = UserFactory(username='participant')
+        self.other_user = UserFactory(username='other_user')
+
+        self.comp = CompetitionFactory(created_by=self.creator, collaborators=[self.collaborator])
+        self.phase = PhaseFactory(competition=self.comp)
+
+        # One submission of the participant for every status
+        self.submissions = [
+            SubmissionFactory(phase=self.phase, owner=self.participant, status=status)
+            for status, _ in Submission.STATUS_CHOICES
+        ]
+
+    def re_run(self, submission):
+        url = reverse('submission-re-run-submission', args=(submission.pk,))
+        return self.client.post(url)
+
+    def test_organizers_and_superuser_can_re_run_submission_in_any_status(self):
+        """
+        Competition creator, collaborator and superuser rerun a submission in every status.
+        Expect 200 and a new submission for each.
+        """
+        for user in [self.creator, self.collaborator, self.superuser]:
+            self.client.force_login(user)
+            for submission in self.submissions:
+                with mock.patch(self.RUN_SUBMISSION):
+                    resp = self.re_run(submission=submission)
+                assert resp.status_code == 200, f'{user.username} could not rerun a "{submission.status}" submission'
+                assert resp.data['id'] != submission.pk
+                assert Submission.objects.filter(pk=resp.data['id']).exists()
+
+    def test_re_run_submission_copies_submission_details(self):
+        """
+        Organizer reruns a submission made for an organization.
+        Expect the new submission to have the same owner, phase, task, data, organization
+        and fact sheet answers, and to be a fresh submission that is started.
+        """
+        organization = OrganizationFactory()
+        submission = SubmissionFactory(
+            phase=self.phase,
+            owner=self.participant,
+            status=Submission.FINISHED,
+            organization=organization,
+            fact_sheet_answers={'team_name': 'Team A'},
+        )
+
+        self.client.force_login(self.creator)
+        with mock.patch(self.RUN_SUBMISSION) as run_submission_mock:
+            resp = self.re_run(submission=submission)
+        assert resp.status_code == 200
+
+        new_sub = Submission.objects.get(pk=resp.data['id'])
+        assert new_sub.pk != submission.pk
+        assert new_sub.owner == self.participant
+        assert new_sub.phase == submission.phase
+        assert new_sub.task == submission.task
+        assert new_sub.data == submission.data
+        assert new_sub.organization == organization
+        assert new_sub.fact_sheet_answers == {'team_name': 'Team A'}
+        assert new_sub.queue == self.comp.queue
+        assert new_sub.has_children is False
+        assert new_sub.is_specific_task_re_run is False
+        assert new_sub.is_soft_deleted is False
+        assert new_sub.parent is None
+        assert new_sub.status == Submission.SUBMITTING
+
+        # The new submission is started on the task of the original submission
+        run_submission_mock.assert_called_once()
+        assert run_submission_mock.call_args.args[0] == new_sub.pk
+        assert list(run_submission_mock.call_args.kwargs['tasks']) == [submission.task]
+
+    def test_re_run_multi_task_submission(self):
+        """
+        Organizer reruns a parent submission whose children ran on two different tasks.
+        Expect a new parent submission with has_children set, started on the tasks of the original children.
+        """
+        tasks = [TaskFactory(), TaskFactory()]
+        self.phase.tasks.add(*tasks)
+
+        organization = OrganizationFactory()
+        parent = SubmissionFactory(
+            phase=self.phase,
+            owner=self.participant,
+            status=Submission.FINISHED,
+            has_children=True,
+            task=None,
+            organization=organization,
+        )
+        for task in tasks:
+            SubmissionFactory(
+                phase=self.phase,
+                owner=self.participant,
+                status=Submission.FINISHED,
+                parent=parent,
+                task=task,
+                data=parent.data,
+                organization=organization,
+            )
+
+        self.client.force_login(self.creator)
+        with mock.patch(self.RUN_SUBMISSION) as run_submission_mock:
+            resp = self.re_run(submission=parent)
+        assert resp.status_code == 200
+
+        new_sub = Submission.objects.get(pk=resp.data['id'])
+        assert new_sub.pk != parent.pk
+        assert new_sub.has_children is True
+        assert new_sub.task is None
+        assert new_sub.data == parent.data
+        assert new_sub.owner == self.participant
+        assert new_sub.organization == organization
+        assert new_sub.is_specific_task_re_run is False
+
+        # The new submission is started on the tasks of the original children
+        run_submission_mock.assert_called_once()
+        assert run_submission_mock.call_args.args[0] == new_sub.pk
+        started_task_pks = sorted(task.pk for task in run_submission_mock.call_args.kwargs['tasks'])
+        assert started_task_pks == sorted(task.pk for task in tasks)
+
+    def test_cannot_re_run_soft_deleted_submission(self):
+        """Organizer and superuser rerun a soft-deleted submission. Expect 403 and no new submission."""
+        submission = SubmissionFactory(
+            phase=self.phase,
+            owner=self.participant,
+            status=Submission.FINISHED,
+            is_soft_deleted=True,
+        )
+        submission_count = Submission.objects.count()
+
+        for user in [self.creator, self.superuser]:
+            self.client.force_login(user)
+            with mock.patch(self.RUN_SUBMISSION) as run_submission_mock:
+                resp = self.re_run(submission=submission)
+            assert resp.status_code == 403
+            assert resp.data['detail'] == 'Cannot re-run a deleted submission'
+            run_submission_mock.assert_not_called()
+
+        assert Submission.objects.count() == submission_count
+
+    def test_submission_owner_cannot_re_run_submission(self):
+        """
+        Submission owner, who is not an organizer, reruns their own submission in every status.
+        Expect 403 for each and no new submissions created.
+        """
+        self.client.force_login(self.participant)
+        for submission in self.submissions:
+            resp = self.re_run(submission=submission)
+            assert resp.status_code == 403
+            assert resp.data['detail'] == 'You do not have permission to re-run submissions'
+        assert Submission.objects.count() == len(self.submissions)
+
+    def test_other_user_cannot_re_run_submission(self):
+        """User who is neither the owner nor an organizer reruns a submission. Expect 403 and no new submission."""
+        self.client.force_login(self.other_user)
+        resp = self.re_run(submission=self.submissions[0])
+        assert resp.status_code == 403
+        assert Submission.objects.count() == len(self.submissions)
+
+    def test_anonymous_user_cannot_re_run_submission(self):
+        """Anonymous user reruns a submission. Expect 403 and no new submission."""
+        resp = self.re_run(submission=self.submissions[0])
+        assert resp.status_code == 403
+        assert Submission.objects.count() == len(self.submissions)
+
+
+class SubmissionResubmitTests(APITestCase):
+    """
+    Tests for the resubmit_submission and resubmit_many_submissions endpoints of SubmissionViewSet.
+    run_submission is mocked so that resubmissions are not sent to Celery.
+    """
+
+    RUN_SUBMISSION = 'competitions.tasks.run_submission'
+
+    def setUp(self):
+        self.creator = UserFactory(username='creator')
+        self.collaborator = UserFactory(username='collab')
+        self.participant = UserFactory(username='participant')
+        self.comp = CompetitionFactory(created_by=self.creator, collaborators=[self.collaborator])
+        self.phase = PhaseFactory(competition=self.comp)
+        self.submission = SubmissionFactory(phase=self.phase, owner=self.participant, status=Submission.FINISHED)
+
+    def resubmit(self, submission):
+        return self.client.post(reverse('submission-resubmit-submission', args=(submission.pk,)))
+
+    def resubmit_many(self, submissions):
+        url = reverse('submission-resubmit-many-submissions')
+        return self.client.post(url, [s.pk for s in submissions], format='json')
+
+    def test_organizer_can_resubmit_on_current_tasks(self):
+        self.client.force_login(self.creator)
+        new_task = TaskFactory()
+        self.phase.tasks.set([new_task])
+        with mock.patch(self.RUN_SUBMISSION) as run_submission_mock:
+            resp = self.resubmit(self.submission)
+        assert resp.status_code == 200, resp.data
+        new_sub = Submission.objects.get(pk=resp.data['id'])
+        assert new_sub.resubmitted_from == self.submission
+        assert new_sub.owner == self.participant
+        assert new_sub.data == self.submission.data
+        assert new_sub.name == self.submission.name
+        assert list(run_submission_mock.call_args.kwargs['tasks']) == [new_task]
+
+    def test_non_organizer_cannot_resubmit(self):
+        self.client.force_login(self.participant)
+        with mock.patch(self.RUN_SUBMISSION) as run_submission_mock:
+            assert self.resubmit(self.submission).status_code == 403
+            assert self.resubmit_many([self.submission]).status_code == 403
+        run_submission_mock.assert_not_called()
+        assert Submission.objects.count() == 1
+
+    def test_cannot_resubmit_unfinished_submission(self):
+        submission = SubmissionFactory(phase=self.phase, owner=self.participant, status=Submission.RUNNING)
+        self.client.force_login(self.creator)
+        with mock.patch(self.RUN_SUBMISSION) as run_submission_mock:
+            resp = self.resubmit(submission)
+        assert resp.status_code == 403
+        run_submission_mock.assert_not_called()
+
+    def test_cannot_resubmit_soft_deleted_submission(self):
+        self.submission.soft_delete()
+        self.client.force_login(self.creator)
+        with mock.patch(self.RUN_SUBMISSION) as run_submission_mock:
+            assert self.resubmit(self.submission).status_code == 403
+            assert self.resubmit_many([self.submission]).status_code == 403
+        run_submission_mock.assert_not_called()
+
+    def test_cannot_resubmit_on_phase_without_tasks(self):
+        self.phase.tasks.clear()
+        self.client.force_login(self.creator)
+        with mock.patch(self.RUN_SUBMISSION) as run_submission_mock:
+            assert self.resubmit(self.submission).status_code == 400
+        run_submission_mock.assert_not_called()
+
+    def test_non_staff_organizers_can_resubmit_many(self):
+        other = SubmissionFactory(phase=self.phase, owner=self.participant, status=Submission.FAILED)
+        for user in [self.creator, self.collaborator]:
+            self.client.force_login(user)
+            with mock.patch(self.RUN_SUBMISSION) as run_submission_mock:
+                resp = self.resubmit_many([self.submission, other])
+            assert resp.status_code == 200, f'{user.username} could not resubmit many'
+            assert resp.data['count'] == 2
+            assert run_submission_mock.call_count == 2
+
+    def test_resubmitting_child_resubmits_parent_once(self):
+        parent = SubmissionFactory(phase=self.phase, owner=self.participant, status=Submission.FINISHED, has_children=True, task=None)
+        child = SubmissionFactory(phase=self.phase, owner=self.participant, status=Submission.FINISHED, parent=parent, data=parent.data)
+        self.client.force_login(self.creator)
+        with mock.patch(self.RUN_SUBMISSION):
+            resp = self.resubmit(child)
+        assert resp.status_code == 200, resp.data
+        assert Submission.objects.get(pk=resp.data['id']).resubmitted_from == parent
+        with mock.patch(self.RUN_SUBMISSION) as run_submission_mock:
+            resp = self.resubmit_many([parent, child])
+        assert resp.data['count'] == 1
+        run_submission_mock.assert_called_once()
+
+    def test_resubmissions_do_not_count_towards_submission_limit(self):
+        self.phase.has_max_submissions = True
+        self.phase.max_submissions_per_person = 1
+        self.phase.save()
+        self.client.force_login(self.creator)
+        with mock.patch(self.RUN_SUBMISSION):
+            assert self.resubmit(self.submission).status_code == 200
+        can_submit, _ = self.phase.can_user_make_submissions(self.participant)
+        assert not can_submit  # the original submission still counts
+        self.submission.status = Submission.FAILED
+        self.submission.save()
+        can_submit, _ = self.phase.can_user_make_submissions(self.participant)
+        assert can_submit

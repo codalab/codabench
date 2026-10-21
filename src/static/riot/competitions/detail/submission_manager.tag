@@ -22,6 +22,7 @@
             <option value="download_scoring_results">Download scoring results of selected submissions</option>
             <option value="delete">Delete selected submissions</option>
             <option value="rerun">Rerun selected submissions</option>
+            <option value="resubmit">Resubmit selected submissions on current tasks</option>
             </select>
 
             <button type="button" class="ui button" disabled="{checked_submissions.length === 0}" onclick="{submission_handling.bind(this)}">
@@ -183,6 +184,12 @@
                             onclick="{ submission.status === 'Submitting' && !submission.auto_run ? run_submission.bind(this, submission) : rerun_submission.bind(this, submission) }">
                             <i
                                 class="icon { submission.status === 'Submitting' && !submission.auto_run ? 'green play' : 'blue redo' }"></i>
+                        </span>
+                        <!-- resubmit on current tasks (re-run keeps the original task) -->
+                        <span if="{ _.includes(['Finished', 'Failed', 'Cancelled'], submission.status) }"
+                            data-tooltip="Resubmit (new submission on current tasks)" data-inverted=""
+                            onclick="{ resubmit_submission.bind(this, submission) }">
+                            <i class="icon purple clone outline { disabled: resubmitting }"></i>
                         </span>
                         <!-- delete submission -->
                         <span data-tooltip="Delete Submission" data-inverted=""
@@ -771,6 +778,45 @@
             event.stopPropagation()
         }
 
+        // Ignore clicks while a resubmit request is in progress, each request creates new submissions
+        self.resubmitting = false
+        self.resubmit_error = function (response) {
+            toastr.error(_.get(response, 'responseJSON.detail') || _.get(response, 'responseJSON[0]') || response.responseText)
+        }
+        self.resubmit_done = function () {
+            self.resubmitting = false
+            self.update()
+        }
+
+        self.resubmit_submission = function (submission) {
+            event.stopPropagation()
+            if (self.resubmitting || !confirm(`Resubmit submission ${submission.id} as a new submission on the current tasks of the phase?`)) {
+                return
+            }
+            self.resubmitting = true
+            CODALAB.api.resubmit_submission(submission.id)
+                .done(function (response) {
+                    toastr.success(`Created submission ${response.id} on current tasks. The leaderboard is not updated automatically.`)
+                    self.update_submissions()
+                })
+                .fail(self.resubmit_error)
+                .always(self.resubmit_done)
+        }
+
+        self.resubmit_selected_submissions = function () {
+            if (self.resubmitting || !confirm(`Resubmit the ${self.checked_submissions.length} selected submissions as new submissions on the current tasks of the phase?`)) {
+                return
+            }
+            self.resubmitting = true
+            CODALAB.api.resubmit_many_submissions(self.checked_submissions)
+                .done(function (response) {
+                    toastr.success(`Created ${response.count} submissions on current tasks. The leaderboard is not updated automatically.`)
+                    self.update_submissions()
+                })
+                .fail(self.resubmit_error)
+                .always(self.resubmit_done)
+        }
+
         self.rerun_selected_submissions = function () {
             CODALAB.api.re_run_many_submissions(self.checked_submissions)
                 .done(function (response) {
@@ -1118,6 +1164,9 @@
                         break;
                     case "rerun":
                         self.rerun_selected_submissions()
+                        break
+                    case "resubmit":
+                        self.resubmit_selected_submissions()
                         break
                     default:
                         console.log("should never be in this state of default..")
