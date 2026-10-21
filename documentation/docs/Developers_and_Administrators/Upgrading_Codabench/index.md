@@ -63,3 +63,6 @@ Manual interventions needed depending on which version you are upgrading from:
 - [Docker-py](Docker-py.md) and [upgrade compute workers](#upgrade-compute-workers) (version < 1.22.0)
 - [Django 4.2](Django-4.md) (version < 1.23.0)
 - [Postgres 18](Postgres-18.md) (version < 1.24.0)
+- [Add `DEFAULT_FROM_EMAIL` in your `.env` file](Add-DEFAULT_FROM_EMAIL-in-your-.env-file.md) (version < 1.26.0)
+- [RabbitMQ feature flags](RabbitMQ-feature-flags.md) (version < 1.28.0, recommended)
+- [Users queue limit](Users-queue-limit.md) (version < 1.31.0)

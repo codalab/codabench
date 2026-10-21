@@ -68,7 +68,10 @@ nav = [
             {"Minio Image Upgrade (version < 1.21.1)" = "Developers_and_Administrators/Upgrading_Codabench/Minio-image.md"},
             {"Docker-Py (version < 1.22.0)" = "Developers_and_Administrators/Upgrading_Codabench/Docker-py.md"},
             {"Django 4 Upgrades (version < 1.23.0)" = "Developers_and_Administrators/Upgrading_Codabench/Django-4.md"},
-            {"Postgres 18 upgrade (version < 1.24.0)" = "Developers_and_Administrators/Upgrading_Codabench/Postgres-18.md"}
+            {"Postgres 18 upgrade (version < 1.24.0)" = "Developers_and_Administrators/Upgrading_Codabench/Postgres-18.md"},
+            {"Add DEFAULT_FROM_EMAIL in your .env file (version < 1.26.0)" = "Developers_and_Administrators/Upgrading_Codabench/Add-DEFAULT_FROM_EMAIL-in-your-.env-file.md"},
+            {"RabbitMQ feature flags (version < 1.28.0, recommended)" = "Developers_and_Administrators/Upgrading_Codabench/RabbitMQ-feature-flags.md"},
+            {"Users queue limit (version < 1.31.0)" = "Developers_and_Administrators/Upgrading_Codabench/Users-queue-limit.md"}
         ]}
         ]},
         {"Newsletters Archive" = [
