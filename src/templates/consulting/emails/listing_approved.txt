@@ -1,0 +1,6 @@
+{% extends 'emails/base_email.txt' %}
+
+{% block content %}
+    Your consulting listing "{{ listing.title }}" has been approved and is now shown on the consulting page:
+    {{ protocol }}://{{ domain }}{% url 'consulting:public' %}
+{% endblock %}
