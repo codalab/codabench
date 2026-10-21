@@ -4,7 +4,7 @@ import zipfile
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from collections import defaultdict
 
-from django.db.models import Q, Value, BooleanField
+from django.db.models import F, Q, Value, BooleanField
 from django.db import transaction
 
 from rest_framework import status
@@ -22,6 +22,13 @@ from profiles.models import User
 from tasks.models import Task
 from datasets.models import Data
 from utils.data import pretty_bytes, gb_to_bytes
+
+
+def collaborator_tasks_filter(user):
+    """Tasks the user can edit as a co-organizer: used by a competition created by the task creator, where the user is a collaborator.
+    Being a collaborator of a competition created by someone else is not enough, because a competition owner
+    can add anyone as a collaborator without their consent"""
+    return Q(phases__competition__created_by=F('created_by'), phases__competition__collaborators=user)
 
 
 # TODO:// TaskViewSimple uses simple serializer from tasks, which exists purely for the use of Select2 on phase modal
@@ -53,6 +60,10 @@ class TaskViewSet(ModelViewSet):
             # the public task to the user and hence we check the `retrieve` action
             if self.request.query_params.get('public') or self.action == 'retrieve':
                 task_filter |= Q(is_public=True)
+            # `collaborations` is sent when the user checks Show Co-organized Tasks on the front-end
+            # retrieve is needed to open the edit form of these tasks
+            if self.request.query_params.get('collaborations') or self.action == 'retrieve':
+                task_filter |= collaborator_tasks_filter(self.request.user)
             # Removed the "task validation" process (https://github.com/codalab/codabench/pull/1962)
             # We now always set "validated" to False. The "task validation" was only partly implemented and never used.
             qs = qs.filter(task_filter)
@@ -79,6 +90,9 @@ class TaskViewSet(ModelViewSet):
         context['shared_with'] = defaultdict(list)
         for user in users.values('username', 'shared_tasks__pk'):
             context['shared_with'][user['shared_tasks__pk']].append(user['username'])
+
+        # Tasks the user can edit as a co-organizer, for the can_edit field
+        context['editable_task_ids'] = set(qs.filter(collaborator_tasks_filter(self.request.user)).values_list('pk', flat=True))
 
         return context
 
@@ -347,13 +361,12 @@ class TaskViewSet(ModelViewSet):
             return Response({"error": f"An error occurred while creating the task.\n {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def can_update(self, user, task):
-        """Creator, superuser, and organizers of a competition that uses the task and that was created by the task creator.
+        """Creator, superuser, and co-organizers (see collaborator_tasks_filter).
         Lets a co-organizer fix a task in place instead of replacing it, which keeps existing scores comparable.
-        Requiring the task creator to have created the competition stops anyone from attaching a task to their own competition to edit it.
-        Being a collaborator is not enough, because a competition owner can add anyone as a collaborator without their consent"""
+        Requiring the task creator to have created the competition stops anyone from attaching a task to their own competition to edit it"""
         if user.is_superuser or user == task.created_by:
             return True
-        return Phase.objects.filter(tasks=task, competition__created_by=task.created_by, competition__collaborators=user).exists()
+        return Task.objects.filter(pk=task.pk).filter(collaborator_tasks_filter(user)).exists()
 
     # This function allows for multiple errors when deleting multiple objects
     def check_delete_permissions(self, request, task):

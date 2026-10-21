@@ -257,3 +257,32 @@ class TestUpdateTaskPermissions(APITestCase):
         assert resp.status_code == status.HTTP_400_BAD_REQUEST
         assert resp.data['error'] == 'Cannot delete a task that is not yours'
         self.task.refresh_from_db()
+
+    def list_tasks(self, user, **params):
+        self.client.force_login(user)
+        resp = self.client.get(reverse('task-list'), params)
+        assert resp.status_code == status.HTTP_200_OK
+        return {task['id']: task for task in resp.data['results']}
+
+    def test_collaborator_sees_editable_task_only_when_asking_for_collaborations(self):
+        assert self.task.pk not in self.list_tasks(self.collaborator)
+        tasks = self.list_tasks(self.collaborator, collaborations=True)
+        assert tasks[self.task.pk]['can_edit'] is True
+        # The owner sees their task as editable too, with or without the filter
+        assert self.list_tasks(self.owner)[self.task.pk]['can_edit'] is True
+
+    def test_collaborator_can_open_editable_task(self):
+        self.client.force_login(self.collaborator)
+        resp = self.client.get(reverse('task-detail', kwargs={'pk': self.task.pk}))
+        assert resp.status_code == status.HTTP_200_OK
+        assert resp.data['can_edit'] is True
+
+    def test_task_not_listed_for_competition_owner_who_added_task_creator_as_collaborator(self):
+        competition = CompetitionFactory(created_by=self.stranger, collaborators=[self.owner])
+        PhaseFactory(competition=competition, tasks=[self.task])
+        assert self.task.pk not in self.list_tasks(self.stranger, collaborations=True)
+
+    def test_public_task_is_not_editable_by_other_users(self):
+        self.task.is_public = True
+        self.task.save()
+        assert self.list_tasks(self.stranger, public=True)[self.task.pk]['can_edit'] is False
