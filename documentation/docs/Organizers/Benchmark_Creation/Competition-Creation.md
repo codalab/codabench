@@ -72,7 +72,7 @@ By clicking `Add phase`, you should be presented with a modal for phase creation
 
 *Advanced*
 
-- Execution Time Limit: The time limit for submission execution time measured in seconds (Currently the label says this is measured in MS, but this seems to be false)
+- Execution Time Limit: The time limit for submission execution time measured in seconds.
 - Max submissions per day: The max submissions allowed for the phase. The time period is from midnight UTC to midnight the next day UTC.
 - Max submissions per person: The absolute max amount of submissions a participant can make on this phase.
 

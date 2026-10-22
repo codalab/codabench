@@ -4,16 +4,16 @@ This is done via writing to a `detailed_results.html` file (OR any `.html` -- fi
 
 This file is watched for changes and updated on the frontend every time the file is updated, so users can get a live feed from the compute worker.
 
-There is no limitation to the contents of this HTML file, and can thus be used to relay any information desired.
+There is no limitation to the contents of this HTML file, and it can thus be used to relay any information desired.
 Use case ideas:
 
 - Plot data using a python plot library like matplotlib or seaborn.
-  - plot the learning curve over time of a reinforcement learning challenge
-  - plot the slope of a linear regression model
-  - plot the location of clusters in a classification challenge
-  - plot anything you can conceive of
+    - plot the learning curve over time of a reinforcement learning challenge
+    - plot the slope of a linear regression model
+    - plot the location of clusters in a classification challenge
+    - plot anything you can conceive of
 - Run a profiler that outputs a network of method calls. 
-- Display any additional data about the submission file that can not be distilled down in to a score of some kind
+- Display any additional data about the submission file that can not be distilled down into a score of some kind
 
 ## How to include figures
 
