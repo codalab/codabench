@@ -1,0 +1,62 @@
+{% load static %}
+
+<div id="footer" class="footer">
+    <div class="footer-inner">
+        <!-- Logo + tagline -->
+        <div class="footer-brand">
+            <a href="/">
+                <img class="footer-logo" src="{% static 'img/codabench.png' %}" alt="Codabench">
+            </a>
+            <p class="footer-tagline">Open-source platform for AI benchmarks and competitions</p>
+            <div class="footer-icons">
+                <a class="footer-icon" href="https://github.com/codalab/codabench" target="_blank" title="GitHub">
+                    <i class="github icon"></i>
+                </a>
+                <a class="footer-icon" href="mailto:{{ CONTACT_EMAIL }}" title="Email">
+                    <i class="envelope icon"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- Quick links: what you can browse -->
+        <div class="footer-column">
+            <h4 class="footer-title">Quick Links</h4>
+            <a href="{% url "competitions:public" %}?ordering=popular">Popular Benchmarks</a>
+            <a href="{% url "competitions:public" %}?ordering=recent">Recent Benchmarks</a>
+            {# Why: this page only exists when external benchmarks are enabled #}
+            {% if EXTERNAL_COMPETITIONS_ENABLED %}
+                <a href="{% url "external_competitions:public" %}">External Benchmarks</a>
+            {% endif %}
+            <a href="{% url "datasets:public" %}">Public Datasets</a>
+        </div>
+
+        <!-- Organizers: how to build a benchmark -->
+        <div class="footer-column">
+            <h4 class="footer-title">Organizers</h4>
+            <a href="https://docs.codabench.org/latest/Organizers/Benchmark_Creation/Getting-started-with-Codabench/" target="_blank">Create a benchmark</a>
+            <a href="https://docs.codabench.org" target="_blank">Documentation</a>
+            <a href="{% url 'schema-swagger-ui' %}">API docs</a>
+        </div>
+
+        <!-- Community: how to get involved -->
+        <div class="footer-column">
+            <h4 class="footer-title">Community</h4>
+            <a href="https://github.com/codalab/codabench" target="_blank">GitHub</a>
+            <a href="https://github.com/codalab/codabench/releases" target="_blank">Release notes</a>
+            <a href="https://github.com/codalab/codabench/blob/develop/.github/CONTRIBUTING.md" target="_blank">How to contribute</a>
+            <a href="https://github.com/codalab/codabench/issues" target="_blank">Report an issue</a>
+            <a href="https://doi.org/10.1016/j.patter.2022.100543" target="_blank">Cite Codabench</a>
+        </div>
+    </div>
+
+    <!-- Bottom bar: copyright and project policies -->
+    <div class="footer-bottom">
+        <span>&copy; {% now "Y" %} Codabench</span>
+        <div class="footer-bottom-links">
+            <a href="https://github.com/codalab/codabench/blob/develop/documentation/PRIVACY.md" target="_blank">Privacy and Terms</a>
+            <a href="https://github.com/codalab/codabench/blob/develop/.github/CODE_OF_CONDUCT.md" target="_blank">Code of Conduct</a>
+            <a href="https://github.com/codalab/codabench/blob/develop/.github/SECURITY.md" target="_blank">Security</a>
+            <a href="https://github.com/codalab/codabench/blob/develop/LICENSE.TXT" target="_blank">License</a>
+        </div>
+    </div>
+</div>

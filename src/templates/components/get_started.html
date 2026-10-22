@@ -1,0 +1,40 @@
+{# Get Started section on the home page #}
+
+<div class="get-started">
+    <h2 class="get-started-title">Get Started</h2>
+    <div class="get-started-cards">
+        <!-- Participate -->
+        <div class="get-started-card">
+            <div class="get-started-icon"><i class="trophy icon"></i></div>
+            <h3 class="get-started-card-title">Participate</h3>
+            <p class="get-started-text">Explore public benchmarks, submit your algorithms or datasets, and compare your results with the community on live leaderboards.</p>
+            <a class="get-started-button" href="{% url "competitions:public" %}">Browse benchmarks</a>
+        </div>
+
+        <!-- Organize -->
+        <div class="get-started-card">
+            <div class="get-started-icon"><i class="users icon"></i></div>
+            <h3 class="get-started-card-title">Organize</h3>
+            <p class="get-started-text">Create your own benchmark with custom datasets, scoring programs and compute workers, and share it with participants worldwide.</p>
+            <a class="get-started-button" href="https://docs.codabench.org/latest/Organizers/Benchmark_Creation/Getting-started-with-Codabench/" target="_blank">Read the tutorial</a>
+        </div>
+
+        <!-- Contribute -->
+        <div class="get-started-card">
+            <div class="get-started-icon"><i class="code icon"></i></div>
+            <h3 class="get-started-card-title">Contribute</h3>
+            <p class="get-started-text">Codabench is open source. Help improve the platform by reporting issues, suggesting new features or contributing code on GitHub.</p>
+            <a class="get-started-button" href="https://github.com/codalab/codabench" target="_blank">View on GitHub</a>
+        </div>
+
+        {% comment %}
+        <!-- Consultancy -->
+        <div class="get-started-card">
+            <div class="get-started-icon"><i class="handshake outline icon"></i></div>
+            <h3 class="get-started-card-title">Consultancy</h3>
+            <p class="get-started-text">Get expert support to design, launch and run your benchmark, from data preparation and scoring to compute infrastructure.</p>
+            <a class="get-started-button" href="/consulting/">Find a consultant</a>
+        </div>
+        {% endcomment %}
+    </div>
+</div>
