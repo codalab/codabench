@@ -897,6 +897,21 @@ def do_phase_migrations():
         )
     )
 
+    pending_submissions = Submission.objects.filter(
+        parent__isnull=True,
+        status=Submission.SUBMITTING,
+        created_by_migration__isnull=False,
+        phase__competition__is_migrating=False,
+        phase__start__lte=now(),
+        has_children=False,
+    ).select_related('phase')
+
+    for submission in pending_submissions:
+        try:
+            submission.start()
+        except Exception:
+            logger.exception(f"Could not start pending migrated submission {submission.pk}")
+
     # Updating Competitions whose phases have finished migrating to `is_migrating=False`
     completed_statuses = [
         Submission.FINISHED,

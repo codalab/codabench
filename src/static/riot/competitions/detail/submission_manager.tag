@@ -16,13 +16,19 @@
             <i class="icon download"></i>Download as CSV
             </a>
 
-            <select class="ui dropdown" ref="submission_handling_operation">
-            <option value="download_submissions">Download selected submissions</option>
-            <option value="download_prediction_results">Download prediction results of selected submissions</option>
-            <option value="download_scoring_results">Download scoring results of selected submissions</option>
-            <option value="delete">Delete selected submissions</option>
-            <option value="rerun">Rerun selected submissions</option>
-            <option value="resubmit">Resubmit selected submissions on current tasks</option>
+            <select class="ui dropdown" ref="submission_handling_operation" onchange="{ on_operation_changed }">
+                <option value="download_submissions">Download selected submissions</option>
+                <option value="download_prediction_results">Download prediction results of selected submissions</option>
+                <option value="download_scoring_results">Download scoring results of selected submissions</option>
+                <option value="delete">Delete selected submissions</option>
+                <option value="rerun">Rerun selected submissions</option>
+                <option value="resubmit">Resubmit selected submissions on current tasks</option>
+                    <option value="migrate">Migrate selected submissions</option>
+                </select>
+
+                <select if="{ selected_operation === 'migrate' }" class="ui dropdown" ref="migrate_target_phase">
+                    <option value="">Destination phase…</option>
+                    <option each="{ phase in opts.competition.phases }" value="{ phase.id }">{ phase.name }</option>
             </select>
 
             <button type="button" class="ui button" disabled="{checked_submissions.length === 0}" onclick="{submission_handling.bind(this)}">
@@ -98,7 +104,6 @@
                 <th class="center aligned">Actions</th>
             </tr>
         </thead>
-
         <tbody>
             <tr if="{ _.isEmpty(submissions) && !loading }" class="center aligned">
                 <td colspan="100%"><em>No submissions found! Please make a submission</em></td>
@@ -145,9 +150,9 @@
                         <i if="{submission.status === 'Failed' && !is_hitl_failure(submission)}" class="failed question circle icon"></i>
                         <i if="{submission.status === 'Failed' && is_hitl_failure(submission)}" class="orange lock icon"></i>
                     </sup>
-                    <sup data-tooltip="An organizer will run your submission soon">
-                        <i if="{submission.status === 'Submitting' && !submission.auto_run}"
-                            class="question circle icon"></i>
+                    <sup if="{ pending_info(submission) }"
+                        data-tooltip="{ pending_info(submission).message }" data-inverted="">
+                        <i class="question circle icon" style="color: { pending_info(submission).color };"></i>
                     </sup>
                 </td>
                 <td>{get_score(submission)}</td>
@@ -230,6 +235,30 @@
                         data-tooltip="Delete Submission" data-inverted=""
                         onclick="{ soft_delete_submission.bind(this, submission) }">
                         <i class="icon red trash"></i>
+                    </span>
+                    <!-- Atomic Migration -->
+                    <span if="{ can_migrate(submission) }" class="migrate-wrapper" onclick="{ do_nothing }">
+                        <span data-tooltip="Migrate to another phase" data-inverted=""
+                            style="cursor:pointer;"
+                            onclick="{ toggle_migrate_menu.bind(this, submission) }">
+                            <i class="icon blue copy outline"></i>
+                        </span>
+                        <div if="{ migrate_menu_open === submission.id }" class="migrate-menu">
+                            <div class="migrate-header">
+                                Migrate submission #{ submission.id } to…
+                            </div>
+                            <div each="{ phase in get_future_phases(submission) }"
+                                class="migrate-item { disabled: migrating }"
+                                onclick="{ migrate_submission.bind(this, submission, phase) }">
+                                <div class="migrate-item-title">
+                                    <span>{ phase.name }</span>
+                                    <i class="angle right icon"></i>
+                                </div>
+                                <small class="migrate-item-meta">
+                                    { phase.status || 'Upcoming' } · starts { pretty_date(phase.start) }
+                                </small>
+                            </div>
+                        </div>
                     </span>
                 </td>
             </tr>
@@ -352,6 +381,7 @@
             <div style="margin-right: 10px; color: #8c8c8c;">
                 <small>{ total_count || 0 } total</small>
             </div>
+        </div>
     </div>
 
     <div class="ui large modal" ref="modal">
@@ -404,6 +434,14 @@
         self.previous = null
 
         self.expanded_submissions = {}
+        self.migrating = false
+
+        self.close_migrate_menu = function () {
+            if (self.migrate_menu_open !== null) {
+                self.migrate_menu_open = null
+                self.update()
+            }
+        }
 
         self.on("mount", function () {
             $(self.refs.search).dropdown()
@@ -411,6 +449,16 @@
             $(self.refs.phase).dropdown()
             $(self.refs.rerun_button).dropdown()
             $(self.refs.submission_handling_operation).dropdown()
+            $(document).on('click.migrate_menu', self.close_migrate_menu)
+            $(document).on('keydown.migrate_menu', function (e) {
+            if (e.key === 'Escape') self.close_migrate_menu()
+        })
+
+        })
+
+        self.on("unmount", function () {
+            $(document).off('click.migrate_menu', self.close_migrate_menu)
+            $(document).off('keydown.migrate_menu')
         })
 
         self.pretty_date = function (date_string) {
@@ -496,6 +544,138 @@
 
         self.is_hitl_failure = function (submission) {
             return !!(submission.status_details && submission.status_details.indexOf('Human in the Loop') !== -1)
+        }
+
+        self.migrate_menu_open = null
+
+        self.is_organizer = function () {
+            return !!opts.admin
+                || !!_.get(opts, 'competition.admin')
+                || !!_.get(opts, 'competition.is_admin')
+        }
+
+        self.can_migrate = function (submission) {
+            return self.is_organizer()
+                && !submission.parent
+                && !submission.is_soft_deleted
+                && submission.status === 'Finished'
+                && self.get_future_phases(submission).length > 0
+        }
+
+        self.toggle_migrate_menu = function (submission, event) {
+            if (event) event.stopPropagation()
+            self.migrate_menu_open = (self.migrate_menu_open === submission.id) ? null : submission.id
+            self.update()
+        }
+
+        self.error_message = function (response, fallback) {
+            let json = response && response.responseJSON
+            if (Array.isArray(json)) return json.join(' ')
+            if (json && json.detail) return json.detail
+            if (json && json.error_msg) return json.error_msg
+            if (json && json.error) return json.error
+            return fallback
+        }
+
+        self.migrate_submission = function (submission, phase, event) {
+            if (event) event.stopPropagation()
+            if (self.migrating) return
+            if (!confirm(`Migrate submission #${submission.id} to phase "${phase.name}"?`)) {
+                return
+            }
+            self.migrating = true
+            self.update()
+            CODALAB.api.migrate_submission(submission.id, phase.id)
+                .done(function () {
+                    toastr.success(`Submission #${submission.id} migrated to "${phase.name}"`)
+                    self.migrate_menu_open = null
+                    self.update_submissions()
+                })
+                .fail(function (response) {
+                    toastr.error(self.error_message(response, 'Error migrating submission'))
+                })
+                .always(function () {
+                    self.migrating = false
+                    self.update()
+                })
+        }
+
+
+        self.selected_operation = 'download_submissions'
+
+        self.on_operation_changed = function (event) {
+            self.selected_operation = event.target.value
+            self.update()
+        }
+
+        self.migrate_selected_submissions = function () {
+            let phase_id = self.refs.migrate_target_phase && self.refs.migrate_target_phase.value
+            if (!phase_id) {
+                toastr.error('Select a destination phase first')
+                return
+            }
+            let phase = _.find(opts.competition.phases, p => String(p.id) === String(phase_id))
+            let count = self.checked_submissions.length
+            if (!confirm(`Migrate ${count} selected submission(s) to phase "${phase.name}"?`)) return
+
+            CODALAB.api.migrate_many_submissions(self.checked_submissions, phase.id)
+                .done(function (response) {
+                    let skipped = response.skipped || []
+                    toastr.success(`${response.migrated.length} submission(s) migrated`)
+                    if (skipped.length > 0) {
+                        toastr.warning(skipped.map(s => `#${s.id}: ${s.reason}`).join('<br>'))
+                    }
+                    self.update_submissions()
+                })
+                .fail(function (response) {
+                    toastr.error(self.error_message(response, 'Error migrating submissions'))
+                })
+        }
+
+        self.get_future_phases = function (submission) {
+            if (!submission || !submission.phase) return []
+
+            const phase = _.isObject(submission.phase)
+                ? submission.phase
+                : _.find(opts.competition.phases, p => p.id === submission.phase)
+
+            if (!phase) return []
+
+            return _.filter(
+                opts.competition.phases,
+                p => p.index > phase.index
+            )
+        }
+
+        self.get_submission_phase = function (submission) {
+            if (!submission || !submission.phase) return null
+            if (_.isObject(submission.phase)) return submission.phase
+            return _.find(opts.competition.phases, p => p.id === submission.phase) || null
+        }
+
+        self.is_waiting_for_phase = function (submission) {
+            if (!submission || submission.status !== 'Submitting') return false
+            let phase = self.get_submission_phase(submission)
+            if (!phase || !phase.start) return false
+            return Date.parse(phase.start) > Date.now()
+        }
+
+        self.waiting_message = function (submission) {
+            let phase = self.get_submission_phase(submission)
+            if (!phase) return ''
+            return 'Waiting for phase "' + phase.name + '" to start (' + self.pretty_date(phase.start) +
+                '). This submission will run automatically once the phase begins.'
+        }
+
+        self.pending_info = function (submission) {
+            if (!submission || submission.status !== 'Submitting') return null
+            if (self.is_waiting_for_phase(submission)) {
+                return { color: 'blue', message: self.waiting_message(submission) }
+            }
+            if (!submission.auto_run) {
+                return { color: 'black', message: 'An organizer will run your submission soon' }
+            }
+            return null
         }
 
         self.update_submissions = function (filters) {
@@ -638,7 +818,6 @@
             } else {
                 const val = parseInt(raw, 10)
                 if (isNaN(val) || val <= 0) return
-                // n'autorise que 50,100,500
                 if (![50, 100, 500].includes(val)) return
                 self.page_size = val
             }
@@ -649,7 +828,6 @@
 
         self.handle_page_enter = function (ev) {
             if (ev.key === 'Enter') {
-                // value du champ input
                 let v = ev.target.value
                 let requested = parseInt(v, 10)
                 if (isNaN(requested)) return
@@ -1120,7 +1298,6 @@
         };
 
         self.submission_handling = function () {
-            // console.log(self.checked_submissions)
             if (self.checked_submissions.length === 0) {
                 console.log("no submission is selected");
             } else {
@@ -1143,6 +1320,9 @@
                         break
                     case "resubmit":
                         self.resubmit_selected_submissions()
+                        break
+                    case "migrate":
+                        self.migrate_selected_submissions()
                         break
                     default:
                         console.log("should never be in this state of default..")
@@ -1215,5 +1395,109 @@
             table tbody tr:hover
                 cursor pointer
                 background-color rgba(0,0,0,0.03)
+        .migrate-wrapper
+            position relative
+            display inline-block
+
+        .migrate-menu
+            position absolute
+            z-index 1000
+            right 0
+            top 26px
+            min-width 240px
+            background white
+            border 1px solid #ddd
+            border-radius 4px
+            box-shadow 0 4px 12px rgba(0, 0, 0, 0.15)
+            text-align left
+
+        .migrate-header
+            padding 8px 12px
+            font-weight bold
+            font-size 0.9em
+            color #555
+            background #f7f7f7
+            border-bottom 1px solid #eee
+            border-radius 4px 4px 0 0
+
+        .migrate-item
+            padding 8px 12px
+            cursor pointer
+            border-bottom 1px solid #f0f0f0
+            &:hover
+                background #eef6ff
+            &.disabled
+                opacity 0.5
+                pointer-events none
+
+        .migrate-item-title
+            display flex
+            justify-content space-between
+            align-items center
+            font-weight 600
+
+        .migrate-item-meta
+            color #8c8c8c
+
+        .migrate-footer
+            padding 6px 12px
+            font-size 0.8em
+            color #8c8c8c
+            background #fafafa
+            border-radius 0 0 4px 4px
+        .child-submissions-row
+            td
+                padding-top 0
+                padding-bottom 0
+        .migrate-wrapper
+            position relative
+            display inline-block
+
+        .migrate-menu
+            position absolute
+            z-index 1000
+            right 0
+            top 26px
+            min-width 240px
+            background white
+            border 1px solid #ddd
+            border-radius 4px
+            box-shadow 0 4px 12px rgba(0, 0, 0, 0.15)
+            text-align left
+
+        .migrate-header
+            padding 8px 12px
+            font-weight bold
+            font-size 0.9em
+            color #555
+            background #f7f7f7
+            border-bottom 1px solid #eee
+            border-radius 4px 4px 0 0
+
+        .migrate-item
+            padding 8px 12px
+            cursor pointer
+            border-bottom 1px solid #f0f0f0
+            &:hover
+                background #eef6ff
+            &.disabled
+                opacity 0.5
+                pointer-events none
+
+        .migrate-item-title
+            display flex
+            justify-content space-between
+            align-items center
+            font-weight 600
+
+        .migrate-item-meta
+            color #8c8c8c
+
+        .migrate-footer
+            padding 6px 12px
+            font-size 0.8em
+            color #8c8c8c
+            background #fafafa
+            border-radius 0 0 4px 4px
     </style>
 </submission-manager>

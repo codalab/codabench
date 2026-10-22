@@ -1,6 +1,6 @@
 import json
 import uuid
-
+from django.utils.timezone import now
 from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
@@ -91,7 +91,7 @@ class SubmissionViewSet(ModelViewSet):
                     except SubmissionDetails.DoesNotExist:
                         logger.error("SubmissionDetails object not found.")
 
-            if self.action in ['update_fact_sheet', 'run_submission', 're_run_submission', 'resubmit_submission']:
+            if self.action in ['update_fact_sheet', 'run_submission', 're_run_submission', 'resubmit_submission', 'migrate_to_phase', 'migrate_many_submissions']:
                 # get_queryset will stop us from re-running something we're not supposed to
                 pass
             else:
@@ -438,10 +438,6 @@ class SubmissionViewSet(ModelViewSet):
         if destination_phase.index <= submission.phase.index:
             raise ValidationError('Destination phase must be a future phase relative to the current one')
 
-        tasks_to_migrate = submission.get_tasks_to_migrate()
-        if not tasks_to_migrate:
-            raise ValidationError('No successfully finished tasks to migrate for this submission')
-
         new_submission = Submission(
             created_by_migration=submission.phase,
             participant=submission.participant,
@@ -451,9 +447,57 @@ class SubmissionViewSet(ModelViewSet):
             organization=submission.organization,
         )
         new_submission.save(ignore_submission_limit=True)
-        new_submission.start(tasks=tasks_to_migrate)
+
+        if destination_phase.start <= now():
+            new_submission.start()
 
         return Response({'id': new_submission.id})
+
+    @action(detail=False, methods=('POST',))
+    def migrate_many_submissions(self, request):
+        pks = request.data.get('pks')
+        destination_phase_id = request.data.get('destination_phase_id')
+        if not isinstance(pks, list) or not pks:
+            raise ValidationError('`pks` must be a non-empty list')
+        if not destination_phase_id:
+            raise ValidationError('destination_phase_id is required')
+
+        destination_phase = get_object_or_404(Phase, pk=destination_phase_id)
+        submissions = Submission.objects.filter(
+            pk__in=pks).select_related('phase__competition')
+
+        migrated, skipped = [], []
+        for submission in submissions:
+            reason = None
+            if not self.has_admin_permission(request.user, submission):
+                reason = 'no permission'
+            elif submission.phase.competition_id != destination_phase.competition_id:
+                reason = 'destination phase belongs to another competition'
+            elif submission.parent_id is not None:
+                reason = 'child submission'
+            elif submission.status != Submission.FINISHED:
+                reason = 'not finished'
+            elif destination_phase.index <= submission.phase.index:
+                reason = 'destination phase is not a future phase'
+
+            if reason:
+                skipped.append({'id': submission.id, 'reason': reason})
+                continue
+
+            new_submission = Submission(
+                created_by_migration=submission.phase,
+                participant=submission.participant,
+                phase=destination_phase,
+                owner=submission.owner,
+                data=submission.data,
+                organization=submission.organization,
+            )
+            new_submission.save(ignore_submission_limit=True)
+            if destination_phase.start <= now():
+                new_submission.start()
+            migrated.append(new_submission.id)
+
+        return Response({'migrated': migrated, 'skipped': skipped})
 
     # TODO: The 3 functions download many should be bundled inside a genereic with the function like "get_prediction_result" as a parameter instead of the same code 3 times
     @action(detail=False, methods=('POST',))
