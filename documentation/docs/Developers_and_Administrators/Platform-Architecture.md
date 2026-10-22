@@ -16,7 +16,7 @@ It is made of several services, each running in its own Docker container:
 - **Redis:** cache, and storage of the background task results.
 - **Flower:** monitoring tool for the background tasks.
 
-More details on these services are given in [Codabench Docker Architecture](Codabench-Architecture.md).
+More details on these services are given in [Docker Architecture](Codabench-Architecture.md).
 
 ## Storage
 
