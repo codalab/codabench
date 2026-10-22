@@ -19,7 +19,10 @@
                     </thead>
                     <tbody>
                     <tr each="{phase, index in phases}">
-                        <td>{ phase.name }</td>
+                        <td>
+                            { phase.name }
+                            <span if="{ phase.is_parallel }" class="ui tiny teal label">Parallel</span>
+                        </td>
                         <td class="right aligned">
                             <a class="chevron">
                                 <sorting-chevrons data="{ phases }"
@@ -213,6 +216,16 @@
                               data-position="bottom center"><i class="help icon circle"></i></span>
                                 </label>
                                 <input type="checkbox" ref="hide_score_output">
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <div class="ui checkbox">
+                                <label>Parallel phase
+                                    <span data-tooltip="A parallel phase can run at the same time as other phases" data-inverted=""
+                                        data-position="bottom center"><i class="help icon circle"></i></span>
+                                </label>
+                                <input type="checkbox" ref="is_parallel">
                             </div>
                         </div>
 
@@ -581,18 +594,19 @@
                         is_valid = false
                     }
                 })
-                _.forEach(_.range(self.phases.length), i => {
-                    if (i !== 0) {
-                        let end = Date.parse(self.formatDateToYYYYMMDD(self.phases[i - 1].end))
-                        let start = Date.parse(self.formatDateToYYYYMMDD(self.phases[i].start))
-                        if (end > start || !end) {
-                            let message = `Phase "${_.get(self.phases[i], 'name', i + 1)}" must start after phase "${_.get(self.phases[i - 1], 'name', i)}" ends`
-                            if (!self.warnings.includes(message)) {
-                                self.warnings.push(message)
-                                self.update()
-                            }
-                            is_valid = false
+                var sequential_phases = self.phases.filter(p => !p.is_parallel)
+                _.forEach(_.range(1, sequential_phases.length), i => {
+                    let prev = sequential_phases[i - 1]
+                    let curr = sequential_phases[i]
+                    let end = Date.parse(self.formatDateToYYYYMMDD(prev.end))
+                    let start = Date.parse(self.formatDateToYYYYMMDD(curr.start))
+                    if (end > start || !end) {
+                        let message = `Phase "${_.get(curr, 'name', i + 1)}" must start after phase "${_.get(prev, 'name', i)}" ends`
+                        if (!self.warnings.includes(message)) {
+                            self.warnings.push(message)
+                            self.update()
                         }
+                        is_valid = false
                     }
                 })
             }
@@ -639,6 +653,7 @@
                 $(field).val('')
             })
             $(self.refs.auto_migrate).prop('checked', false)
+            self.refs.is_parallel.checked = false
 
             // Clear date and time fields values
             $(self.refs.calendar_start_date).find('input[name="start_date"]').val('')
@@ -684,6 +699,7 @@
             self.refs.hide_output.checked = phase.hide_output
             self.refs.hide_prediction_output.checked = phase.hide_prediction_output
             self.refs.hide_score_output.checked = phase.hide_score_output
+            self.refs.is_parallel.checked = !!phase.is_parallel
 
             // Setting description in markdown editor
             self.simple_markdown_editor.value(self.phases[index].description || '')
@@ -850,6 +866,7 @@
             data.hide_output = self.refs.hide_output.checked
             data.hide_prediction_output = self.refs.hide_prediction_output.checked
             data.hide_score_output = self.refs.hide_score_output.checked
+            data.is_parallel = self.refs.is_parallel.checked
             _.forEach(number_fields, field => {
                 let str = _.get(data, field)
                 if (str) {
