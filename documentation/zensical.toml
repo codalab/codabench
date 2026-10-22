@@ -12,11 +12,8 @@ nav = [
     {"Organizers" = [
         {"Benchmark Creation" = [
             {"Getting Started Tutorial" = "Organizers/Benchmark_Creation/Getting-started-with-Codabench.md"},
-<<<<<<< HEAD
             {"Create your First Benchmark" = "Organizers/Benchmark_Creation/How-to-create-your-first-benchmark.md"},
-=======
             {"Competition Design" = "Organizers/Benchmark_Creation/Competition-Design.md"},
->>>>>>> 8c961757 (Add pages Competition design and Platform architecture, fix typos and problems)
             {"Advanced Tutorial" = "Organizers/Benchmark_Creation/Advanced-Tutorial.md"},
             {"How to Transition from CodaLab to Codabench?" = "Organizers/Benchmark_Creation/How-to-transition-from-CodaLab-to-Codabench.md"},
             {"Competition Creation" = "Organizers/Benchmark_Creation/Competition-Creation.md"},
@@ -43,9 +40,9 @@ nav = [
         ]}
     ]},
     {"Developers" = [
-        {"Basic Installation Guide" = "Developers_and_Administrators/Codabench-Installation.md"},
+        {"Codabench Basic Installation Guide" = "Developers_and_Administrators/Codabench-Installation.md"},
         {"Platform Architecture" = "Developers_and_Administrators/Platform-Architecture.md"},
-        {"Docker Architecture" = "Developers_and_Administrators/Codabench-Architecture.md"},
+        {"Codabench Docker Architecture" = "Developers_and_Administrators/Codabench-Architecture.md"},
         {"Submission Docker Container Layout" = "Developers_and_Administrators/Submission-Docker-Container-Layout.md"},
         {"Submission Process Overview" = "Developers_and_Administrators/Submission-Process-Overview.md"},
         {"Adding Tests" = "Developers_and_Administrators/Adding-e2e-tests.md"},
