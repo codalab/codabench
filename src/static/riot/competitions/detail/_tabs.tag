@@ -117,11 +117,15 @@
             <div class="ui relaxed grid" show="{!loading}">
                 <div class="row">
                     <div class="sixteen wide centered column">
+
                         <div class="ui styled accordion">
-                            <virtual each="{ phase, i in competition.phases }">
+                            <virtual each="{ phase in sequential_phases }">
                                 <div class="ui teal phase-header title {active: selected_phase_index === phase.id}">
                                     <i class="ui dropdown icon"></i>
                                     {phase.name}
+                                    <span class="ui tiny { phase_status_label(phase).color } label status-label">
+                                        { phase_status_label(phase).text }
+                                    </span>
                                 </div>
                                 <div class="ui bottom attached content {active: selected_phase_index === phase.id}">
                                     <div class="phase-label">Start:</div>
@@ -129,10 +133,37 @@
                                     <div class="phase-label">End:</div>
                                     <div class="phase-info">{pretty_date(phase.end)}</div>
                                     <span class="phase-label">Description: </span>
-                                    <div class="phase-markdown" id="phase_{i}"></div>
+                                    <div class="phase-markdown" id="phase_{phase.id}"></div>
                                 </div>
                             </virtual>
                         </div>
+
+                        <div if="{ parallel_phases.length > 0 }">
+                        <br>
+                            <h4 class="ui horizontal divider header">
+                                <i class="code branch icon"></i> Parallel phases
+                            </h4>
+                            <div class="ui styled accordion">
+                                <virtual each="{ phase in parallel_phases }">
+                                    <div class="ui purple phase-header title parallel-phase-header {active: selected_phase_index === phase.id}">
+                                        <i class="ui dropdown icon"></i>
+                                        {phase.name}
+                                        <span class="ui tiny { phase_status_label(phase).color } label parallel-status-label">
+                                            { phase_status_label(phase).text }
+                                        </span>
+                                    </div>
+                                    <div class="ui bottom attached content {active: selected_phase_index === phase.id}">
+                                        <div class="phase-label parallel-phase-label">Start:</div>
+                                        <div class="phase-info">{pretty_date(phase.start)}</div>
+                                        <div class="phase-label parallel-phase-label">End:</div>
+                                        <div class="phase-info">{pretty_date(phase.end)}</div>
+                                        <span class="phase-label parallel-phase-label">Description: </span>
+                                        <div class="phase-markdown" id="phase_{phase.id}"></div>
+                                    </div>
+                                </virtual>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </div>
@@ -214,6 +245,22 @@
         self.selected_phase_index = undefined
         self.leaderboard_phases = []
         self.loading = true
+
+        self.sequential_phases = []
+        self.parallel_phases = []
+
+        self.split_phases = function () {
+            var phases = (self.competition && self.competition.phases) || []
+            self.sequential_phases = phases.filter(p => !p.is_parallel)
+            self.parallel_phases = phases.filter(p => p.is_parallel)
+        }
+
+        self.phase_status_label = function (phase) {
+            var now = new Date()
+            if (new Date(phase.start) > now) return {text: 'Upcoming', color: 'grey'}
+            if (phase.end && new Date(phase.end) < now) return {text: 'Ended', color: 'red'}
+            return {text: 'Active', color: 'green'}
+        }
 
         self.on('mount', function () {
             $('.tabular.menu.details-menu .item', self.root).tab({
@@ -343,6 +390,7 @@
             })
 
             self.competition.is_admin = CODALAB.state.user.has_competition_admin_privileges(competition)
+            self.split_phases()
 
             // Find current phase and set selected phase index to its id
             self.selected_phase_index = _.get(_.find(self.competition.phases, {'status': 'Current'}), 'id')
@@ -361,12 +409,9 @@
 
             self.phase_selected(_.find(self.competition.phases, {id: self.selected_phase_index}))
 
-            $('.phases-tab .accordion', self.root).accordion()
-
-            $('.tabular.pages-menu.menu .item', self.root).tab()
-
             // Need to run update() to build tags to render html in
             self.update()
+            $('.phases-tab .accordion', self.root).accordion()
             _.forEach(self.competition.pages, (page, index) => {
 
                 // Render html pages
@@ -384,13 +429,14 @@
                     $(`#page_term`)[0].appendChild(node.cloneNode(true)); // Append each node
                 });
             }
-            _.forEach(self.competition.phases, (phase, index) => {
-                // Render phase description
+            _.forEach(self.competition.phases, phase => {
+                const target = $(`#phase_${phase.id}`)[0]
+                if (!target) return
                 const rendered_content = renderMarkdownWithLatex(phase.description)
-                $(`#phase_${index}`)[0].innerHTML = ""
+                target.innerHTML = ""
                 rendered_content.forEach(node => {
-                    $(`#phase_${index}`)[0].appendChild(node.cloneNode(true)); // Append each node
-                });
+                    target.appendChild(node.cloneNode(true))
+                })
             })
             _.delay(() => {
                 self.loading = false
@@ -437,6 +483,8 @@
     </script>
 
     <style type="text/stylus">
+
+
         $blue = #2c3f4c
         $teal = #00bbbb
         $lightblue = #f2faff
@@ -543,6 +591,24 @@
             width 100%
             color #2c3f4c
             padding 50px 0 150px
+
+            .phase-header.parallel-phase-header
+                background-color #e9dcf7 !important
+
+            .ui.styled.accordion .phase-header.parallel-phase-header.active,
+            .phase-header.parallel-phase-header:hover
+                background-color #6c3b9c !important
+                color white !important
+
+            .phase-label.parallel-phase-label
+                color #6c3483
+
+            .phase-header .status-label,
+            .phase-header .parallel-status-label
+                vertical-align middle
+                margin-left 10px
+                position relative
+                top -1px
 
             .underline
                 border-bottom 1px solid $teal
