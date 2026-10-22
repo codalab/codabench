@@ -1,4 +1,4 @@
-The competition docker image defines the docker environment in which the submissions of the competitions or benchmarks are run. Each competition can have a different docker environment, referred by its [DockerHub](https://hub.docker.com/) name and tag.
+The competition docker image defines the docker environment in which the submissions of the competitions or benchmarks are run. Each competition can have a different docker environment, referred to by its [DockerHub](https://hub.docker.com/) name and tag.
 
 ## Default competition docker image
 
@@ -22,7 +22,7 @@ If the default image does not suit your needs (missing libraries, etc.), you can
 
 ## Custom image based on CodaLab image
 
-If you wish to create a custom image based on the Codalab image, you can follow the steps below:
+If you wish to create a custom image based on the CodaLab image, you can follow the steps below:
 
 #### Preliminary steps
 

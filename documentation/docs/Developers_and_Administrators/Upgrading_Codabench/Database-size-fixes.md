@@ -5,7 +5,7 @@
 
 Start maintenance mode:
 ```sh
-touch maintenance/maintenance.on
+touch maintenance_mode/maintenance.on
 ```
 
 ### 1. Django migration ([1774](https://github.com/codalab/codabench/pull/1774), [1752](https://github.com/codalab/codabench/pull/1752))
@@ -26,12 +26,11 @@ reset_all_users_quota_to_gb()
 ```
 
 ```python
-# Convert all 16 GB quota into 15 GB
+# Convert all 15 GB+ quota into 15 GB
 from profiles.models import User
 users = User.objects.all()
 for user in users:
     # Reset quota to 15 if quota is between 15 and 20
-    # Do not reset quota for special users like adrien
     if user.quota > 15 and user.quota < 20:
         user.quota = 15
         user.save()
@@ -65,7 +64,7 @@ latest_id_submission_detail = SubmissionDetails.objects.latest('id').id
 print("SubmissionDetail Last ID: ", latest_id_submission_detail)
 ```
 
-After we have the latest ids, we should deploy and run the 3 blocks of code below to fix the sizes i.e. to convert all kib to bytes to make everything consistent. For new files uploaded after the deployment, the sizes will be saved in bytes automatically that is why we need to run the following code for older files only.
+After we have the latest ids, we should deploy and run the 3 blocks of code below to fix the sizes i.e. to convert all KiB to bytes to make everything consistent. For new files uploaded after the deployment, the sizes will be saved in bytes automatically, that is why we need to run the following code for older files only.
 
 ```python
 # Run the conversion only for records with id <= latest_id
@@ -110,5 +109,5 @@ for sub_det in SubmissionDetails.objects.filter(id__lte=latest_id_submission_det
 Then, do not forget to stop maintenance mode:
 
 ```sh
-rm maintenance/maintenance.on
+rm maintenance_mode/maintenance.on
 ```
