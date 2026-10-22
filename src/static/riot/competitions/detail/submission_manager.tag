@@ -189,7 +189,7 @@
                         <span if="{ _.includes(['Finished', 'Failed', 'Cancelled'], submission.status) }"
                             data-tooltip="Resubmit (new submission on current tasks)" data-inverted=""
                             onclick="{ resubmit_submission.bind(this, submission) }">
-                            <i class="icon purple clone outline { disabled: resubmitting }"></i>
+                            <i class="icon purple history { disabled: resubmitting }"></i>
                         </span>
                         <!-- delete submission -->
                         <span data-tooltip="Delete Submission" data-inverted=""
