@@ -2,7 +2,7 @@
     <div if="{ opts.admin }" class="admin-buttons" style="display: flex; align-items: center; gap: 20px;">
         <div style="display: flex; align-items: center; gap: 10px;">
             <div class="ui dropdown button" ref="rerun_button">
-            <i class="icon redo"></i>
+            <i class="icon history"></i>
             <div class="text">Rerun all submissions per phase</div>
             <div class="menu">
                 <div class="header">Select a phase</div>
@@ -183,13 +183,13 @@
                             data-inverted=""
                             onclick="{ submission.status === 'Submitting' && !submission.auto_run ? run_submission.bind(this, submission) : rerun_submission.bind(this, submission) }">
                             <i
-                                class="icon { submission.status === 'Submitting' && !submission.auto_run ? 'green play' : 'blue redo' }"></i>
+                                class="icon { submission.status === 'Submitting' && !submission.auto_run ? 'green play' : 'purple history' }"></i>
                         </span>
                         <!-- resubmit on current tasks (re-run keeps the original task) -->
                         <span if="{ _.includes(['Finished', 'Failed', 'Cancelled'], submission.status) }"
                             data-tooltip="Resubmit (new submission on current tasks)" data-inverted=""
                             onclick="{ resubmit_submission.bind(this, submission) }">
-                            <i class="icon purple clone outline { disabled: resubmitting }"></i>
+                            <i class="icon blue redo { disabled: resubmitting }"></i>
                         </span>
                         <!-- delete submission -->
                         <span data-tooltip="Delete Submission" data-inverted=""
@@ -305,7 +305,7 @@
                                             data-inverted=""
                                             onclick="{ child.status === 'Submitting' && !child.auto_run ? run_submission.bind(this, child) : rerun_submission.bind(this, child) }">
                                             <i
-                                                class="icon { child.status === 'Submitting' && !child.auto_run ? 'green play' : 'blue redo' }"></i>
+                                                class="icon { child.status === 'Submitting' && !child.auto_run ? 'green play' : 'purple history' }"></i>
                                         </span>
                                         <span data-tooltip="Delete Submission" data-inverted=""
                                             onclick="{ delete_submission.bind(this, child) }">
