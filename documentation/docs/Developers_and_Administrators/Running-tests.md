@@ -3,6 +3,7 @@
 $ docker compose exec django py.test -m "not e2e"
 
 # Playwright tests (make sure to install uv first: https://docs.astral.sh/uv/getting-started/installation/) 
+cd tests
 uv sync --frozen
 uv add playwright
 uv run playwright install
@@ -20,7 +21,7 @@ docker compose -f docker-compose.yml exec django py.test src/ -m "not e2e"
 
 ## Example competitions
 
-The repo comes with a couple examples that are used during tests:
+The repo comes with a couple of examples that are used during tests:
 
 ### Codabench (v2) test data
 

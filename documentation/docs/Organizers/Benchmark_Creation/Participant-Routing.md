@@ -60,10 +60,10 @@ Click **Create**.
 ## Queue Priority
 
 Routing follows the following priority:
-!!! Tip
-    `title="Queue priority"
+
+!!! Tip "Queue priority"
     Group Queue > Competition Queue > Default Queue
-    `
+
 ---
 
 ## Routing Trigger
@@ -96,7 +96,7 @@ For a given root submission:
 
 ---
 
-## Leaderboard exemple
+## Leaderboard example
 
 ![image (5)](_attachments/participant_routing5.png)
 

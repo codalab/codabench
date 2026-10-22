@@ -34,7 +34,7 @@ These features are only for competition organizers.
 From here, you can:
  - Delete submissions
  - Re-run submissions
- - Set a submissions score
+ - Set a submission's score
  - Force a submission to leaderboard
 
 You can also view the logs, and all output associated with a submission.
