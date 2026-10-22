@@ -7,6 +7,7 @@ nav = [
     {"Home" = "index.md"},
     {"Participants" = [
         {"Participating in a Competition" = "Participants/User_Participating-in-a-Competition.md"},
+        {"Competitions Dashboard" = "https://www.codabench.org/dashboard/"},
         {"List of Current Benchmarks and Competitions" = "https://www.codabench.org/competitions/public/?page=1"}
     ]},
     {"Organizers" = [

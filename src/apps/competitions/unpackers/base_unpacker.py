@@ -10,7 +10,7 @@ from django.utils import timezone
 from api.serializers.competitions import CompetitionSerializer
 from api.serializers.leaderboards import LeaderboardSerializer
 from api.serializers.tasks import TaskSerializer, SolutionSerializer
-from competitions.models import Phase, Tag
+from competitions.models import Phase, Tag, TagCategory
 from datasets.models import Data
 from queues.models import Queue
 from tasks.models import Task, Solution
@@ -334,31 +334,41 @@ class BaseUnpacker:
         self.competition.pop('leaderboards')
 
         # Process Tags
-        yaml_tags = self.competition.get('tags', [])
+        yaml_tags = self.competition.get('tags')
         tag_pks = []
-        if isinstance(yaml_tags, list):
-            for tag_data in yaml_tags:
-                if not isinstance(tag_data, dict):
-                    continue
-                try:
-                    tag = Tag.objects.filter(
-                        name=str(tag_data['name']).strip(),
-                        category__name=str(tag_data['category']).strip()
-                    ).first()
-                    
+        if yaml_tags:
+            if not isinstance(yaml_tags, dict):
+                raise CompetitionUnpackingException(
+                    "Competition 'tags' must be a dictionary mapping categories to lists of tag names."
+                )
+
+            for category_name, tag_names in yaml_tags.items():
+                cat_name = str(category_name).strip()
+                category = TagCategory.objects.filter(name=cat_name).first()
+                if not category:
+                    raise CompetitionUnpackingException(
+                        f"Tag category '{cat_name}' does not exist."
+                    )
+
+                if not isinstance(tag_names, list):
+                    raise CompetitionUnpackingException(
+                        f"Tags under category '{cat_name}' must be a list of tag names."
+                    )
+
+                for tag_name in tag_names:
+                    t_name = str(tag_name).strip()
+                    tag = Tag.objects.filter(name=t_name, category=category).first()
                     if not tag:
-                        raise Tag.DoesNotExist
-                        
+                        raise CompetitionUnpackingException(
+                            f"Tag '{t_name}' does not exist in category '{cat_name}'."
+                        )
+
                     if tag.pk in tag_pks:
                         raise CompetitionUnpackingException(
-                            f"Duplicate tag found in the yaml: '{tag_data.get('name')}' (Category: {tag_data.get('category')})"
+                            f"Duplicate tag '{t_name}' found in category '{cat_name}'."
                         )
                     tag_pks.append(tag.pk)
-                except (Tag.DoesNotExist, KeyError):
-                    raise CompetitionUnpackingException(
-                        f"Could not find tag: '{tag_data.get('name')}' (Category: {tag_data.get('category')})"
-                    )
-                    
+
         self.competition['tags'] = tag_pks
 
         serializer = CompetitionSerializer(

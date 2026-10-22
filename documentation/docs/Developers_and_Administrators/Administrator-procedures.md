@@ -353,3 +353,23 @@ create_codabench_statistics_published_comps()
 !!! note 
     A csv file named `codabench_statistics_published_comps.csv` is generated in `statistics folder`
 
+## Tag Taxonomy Management
+
+Codabench includes management commands to populate default competition categories and tags.
+
+### Initializing Default Tags (`init_tags`)
+
+To populate the database with default tag categories (*Machine Learning Domain*, *Fields of Application*, *Conferences*) and their associated tags:
+
+```bash
+docker compose exec django ./manage.py init_tags
+```
+
+#### Resetting Tags
+To delete all existing tags and categories and recreate the default taxonomy:
+
+```bash
+docker compose exec django ./manage.py init_tags --reset
+```
+
+

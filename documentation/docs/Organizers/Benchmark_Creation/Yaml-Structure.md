@@ -31,7 +31,8 @@ For all v2 style competition bundles, be sure to add `version: 2` to the top of 
 - **auto_run_submissions:** a boolean (default: `True`) if set to `False`, organizers have to manually run the submissions of each participant
 - **can_participants_make_submissions_public:** a boolean (default: `True`) if set to `False`, participants cannot make their submissions public from submissions panel.
 - **forum_enabled:** a boolean (default: `True`) if set to `False`, organizers and participants cannot see or interact with competition forum.
- 
+- **tags:** Taxonomy tags associated with the competition grouped by category (dictionary mapping category names to lists of tag names). Category names and tag names must match existing entries in the platform taxonomy.
+
 
 
 
@@ -56,7 +57,21 @@ reward: $1000 prize pool
 auto_run_submissions: True
 can_participants_make_submissions_public: False
 forum_enabled: True
+tags:
+  Machine Learning Domain:
+    - Reinforcement Learning
+    - Computer Vision
+  Fields of Application:
+    - Robotics
 ```
+
+!!! info "Default Platform Taxonomy"
+    Tags and categories defined in `competition.yaml` must exist in the platform database. By default, Codabench is initialized with the following taxonomy:
+
+    - **Machine Learning Domain:** *Algorithms*, *Audio*, *AutoML*, *Computer Vision*, *Generative AI*, *Graphs*, *LLM*, *Multimodal*, *NLP*, *Other*, *Reinforcement Learning*, *Tabular*, *Time Series*
+    - **Fields of Application:** *Agriculture*, *Astronomy*, *Biology*, *Climate*, *Cybersecurity*, *Earth Observation*, *Education*, *Energy*, *Finance*, *E-commerce*, *Healthcare*, *Legal*, *Other*, *Robotics*, *Science*, *Social Media*, *Sports*, *Transportation*
+    - **Conferences:** *ACL*, *CVPR*, *ECCV*, *ECML PKDD*, *ICCV*, *ICLR*, *ICML*, *MICCAI*, *NAACL*, *NeurIPS*, *WSDM*
+
 
 ## Pages
 ### Required
