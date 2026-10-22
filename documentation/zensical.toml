@@ -43,9 +43,9 @@ nav = [
         ]}
     ]},
     {"Developers" = [
-        {"Codabench Basic Installation Guide" = "Developers_and_Administrators/Codabench-Installation.md"},
+        {"Basic Installation Guide" = "Developers_and_Administrators/Codabench-Installation.md"},
         {"Platform Architecture" = "Developers_and_Administrators/Platform-Architecture.md"},
-        {"Codabench Docker Architecture" = "Developers_and_Administrators/Codabench-Architecture.md"},
+        {"Docker Architecture" = "Developers_and_Administrators/Codabench-Architecture.md"},
         {"Submission Docker Container Layout" = "Developers_and_Administrators/Submission-Docker-Container-Layout.md"},
         {"Submission Process Overview" = "Developers_and_Administrators/Submission-Process-Overview.md"},
         {"Adding Tests" = "Developers_and_Administrators/Adding-e2e-tests.md"},
