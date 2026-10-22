@@ -24,24 +24,23 @@ For starting kits in v2, they should be solutions included with the competition 
   |- example_solution.zip
   |- overview.md
   |- evaluation.md
-  |- terms_and_conditions.md
+  |- terms.md
   |- data.md
 ```
 
 
 ## Example competition.yaml:
 ```yaml title="competition.yaml"
+version: 2
 title: Example Competition Submit Scores
 description: An example competition where submissions should output the score they want
-image: logo.jpg
+image: logo.png
 terms: terms.md
 pages:
     - title: overview
       file: overview.md
     - title: evaluation
       file: evaluation.md
-    - title: terms
-      file: terms_and_conditions.md
     - title: data
       file: data.md
 phases:
@@ -63,7 +62,7 @@ solutions:
       path: example_solution.zip
       tasks:
         - 0
-leaderboard:
+leaderboards:
   - title: Results
     key: main
     columns:
