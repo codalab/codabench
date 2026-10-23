@@ -862,6 +862,7 @@ def create_competition_dump(competition_pk, keys_instead_of_files=False):
             )
         )
 
+
 @app.task(queue="site-worker", soft_time_limit=60 * 5)
 def do_phase_migrations():
     current_time = now()
