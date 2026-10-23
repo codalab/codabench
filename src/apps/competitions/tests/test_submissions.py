@@ -8,12 +8,13 @@ from django.urls import reverse
 from django.utils import timezone
 
 from api.serializers.submissions import SubmissionCreationSerializer
-from api.serializers.competitions import CompetitionSerializer
-from competitions.models import Submission
+from api.serializers.competitions import CompetitionSerializer, PhaseDetailSerializer
+from competitions.models import Phase, Submission
 from competitions.tasks import run_submission, submission_status_cleanup
 
-from factories import SubmissionFactory, UserFactory, CompetitionFactory, PhaseFactory, TaskFactory, LeaderboardFactory
+from factories import SubmissionFactory, UserFactory, CompetitionFactory, PhaseFactory, TaskFactory, LeaderboardFactory, OrganizationFactory
 from leaderboards.models import Leaderboard
+from profiles.models import Membership
 
 
 class SubmissionTestCase(TestCase):
@@ -84,6 +85,99 @@ class MaxSubmissionsTests(SubmissionTestCase):
         self.set_max_submissions(per_person=2)
         self.make_submission()
         self.assertRaises(PermissionError, self.make_submission)
+
+
+class TeamMaxSubmissionsTests(SubmissionTestCase):
+    def setUp(self):
+        super().setUp()
+        self.teammate = UserFactory()
+        self.organization = OrganizationFactory()
+        self.add_member(self.user, self.organization, Membership.PARTICIPANT)
+        self.add_member(self.teammate, self.organization, Membership.MEMBER)
+
+    def add_member(self, user, organization, group):
+        Membership.objects.create(user=user, organization=organization, group=group)
+
+    def set_max_submissions(self, per_person=None, per_day=None, scope=Phase.ORGANIZATION_SCOPE):
+        self.phase.has_max_submissions = True
+        self.phase.max_submissions_per_person = per_person
+        self.phase.max_submissions_per_day = per_day
+        self.phase.max_submissions_scope = scope
+        self.phase.save()
+
+    def test_members_share_team_max_across_tagged_and_untagged_submissions(self):
+        self.set_max_submissions(per_person=2)
+        self.make_submission(organization=self.organization)
+        self.make_submission(owner=self.teammate)
+        with self.assertRaisesMessage(PermissionError, f'Team "{self.organization.name}" has reached the maximum allowed submissions for this phase'):
+            self.make_submission()
+        self.assertRaises(PermissionError, self.make_submission, owner=self.teammate)
+
+    def test_team_max_per_day(self):
+        self.set_max_submissions(per_day=1)
+        submission = self.make_submission(owner=self.teammate)
+        with self.assertRaisesMessage(PermissionError, f'Team "{self.organization.name}" has reached the maximum allowed submissions for today for this phase'):
+            self.make_submission()
+        Submission.objects.filter(pk=submission.pk).update(created_when=timezone.now() - timedelta(days=1))
+        self.make_submission()
+
+    def test_default_scope_counts_per_participant(self):
+        assert PhaseFactory(competition=self.competition).max_submissions_scope == Phase.PARTICIPANT_SCOPE
+        self.set_max_submissions(per_person=1, scope=Phase.PARTICIPANT_SCOPE)
+        self.make_submission(owner=self.teammate)
+        self.make_submission()
+        self.assertRaises(PermissionError, self.make_submission)
+
+    def test_user_without_team_counts_per_participant(self):
+        self.set_max_submissions(per_person=1)
+        loner = UserFactory()
+        self.make_submission()
+        self.make_submission(owner=loner)
+        with self.assertRaisesMessage(PermissionError, 'Reached maximum allowed submissions for this phase'):
+            self.make_submission(owner=loner)
+
+    def test_user_in_two_teams_blocked_when_either_is_full(self):
+        self.set_max_submissions(per_person=1)
+        other_organization = OrganizationFactory()
+        other_member = UserFactory()
+        self.add_member(self.user, other_organization, Membership.MEMBER)
+        self.add_member(other_member, other_organization, Membership.MEMBER)
+        self.make_submission(owner=other_member)
+        with self.assertRaisesMessage(PermissionError, f'Team "{other_organization.name}" has reached the maximum allowed submissions for this phase'):
+            self.make_submission()
+        self.make_submission(owner=self.teammate)
+
+    def test_invited_users_are_not_team_members(self):
+        self.set_max_submissions(per_person=1)
+        invited = UserFactory()
+        self.add_member(invited, self.organization, Membership.INVITED)
+        self.make_submission(owner=invited)
+        self.make_submission()
+        # Invited users fall back to their own per participant limit
+        self.assertRaises(PermissionError, self.make_submission, owner=invited)
+
+    def test_used_submissions_show_team_usage(self):
+        self.set_max_submissions(per_person=10, per_day=10)
+        submission = self.make_submission(owner=self.teammate)
+        Submission.objects.filter(pk=submission.pk).update(created_when=timezone.now() - timedelta(days=1))
+        self.make_submission(organization=self.organization)
+        self.make_submission(owner=UserFactory())
+        data = PhaseDetailSerializer(self.phase, context={'request': mock.Mock(user=self.user)}).data
+        assert data['max_submissions_scope'] == Phase.ORGANIZATION_SCOPE
+        assert data['used_submissions_per_day'] == 1
+        assert data['used_submissions_per_person'] == 2
+
+        # A user in several teams sees the usage of the team closest to its limits
+        other_organization = OrganizationFactory()
+        other_member = UserFactory()
+        self.add_member(self.user, other_organization, Membership.MEMBER)
+        self.add_member(other_member, other_organization, Membership.MEMBER)
+        for _ in range(3):
+            self.make_submission(owner=other_member)
+        data = PhaseDetailSerializer(self.phase, context={'request': mock.Mock(user=self.user)}).data
+        # The user's own submission also counts for their new team
+        assert data['used_submissions_per_day'] == 4
+        assert data['used_submissions_per_person'] == 4
 
 
 class SubmissionManagerTests(SubmissionTestCase):
