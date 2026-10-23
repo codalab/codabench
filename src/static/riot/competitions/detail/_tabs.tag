@@ -123,7 +123,8 @@
                                 <div class="ui teal phase-header title {active: selected_phase_index === phase.id}">
                                     <i class="ui dropdown icon"></i>
                                     {phase.name}
-                                    <span class="ui tiny { phase_status_label(phase).color } label status-label">
+                                    <span if="{ phase.is_phase_admin }" class="ui tiny orange label phase-tag">Phase admin</span>
+                                    <span class="ui tiny { phase_status_label(phase).color } label phase-tag">
                                         { phase_status_label(phase).text }
                                     </span>
                                 </div>
@@ -148,8 +149,8 @@
                                     <div class="ui purple phase-header title parallel-phase-header {active: selected_phase_index === phase.id}">
                                         <i class="ui dropdown icon"></i>
                                         {phase.name}
-                                        <span if="{ phase.is_phase_admin }" class="ui tiny orange label">Phase admin</span>
-                                        <span class="ui tiny { phase_status_label(phase).color } label parallel-status-label">
+                                        <span if="{ phase.is_phase_admin }" class="ui tiny orange label phase-tag">Phase admin</span>
+                                        <span class="ui tiny { phase_status_label(phase).color } label phase-tag">
                                             { phase_status_label(phase).text }
                                         </span>
                                     </div>
@@ -181,12 +182,15 @@
                 <div if="{competition.participant_status === 'approved'}">
                     <div class="ui button-container">
                         <div class="ui inline button {active: selected_phase_index == phase.id}"
-                             each="{ phase in competition.phases }"
-                             onclick="{ phase_selected.bind(this, phase) }">{ phase.name }
-                        </div>
+                        each="{ phase in competition.phases }"
+                        onclick="{ phase_selected.bind(this, phase) }">
+                        { phase.name }
+                        <i if="{ phase.is_parallel }" class="code branch icon" title="Parallel phase"></i>
+                        <i if="{ phase.is_phase_admin }" class="lock icon" title="Submissions disabled"></i>
+                    </div>
                     </div>
                     <div>
-                        <submission-limit></submission-limit>
+                        <submission-limit show="{ !(selected_phase && selected_phase.is_phase_admin) }"></submission-limit>
                         <div if="{ selected_phase && selected_phase.is_phase_admin }" class="ui orange message">
                             Submissions are disabled on this phase. It only receives migrated submissions.
                         </div>
@@ -262,9 +266,8 @@
         }
 
         self.phase_status_label = function (phase) {
-            var now = new Date()
-            if (new Date(phase.start) > now) return {text: 'Upcoming', color: 'grey'}
-            if (phase.end && new Date(phase.end) < now) return {text: 'Ended', color: 'red'}
+            if (!phase.phase_started) return {text: 'Upcoming', color: 'grey'}
+            if (phase.phase_ended) return {text: 'Ended', color: 'red'}
             return {text: 'Active', color: 'green'}
         }
 
@@ -364,8 +367,8 @@
             // loop over competition phases to mark if phase has started or ended
             self.competition.phases.forEach(function (phase, index) {
 
-                phase_ended = false
-                phase_started = false
+                var phase_ended = false
+                var phase_started = false
 
                 // check if phase has started
                 if((Date.parse(phase["start"]) - Date.parse(new Date())) > 0){
@@ -399,7 +402,11 @@
             self.split_phases()
 
             // Find current phase and set selected phase index to its id
-            self.selected_phase_index = _.get(_.find(self.competition.phases, {'status': 'Current'}), 'id')
+            self.selected_phase_index = _.get(
+                _.find(self.competition.phases, p => p.status === 'Current' && !p.is_phase_admin) ||
+                _.find(self.competition.phases, {status: 'Current'}),
+                'id'
+            )
 
             // If no Current phase in this competition
             // Find Final phase and set selected phase index to its id
@@ -419,6 +426,7 @@
             // Need to run update() to build tags to render html in
             self.update()
             $('.phases-tab .accordion', self.root).accordion()
+            $('.tabular.pages-menu.menu .item', self.root).tab()
             _.forEach(self.competition.pages, (page, index) => {
 
                 // Render html pages
@@ -610,12 +618,12 @@
             .phase-label.parallel-phase-label
                 color #6c3483
 
-            .phase-header .status-label,
-            .phase-header .parallel-status-label
+            .phase-header .phase-tag
                 vertical-align middle
                 margin-left 10px
                 position relative
                 top -1px
+                text-transform none
 
             .underline
                 border-bottom 1px solid $teal
