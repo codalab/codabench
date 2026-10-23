@@ -148,6 +148,7 @@
                                     <div class="ui purple phase-header title parallel-phase-header {active: selected_phase_index === phase.id}">
                                         <i class="ui dropdown icon"></i>
                                         {phase.name}
+                                        <span if="{ phase.is_phase_admin }" class="ui tiny orange label">Phase admin</span>
                                         <span class="ui tiny { phase_status_label(phase).color } label parallel-status-label">
                                             { phase_status_label(phase).text }
                                         </span>
@@ -186,7 +187,12 @@
                     </div>
                     <div>
                         <submission-limit></submission-limit>
-                        <submission-upload is_admin="{competition.is_admin}" competition="{ competition }" phases="{ competition.phases }" fact_sheet="{ competition.fact_sheet }"></submission-upload>
+                        <div if="{ selected_phase && selected_phase.is_phase_admin }" class="ui orange message">
+                            Submissions are disabled on this phase. It only receives migrated submissions.
+                        </div>
+                        <submission-upload if="{ !(selected_phase && selected_phase.is_phase_admin) }"
+                                        is_admin="{competition.is_admin}" competition="{ competition }"
+                                        phases="{ competition.phases }" fact_sheet="{ competition.fact_sheet }"></submission-upload>
                     </div>
                     <div>
                         <submission-manager id="user-submission-table" competition="{ competition }"></submission-manager>
@@ -407,7 +413,8 @@
                 self.selected_phase_index = self.competition.phases[self.competition.phases.length - 1].id;
             }
 
-            self.phase_selected(_.find(self.competition.phases, {id: self.selected_phase_index}))
+            self.selected_phase = _.find(self.competition.phases, {id: self.selected_phase_index})
+            self.phase_selected(self.selected_phase)
 
             // Need to run update() to build tags to render html in
             self.update()
