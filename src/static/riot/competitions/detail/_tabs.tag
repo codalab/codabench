@@ -117,11 +117,16 @@
             <div class="ui relaxed grid" show="{!loading}">
                 <div class="row">
                     <div class="sixteen wide centered column">
+
                         <div class="ui styled accordion">
-                            <virtual each="{ phase, i in competition.phases }">
+                            <virtual each="{ phase in sequential_phases }">
                                 <div class="ui teal phase-header title {active: selected_phase_index === phase.id}">
                                     <i class="ui dropdown icon"></i>
                                     {phase.name}
+                                    <span if="{ phase.is_locked_phase }" class="ui tiny orange label phase-tag">Locked Phase</span>
+                                    <span class="ui tiny { phase_status_label(phase).color } label phase-tag">
+                                        { phase_status_label(phase).text }
+                                    </span>
                                 </div>
                                 <div class="ui bottom attached content {active: selected_phase_index === phase.id}">
                                     <div class="phase-label">Start:</div>
@@ -129,10 +134,38 @@
                                     <div class="phase-label">End:</div>
                                     <div class="phase-info">{pretty_date(phase.end)}</div>
                                     <span class="phase-label">Description: </span>
-                                    <div class="phase-markdown" id="phase_{i}"></div>
+                                    <div class="phase-markdown" id="phase_{phase.id}"></div>
                                 </div>
                             </virtual>
                         </div>
+
+                        <div if="{ parallel_phases.length > 0 }">
+                        <br>
+                            <h4 class="ui horizontal divider header">
+                                <i class="code branch icon"></i> Parallel phases
+                            </h4>
+                            <div class="ui styled accordion">
+                                <virtual each="{ phase in parallel_phases }">
+                                    <div class="ui purple phase-header title parallel-phase-header {active: selected_phase_index === phase.id}">
+                                        <i class="ui dropdown icon"></i>
+                                        {phase.name}
+                                        <span if="{ phase.is_locked_phase }" class="ui tiny orange label phase-tag">Locked phase</span>
+                                        <span class="ui tiny { phase_status_label(phase).color } label phase-tag">
+                                            { phase_status_label(phase).text }
+                                        </span>
+                                    </div>
+                                    <div class="ui bottom attached content {active: selected_phase_index === phase.id}">
+                                        <div class="phase-label parallel-phase-label">Start:</div>
+                                        <div class="phase-info">{pretty_date(phase.start)}</div>
+                                        <div class="phase-label parallel-phase-label">End:</div>
+                                        <div class="phase-info">{pretty_date(phase.end)}</div>
+                                        <span class="phase-label parallel-phase-label">Description: </span>
+                                        <div class="phase-markdown" id="phase_{phase.id}"></div>
+                                    </div>
+                                </virtual>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </div>
@@ -149,13 +182,21 @@
                 <div if="{competition.participant_status === 'approved'}">
                     <div class="ui button-container">
                         <div class="ui inline button {active: selected_phase_index == phase.id}"
-                             each="{ phase in competition.phases }"
-                             onclick="{ phase_selected.bind(this, phase) }">{ phase.name }
-                        </div>
+                        each="{ phase in competition.phases }"
+                        onclick="{ phase_selected.bind(this, phase) }">
+                        { phase.name }
+                        <i if="{ phase.is_parallel }" class="code branch icon" title="Parallel phase"></i>
+                        <i if="{ phase.is_locked_phase }" class="lock icon" title="Submissions disabled"></i>
+                    </div>
                     </div>
                     <div>
-                        <submission-limit></submission-limit>
-                        <submission-upload is_admin="{competition.is_admin}" competition="{ competition }" phases="{ competition.phases }" fact_sheet="{ competition.fact_sheet }"></submission-upload>
+                        <submission-limit show="{ !(selected_phase && selected_phase.is_locked_phase) }"></submission-limit>
+                        <div if="{ selected_phase && selected_phase.is_locked_phase }" class="ui orange message">
+                            Submissions are disabled on this phase. It only receives migrated submissions.
+                        </div>
+                        <submission-upload if="{ !(selected_phase && selected_phase.is_locked_phase) }"
+                                        is_admin="{competition.is_admin}" competition="{ competition }"
+                                        phases="{ competition.phases }" fact_sheet="{ competition.fact_sheet }"></submission-upload>
                     </div>
                     <div>
                         <submission-manager id="user-submission-table" competition="{ competition }"></submission-manager>
@@ -214,6 +255,21 @@
         self.selected_phase_index = undefined
         self.leaderboard_phases = []
         self.loading = true
+
+        self.sequential_phases = []
+        self.parallel_phases = []
+
+        self.split_phases = function () {
+            var phases = (self.competition && self.competition.phases) || []
+            self.sequential_phases = phases.filter(p => !p.is_parallel)
+            self.parallel_phases = phases.filter(p => p.is_parallel)
+        }
+
+        self.phase_status_label = function (phase) {
+            if (!phase.phase_started) return {text: 'Upcoming', color: 'grey'}
+            if (phase.phase_ended) return {text: 'Ended', color: 'red'}
+            return {text: 'Active', color: 'green'}
+        }
 
         self.on('mount', function () {
             $('.tabular.menu.details-menu .item', self.root).tab({
@@ -311,8 +367,8 @@
             // loop over competition phases to mark if phase has started or ended
             self.competition.phases.forEach(function (phase, index) {
 
-                phase_ended = false
-                phase_started = false
+                var phase_ended = false
+                var phase_started = false
 
                 // check if phase has started
                 if((Date.parse(phase["start"]) - Date.parse(new Date())) > 0){
@@ -343,9 +399,14 @@
             })
 
             self.competition.is_admin = CODALAB.state.user.has_competition_admin_privileges(competition)
+            self.split_phases()
 
             // Find current phase and set selected phase index to its id
-            self.selected_phase_index = _.get(_.find(self.competition.phases, {'status': 'Current'}), 'id')
+            self.selected_phase_index = _.get(
+                _.find(self.competition.phases, p => p.status === 'Current' && !p.is_locked_phase) ||
+                _.find(self.competition.phases, {status: 'Current'}),
+                'id'
+            )
 
             // If no Current phase in this competition
             // Find Final phase and set selected phase index to its id
@@ -359,14 +420,13 @@
                 self.selected_phase_index = self.competition.phases[self.competition.phases.length - 1].id;
             }
 
-            self.phase_selected(_.find(self.competition.phases, {id: self.selected_phase_index}))
-
-            $('.phases-tab .accordion', self.root).accordion()
-
-            $('.tabular.pages-menu.menu .item', self.root).tab()
+            self.selected_phase = _.find(self.competition.phases, {id: self.selected_phase_index})
+            self.phase_selected(self.selected_phase)
 
             // Need to run update() to build tags to render html in
             self.update()
+            $('.phases-tab .accordion', self.root).accordion()
+            $('.tabular.pages-menu.menu .item', self.root).tab()
             _.forEach(self.competition.pages, (page, index) => {
 
                 // Render html pages
@@ -384,13 +444,14 @@
                     $(`#page_term`)[0].appendChild(node.cloneNode(true)); // Append each node
                 });
             }
-            _.forEach(self.competition.phases, (phase, index) => {
-                // Render phase description
+            _.forEach(self.competition.phases, phase => {
+                const target = $(`#phase_${phase.id}`)[0]
+                if (!target) return
                 const rendered_content = renderMarkdownWithLatex(phase.description)
-                $(`#phase_${index}`)[0].innerHTML = ""
+                target.innerHTML = ""
                 rendered_content.forEach(node => {
-                    $(`#phase_${index}`)[0].appendChild(node.cloneNode(true)); // Append each node
-                });
+                    target.appendChild(node.cloneNode(true))
+                })
             })
             _.delay(() => {
                 self.loading = false
@@ -437,6 +498,8 @@
     </script>
 
     <style type="text/stylus">
+
+
         $blue = #2c3f4c
         $teal = #00bbbb
         $lightblue = #f2faff
@@ -543,6 +606,24 @@
             width 100%
             color #2c3f4c
             padding 50px 0 150px
+
+            .phase-header.parallel-phase-header
+                background-color #e9dcf7 !important
+
+            .ui.styled.accordion .phase-header.parallel-phase-header.active,
+            .phase-header.parallel-phase-header:hover
+                background-color #6c3b9c !important
+                color white !important
+
+            .phase-label.parallel-phase-label
+                color #6c3483
+
+            .phase-header .phase-tag
+                vertical-align middle
+                margin-left 10px
+                position relative
+                top -1px
+                text-transform none
 
             .underline
                 border-bottom 1px solid $teal
