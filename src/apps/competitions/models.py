@@ -305,7 +305,7 @@ class Phase(models.Model):
     start = models.DateTimeField()
     end = models.DateTimeField(null=True, blank=True)
     is_parallel = models.BooleanField(default=False)
-    is_phase_admin = models.BooleanField(default=False)
+    is_locked_phase = models.BooleanField(default=False)
     name = models.CharField(max_length=256)
     description = models.TextField(null=True, blank=True)
     execution_time_limit = models.PositiveIntegerField(default=60 * 10)
@@ -338,12 +338,12 @@ class Phase(models.Model):
         return self.competition.published
 
     def can_user_make_submissions(self, user):
-        """Takes a user and checks how many submissions they've made vs the max.
-        Returns:
-            (can_make_submissions, reason_if_not)
+        """ 
+        Takes a user and checks how many submissions they've made vs the max.
+        Returns: (can_make_submissions, reason_if_not)
         """
-        if self.is_phase_admin:
-            return False, 'Submissions are disabled on this phase: it only accepts migrated submissions'
+        if self.is_locked_phase:
+            return False, 'This phase is locked: it only accepts migrated submissions'
         if not self.has_max_submissions:
             return True, None
 
