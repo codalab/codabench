@@ -22,6 +22,7 @@
                         <td>
                             { phase.name }
                             <span if="{ phase.is_parallel }" class="ui tiny teal label">Parallel</span>
+                            <span if="{ phase.is_phase_admin }" class="ui tiny orange label">Phase admin</span>
                         </td>
                         <td class="right aligned">
                             <a class="chevron">
@@ -226,6 +227,16 @@
                                         data-position="bottom center"><i class="help icon circle"></i></span>
                                 </label>
                                 <input type="checkbox" ref="is_parallel">
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <div class="ui checkbox">
+                                <label>Phase admin
+                                    <span data-tooltip="Participants cannot submit to this phase. Only submission migrations are allowed."
+                                        data-inverted="" data-position="bottom center"><i class="help icon circle"></i></span>
+                                </label>
+                                <input type="checkbox" ref="is_phase_admin">
                             </div>
                         </div>
 
@@ -654,6 +665,7 @@
             })
             $(self.refs.auto_migrate).prop('checked', false)
             self.refs.is_parallel.checked = false
+            self.refs.is_phase_admin.checked = false
 
             // Clear date and time fields values
             $(self.refs.calendar_start_date).find('input[name="start_date"]').val('')
@@ -700,6 +712,7 @@
             self.refs.hide_prediction_output.checked = phase.hide_prediction_output
             self.refs.hide_score_output.checked = phase.hide_score_output
             self.refs.is_parallel.checked = !!phase.is_parallel
+            self.refs.is_phase_admin.checked = !!phase.is_phase_admin
 
             // Setting description in markdown editor
             self.simple_markdown_editor.value(self.phases[index].description || '')
@@ -867,6 +880,7 @@
             data.hide_prediction_output = self.refs.hide_prediction_output.checked
             data.hide_score_output = self.refs.hide_score_output.checked
             data.is_parallel = self.refs.is_parallel.checked
+            data.is_phase_admin = self.refs.is_phase_admin.checked
             _.forEach(number_fields, field => {
                 let str = _.get(data, field)
                 if (str) {
