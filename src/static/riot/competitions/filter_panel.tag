@@ -106,7 +106,7 @@
 
     <!-- Reset / Clear Filters -->
     <div class="ui secondary segment">
-      <button type="button" class="ui fluid basic compact button" onclick="{ reset_all_filters }">
+      <button type="button" class="ui fluid basic compact button clear-filters-btn" onclick="{ reset_all_filters }">
         <i class="undo icon"></i> Clear All Filters
       </button>
     </div>
@@ -480,17 +480,68 @@
     competition-filter-panel
       display block
 
-    .filters-panel
+    .filters-panel.ui.segments
       width 100%
       background #fff
-      border-radius 4px
+      border 1px solid #e3e7ec !important
+      border-radius 10px !important
+      box-shadow 0 1px 2px rgba(0, 0, 0, 0.04) !important
       margin-top 0 !important
       margin-bottom 15px
+      overflow hidden
+
+      > .ui.segment
+        background #fff !important
+        border-top 1px solid #f1f4f7 !important
+        padding 12px 14px !important
+        margin 0 !important
+
+        &:first-child
+          border-top none !important
+
+      .ui.header
+        color var(--cb-navy-900, #1b2f40) !important
+        font-weight 700 !important
+        font-size 13px !important
+        letter-spacing -0.01em
+        margin 0 0 8px 0
+
+      // Search & Date Inputs
+      .ui.input input
+        border 1px solid #e3e7ec !important
+        border-radius 6px !important
+        font-size 13px
+        color var(--cb-navy-900, #1b2f40)
+        background #fff
+        padding 8px 10px 8px 34px !important
+        transition border-color 0.15s ease, box-shadow 0.15s ease
+
+        &:focus
+          border-color var(--cb-blue-500, #3b6e9b) !important
+          box-shadow 0 0 0 2px rgba(59, 110, 155, 0.15) !important
+          outline none
+
+      .ui.icon.input > i.icon
+        color var(--cb-blue-500, #3b6e9b) !important
+        opacity 0.75
 
       .filter-item
         display block !important
         margin-bottom 6px !important
         font-size 13px
+        color var(--cb-navy-700, #36536d)
+
+        label
+          cursor pointer
+          color var(--cb-navy-700, #36536d)
+          font-size 13px
+
+          &:hover
+            color var(--cb-navy-900, #1b2f40)
+
+        &.disabled
+          opacity 0.5
+          pointer-events none
 
       .filter-count
         color #888
@@ -505,12 +556,34 @@
       .category-accordion
         margin 0 !important
         border-radius 0 !important
+        border-top 1px solid #f1f4f7 !important
+        background #fff !important
 
         .title
           font-size 13px !important
-          font-weight bold !important
+          font-weight 700 !important
+          color var(--cb-navy-900, #1b2f40) !important
           cursor pointer
           user-select none
+          display flex
+          align-items center
+          justify-content space-between
+          padding 2px 0
+          transition color 0.15s ease
+
+          &:hover
+            color var(--cb-blue-500, #3b6e9b) !important
+
+          i.dropdown.icon
+            float none !important
+            color var(--cb-navy-700, #36536d) !important
+            opacity 0.7
+            margin 0
+            font-size 11px
+            transition transform 0.2s ease
+
+          &.active i.dropdown.icon
+            transform rotate(90deg)
 
         .content
           padding-top 8px !important
@@ -538,14 +611,14 @@
         display inline-flex
         align-items center
         gap 4px
-        padding 4px 8px
+        padding 4px 9px
         font-size 12px
-        font-weight normal
+        font-weight 500
         line-height 1.2
-        color #374151
-        background-color #f3f4f6
-        border 1px solid #e5e7eb
-        border-radius 4px
+        color var(--cb-navy-700, #36536d)
+        background-color #f1f4f7
+        border 1px solid #e2e8f0
+        border-radius 6px
         cursor pointer
         transition all 0.15s ease-in-out
         user-select none
@@ -555,18 +628,18 @@
         max-width 100%
 
         &:hover
-          background-color #e5e7eb
-          border-color #d1d5db
-          color #111827
+          background-color #e5ebf1
+          border-color #cbd5e1
+          color var(--cb-navy-900, #1b2f40)
 
         &:focus
           outline none
 
         &.active
-          background-color #1e88e5
-          border-color #1565c0
+          background-color var(--cb-blue-500, #3b6e9b)
+          border-color var(--cb-blue-500, #3b6e9b)
           color #ffffff
-          box-shadow 0 1px 2px rgba(30, 136, 229, 0.25)
+          box-shadow 0 1px 3px rgba(59, 110, 155, 0.3)
 
           .tag-pill-name
             color #ffffff
@@ -582,15 +655,35 @@
         .tag-pill-count
           font-size 10px
           line-height 1
-          padding 2px 4px
-          border-radius 3px
-          background-color #e5e7eb
-          color #4b5563
-          font-weight normal
+          padding 2px 5px
+          border-radius 4px
+          background-color #e2e8f0
+          color #475569
+          font-weight 600
           margin-left 2px
+
+      .clear-filters-btn
+        border 1px solid #e3e7ec !important
+        border-radius 8px !important
+        background-color #f8fafc !important
+        color var(--cb-navy-700, #36536d) !important
+        font-weight 500 !important
+        font-size 13px !important
+        padding 9px 12px !important
+        transition all 0.15s ease-in-out !important
+
+        i.icon
+          color var(--cb-blue-500, #3b6e9b) !important
+          opacity 0.85
+
+        &:hover
+          background-color var(--cb-blue-50, #eef4fa) !important
+          border-color var(--cb-blue-500, #3b6e9b) !important
+          color var(--cb-blue-500, #3b6e9b) !important
 
       input[type="radio"],
       input[type="checkbox"]
-        margin-right 5px
+        margin-right 6px
+        accent-color var(--cb-blue-500, #3b6e9b)
   </style>
 </competition-filter-panel>
