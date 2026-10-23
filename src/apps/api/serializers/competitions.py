@@ -507,7 +507,15 @@ class CompetitionSerializerSimple(serializers.ModelSerializer):
 
     def get_tags(self, obj):
         if not hasattr(obj, 'prefetched_tags_cached'):
-            obj.prefetched_tags_cached = [{'name': tag.name, 'category': tag.category.name} for tag in obj.tags.all()]
+            obj.prefetched_tags_cached = [
+                {
+                    'id': tag.id,
+                    'name': tag.name,
+                    'category': tag.category.name,
+                    'category_id': tag.category_id,
+                }
+                for tag in obj.tags.all()
+            ]
         return obj.prefetched_tags_cached
 
     def get_owner_display_name(self, obj):
