@@ -338,7 +338,7 @@ class Phase(models.Model):
         return self.competition.published
 
     def can_user_make_submissions(self, user):
-        """ 
+        """
         Takes a user and checks how many submissions they've made vs the max.
         Returns: (can_make_submissions, reason_if_not)
         """

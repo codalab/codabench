@@ -186,18 +186,16 @@
                         onclick="{ phase_selected.bind(this, phase) }">
                         { phase.name }
                         <i if="{ phase.is_parallel }" class="code branch icon" title="Parallel phase"></i>
-                        <i if="{ phase.is_locked_phase }" class="lock icon" title="Submissions disabled"></i>
+                        <i if="{ phase.is_locked_phase }" class="lock icon" title="Locked phase"></i>
                     </div>
                     </div>
-                    <div>
-                        <submission-limit show="{ !(selected_phase && selected_phase.is_locked_phase) }"></submission-limit>
-                        <div if="{ selected_phase && selected_phase.is_locked_phase }" class="ui orange message">
-                            Submissions are disabled on this phase. It only receives migrated submissions.
-                        </div>
-                        <submission-upload if="{ !(selected_phase && selected_phase.is_locked_phase) }"
-                                        is_admin="{competition.is_admin}" competition="{ competition }"
-                                        phases="{ competition.phases }" fact_sheet="{ competition.fact_sheet }"></submission-upload>
+                    <submission-limit show="{ !(selected_phase && selected_phase.is_locked_phase) }"></submission-limit>
+                    <div if="{ selected_phase && selected_phase.is_locked_phase }" class="ui orange message">
+                        This phase is locked. It only receives migrated submissions.
                     </div>
+                    <submission-upload show="{ !(selected_phase && selected_phase.is_locked_phase) }"
+                                    is_admin="{competition.is_admin}" competition="{ competition }"
+                                    phases="{ competition.phases }" fact_sheet="{ competition.fact_sheet }"></submission-upload>
                     <div>
                         <submission-manager id="user-submission-table" competition="{ competition }"></submission-manager>
                     </div>
