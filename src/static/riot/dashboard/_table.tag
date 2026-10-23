@@ -9,7 +9,7 @@
             </button>
         </div>
 
-        <div class="table-scroll-wrap" style="max-height: 480px; overflow-y: auto;">
+        <div class="table-scroll-wrap" style="max-height: 480px; overflow-y: auto; overflow-x: auto; -webkit-overflow-scrolling: touch;">
             <table class="ui celled compact striped selectable table">
                 <thead>
                     <tr>

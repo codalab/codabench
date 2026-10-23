@@ -1,5 +1,5 @@
 <dashboard-charts>
-    <div class="ui four column grid kpi-stats">
+    <div class="ui stackable four column grid kpi-stats">
         <div class="column center aligned">
             <div class="ui mini statistic">
                 <div class="value">{ opts.p.filteredCompetitions.length }</div>

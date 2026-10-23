@@ -40,7 +40,7 @@
             <div class="comp-info">
               <h4 class="heading">{competition.title}</h4>
               <div if="{competition.tags && competition.tags.length > 0}" class="comp-tags">
-                <tag-badge each="{tag in competition.tags}" tag="{tag}" size="mini"></tag-badge>
+                <tag-badge each="{tag in get_visible_tags(competition.tags)}" tag="{tag}" size="mini"></tag-badge>
               </div>
               <p class="comp-description">{ pretty_description(competition.description) }</p>
               <p class="organizer"><em>Organized by: <strong>{competition.created_by}</strong></em></p>
@@ -195,6 +195,18 @@
 
     self.pretty_description = function (description) {
         return description.substring(0, 120) + (description.length > 120 ? '...' : '') || ''
+    }
+
+    self.get_visible_tags = function (tags) {
+        if (!tags || !tags.length) {
+            return []
+        }
+        var counts = {}
+        return tags.filter(function (tag) {
+            var cat = tag.category_id || tag.category || 'default'
+            counts[cat] = (counts[cat] || 0) + 1
+            return counts[cat] <= 5
+        })
     }
 
     self.get_url_page_number_or_default = function () {

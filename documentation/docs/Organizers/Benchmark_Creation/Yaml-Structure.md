@@ -34,8 +34,8 @@ For all v2 style competition bundles, be sure to add `version: 2` to the top of 
 - <a id="tags"></a>**tags:** Taxonomy tags associated with the competition grouped by category (dictionary mapping category names to lists of tag names). Category names and tag names must match existing entries in the platform taxonomy.
     - Default categories and tags:
         - **Machine Learning Domain:** *Algorithms*, *Audio*, *AutoML*, *Computer Vision*, *Generative AI*, *Graphs*, *LLM*, *Multimodal*, *NLP*, *Other*, *Reinforcement Learning*, *Tabular*, *Time Series*
-        - **Fields of Application:** *Agriculture*, *Astronomy*, *Biology*, *Climate*, *Cybersecurity*, *Earth Observation*, *Education*, *Energy*, *Finance*, *E-commerce*, *Healthcare*, *Legal*, *Other*, *Robotics*, *Science*, *Social Media*, *Sports*, *Transportation*
-        - **Conferences:** *ACL*, *CVPR*, *ECCV*, *ECML PKDD*, *ICCV*, *ICLR*, *ICML*, *MICCAI*, *NAACL*, *NeurIPS*, *WSDM*
+        - **Fields of Application:** *Agriculture*, *Astronomy*, *Biology*, *Climate*, *Cybersecurity*, *Earth Observation*, *Education*, *Energy*, *Finance*, *E-commerce*, *Healthcare*, *Legal*, *Other*, *Robotics*, *Social Media*, *Sports*, *Transportation*
+        - **Conferences:** *ACL*, *CVPR*, *ECCV*, *ECML PKDD*, *ICCV*, *ICLR*, *ICML*, *MICCAI*, *NAACL*, *NeurIPS*, *SemEval*, *WSDM*
 
 ```yaml
 # Required

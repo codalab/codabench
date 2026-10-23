@@ -13,7 +13,8 @@
             return {
                 name: self.opts.name || self.opts.tag || '',
                 category: self.opts.category || '',
-                category_id: self.opts.category_id || self.opts.categoryId
+                category_id: self.opts.category_id || self.opts.categoryId,
+                color: self.opts.color
             }
         }
 
@@ -47,23 +48,17 @@
             return ''
         }
 
-        self.get_category_style = function () {
+        self.get_color = function () {
+            var tag = self.get_tag()
+            if (tag.color != null && !isNaN(tag.color)) {
+                return Number(tag.color)
+            }
             var id = self.get_category_id()
-            if (!id) {
-                var catName = self.get_category_name()
-                if (catName) {
-                    var hash = 0
-                    for (var i = 0; i < catName.length; i++) {
-                        hash = catName.charCodeAt(i) + ((hash << 5) - hash)
-                    }
-                    id = Math.abs(hash)
-                }
-            }
-            if (!id) {
-                return 'background-color: hsl(0, 0%, 95%); border: 1px solid hsl(0, 0%, 85%); color: hsl(0, 0%, 40%);'
-            }
-            var hue = ((id + 45) * 137.5) % 360
-            return 'background-color: hsl(' + hue + ', 85%, 90%); border: 1px solid hsl(' + hue + ', 85%, 75%); color: hsl(' + hue + ', 85%, 25%);'
+            return id ? Math.round(((id + 45) * 137.5) % 360) : 0
+        }
+
+        self.get_category_style = function () {
+            return '--tag-color: ' + self.get_color() + ';'
         }
     </script>
 

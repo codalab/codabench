@@ -660,6 +660,8 @@ class CompetitionViewSet(ModelViewSet):
         if tags_param:
             for t in tags_param.split(","):
                 t = t.strip()
+                if not t:
+                    continue
                 try:
                     tag_ids.append(int(t))
                 except (ValueError, TypeError):

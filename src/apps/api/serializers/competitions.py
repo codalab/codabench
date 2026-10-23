@@ -513,6 +513,7 @@ class CompetitionSerializerSimple(serializers.ModelSerializer):
                     'name': tag.name,
                     'category': tag.category.name,
                     'category_id': tag.category_id,
+                    'color': int(((tag.category_id + 45) * 137.5) % 360),
                 }
                 for tag in obj.tags.all()
             ]
