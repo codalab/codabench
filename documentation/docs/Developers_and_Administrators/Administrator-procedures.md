@@ -353,11 +353,20 @@ create_codabench_statistics_published_comps()
 !!! note 
     A csv file named `codabench_statistics_published_comps.csv` is generated in `statistics folder`
 
-## Tag Taxonomy Management
+## Tag Management
 
-Codabench includes management commands to populate default competition categories and tags.
+Codabench includes Django admin interfaces and management commands to manage competition categories and tags.
 
-### Initializing Default Tags (`init_tags`)
+### Creating Tags via Django Admin
+
+Superusers can create and edit categories and tags directly in the **Django Admin** interface:
+
+1. Log in with a superuser account and open the Django Admin (`/admin/`).
+2. Under **Competitions**:
+    - **Tag categories:** Click `Add Tag category`, enter the category name, and click **Save**.
+    - **Tags:** Click `Add Tag`, enter the tag name, select its parent category from the dropdown, and click **Save**.
+
+### Initializing Default Tags
 
 To populate the database with default tag categories (*Machine Learning Domain*, *Fields of Application*, *Conferences*) and their associated tags:
 
@@ -378,5 +387,18 @@ docker compose exec django ./manage.py init_tags --reset
 !!! warning
     Running `--reset` deletes all existing tags and categories, which also removes all assigned tags from existing competitions.
 
+### Automatic Tagging
 
+To automatically classify and tag untagged competitions:
+
+```bash
+docker compose exec django ./manage.py run_auto_tags
+```
+
+#### Retagging All Competitions
+To force re-evaluation and retag all competitions (including already tagged ones):
+
+```bash
+docker compose exec django ./manage.py run_auto_tags --all
+```
 
