@@ -1,3 +1,4 @@
+import copy
 import os
 
 from django.test import TestCase
@@ -26,6 +27,17 @@ class V2UnpackerTests(TestCase):
     def test_phase_unpacking(self):
         self.unpacker._unpack_phases()
         assert self.unpacker.competition['phases'] == test_data.get_phases(2)
+
+    def test_phase_max_submissions_scope_unpacking(self):
+        competition_yaml = copy.deepcopy(test_data.v2_yaml_data)
+        competition_yaml['phases'][0]['max_submissions_scope'] = 'organization'
+        unpacker = V2Unpacker(
+            competition_yaml=competition_yaml,
+            temp_directory=self.temp_dir,
+            creator=self.user,
+        )
+        unpacker._unpack_phases()
+        assert [phase['max_submissions_scope'] for phase in unpacker.competition['phases']] == ['organization', 'participant']
 
     def test_terms_unpacking(self):
         self.unpacker._unpack_terms()

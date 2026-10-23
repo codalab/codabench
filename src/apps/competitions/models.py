@@ -13,7 +13,7 @@ from decimal import Decimal
 
 from celery_config import app, app_for_vhost
 from leaderboards.models import SubmissionScore, Column
-from profiles.models import CustomGroup, User, Organization
+from profiles.models import CustomGroup, User, Organization, Membership
 from utils.data import PathWrapper
 from utils.storage import BundleStorage
 from PIL import Image
@@ -317,6 +317,14 @@ class Phase(models.Model):
     max_submissions_per_day = models.PositiveIntegerField(default=5, null=True, blank=True)
     max_submissions_per_person = models.PositiveIntegerField(default=100, null=True, blank=True)
 
+    PARTICIPANT_SCOPE = 'participant'
+    ORGANIZATION_SCOPE = 'organization'
+    MAX_SUBMISSIONS_SCOPE_CHOICES = (
+        (PARTICIPANT_SCOPE, 'Participant'),
+        (ORGANIZATION_SCOPE, 'Organization'),
+    )
+    max_submissions_scope = models.CharField(max_length=128, choices=MAX_SUBMISSIONS_SCOPE_CHOICES, default=PARTICIPANT_SCOPE)
+
     tasks = models.ManyToManyField('tasks.Task', blank=True, related_name='phases', through='PhaseTaskInstance')
 
     leaderboard = models.ForeignKey('leaderboards.Leaderboard', on_delete=models.DO_NOTHING, null=True, blank=True,
@@ -335,8 +343,33 @@ class Phase(models.Model):
     def published(self):
         return self.competition.published
 
+    def get_quota_submission_querysets(self, user):
+        """Returns the submissions counted against the user's submission limits.
+
+        Returns:
+            [(organization, queryset)], organization is None when counting per participant
+        """
+        # Resubmissions are started by organizers and do not use the participant's quota
+        qs = self.submissions.filter(parent__isnull=True, resubmitted_from__isnull=True).exclude(status='Failed')
+        if self.max_submissions_scope == self.ORGANIZATION_SCOPE:
+            # A team's usage is every submission made by its current (non-invited) members
+            organizations = Organization.objects.filter(
+                membership__user=user,
+                membership__group__in=Membership.ALL_GROUP,
+            ).distinct()
+            querysets = [
+                (organization, qs.filter(owner__in=Membership.objects.filter(
+                    organization=organization,
+                    group__in=Membership.ALL_GROUP,
+                ).values('user')))
+                for organization in organizations
+            ]
+            if querysets:
+                return querysets
+        return [(None, qs.filter(owner=user))]
+
     def can_user_make_submissions(self, user):
-        """Takes a user and checks how many submissions they've made vs the max.
+        """Takes a user and checks how many submissions they (or their teams) have made vs the max.
 
         Returns:
             (can_make_submissions, reason_if_not)
@@ -344,17 +377,20 @@ class Phase(models.Model):
         if not self.has_max_submissions:
             return True, None
 
-        # Resubmissions are started by organizers and do not use the participant's quota
-        qs = self.submissions.filter(owner=user, parent__isnull=True, resubmitted_from__isnull=True).exclude(status='Failed')
-        total_submission_count = qs.count()
-        daily_submission_count = qs.filter(created_when__date=now().date()).count()
+        for organization, qs in self.get_quota_submission_querysets(user):
+            total_submission_count = qs.count()
+            daily_submission_count = qs.filter(created_when__date=now().date()).count()
 
-        if self.max_submissions_per_day:
-            if daily_submission_count >= self.max_submissions_per_day:
-                return False, 'Reached maximum allowed submissions for today for this phase'
-        if self.max_submissions_per_person:
-            if total_submission_count >= self.max_submissions_per_person:
-                return False, 'Reached maximum allowed submissions for this phase'
+            if self.max_submissions_per_day:
+                if daily_submission_count >= self.max_submissions_per_day:
+                    if organization:
+                        return False, f'Team "{organization.name}" has reached the maximum allowed submissions for today for this phase'
+                    return False, 'Reached maximum allowed submissions for today for this phase'
+            if self.max_submissions_per_person:
+                if total_submission_count >= self.max_submissions_per_person:
+                    if organization:
+                        return False, f'Team "{organization.name}" has reached the maximum allowed submissions for this phase'
+                    return False, 'Reached maximum allowed submissions for this phase'
         return True, None
 
     @property
