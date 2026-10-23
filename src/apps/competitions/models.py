@@ -365,7 +365,8 @@ class Phase(models.Model):
         if not self.has_max_submissions:
             return True, None
 
-        qs = self.submissions.filter(owner=user, parent__isnull=True).exclude(status='Failed')
+        # Resubmissions are started by organizers and do not use the participant's quota
+        qs = self.submissions.filter(owner=user, parent__isnull=True, resubmitted_from__isnull=True).exclude(status='Failed')
         total_submission_count = qs.count()
         daily_submission_count = qs.filter(created_when__date=now().date()).count()
 
@@ -529,6 +530,8 @@ class Submission(models.Model):
 
     has_children = models.BooleanField(default=False)
     parent = models.ForeignKey('Submission', on_delete=models.CASCADE, blank=True, null=True, related_name='children')
+    # Set when an organizer resubmits a submission on the current phase tasks
+    resubmitted_from = models.ForeignKey('Submission', on_delete=models.SET_NULL, blank=True, null=True, related_name='resubmissions')
 
     fact_sheet_answers = models.JSONField(null=True, blank=True, max_length=4096)
 
@@ -648,6 +651,28 @@ class Submission(models.Model):
         # start submission providing the tasks and groups ids
         self.start(tasks=tasks, group_ids=group_ids)
         return self
+
+    def resubmit(self):
+        """New submission with the same upload, run on the current phase tasks as if the participant submitted it again"""
+        # A child only ran on one task, resubmit the whole parent submission instead
+        if self.parent:
+            return self.parent.resubmit()
+        sub = Submission(
+            owner=self.owner,
+            participant=self.participant,
+            phase=self.phase,
+            data=self.data,
+            md5=self.md5,
+            name=self.name,
+            description=self.description,
+            fact_sheet_answers=self.fact_sheet_answers,
+            queue=self.phase.competition.queue,
+            organization=self.organization,
+            resubmitted_from=self,
+        )
+        sub.save(ignore_submission_limit=True)
+        sub.selected_groups.set(self.selected_groups.all())
+        return sub.run()
 
     def re_run(self, task=None):
 

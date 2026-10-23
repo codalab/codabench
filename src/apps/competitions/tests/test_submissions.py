@@ -475,3 +475,22 @@ class PhaseIsActiveTests(SubmissionTestCase):
         self.phase.start = timezone.now() - timedelta(days=2)
         self.phase.end = timezone.now() - timedelta(days=1)
         assert not self.phase.is_active
+
+
+class ResubmitTests(SubmissionTestCase):
+    def test_resubmit_runs_same_upload_on_current_phase_task(self):
+        sub = self.make_submission()
+        with mock.patch('competitions.tasks._send_to_compute_worker'):
+            sub.start()
+            new_task = TaskFactory()
+            self.phase.tasks.set([new_task])
+            new_sub = sub.resubmit()
+        new_sub.refresh_from_db()
+        assert new_sub.pk != sub.pk
+        assert new_sub.owner == sub.owner
+        assert new_sub.data == sub.data
+        assert new_sub.task == new_task
+        assert not new_sub.is_specific_task_re_run
+        # re-run keeps the original task
+        with mock.patch('competitions.tasks._send_to_compute_worker'):
+            assert sub.re_run().task == sub.task
