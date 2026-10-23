@@ -123,7 +123,7 @@
                                 <div class="ui teal phase-header title {active: selected_phase_index === phase.id}">
                                     <i class="ui dropdown icon"></i>
                                     {phase.name}
-                                    <span if="{ phase.is_phase_admin }" class="ui tiny orange label phase-tag">Phase admin</span>
+                                    <span if="{ phase.is_locked_phase }" class="ui tiny orange label phase-tag">Locked Phase</span>
                                     <span class="ui tiny { phase_status_label(phase).color } label phase-tag">
                                         { phase_status_label(phase).text }
                                     </span>
@@ -149,7 +149,7 @@
                                     <div class="ui purple phase-header title parallel-phase-header {active: selected_phase_index === phase.id}">
                                         <i class="ui dropdown icon"></i>
                                         {phase.name}
-                                        <span if="{ phase.is_phase_admin }" class="ui tiny orange label phase-tag">Phase admin</span>
+                                        <span if="{ phase.is_locked_phase }" class="ui tiny orange label phase-tag">Locked phase</span>
                                         <span class="ui tiny { phase_status_label(phase).color } label phase-tag">
                                             { phase_status_label(phase).text }
                                         </span>
@@ -186,15 +186,15 @@
                         onclick="{ phase_selected.bind(this, phase) }">
                         { phase.name }
                         <i if="{ phase.is_parallel }" class="code branch icon" title="Parallel phase"></i>
-                        <i if="{ phase.is_phase_admin }" class="lock icon" title="Submissions disabled"></i>
+                        <i if="{ phase.is_locked_phase }" class="lock icon" title="Submissions disabled"></i>
                     </div>
                     </div>
                     <div>
-                        <submission-limit show="{ !(selected_phase && selected_phase.is_phase_admin) }"></submission-limit>
-                        <div if="{ selected_phase && selected_phase.is_phase_admin }" class="ui orange message">
+                        <submission-limit show="{ !(selected_phase && selected_phase.is_locked_phase) }"></submission-limit>
+                        <div if="{ selected_phase && selected_phase.is_locked_phase }" class="ui orange message">
                             Submissions are disabled on this phase. It only receives migrated submissions.
                         </div>
-                        <submission-upload if="{ !(selected_phase && selected_phase.is_phase_admin) }"
+                        <submission-upload if="{ !(selected_phase && selected_phase.is_locked_phase) }"
                                         is_admin="{competition.is_admin}" competition="{ competition }"
                                         phases="{ competition.phases }" fact_sheet="{ competition.fact_sheet }"></submission-upload>
                     </div>
@@ -403,7 +403,7 @@
 
             // Find current phase and set selected phase index to its id
             self.selected_phase_index = _.get(
-                _.find(self.competition.phases, p => p.status === 'Current' && !p.is_phase_admin) ||
+                _.find(self.competition.phases, p => p.status === 'Current' && !p.is_locked_phase) ||
                 _.find(self.competition.phases, {status: 'Current'}),
                 'id'
             )
