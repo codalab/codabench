@@ -13,10 +13,8 @@
                             <div class="competition-name underline">
                                 {competition.title}
                             </div>
-                            <div if="{ resolved_tags && resolved_tags.length > 0 }" class="ui labels" style="margin-top: 8px; margin-bottom: 0;">
-                                <div each="{ tag in resolved_tags }" class="ui label" style="{ getCategoryStyle(tag.category) }">
-                                    { tag.name }
-                                </div>
+                            <div if="{ resolved_tags && resolved_tags.length > 0 }" class="comp-tags" style="margin-top: 8px; margin-bottom: 0;">
+                                <tag-badge each="{ tag in resolved_tags }" tag="{ tag }" size="normal"></tag-badge>
                             </div>
                         </div>
                     </div>
@@ -214,14 +212,6 @@
         let self = this
 
         self.competition = {}
-
-        self.getCategoryStyle = function(categoryId) {
-            if (!categoryId) {
-                return `background-color: hsl(0, 0%, 95%); border: 1px solid hsl(0, 0%, 85%); color: hsl(0, 0%, 40%);`;
-            }
-            const hue = ((categoryId + 45)  * 137.5) % 360;
-            return `background-color: hsl(${hue}, 85%, 90%); border: 1px solid hsl(${hue}, 85%, 75%); color: hsl(${hue}, 85%, 25%);`;
-        }
 
         self.files = []
 

@@ -9,19 +9,19 @@
       </div>
 
       <h5 class="ui header" style="margin-top: 12px; margin-bottom: 6px;">Filter Match Mode</h5>
-      <div class="ui mini fluid two buttons">
-        <button type="button" class="ui button { active: filter_state.filter_mode === 'or', blue: filter_state.filter_mode === 'or' }" onclick="{ set_mode_or }">Any (OR)</button>
-        <button type="button" class="ui button { active: filter_state.filter_mode === 'and', blue: filter_state.filter_mode === 'and' }" onclick="{ set_mode_and }">All (AND)</button>
+      <div class="mode-pills-container">
+        <button type="button" class="tag-pill mode-pill { active: filter_state.filter_mode === 'or' }" onclick="{ set_mode_or }">Any (OR)</button>
+        <button type="button" class="tag-pill mode-pill { active: filter_state.filter_mode === 'and' }" onclick="{ set_mode_and }">All (AND)</button>
       </div>
     </div>
 
     <!-- Visibility (only if opts.show_visibility is true) -->
     <div class="ui segment" if="{ opts.show_visibility }">
       <h5 class="ui header" style="margin-bottom: 6px;">Visibility</h5>
-      <div class="ui mini fluid buttons">
-        <button type="button" class="ui button { active: filter_state.visibility === 'public', blue: filter_state.visibility === 'public' }" onclick="{ set_visibility.bind(this, 'public') }">Public</button>
-        <button type="button" class="ui button { active: filter_state.visibility === 'private', blue: filter_state.visibility === 'private' }" onclick="{ set_visibility.bind(this, 'private') }">Private</button>
-        <button type="button" class="ui button { active: filter_state.visibility === 'all', blue: filter_state.visibility === 'all' }" onclick="{ set_visibility.bind(this, 'all') }">All</button>
+      <div class="mode-pills-container">
+        <button type="button" class="tag-pill mode-pill { active: filter_state.visibility === 'public' }" onclick="{ set_visibility.bind(this, 'public') }">Public</button>
+        <button type="button" class="tag-pill mode-pill { active: filter_state.visibility === 'private' }" onclick="{ set_visibility.bind(this, 'private') }">Private</button>
+        <button type="button" class="tag-pill mode-pill { active: filter_state.visibility === 'all' }" onclick="{ set_visibility.bind(this, 'all') }">All</button>
       </div>
     </div>
 
@@ -85,15 +85,21 @@
         <i class="dropdown icon" style="float: right;"></i>
       </h5>
       <div class="content { open_cats[cat.name] !== false ? 'active' : '' }" data-catname="{ cat.name }" style="margin-top: 10px;">
-        <div class="filter-scroll-list">
-          <div class="ui checkbox filter-item" if="{ cat.noTagsCount !== undefined }">
-            <input type="checkbox" checked="{ is_cat_no_tags_checked(cat) }" onchange="{ toggle_category_no_tags.bind(this, cat) }">
-            <label><i>None</i> <span if="{ opts.show_counts && (cat.noTagsCount !== undefined) }" class="filter-count">({ cat.noTagsCount })</span></label>
-          </div>
-          <div class="ui checkbox filter-item" each="{ tag in cat.tags }">
-            <input type="checkbox" checked="{ is_tag_checked(cat, tag) }" onchange="{ toggle_tag.bind(this, cat.name, tag) }">
-            <label>{ tag.name } <span if="{ opts.show_counts && (tag.count !== undefined) }" class="filter-count">({ tag.count })</span></label>
-          </div>
+        <div class="tag-pills-container">
+          <button type="button"
+                  class="tag-pill { active: is_cat_no_tags_checked(cat) }"
+                  if="{ cat.noTagsCount !== undefined }"
+                  onclick="{ toggle_category_no_tags.bind(this, cat) }">
+            <span class="tag-pill-name"><i>None</i></span>
+            <span if="{ opts.show_counts && (cat.noTagsCount !== undefined) }" class="tag-pill-count">{ cat.noTagsCount }</span>
+          </button>
+          <button type="button"
+                  class="tag-pill { active: is_tag_checked(cat, tag) }"
+                  each="{ tag in cat.tags }"
+                  onclick="{ toggle_tag.bind(this, cat.name, tag) }">
+            <span class="tag-pill-name">{ tag.name }</span>
+            <span if="{ opts.show_counts && (tag.count !== undefined) }" class="tag-pill-count">{ tag.count }</span>
+          </button>
         </div>
       </div>
     </div>
@@ -233,7 +239,13 @@
 
     // Category None toggle
     self.toggle_category_no_tags = function (cat, e) {
-        var is_checked = e.target.checked
+        if (e && e.preventDefault) e.preventDefault()
+        var is_checked
+        if (e && e.target && typeof e.target.checked === 'boolean') {
+            is_checked = e.target.checked
+        } else {
+            is_checked = !self.is_cat_no_tags_checked(cat)
+        }
         var cat_name = (typeof cat === 'object') ? cat.name : cat
         if (typeof cat === 'object') {
             cat.noTagsChecked = is_checked
@@ -259,7 +271,13 @@
 
     // Specific tag toggle
     self.toggle_tag = function (cat_name, tag, e) {
-        var is_checked = e.target.checked
+        if (e && e.preventDefault) e.preventDefault()
+        var is_checked
+        if (e && e.target && typeof e.target.checked === 'boolean') {
+            is_checked = e.target.checked
+        } else {
+            is_checked = !self.is_tag_checked({ name: cat_name }, tag)
+        }
         if (tag && typeof tag === 'object') {
             tag.checked = is_checked
         }
@@ -426,9 +444,6 @@
                 var categories = Object.keys(groups).sort()
                 self.loaded_categories = categories.map(function (cat) {
                     var catTags = groups[cat]
-                    catTags.sort(function (a, b) {
-                        return a.name.localeCompare(b.name)
-                    })
                     return {
                         name: cat,
                         tags: catTags
@@ -499,6 +514,80 @@
 
         .content
           padding-top 8px !important
+
+      .mode-pills-container
+        display flex
+        gap 6px
+        width 100%
+
+      .mode-pill
+        flex 1
+        justify-content center
+        text-align center
+
+      .tag-pills-container
+        display flex
+        flex-wrap wrap
+        gap 6px
+        align-items center
+        max-height 220px
+        overflow-y auto
+        padding 2px 2px 4px 2px
+
+      .tag-pill
+        display inline-flex
+        align-items center
+        gap 4px
+        padding 4px 8px
+        font-size 12px
+        font-weight normal
+        line-height 1.2
+        color #374151
+        background-color #f3f4f6
+        border 1px solid #e5e7eb
+        border-radius 4px
+        cursor pointer
+        transition all 0.15s ease-in-out
+        user-select none
+        outline none
+        box-shadow none
+        text-align left
+        max-width 100%
+
+        &:hover
+          background-color #e5e7eb
+          border-color #d1d5db
+          color #111827
+
+        &:focus
+          outline none
+
+        &.active
+          background-color #1e88e5
+          border-color #1565c0
+          color #ffffff
+          box-shadow 0 1px 2px rgba(30, 136, 229, 0.25)
+
+          .tag-pill-name
+            color #ffffff
+
+          .tag-pill-count
+            background-color rgba(255, 255, 255, 0.25)
+            color #ffffff
+
+        .tag-pill-name
+          white-space normal
+          word-break break-word
+
+        .tag-pill-count
+          font-size 10px
+          line-height 1
+          padding 2px 4px
+          border-radius 3px
+          background-color #e5e7eb
+          color #4b5563
+          font-weight normal
+          margin-left 2px
 
       input[type="radio"],
       input[type="checkbox"]

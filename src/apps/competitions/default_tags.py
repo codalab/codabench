@@ -31,7 +31,6 @@ DEFAULT_TAXONOMY = {
         "Social Media",
         "Astronomy",
         "Legal",
-        "Science",
         "Other",                                                                                                                                                                
     ],
     "Conferences": [
@@ -45,6 +44,7 @@ DEFAULT_TAXONOMY = {
         "MICCAI", 
         "NAACL", 
         "WSDM", 
-        "ECML PKDD"
+        "ECML PKDD",
+        "SemEval"
     ]
 }

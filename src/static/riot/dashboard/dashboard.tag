@@ -487,11 +487,6 @@
                     };
                 });
 
-                tagsArr.sort((a, b) => {
-                    if (a.checked !== b.checked) return a.checked ? -1 : 1;
-                    if (b.count !== a.count) return b.count - a.count;
-                    return a.name.localeCompare(b.name);
-                });
                 var noTagsChecked = (self.state.selectedTags[cat] && self.state.selectedTags[cat]['_no_tags_']) ? true : false;
 
                 self.categoryFilters.push({

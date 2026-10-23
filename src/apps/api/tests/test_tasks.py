@@ -3,7 +3,7 @@ from django.urls import reverse
 from rest_framework.test import APITestCase
 from rest_framework import status
 
-from factories import UserFactory, DataFactory
+from factories import UserFactory, DataFactory, TaskFactory, PhaseFactory, CompetitionFactory
 
 # Removed this test because of the changes of this PR : https://github.com/codalab/codabench/pull/1963
 # class TestTasks(APITestCase):
@@ -185,3 +185,104 @@ class TestUploadTask(APITestCase):
             response = self.client.post(reverse('tasks:upload_task'), {'file': zip_file}, format='multipart')
         assert response.status_code == status.HTTP_201_CREATED
         assert "Task 'Iris Task' created successfully!" == response.data['message']
+
+
+class TestUpdateTaskPermissions(APITestCase):
+    def setUp(self):
+        self.owner = UserFactory()
+        self.collaborator = UserFactory()
+        self.stranger = UserFactory()
+        self.task = TaskFactory(created_by=self.owner)
+        self.scoring_program = DataFactory(created_by=self.owner, type='scoring_program')
+        competition = CompetitionFactory(created_by=self.owner, collaborators=[self.collaborator])
+        PhaseFactory(competition=competition, tasks=[self.task])
+
+    def update_task(self, user, **extra):
+        self.client.force_login(user)
+        return self.client.put(
+            reverse('task-detail', kwargs={'pk': self.task.pk}),
+            {'name': 'Updated', 'description': self.task.description, 'scoring_program': self.scoring_program.key, **extra},
+            format='json',
+        )
+
+    def test_competition_collaborator_can_update_task_used_by_the_competition(self):
+        """A co-organizer must be able to fix a task in place instead of replacing it and losing existing scores"""
+        resp = self.update_task(self.collaborator)
+        assert resp.status_code == status.HTTP_200_OK
+        self.task.refresh_from_db()
+        assert self.task.name == 'Updated'
+
+    def test_user_who_is_not_organizer_cannot_update_task(self):
+        resp = self.update_task(self.stranger)
+        assert resp.status_code == status.HTTP_403_FORBIDDEN
+        self.task.refresh_from_db()
+        assert self.task.name != 'Updated'
+
+    def test_user_cannot_update_task_by_attaching_it_to_their_own_competition(self):
+        """Otherwise anyone could edit a public task (scoring program, reference data) of another competition"""
+        competition = CompetitionFactory(created_by=self.stranger)
+        PhaseFactory(competition=competition, tasks=[self.task])
+        resp = self.update_task(self.stranger)
+        assert resp.status_code == status.HTTP_403_FORBIDDEN
+        self.task.refresh_from_db()
+        assert self.task.name != 'Updated'
+
+    def test_user_cannot_update_task_by_adding_its_creator_as_collaborator_of_their_competition(self):
+        """Collaborators can be added without their consent, so this must not grant edit rights"""
+        competition = CompetitionFactory(created_by=self.stranger, collaborators=[self.owner])
+        PhaseFactory(competition=competition, tasks=[self.task])
+        resp = self.update_task(self.stranger)
+        assert resp.status_code == status.HTTP_403_FORBIDDEN
+        self.task.refresh_from_db()
+        assert self.task.name != 'Updated'
+
+    def test_user_the_task_is_shared_with_cannot_update_task(self):
+        """Sharing a task lets a user see and reuse it, not edit it"""
+        self.task.shared_with.add(self.stranger)
+        resp = self.update_task(self.stranger)
+        assert resp.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_collaborator_cannot_change_is_public_or_shared_with(self):
+        assert self.update_task(self.collaborator, is_public=not self.task.is_public).status_code == status.HTTP_403_FORBIDDEN
+        assert self.update_task(self.collaborator, shared_with=[self.stranger.pk]).status_code == status.HTTP_403_FORBIDDEN
+        self.task.refresh_from_db()
+        assert self.task.name != 'Updated'
+        assert not self.task.shared_with.exists()
+        # The edit form always sends the current is_public value
+        assert self.update_task(self.collaborator, is_public=self.task.is_public).status_code == status.HTTP_200_OK
+
+    def test_collaborator_cannot_delete_task(self):
+        self.client.force_login(self.collaborator)
+        resp = self.client.delete(reverse('task-detail', kwargs={'pk': self.task.pk}))
+        assert resp.status_code == status.HTTP_400_BAD_REQUEST
+        assert resp.data['error'] == 'Cannot delete a task that is not yours'
+        self.task.refresh_from_db()
+
+    def list_tasks(self, user, **params):
+        self.client.force_login(user)
+        resp = self.client.get(reverse('task-list'), params)
+        assert resp.status_code == status.HTTP_200_OK
+        return {task['id']: task for task in resp.data['results']}
+
+    def test_collaborator_sees_editable_task_only_when_asking_for_collaborations(self):
+        assert self.task.pk not in self.list_tasks(self.collaborator)
+        tasks = self.list_tasks(self.collaborator, collaborations=True)
+        assert tasks[self.task.pk]['can_edit'] is True
+        # The owner sees their task as editable too, with or without the filter
+        assert self.list_tasks(self.owner)[self.task.pk]['can_edit'] is True
+
+    def test_collaborator_can_open_editable_task(self):
+        self.client.force_login(self.collaborator)
+        resp = self.client.get(reverse('task-detail', kwargs={'pk': self.task.pk}))
+        assert resp.status_code == status.HTTP_200_OK
+        assert resp.data['can_edit'] is True
+
+    def test_task_not_listed_for_competition_owner_who_added_task_creator_as_collaborator(self):
+        competition = CompetitionFactory(created_by=self.stranger, collaborators=[self.owner])
+        PhaseFactory(competition=competition, tasks=[self.task])
+        assert self.task.pk not in self.list_tasks(self.stranger, collaborations=True)
+
+    def test_public_task_is_not_editable_by_other_users(self):
+        self.task.is_public = True
+        self.task.save()
+        assert self.list_tasks(self.stranger, public=True)[self.task.pk]['can_edit'] is False
