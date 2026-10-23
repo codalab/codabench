@@ -365,11 +365,18 @@ To populate the database with default tag categories (*Machine Learning Domain*,
 docker compose exec django ./manage.py init_tags
 ```
 
+!!! note
+    For the complete list of default categories and tags populated by this command, see the [YAML Structure documentation](../Organizers/Benchmark_Creation/Yaml-Structure.md#tags).
+
 #### Resetting Tags
 To delete all existing tags and categories and recreate the default taxonomy:
 
 ```bash
 docker compose exec django ./manage.py init_tags --reset
 ```
+
+!!! warning
+    Running `--reset` deletes all existing tags and categories, which also removes all assigned tags from existing competitions.
+
 
 
