@@ -1,5 +1,7 @@
 !!! note "After upgrading from Codabench <1.24.0, you will need to perform important manual interventions."
 
+!!! warning "The database steps below replace the standard upgrade commands for this version."
+
 ## Rabbit
 We also need to log into the RabbitMQ interface and enable the flags it wants us to enable after upgrading.
 
@@ -57,10 +59,12 @@ docker compose exec db bash -lc 'PGPASSWORD="$DB_PASSWORD" pg_restore --verbose 
 
 _See [this](https://www.postgresql.org/docs/18/upgrading.html) for more details._
 
-### 5 Restart the rest of the services and disable maintenance mode:
+### 5. Restart the rest of the services, run the migrations and disable maintenance mode:
 
 ```sh
 docker compose up -d
+docker compose exec django ./manage.py migrate
+docker compose exec django ./manage.py collectstatic --noinput
 rm maintenance_mode/maintenance.on
 ```
 
