@@ -605,21 +605,21 @@
                         is_valid = false
                     }
                 })
-                var sequential_phases = self.phases.filter(p => !p.is_parallel)
-                _.forEach(_.range(1, sequential_phases.length), i => {
-                    let prev = sequential_phases[i - 1]
-                    let curr = sequential_phases[i]
-                    let end = Date.parse(self.formatDateToYYYYMMDD(prev.end))
-                    let start = Date.parse(self.formatDateToYYYYMMDD(curr.start))
+                var sequential_phases = self.phases.filter(p => p && !p.is_parallel)
+                for (var i = 1; i < sequential_phases.length; i++) {
+                    var prev = sequential_phases[i - 1]
+                    var curr = sequential_phases[i]
+                    var end = Date.parse(self.formatDateToYYYYMMDD(prev.end))
+                    var start = Date.parse(self.formatDateToYYYYMMDD(curr.start))
                     if (end > start || !end) {
-                        let message = `Phase "${_.get(curr, 'name', i + 1)}" must start after phase "${_.get(prev, 'name', i)}" ends`
+                        var message = `Phase "${_.get(curr, 'name', i + 1)}" must start after phase "${_.get(prev, 'name', i)}" ends`
                         if (!self.warnings.includes(message)) {
                             self.warnings.push(message)
                             self.update()
                         }
                         is_valid = false
                     }
-                })
+                }
             }
 
             CODALAB.events.trigger('competition_is_valid_update', 'phases', is_valid)
