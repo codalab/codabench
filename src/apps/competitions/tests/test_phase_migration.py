@@ -217,7 +217,7 @@ class PhaseStatusTests(TestCase):
         assert Phase.objects.get(id=self.phase2.id).status == Phase.PREVIOUS
         assert Phase.objects.get(id=self.phase3.id).status == Phase.CURRENT
         assert Phase.objects.get(id=self.phase4.id).status == Phase.NEXT
-        assert Phase.objects.get(id=self.phase5.id).status ==Phase.NEXT
+        assert Phase.objects.get(id=self.phase5.id).status == Phase.NEXT
 
     def test_parallel_phases_can_be_current_simultaneously(self):
         self.set_start_end(self.phase1, **self.current)
