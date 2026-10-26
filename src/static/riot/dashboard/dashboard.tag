@@ -1,34 +1,36 @@
 <dashboard>
-    <div class="ui container fluid dashboard-container" style="max-width: 1400px; padding: 0 20px;">
-        <div class="ui stackable grid">
-            <div class="sixteen wide column">
-                <h2 class="ui header">
+    <div class="dashboard-page-container">
+        <!-- Dashboard Header -->
+        <div class="dashboard-header">
+            <div class="dashboard-title-group">
+                <h1 class="dashboard-title">
                     <i class="chart pie icon"></i>
-                    <div class="content">
-                        Competitions Dashboard
-                        <div class="sub header">Analyze trends, organizers, and domains across Codabench</div>
-                    </div>
-                </h2>
-            </div>
+                    Competitions Dashboard
+                </h1>
+                <p class="dashboard-subtitle">Analyze trends, organizers, and domains across Codabench</p>
         </div>
-
-        <div class="ui divider"></div>
 
         <div class="ui active inverted dimmer" if="{ loading }">
             <div class="ui large text loader">Fetching data...</div>
         </div>
 
-        <div class="ui stackable grid" show="{ !loading }">
-            <div class="four wide column">
+        <div class="dashboard-layout" show="{ !loading }">
+            <aside class="dashboard-sidebar">
                 <competition-filter-panel show_visibility="{ isAdmin }" show_counts="{ true }" categories="{ categoryFilters }" onfilterchange="{ handleFilterChange }"></competition-filter-panel>
-            </div>
+            </aside>
 
-            <div class="twelve wide column">
+            <main class="dashboard-main">
+                <!-- Show when there are no competitions matching filters -->
+                <div class="no-results-message" if="{ filteredCompetitions.length === 0 }" style="margin-bottom: 20px;">
+                    <div class="ui warning message">
+                        <div class="header">No competitions found</div>
+                        Try changing your filters or search term.
+                    </div>
+                </div>
+
                 <dashboard-charts p="{ this }"></dashboard-charts>
-
-
                 <dashboard-table p="{ this }"></dashboard-table>
-            </div>
+            </main>
         </div>
     </div>
 
@@ -52,12 +54,24 @@
         self.categoryTagsCounts = {};
         self.showOrgsChart = false;
         self.showCompsChart = false;
+        self.showCumTagsChart = false;
+        self.showHeatmapChart = false;
+        self.categoriesWithTags = [];
 
         self.kpis = {
             distinctOrganizers: 0,
             participants: 0,
             submissions: 0
         };
+
+        // 4 New Notebook Charts State
+        self.launchesInterval = 'yearly';
+        self.launchesStartDateStr = '';
+        self.launchesEndDateStr = '';
+        self.selectedCumCat = null;
+        self.heatmapCat1 = null;
+        self.heatmapCat2 = null;
+        self.heatmapNormalize = false;
 
         // Filter and sort state
         self.state = {
@@ -228,7 +242,7 @@
 
                 if (item.tags && Array.isArray(item.tags)) {
                     item.tags.forEach((tag) => {
-                        var cat = tag.category || "Other";
+                        var cat = tag.category_name || tag.category || "Other";
                         if (!comp.tagsByCategory[cat]) comp.tagsByCategory[cat] = [];
                         comp.tagsByCategory[cat].push(tag.name);
 
@@ -240,6 +254,16 @@
             });
 
             self.availableCategories = Object.keys(self.globalCategoryTags).sort();
+
+            if (!self.selectedCumCat || !self.availableCategories.includes(self.selectedCumCat)) {
+                self.selectedCumCat = self.availableCategories[0] || null;
+            }
+            if (!self.heatmapCat1 || !self.availableCategories.includes(self.heatmapCat1)) {
+                self.heatmapCat1 = self.availableCategories[0] || null;
+            }
+            if (!self.heatmapCat2 || !self.availableCategories.includes(self.heatmapCat2)) {
+                self.heatmapCat2 = self.availableCategories[1] || self.availableCategories[0] || null;
+            }
 
             self.state.selectedTags = {};
             self.chartCards = [];
@@ -511,10 +535,12 @@
             self.showCompsChart = cPairs.length > 0;
 
             self.chartCards = [];
+            self.categoriesWithTags = [];
             self.availableCategories.forEach((cat, catIdx) => {
                 var counts = self.categoryTagsCounts[cat] || {};
                 var hasData = Object.keys(counts).some((k) => counts[k] > 0);
                 if (hasData) {
+                    self.categoriesWithTags.push(cat);
                     self.chartCards.push({
                         catName: cat,
                         id: "chart_cat_" + cat.replace(/[^a-zA-Z0-9]/g, "_"),
@@ -522,6 +548,25 @@
                     });
                 }
             });
+
+            self.showCumTagsChart = self.filteredCompetitions.length > 0 && self.categoriesWithTags.length > 0;
+            self.showHeatmapChart = self.filteredCompetitions.length > 0 && self.categoriesWithTags.length > 0;
+
+            if (self.categoriesWithTags.length > 0) {
+                if (!self.selectedCumCat || !self.categoriesWithTags.includes(self.selectedCumCat)) {
+                    self.selectedCumCat = self.categoriesWithTags[0];
+                }
+                if (!self.heatmapCat1 || !self.categoriesWithTags.includes(self.heatmapCat1)) {
+                    self.heatmapCat1 = self.categoriesWithTags[0];
+                }
+                if (!self.heatmapCat2 || !self.categoriesWithTags.includes(self.heatmapCat2)) {
+                    self.heatmapCat2 = self.categoriesWithTags[1] || self.categoriesWithTags[0];
+                }
+            } else {
+                self.selectedCumCat = null;
+                self.heatmapCat1 = null;
+                self.heatmapCat2 = null;
+            }
 
             self.totalPages = Math.max(1, Math.ceil(self.filteredCompetitions.length / self.pageSize));
             self.currentPage = Math.min(self.currentPage, self.totalPages);
@@ -550,8 +595,15 @@
         // Cycle through Bar, Doughnut, and Vertical Bar charts for tag categories
         self.initOrUpdateCharts = () => {
             var rows = self.filteredCompetitions;
+            var hasCompetitions = rows.length > 0;
 
             var visibleIds = new Set();
+            if (hasCompetitions) {
+                visibleIds.add("chCumulativeGrowth");
+                visibleIds.add("chLaunches");
+            }
+            if (self.showCumTagsChart) visibleIds.add("chCumTags");
+            if (self.showHeatmapChart) visibleIds.add("chHeatmap");
             if (self.showOrgsChart) visibleIds.add("chOrgs");
             if (self.showCompsChart) visibleIds.add("chComps");
             self.chartCards.forEach((c) => visibleIds.add(c.id));
@@ -564,6 +616,17 @@
                     }
                 }
             });
+
+            if (hasCompetitions) {
+                self.renderCumulativeGrowthChart();
+                self.renderLaunchesChart();
+            }
+            if (self.showCumTagsChart) {
+                self.renderCumTagsChart();
+            }
+            if (self.showHeatmapChart) {
+                self.renderHeatmapChart();
+            }
 
             if (self.showOrgsChart) {
                 var oPairs = countOrgs(rows, 10);
@@ -699,7 +762,7 @@
                             position: "right",
                             labels: {
                                 boxWidth: 12,
-                                fontSize: 11
+                                fontSize: 12
                             }
                         }
                     }
@@ -755,6 +818,653 @@
             }
         };
 
+        function getBluesColor(pct) {
+            if (pct <= 0) return "#f8fafc";
+            var r = Math.round(240 - pct * (240 - 8));
+            var g = Math.round(246 - pct * (246 - 65));
+            var b = Math.round(252 - pct * (252 - 145));
+            return "rgb(" + r + "," + g + "," + b + ")";
+        }
+
+        self.renderCumulativeGrowthChart = () => {
+            var id = "chCumulativeGrowth";
+            var el = (self.refs && self.refs[id]) || document.getElementById(id);
+            if (!el) return;
+
+            var validComps = self.filteredCompetitions.filter(function (c) {
+                return c.created_when && !isNaN(new Date(c.created_when).getTime());
+            });
+
+            if (validComps.length === 0) {
+                if (self.charts[id]) {
+                    self.charts[id].destroy();
+                    delete self.charts[id];
+                }
+                return;
+            }
+
+            validComps.sort(function (a, b) {
+                return new Date(a.created_when) - new Date(b.created_when);
+            });
+
+            var startDate = new Date(validComps[0].created_when);
+            var endDate = new Date(validComps[validComps.length - 1].created_when);
+
+            var startY = startDate.getUTCFullYear();
+            var startM = startDate.getUTCMonth();
+            var endY = endDate.getUTCFullYear();
+            var endM = endDate.getUTCMonth();
+
+            var months = [];
+            var curY = startY, curM = startM;
+            while (curY < endY || (curY === endY && curM <= endM)) {
+                var mStr = curY + "-" + (curM + 1 < 10 ? "0" : "") + (curM + 1);
+                months.push(mStr);
+                curM++;
+                if (curM > 11) {
+                    curM = 0;
+                    curY++;
+                }
+            }
+
+            var countsByMonth = {};
+            validComps.forEach(function (c) {
+                var d = new Date(c.created_when);
+                var mStr = d.getUTCFullYear() + "-" + (d.getUTCMonth() + 1 < 10 ? "0" : "") + (d.getUTCMonth() + 1);
+                countsByMonth[mStr] = (countsByMonth[mStr] || 0) + 1;
+            });
+
+            var runningTotal = 0;
+            var cumData = months.map(function (m) {
+                runningTotal += (countsByMonth[m] || 0);
+                return runningTotal;
+            });
+
+            if (self.charts[id] && self.charts[id].ctx && self.charts[id].ctx.canvas === el) {
+                self.charts[id].data.labels = months;
+                self.charts[id].data.datasets[0].data = cumData;
+                self.charts[id].update();
+            } else {
+                if (self.charts[id]) self.charts[id].destroy();
+                self.charts[id] = new Chart(el, {
+                    type: "line",
+                    data: {
+                        labels: months,
+                        datasets: [{
+                            label: "Cumulative Competitions",
+                            data: cumData,
+                            borderColor: "#2980b9",
+                            backgroundColor: "rgba(41, 128, 185, 0.08)",
+                            borderWidth: 2.5,
+                            pointRadius: months.length > 36 ? 0 : 2,
+                            pointHoverRadius: 5,
+                            pointBackgroundColor: "#2980b9",
+                            fill: true,
+                            lineTension: 0.15
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        legend: { display: false },
+                        tooltips: {
+                            mode: "index",
+                            intersect: false
+                        },
+                        scales: {
+                            xAxes: [{
+                                gridLines: { display: false },
+                                ticks: {
+                                    autoSkip: true,
+                                    maxTicksLimit: 12,
+                                    maxRotation: 45,
+                                    minRotation: 0
+                                }
+                            }],
+                            yAxes: [{
+                                ticks: {
+                                    beginAtZero: true,
+                                    precision: 0
+                                }
+                            }]
+                        }
+                    }
+                });
+            }
+        };
+
+        self.renderLaunchesChart = () => {
+            var id = "chLaunches";
+            var el = (self.refs && self.refs[id]) || document.getElementById(id);
+            if (!el) return;
+
+            var startDate = self.launchesStartDateStr ? new Date(self.launchesStartDateStr + "T00:00:00Z") : null;
+            var endDate = self.launchesEndDateStr ? new Date(self.launchesEndDateStr + "T23:59:59.999Z") : null;
+
+            var validComps = self.filteredCompetitions.filter(function (c) {
+                if (!c.created_when) return false;
+                var d = new Date(c.created_when);
+                if (isNaN(d.getTime())) return false;
+                if (startDate && d < startDate) return false;
+                if (endDate && d > endDate) return false;
+                return true;
+            });
+
+            if (validComps.length === 0) {
+                if (self.charts[id]) {
+                    self.charts[id].destroy();
+                    delete self.charts[id];
+                }
+                return;
+            }
+
+            var interval = self.launchesInterval || "yearly";
+
+            function getBucketKey(d) {
+                var y = d.getUTCFullYear();
+                var m = d.getUTCMonth();
+                if (interval === "yearly") {
+                    return y.toString();
+                } else if (interval === "semiannual") {
+                    return y + (m < 6 ? "-S1" : "-S2");
+                } else if (interval === "monthly") {
+                    return y + "-" + (m + 1 < 10 ? "0" : "") + (m + 1);
+                } else {
+                    // Weekly (ISO 8601 week)
+                    var target = new Date(Date.UTC(y, m, d.getUTCDate()));
+                    var dayNr = target.getUTCDay() || 7;
+                    target.setUTCDate(target.getUTCDate() + 4 - dayNr);
+                    var yearStart = new Date(Date.UTC(target.getUTCFullYear(), 0, 1));
+                    var weekNo = Math.ceil((((target - yearStart) / 86400000) + 1) / 7);
+                    return target.getUTCFullYear() + "-W" + (weekNo < 10 ? "0" : "") + weekNo;
+                }
+            }
+
+            var counts = {};
+            validComps.forEach(function (c) {
+                var k = getBucketKey(new Date(c.created_when));
+                counts[k] = (counts[k] || 0) + 1;
+            });
+
+            var labels = Object.keys(counts).sort();
+
+            // Continuous ranges for yearly, semiannual, monthly
+            if (labels.length > 1 && interval === "yearly") {
+                var minYear = parseInt(labels[0], 10);
+                var maxYear = parseInt(labels[labels.length - 1], 10);
+                var fullYears = [];
+                for (var yr = minYear; yr <= maxYear; yr++) {
+                    fullYears.push(yr.toString());
+                }
+                labels = fullYears;
+            } else if (labels.length > 1 && interval === "semiannual") {
+                var startY = parseInt(labels[0].split("-")[0], 10);
+                var startS = labels[0].split("-")[1] === "S1" ? 1 : 2;
+                var endY = parseInt(labels[labels.length - 1].split("-")[0], 10);
+                var endS = labels[labels.length - 1].split("-")[1] === "S1" ? 1 : 2;
+                var fullSem = [];
+                var cY = startY, cS = startS;
+                while (cY < endY || (cY === endY && cS <= endS)) {
+                    fullSem.push(cY + "-S" + cS);
+                    if (cS === 1) {
+                        cS = 2;
+                    } else {
+                        cS = 1;
+                        cY++;
+                    }
+                }
+                labels = fullSem;
+            } else if (labels.length > 1 && interval === "monthly") {
+                var startP = labels[0].split("-");
+                var endP = labels[labels.length - 1].split("-");
+                var sY = parseInt(startP[0], 10), sM = parseInt(startP[1], 10) - 1;
+                var eY = parseInt(endP[0], 10), eM = parseInt(endP[1], 10) - 1;
+                var fullM = [];
+                var curY = sY, curM = sM;
+                while (curY < eY || (curY === eY && curM <= eM)) {
+                    fullM.push(curY + "-" + (curM + 1 < 10 ? "0" : "") + (curM + 1));
+                    curM++;
+                    if (curM > 11) {
+                        curM = 0;
+                        curY++;
+                    }
+                }
+                labels = fullM;
+            }
+
+            var dataVals = labels.map(function (k) {
+                return counts[k] || 0;
+            });
+
+            if (self.charts[id] && self.charts[id].ctx && self.charts[id].ctx.canvas === el) {
+                self.charts[id].data.labels = labels;
+                self.charts[id].data.datasets[0].data = dataVals;
+                self.charts[id].update();
+            } else {
+                if (self.charts[id]) self.charts[id].destroy();
+                self.charts[id] = new Chart(el, {
+                    type: "bar",
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: "Launches",
+                            data: dataVals,
+                            backgroundColor: "#2980b9",
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        legend: { display: false },
+                        scales: {
+                            xAxes: [{
+                                gridLines: { display: false },
+                                ticks: {
+                                    autoSkip: true,
+                                    maxTicksLimit: 20,
+                                    maxRotation: 45,
+                                    minRotation: 0
+                                }
+                            }],
+                            yAxes: [{
+                                ticks: {
+                                    beginAtZero: true,
+                                    precision: 0
+                                }
+                            }]
+                        }
+                    }
+                });
+            }
+        };
+
+        self.renderCumTagsChart = () => {
+            var id = "chCumTags";
+            var el = (self.refs && self.refs[id]) || document.getElementById(id);
+            if (!self.showCumTagsChart) {
+                if (self.charts[id]) {
+                    self.charts[id].destroy();
+                    delete self.charts[id];
+                }
+                return;
+            }
+
+            var available = (self.categoriesWithTags && self.categoriesWithTags.length > 0) ? self.categoriesWithTags : self.availableCategories;
+            var cat = self.selectedCumCat;
+            if (!cat || !available.includes(cat)) {
+                cat = available[0] || null;
+                self.selectedCumCat = cat;
+            }
+
+            if (!cat) {
+                if (self.charts[id]) {
+                    self.charts[id].destroy();
+                    delete self.charts[id];
+                }
+                return;
+            }
+
+            var compsWithCat = [];
+            var tagTotals = {};
+            self.filteredCompetitions.forEach(function (c) {
+                if (!c.created_when) return;
+                var d = new Date(c.created_when);
+                if (isNaN(d.getTime())) return;
+                var tags = (c.tagsByCategory && c.tagsByCategory[cat]) || [];
+                if (tags.length > 0) {
+                    tags.forEach(function (t) {
+                        tagTotals[t] = (tagTotals[t] || 0) + 1;
+                    });
+                    compsWithCat.push({ date: d, tags: tags });
+                }
+            });
+
+            var topTags = Object.keys(tagTotals).sort(function (a, b) {
+                return tagTotals[b] - tagTotals[a];
+            }).slice(0, 10);
+
+            if (topTags.length === 0 || compsWithCat.length === 0) {
+                if (self.charts[id]) {
+                    self.charts[id].destroy();
+                    delete self.charts[id];
+                }
+                return;
+            }
+
+            compsWithCat.sort(function (a, b) {
+                return a.date - b.date;
+            });
+
+            var startY = compsWithCat[0].date.getUTCFullYear();
+            var startM = compsWithCat[0].date.getUTCMonth();
+            var endY = compsWithCat[compsWithCat.length - 1].date.getUTCFullYear();
+            var endM = compsWithCat[compsWithCat.length - 1].date.getUTCMonth();
+
+            var months = [];
+            var curY = startY, curM = startM;
+            while (curY < endY || (curY === endY && curM <= endM)) {
+                var mStr = curY + "-" + (curM + 1 < 10 ? "0" : "") + (curM + 1);
+                months.push(mStr);
+                curM++;
+                if (curM > 11) {
+                    curM = 0;
+                    curY++;
+                }
+            }
+
+            var monthlyCounts = {};
+            compsWithCat.forEach(function (item) {
+                var d = item.date;
+                var mStr = d.getUTCFullYear() + "-" + (d.getUTCMonth() + 1 < 10 ? "0" : "") + (d.getUTCMonth() + 1);
+                if (!monthlyCounts[mStr]) monthlyCounts[mStr] = {};
+                item.tags.forEach(function (t) {
+                    if (topTags.includes(t)) {
+                        monthlyCounts[mStr][t] = (monthlyCounts[mStr][t] || 0) + 1;
+                    }
+                });
+            });
+
+            var CUM_PALETTE = ["#2185d0", "#21ba45", "#f2711c", "#a333c8", "#00b5ad", "#fbbd08", "#db2828", "#e03997", "#34495e", "#16a085"];
+            var datasets = topTags.map(function (t, idx) {
+                var col = CUM_PALETTE[idx % CUM_PALETTE.length];
+                var running = 0;
+                var series = months.map(function (m) {
+                    running += (monthlyCounts[m] && monthlyCounts[m][t]) ? monthlyCounts[m][t] : 0;
+                    return running;
+                });
+                return {
+                    label: t + " (" + tagTotals[t] + ")",
+                    data: series,
+                    borderColor: col,
+                    backgroundColor: "transparent",
+                    borderWidth: 2,
+                    pointRadius: months.length > 36 ? 0 : 2,
+                    pointHoverRadius: 4,
+                    pointBackgroundColor: col,
+                    fill: false,
+                    lineTension: 0.15
+                };
+            });
+
+            if (self.charts[id] && self.charts[id].ctx && self.charts[id].ctx.canvas === el) {
+                self.charts[id].data.labels = months;
+                self.charts[id].data.datasets = datasets;
+                self.charts[id].update();
+            } else {
+                if (self.charts[id]) self.charts[id].destroy();
+                self.charts[id] = new Chart(el, {
+                    type: "line",
+                    data: {
+                        labels: months,
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        legend: {
+                            display: true,
+                            position: "right",
+                            labels: {
+                                boxWidth: 12,
+                                fontSize: 11
+                            }
+                        },
+                        tooltips: {
+                            mode: "index",
+                            intersect: false
+                        },
+                        scales: {
+                            xAxes: [{
+                                gridLines: { display: false },
+                                ticks: {
+                                    autoSkip: true,
+                                    maxTicksLimit: 12,
+                                    maxRotation: 45,
+                                    minRotation: 0
+                                }
+                            }],
+                            yAxes: [{
+                                ticks: {
+                                    beginAtZero: true,
+                                    precision: 0
+                                }
+                            }]
+                        }
+                    }
+                });
+            }
+        };
+
+        self.renderHeatmapChart = () => {
+            var id = "chHeatmap";
+            var el = (self.refs && self.refs[id]) || document.getElementById(id);
+            if (!self.showHeatmapChart) {
+                if (self.charts[id]) {
+                    self.charts[id].destroy();
+                    delete self.charts[id];
+                }
+                return;
+            }
+
+            var available = (self.categoriesWithTags && self.categoriesWithTags.length > 0) ? self.categoriesWithTags : self.availableCategories;
+            var cat1 = self.heatmapCat1;
+            var cat2 = self.heatmapCat2;
+            if (!cat1 || !available.includes(cat1)) {
+                cat1 = available[0] || null;
+                self.heatmapCat1 = cat1;
+            }
+            if (!cat2 || !available.includes(cat2)) {
+                cat2 = available[1] || available[0] || null;
+                self.heatmapCat2 = cat2;
+            }
+
+            if (!cat1 || !cat2) {
+                if (self.charts[id]) {
+                    self.charts[id].destroy();
+                    delete self.charts[id];
+                }
+                return;
+            }
+
+            var matrix = {};
+            var rowCounts = {};
+            var colCounts = {};
+
+            self.filteredCompetitions.forEach(function (c) {
+                var tags1 = (c.tagsByCategory && c.tagsByCategory[cat1]) || [];
+                var tags2 = (c.tagsByCategory && c.tagsByCategory[cat2]) || [];
+                if (tags1.length === 0 || tags2.length === 0) return;
+
+                tags1.forEach(function (t1) {
+                    rowCounts[t1] = (rowCounts[t1] || 0) + 1;
+                    if (!matrix[t1]) matrix[t1] = {};
+                    tags2.forEach(function (t2) {
+                        colCounts[t2] = (colCounts[t2] || 0) + 1;
+                        matrix[t1][t2] = (matrix[t1][t2] || 0) + 1;
+                    });
+                });
+            });
+
+            var rowOrder = Object.keys(rowCounts).sort(function (a, b) {
+                return rowCounts[b] - rowCounts[a];
+            }).slice(0, 18);
+
+            var colOrder = Object.keys(colCounts).sort(function (a, b) {
+                return colCounts[b] - colCounts[a];
+            }).slice(0, 18);
+
+            if (rowOrder.length === 0 || colOrder.length === 0) {
+                if (self.charts[id]) {
+                    self.charts[id].destroy();
+                    delete self.charts[id];
+                }
+                return;
+            }
+
+            var maxVal = 1;
+            rowOrder.forEach(function (r) {
+                colOrder.forEach(function (c) {
+                    var v = (matrix[r] && matrix[r][c]) || 0;
+                    if (v > maxVal) maxVal = v;
+                });
+            });
+
+            var rowSums = {};
+            rowOrder.forEach(function (r) {
+                var s = 0;
+                colOrder.forEach(function (c) {
+                    s += (matrix[r] && matrix[r][c]) || 0;
+                });
+                rowSums[r] = s;
+            });
+
+            var desiredHeight = Math.max(380, rowOrder.length * 28 + 90);
+            if (el.parentElement) {
+                el.parentElement.style.height = desiredHeight + "px";
+            }
+
+            // Mouse hover tooltip on canvas
+            el.onmousemove = function (evt) {
+                var chart = self.charts[id];
+                if (!chart || !chart.chartArea) return;
+                var chartArea = chart.chartArea;
+                var rect = el.getBoundingClientRect();
+                var mouseX = evt.clientX - rect.left;
+                var mouseY = evt.clientY - rect.top;
+
+                if (mouseX >= chartArea.left && mouseX <= chartArea.right &&
+                    mouseY >= chartArea.top && mouseY <= chartArea.bottom) {
+                    var colW = (chartArea.right - chartArea.left) / colOrder.length;
+                    var rowH = (chartArea.bottom - chartArea.top) / rowOrder.length;
+                    var cIdx = Math.floor((mouseX - chartArea.left) / colW);
+                    var rIdx = Math.floor((mouseY - chartArea.top) / rowH);
+
+                    if (rIdx >= 0 && rIdx < rowOrder.length && cIdx >= 0 && cIdx < colOrder.length) {
+                        var rTag = rowOrder[rIdx];
+                        var cTag = colOrder[cIdx];
+                        var val = (matrix[rTag] && matrix[rTag][cTag]) || 0;
+                        var rSum = rowSums[rTag] || 0;
+                        var pctStr = rSum > 0 ? ((val / rSum) * 100).toFixed(1) + "%" : "0%";
+                        el.title = rTag + " × " + cTag + ": " + val + " (" + pctStr + ")";
+                        return;
+                    }
+                }
+                el.title = "";
+            };
+
+            var heatmapPlugin = {
+                id: "heatmapCellRenderer",
+                afterDraw: function (chart) {
+                    var ctx = chart.ctx;
+                    var chartArea = chart.chartArea;
+                    if (!chartArea) return;
+
+                    var numCols = colOrder.length;
+                    var numRows = rowOrder.length;
+                    if (numCols === 0 || numRows === 0) return;
+
+                    var colWidth = (chartArea.right - chartArea.left) / numCols;
+                    var rowHeight = (chartArea.bottom - chartArea.top) / numRows;
+
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.rect(chartArea.left, chartArea.top, chartArea.right - chartArea.left, chartArea.bottom - chartArea.top);
+                    ctx.clip();
+
+                    for (var rIdx = 0; rIdx < numRows; rIdx++) {
+                        var rTag = rowOrder[rIdx];
+                        var rSum = rowSums[rTag] || 0;
+                        var y = chartArea.top + rIdx * rowHeight;
+
+                        for (var cIdx = 0; cIdx < numCols; cIdx++) {
+                            var cTag = colOrder[cIdx];
+                            var val = (matrix[rTag] && matrix[rTag][cTag]) || 0;
+                            var x = chartArea.left + cIdx * colWidth;
+
+                            var ratio = 0;
+                            var text = "";
+                            if (self.heatmapNormalize) {
+                                var pct = rSum > 0 ? (val / rSum) * 100 : 0;
+                                ratio = Math.min(1, pct / 100);
+                                text = pct > 0 ? (pct >= 10 ? pct.toFixed(0) + "%" : pct.toFixed(1) + "%") : "0%";
+                            } else {
+                                ratio = Math.min(1, val / maxVal);
+                                text = val.toString();
+                            }
+
+                            ctx.fillStyle = getBluesColor(ratio);
+                            ctx.fillRect(x + 0.5, y + 0.5, colWidth - 1, rowHeight - 1);
+
+                            ctx.strokeStyle = "#ffffff";
+                            ctx.lineWidth = 1;
+                            ctx.strokeRect(x + 0.5, y + 0.5, colWidth - 1, rowHeight - 1);
+
+                            var fontSize = Math.min(11, Math.max(9, Math.floor(rowHeight * 0.4)));
+                            ctx.font = (ratio > 0.4 ? "600 " : "400 ") + fontSize + 'px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                            ctx.fillStyle = ratio > 0.45 ? "#ffffff" : (val > 0 ? "#1e293b" : "#94a3b8");
+                            ctx.textAlign = "center";
+                            ctx.textBaseline = "middle";
+                            ctx.fillText(text, x + colWidth / 2, y + rowHeight / 2);
+                        }
+                    }
+                    ctx.restore();
+                }
+            };
+
+            if (self.charts[id]) {
+                self.charts[id].destroy();
+            }
+
+            self.charts[id] = new Chart(el, {
+                type: "bubble",
+                data: {
+                    xLabels: colOrder,
+                    yLabels: rowOrder,
+                    datasets: [{ data: [] }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 0 },
+                    legend: { display: false },
+                    tooltips: { enabled: false },
+                    layout: {
+                        padding: { top: 10, right: 15, bottom: 10, left: 10 }
+                    },
+                    scales: {
+                        xAxes: [{
+                            type: "category",
+                            labels: colOrder,
+                            position: "bottom",
+                            offset: true,
+                            gridLines: { display: false, drawBorder: false },
+                            ticks: {
+                                autoSkip: false,
+                                maxRotation: 45,
+                                minRotation: 35,
+                                fontSize: 11,
+                                fontColor: "#334155"
+                            }
+                        }],
+                        yAxes: [{
+                            type: "category",
+                            labels: rowOrder,
+                            position: "left",
+                            offset: true,
+                            gridLines: { display: false, drawBorder: false },
+                            ticks: {
+                                autoSkip: false,
+                                fontSize: 11,
+                                fontColor: "#334155"
+                            }
+                        }]
+                    }
+                },
+                plugins: [heatmapPlugin]
+            });
+        };
+
         // Export currently filtered competitions to CSV
         self.downloadCSV = () => {
             var rows = self.filteredCompetitions;
@@ -801,37 +1511,71 @@
         });
     </script>
 
-    <style type="text/stylus" scoped>
-        .kpi-stats
-            display flex !important
-            justify-content space-around !important
-            flex-wrap wrap !important
-            margin-bottom 1.2rem !important
+    <style type="text/stylus">
+        dashboard
+            display block
+            width 100%
 
-        .chart-card
-            padding 12px 14px !important
+        .dashboard-page-container
+            max-width 1440px
+            margin 0 auto
+            padding 15px 20px 40px 20px
 
-        .table-card
-            padding 14px !important
-            margin-top 16px !important
-
-        .table-top-bar
+        .dashboard-header
             display flex
             justify-content space-between
             align-items center
-            margin-bottom 12px
+            flex-wrap wrap
+            gap 12px
+            margin-bottom 20px
+            padding-bottom 16px
+            border-bottom 1px solid #e3e7ec
 
-        .table-scroll-wrap
-            max-height 480px
-            overflow-y auto
+        .dashboard-title-group
+            flex 1
+            min-width 240px
 
-        .pagination-footer
+        .dashboard-title
+            margin 0
+            font-size 24px
+            font-weight bold
+            color #1b1b1b
             display flex
-            justify-content center
-            margin-top 12px
-        .dashboard-container
-            margin-top 15px
-            margin-bottom 40px
+            align-items center
+            gap 10px
+
+            i.icon
+                color #43637a
+                margin 0
+
+        .dashboard-subtitle
+            margin 4px 0 0 0
+            font-family Roboto, sans-serif
+            font-size 14px
+            font-weight normal
+            color #64748b
+            line-height 1.4
+
+        .dashboard-layout
+            display flex
+            align-items flex-start
+            gap 20px
+            width 100%
+
+        .dashboard-sidebar
+            width 270px
+            flex-shrink 0
+
+        .dashboard-main
+            flex 1
+            min-width 0
+
+        @media (max-width 991px)
+            .dashboard-layout
+                flex-direction column
+
+            .dashboard-sidebar
+                width 100%
 
         .canvas-wrap
             position relative

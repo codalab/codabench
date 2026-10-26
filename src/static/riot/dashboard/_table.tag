@@ -4,8 +4,8 @@
             <h3 class="ui header" style="margin: 0;">
                 Competitions ({ opts.p.filteredCompetitions.length })
             </h3>
-            <button class="ui green mini button" onclick="{ downloadCSV }">
-                <i class="download icon"></i> Download CSV
+            <button class="ui green button" onclick="{ downloadCSV }">
+                <i class="icon download"></i>Download as CSV
             </button>
         </div>
 
@@ -39,7 +39,7 @@
                         </td>
                     </tr>
                     <tr if="{ opts.p.filteredCompetitions.length === 0 }">
-                        <td colspan="{ 4 + opts.p.availableCategories.length }" class="center aligned">
+                        <td colspan="{ 4 + opts.p.availableCategories.length }" class="center aligned" style="padding: 20px; color: #888;">
                             <em>No competitions match the selected filters.</em>
                         </td>
                     </tr>
@@ -47,7 +47,7 @@
             </table>
         </div>
 
-        <div class="pagination-footer" if="{ opts.p.totalPages > 1 }" style="display: flex; justify-content: center; margin-top: 12px;">
+        <div class="pagination-footer" if="{ opts.p.totalPages > 1 }" style="display: flex; justify-content: center; align-items: center; margin-top: 12px; gap: 10px;">
             <div class="ui secondary compact menu">
                 <a class="item { disabled: opts.p.currentPage === 1 }" onclick="{ changePagePrev }">
                     <i class="chevron left icon"></i> Prev
@@ -59,6 +59,7 @@
             </div>
         </div>
     </div>
+
     <script>
         var self = this;
         self.downloadCSV = (e) => {
@@ -80,4 +81,20 @@
             opts.p.changePageNext(e);
         };
     </script>
+
+    <style type="text/stylus">
+        dashboard-table
+            display block
+            width 100%
+            margin-top 20px
+
+        .table-card
+            background #fff !important
+            margin-top 20px !important
+
+        .table-scroll-wrap
+            width 100%
+            overflow-x auto
+            -webkit-overflow-scrolling touch
+    </style>
 </dashboard-table>
