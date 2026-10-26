@@ -441,7 +441,7 @@ def md5(filename):
 
 
 def sha256(filename):
-    """Given some file return its md5, works well on large files"""
+    """Given some file return its sha256, works well on large files"""
     hash_sha256 = hashlib.sha256()
     with open(filename, "rb") as f:
         for chunk in iter(lambda: f.read(4096), b""):
