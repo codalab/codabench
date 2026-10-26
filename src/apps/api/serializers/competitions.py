@@ -18,6 +18,9 @@ from tasks.models import Task
 from api.serializers.queues import QueueSerializer, QueuePublicSerializer
 from datetime import datetime
 from django.utils.timezone import now
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class PhaseSerializer(WritableNestedModelSerializer):
@@ -101,6 +104,36 @@ class PhaseSerializer(WritableNestedModelSerializer):
         if not value:
             raise ValidationError("Phases require a leaderboard")
         return value
+
+    def create(self, validated_data):
+        phase = super().create(validated_data)
+        logger.info(
+            "Phase created: pk=%s name=%r competition=%s index=%s start=%s end=%s "
+            "parallel=%s locked=%s auto_migrate=%s",
+            phase.pk, phase.name, phase.competition_id, phase.index, phase.start,
+            phase.end, phase.is_parallel, phase.is_locked_phase,
+            phase.auto_migrate_to_this_phase,
+        )
+        if phase.is_parallel:
+            logger.info(
+                "Parallel phase created: pk=%s name=%r competition=%s (may overlap other phases)",
+                phase.pk, phase.name, phase.competition_id,
+            )
+            if phase.auto_migrate_to_this_phase:
+                logger.warning(
+                    "Parallel phase pk=%s has auto_migrate_to_this_phase enabled: source is the "
+                    "phase with index %s, which may still be running",
+                    phase.pk, phase.index - 1,
+                )
+        return phase
+
+    def update(self, instance, validated_data):
+        phase = super().update(instance, validated_data)
+        logger.info(
+            "Phase updated: pk=%s name=%r competition=%s parallel=%s locked=%s",
+            phase.pk, phase.name, phase.competition_id, phase.is_parallel, phase.is_locked_phase,
+        )
+        return phase
 
 
 class PhaseDetailSerializer(serializers.ModelSerializer):
