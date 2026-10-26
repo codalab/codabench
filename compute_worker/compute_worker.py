@@ -440,6 +440,15 @@ def md5(filename):
     return hash_md5.hexdigest()
 
 
+def sha256(filename):
+    """Given some file return its md5, works well on large files"""
+    hash_sha256 = hashlib.sha256()
+    with open(filename, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_sha256.update(chunk)
+    return hash_sha256.hexdigest()
+
+
 def get_folder_size_in_gb(folder):
     # Check if the folder exists; if not, return 0 GB
     if not os.path.exists(folder):
@@ -1453,6 +1462,8 @@ class Run:
                         raise SubmissionException("Can't copy file. Make sure the folder exists and that you are using only one compute worker")
                 else:
                     zip_file = self._get_bundle(url, path, cache=cache_this_bundle)
+                    sha256_checksum = sha256(zip_file)
+                    logger.info(f"{path} has a sha256 checksum of {sha256_checksum}")
 
                 # Computing checksum of the submission file during ingestion run
                 if url == self.submission_data and not self.is_scoring:
@@ -1460,7 +1471,7 @@ class Run:
                     # a solution, or maybe match them against other submissions later
                     logger.info(f"Beginning MD5 checksum of submission: {zip_file}")
                     checksum = md5(zip_file)
-                    logger.info(f"Checksum result: {checksum}")
+                    logger.info(f"MD5 checksum result: {checksum}")
                     self._update_submission({"md5": checksum})
 
         # During scoring: copy submission files into "input/res"
