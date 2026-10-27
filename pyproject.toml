@@ -3,7 +3,7 @@ name = "codabench"
 version = "0.1.0"
 description = ""
 authors = [{ name = "Codalab" }]
-requires-python = "==3.13.11"
+requires-python = "==3.13.18"
 readme = "README.md"
 classifiers = [
     "Programming Language :: Python :: 3",
