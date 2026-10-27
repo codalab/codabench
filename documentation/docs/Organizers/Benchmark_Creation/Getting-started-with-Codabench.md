@@ -36,4 +36,4 @@ This getting started tutorial shows a **simple example** of how to create a comp
 You are done with this simple tutorial.
 Next, check the more [advanced tutorial](Advanced-Tutorial.md).
 
-You can also check out this blog post: [How to create your first benchmark on Codabench](https://medium.com/@adrienpavao/how-to-create-your-first-benchmark-on-codabench-910e2aee130c).
+You can also follow this other tutorial: [How to create your first benchmark on Codabench](How-to-create-your-first-benchmark.md).
