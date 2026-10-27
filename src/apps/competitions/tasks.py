@@ -82,6 +82,7 @@ PHASE_FIELDS = [
     "end",
     "max_submissions_per_day",
     "max_submissions_per_person",
+    "max_submissions_scope",
     "execution_time_limit",
     "auto_migrate_to_this_phase",
     "hide_output",

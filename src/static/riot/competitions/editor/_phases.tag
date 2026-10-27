@@ -189,6 +189,19 @@
                             </div>
                         </div>
                         <div class="field">
+                            <label>
+                                Max Submissions Scope <span
+                                    data-tooltip="Whether the submission limits apply to each participant or are shared by all members of a participant's organization (team)"
+                                    data-inverted=""
+                                    data-position="bottom center">
+                                <i class="help icon circle"></i></span>
+                            </label>
+                            <select name="max_submissions_scope" ref="max_submissions_scope">
+                                <option value="participant">Per participant</option>
+                                <option value="organization">Per organization (team)</option>
+                            </select>
+                        </div>
+                        <div class="field">
                             <div class="ui checkbox">
                                 <label>Hide Submission Output
                                     <span data-tooltip="Hide all submission output" data-inverted=""
@@ -639,6 +652,7 @@
                 $(field).val('')
             })
             $(self.refs.auto_migrate).prop('checked', false)
+            $(self.refs.max_submissions_scope).val('participant')
 
             // Clear date and time fields values
             $(self.refs.calendar_start_date).find('input[name="start_date"]').val('')
