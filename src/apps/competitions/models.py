@@ -132,6 +132,14 @@ class Competition(models.Model):
         :param next_phase: The new phase object we are entering
         """
 
+        if next_phase.competition_id != self.pk or current_phase.pk == next_phase.pk:
+            logger.error(f"Invalid migration request on competition pk={self.pk}: phases pk={current_phase.pk} -> pk={next_phase.pk}")
+            return
+
+        if next_phase.end and next_phase.end < now():
+            logger.warning(f"Migration to phase pk={next_phase.pk} refused: the phase has ended ({next_phase.end})")
+            return
+
         if not force_migration:
             logger.info(f"Checking for submissions that may still be running competition pk={self.pk}")
             status_list = [Submission.CANCELLED, Submission.FINISHED, Submission.FAILED, Submission.NONE]

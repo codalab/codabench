@@ -882,7 +882,7 @@ def do_phase_migrations():
         phase__competition__is_migrating=False,
         phase__start__lte=now(),
         has_children=False,
-    ).select_related('phase')
+    ).filter(Q(phase__end__isnull=True) | Q(phase__end__gt=now()))
 
     for submission in pending_submissions:
         try:
@@ -912,7 +912,7 @@ def do_phase_migrations():
         start__lte=now(),
         competition__is_migrating=False,
         has_been_migrated=False,
-    )
+    ).filter(Q(end__isnull=True) | Q(end__gt=now()))
 
     logger.info(f"Checking {len(new_phases)} phases for phase migrations.")
 
@@ -921,24 +921,23 @@ def do_phase_migrations():
 
 
 @app.task(queue="site-worker", soft_time_limit=60 * 5)
-def manual_migration(phase_id):
+def manual_migration(phase_id, destination_phase_id=None):
     try:
         source_phase = Phase.objects.get(id=phase_id)
     except Phase.DoesNotExist:
-        logger.error(
-            f"Could not manually migrate phase with id: {phase_id}. Phase could not be found."
-        )
+        logger.error(f"Could not manually migrate phase with id: {phase_id}. Phase could not be found.")
         return
 
+    competition_phases = source_phase.competition.phases
     try:
-        destination_phase = source_phase.competition.phases.get(
-            index=source_phase.index + 1
-        )
+        if destination_phase_id is not None:
+            destination_phase = competition_phases.get(id=destination_phase_id)
+        else:
+            destination_phase = competition_phases.get(index=source_phase.index + 1)
     except Phase.DoesNotExist:
-        logger.error(
-            f"Could not manually migrate phase with id: {phase_id}. The next phase could not be found."
-        )
+        logger.error(f"Could not manually migrate phase with id: {phase_id}. The destination phase could not be found.")
         return
+
     destination_phase.competition.apply_phase_migration(
         source_phase, destination_phase, force_migration=True
     )
