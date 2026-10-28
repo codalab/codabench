@@ -1,0 +1,49 @@
+/* --------------------------------------------------------------------------------------
+ Tag badges component (riot/competitions/tag-badge.tag, public-list, competition detail)
+ */
+
+/* Tags container */
+.comp-tags
+    display flex
+    flex-wrap wrap
+    gap 6px
+    align-items center
+
+/* Tag badge custom element wrapper */
+tag-badge
+    display inline-flex
+    vertical-align middle
+
+/* Tag badge */
+.comp-tag
+    display inline-flex
+    align-items center
+    border-radius 4px
+    font-weight 600
+    line-height 1.2
+    white-space nowrap
+    text-decoration none !important
+    user-select none
+    background-color unquote('hsl(var(--tag-color), 85%, 90%)')
+    border 1px solid unquote('hsl(var(--tag-color), 85%, 75%)')
+    color unquote('hsl(var(--tag-color), 85%, 25%)')
+
+    // Compact size for competition list tiles and cards
+    &.mini
+        padding 2px 7px
+        font-size 10px
+
+    // Small size
+    &.small
+        padding 3px 8px
+        font-size 11px
+
+    // Standard size for detail header and main views
+    &.normal
+        padding 4px 10px
+        font-size 12px
+
+    // Prominent size
+    &.large
+        padding 5px 12px
+        font-size 13px

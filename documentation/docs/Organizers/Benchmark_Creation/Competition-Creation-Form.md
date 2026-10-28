@@ -10,6 +10,7 @@ The details tab covers all basic competition info, such as title, logo, descript
 - Logo: The logo corresponding to your competition
 - Description: The description of your competition
 - Queue: If you've previously created a queue through queue management, you can assign it to your competition here.
+- Tags: Select one or multiple tags categorized by domain (e.g., Machine Learning Domain, Fields of Application, Conferences) to classify your competition and make it easily discoverable on the platform.
 
 
 ## Participation

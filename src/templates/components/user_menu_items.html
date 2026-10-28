@@ -4,6 +4,7 @@
 <!-- Admin management -->
 <div class="header">Admin management</div>
     <a class="item" href="{% url "pages:server_status" %}">Server Status</a>
+    <a class="item" href="{% url "dashboard:dashboard" %}">Dashboard</a>
     {% if request.user.is_staff %}
         <a class="item" href="{% url "pages:monitor_queues" %}">Monitor Queues</a>
         <a class="item" href="{% url "admin:index" %}">Django Admin</a>
