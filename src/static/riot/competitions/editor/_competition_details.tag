@@ -42,24 +42,23 @@
         <div class="field">
             <label>Tags</label>
             <!-- Selected Tags Area -->
-            <div class="ui secondary segment" show="{ selected_tags_cache.length > 0 }" style="margin-bottom: 10px;">
-                <div class="ui labels">
-                    <a class="ui blue label" each="{ tag in selected_tags_cache }">
+            <div class="ui segment" style="margin-bottom: 10px; background: #fff; box-shadow: none;">
+                <div class="ui labels" style="margin: 0;">
+                    <a class="ui blue label" each="{ tag in selected_tags_cache }" style="margin-bottom: 4px;">
                         { tag.name }
                         <i class="delete icon" onclick="{ remove_tag }"></i>
                     </a>
+                    <span if="{ selected_tags_cache.length === 0 }" style="color: #888; font-style: italic; font-size: 13px;">No tags selected</span>
                 </div>
             </div>
 
             <!-- Available Tags Area -->
-            <div class="ui segment" style="max-height: 300px; overflow-y: auto;">
+            <div class="ui segment" style="max-height: 300px; overflow-y: auto; box-shadow: none;">
                 <div each="{ cat in tags_by_category }" style="margin-bottom: 15px;">
-                    <h5 class="ui dividing header" style="margin-top: 0;">{ cat.name }</h5>
+                    <h5 class="ui dividing header" style="margin-top: 0; margin-bottom: 8px;">{ cat.name }</h5>
                     <div class="ui labels">
                         <a class="ui { is_selected(tag.id) ? 'blue' : 'basic' } label" each="{ tag in cat.tags }" onclick="{ toggle_tag }" style="margin-bottom: 8px; cursor: pointer; user-select: none;">
                             { tag.name }
-                            <i class="check icon" if="{ is_selected(tag.id) }"></i>
-                            <i class="plus icon" if="{ !is_selected(tag.id) }"></i>
                         </a>
                     </div>
                 </div>

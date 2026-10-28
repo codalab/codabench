@@ -1,36 +1,63 @@
 <dashboard>
-    <div class="ui container fluid dashboard-container" style="max-width: 1400px; padding: 0 20px;">
-        <div class="ui stackable grid">
-            <div class="sixteen wide column">
-                <h2 class="ui header">
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+            <div class="dashboard-title-group">
+                <h1 class="dashboard-title">
                     <i class="chart pie icon"></i>
-                    <div class="content">
-                        Competitions Dashboard
-                        <div class="sub header">Analyze trends, organizers, and domains across Codabench</div>
-                    </div>
-                </h2>
+                    Competitions Dashboard
+                </h1>
+                <p class="dashboard-subtitle">Analyze trends, organizers, and domains across Codabench</p>
             </div>
         </div>
 
-        <div class="ui divider"></div>
-
-        <div class="ui active inverted dimmer" if="{ loading }">
-            <div class="ui large text loader">Fetching data...</div>
-        </div>
-
-        <div class="ui stackable grid" show="{ !loading }">
-            <div class="four wide column">
+        <div class="dashboard-layout">
+            <aside class="dashboard-sidebar">
                 <competition-filter-panel show_visibility="{ isAdmin }" show_counts="{ true }" categories="{ categoryFilters }" onfilterchange="{ handleFilterChange }"></competition-filter-panel>
-            </div>
+            </aside>
 
-            <div class="twelve wide column">
-                <dashboard-charts p="{ this }"></dashboard-charts>
+            <main class="dashboard-main">
+                <!-- Loading indicator matching competitions/public and datasets/public -->
+                <div id="loading" class="loading-indicator" show="{ loading }">
+                    <div class="loading-text">Fetching data...</div>
+                    <div class="spinner"></div>
+                </div>
 
+                <div show="{ !loading }">
+                    <!-- Navigation Tabs (Full width of the main content, excluding filter sidebar) -->
+                    <div class="ui tiny fluid three secondary pointing tabular menu details-menu dashboard-tabs-menu">
+                        <div class="item { active: activeTab === 'overview' }" onclick="{ setActiveTab.bind(this, 'overview') }">Overview</div>
+                        <div class="item { active: activeTab === 'tags' }" onclick="{ setActiveTab.bind(this, 'tags') }">Tags Statistics</div>
+                        <div class="item { active: activeTab === 'explorer' }" onclick="{ setActiveTab.bind(this, 'explorer') }">Data Exploration</div>
+                    </div>
 
-                <dashboard-table p="{ this }"></dashboard-table>
-            </div>
+                    <!-- Show when there are no competitions matching filters -->
+                    <div class="no-results-message" if="{ filteredCompetitions.length === 0 }">
+                        <div class="ui warning message">
+                            <div class="header">No competitions found</div>
+                            Try changing your filters or search term.
+                        </div>
+                    </div>
+
+                    <!-- Tab 1: Overview -->
+                    <dashboard-overview p="{ this }"></dashboard-overview>
+
+                    <!-- Tab 2: Tags Statistics -->
+                    <div class="dashboard-tab-pane" show="{ activeTab === 'tags' }">
+                        <div class="dashboard-charts-grid">
+                            <dashboard-tags-category-charts p="{ this }"></dashboard-tags-category-charts>
+                            <dashboard-tags-cumulative p="{ this }"></dashboard-tags-cumulative>
+                            <dashboard-tags-heatmap p="{ this }"></dashboard-tags-heatmap>
+                        </div>
+                    </div>
+
+                    <!-- Tab 3: Data Exploration -->
+                    <div class="dashboard-tab-pane" show="{ activeTab === 'explorer' }">
+                        <dashboard-data-explorer p="{ this }"></dashboard-data-explorer>
+                        <dashboard-competitions-table p="{ this }"></dashboard-competitions-table>
+                    </div>
+                </div>
+            </main>
         </div>
-    </div>
 
     <script>
         var self = this;
@@ -38,13 +65,8 @@
         self.isLoggedIn = typeof CODALAB !== "undefined" && CODALAB.state && CODALAB.state.user && CODALAB.state.user.logged_in;
 
         self.loading = true;
-        self.dataSource = "api";
         self.allCompetitions = [];
         self.filteredCompetitions = [];
-        self.pagedCompetitions = [];
-        self.pageSize = 15;
-        self.currentPage = 1;
-        self.totalPages = 1;
 
         self.availableCategories = [];
         self.categoryFilters = [];
@@ -52,6 +74,10 @@
         self.categoryTagsCounts = {};
         self.showOrgsChart = false;
         self.showCompsChart = false;
+        self.popularCompetitions = [];
+        self.showCumTagsChart = false;
+        self.showHeatmapChart = false;
+        self.categoriesWithTags = [];
 
         self.kpis = {
             distinctOrganizers: 0,
@@ -59,34 +85,147 @@
             submissions: 0
         };
 
-        // Filter and sort state
+        // Distinct Colors Palette (Unified 30 distinct accessible colors)
+        self.DISTINCT_COLORS = [
+            "#2185d0", "#21ba45", "#f2711c", "#a333c8", "#db2828",
+            "#00b5ad", "#fbbd08", "#e03997", "#16a085", "#e67e22",
+            "#8e44ad", "#2980b9", "#27ae60", "#d35400", "#c0392b",
+            "#1abc9c", "#3498db", "#9b59b6", "#f39c12", "#e74c3c",
+            "#34495e", "#00cec9", "#6c5ce7", "#fd79a8", "#0984e3",
+            "#b2bec3", "#e17055", "#fdcb6e", "#636e72", "#d63031"
+        ];
+
+        self.getDistinctColors = function (count) {
+            var list = [];
+            for (var i = 0; i < count; i++) {
+                list.push(self.DISTINCT_COLORS[i % self.DISTINCT_COLORS.length]);
+            }
+            return list;
+        };
+
+        // Number Formatter
+        self.format_number = function (num) {
+            if (num === null || num === undefined) return "0";
+            return Number(num).toLocaleString();
+        };
+
+        // CSV Export & RFC 4180 Escaping (prevents CSV formula injection)
+        self.escapeCsv = function (v) {
+            var s = String(v == null ? '' : v);
+            if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+            return '"' + s.replace(/"/g, '""') + '"';
+        };
+
+        self.downloadCsv = function (filename, lines) {
+            var blob = new Blob(["\uFEFF" + lines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+            var link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+            URL.revokeObjectURL(link.href);
+        };
+
+        // Month Range Generators
+        self.getMonthRange = function (startDate, endDate) {
+            var s = new Date(startDate);
+            var e = new Date(endDate);
+            if (isNaN(s.getTime()) || isNaN(e.getTime())) return [];
+            var months = [];
+            var curY = s.getUTCFullYear(), curM = s.getUTCMonth();
+            var endY = e.getUTCFullYear(), endM = e.getUTCMonth();
+            while (curY < endY || (curY === endY && curM <= endM)) {
+                months.push(curY + "-" + (curM + 1 < 10 ? "0" : "") + (curM + 1));
+                curM++;
+                if (curM > 11) {
+                    curM = 0;
+                    curY++;
+                }
+            }
+            return months;
+        };
+
+        self.getCompetitionsMonthRange = function (comps) {
+            var dates = (comps || []).map(function (c) {
+                return new Date(c.created_when);
+            }).filter(function (d) {
+                return !isNaN(d.getTime());
+            });
+            if (dates.length === 0) return [];
+            var minDate = new Date(Math.min.apply(null, dates));
+            var maxDate = new Date(Math.max.apply(null, dates));
+            return self.getMonthRange(minDate, maxDate);
+        };
+
+        // Dropdown Initializer
+        self.initDropdowns = function (scope, drops) {
+            drops.forEach(function (item) {
+                var el = scope.refs ? scope.refs[item.ref] : null;
+                if (!el) return;
+                var $d = $(el);
+                if (!$d.data('module-dropdown')) {
+                    $d.dropdown({
+                        onChange: function (val) {
+                            if (val && val !== item.getVal()) {
+                                item.setVal(val);
+                            }
+                        }
+                    });
+                } else {
+                    $d.dropdown('refresh');
+                }
+                var cur = item.getVal();
+                if (cur) {
+                    $d.dropdown('set selected', cur);
+                }
+            });
+        };
+
+        // Tabs & Navigation State
+        self.activeTab = 'overview';
+        self.setActiveTab = (tab) => {
+            if (self.activeTab === tab) return;
+            self.activeTab = tab;
+            if (window.location.hash !== '#/' + tab) {
+                window.location.hash = '#/' + tab;
+            }
+            self.update();
+        };
+
+        self.syncTabFromHash = () => {
+            var rawHash = (window.location.hash || '').replace(/^#\/?/, '');
+            if (['overview', 'tags', 'explorer'].includes(rawHash)) {
+                if (self.activeTab !== rawHash) {
+                    self.activeTab = rawHash;
+                    self.update();
+                }
+            }
+        };
+
         self.state = {
             search: "",
-            filter_mode: "or",
             mode: "or",
             visibility: "public",
-            type: "all",
             participating_in: false,
             organizing: false,
             has_reward: false,
-            selectedTags: {},
-            sortKey: "id",
-            sortDir: 1,
             startDate: null,
-            endDate: null
+            endDate: null,
+            selectedTags: {},
+            type: "all"
         };
-
-        self.charts = {};
-        self.search_timer = null;
-
-        var PALETTE = ["#2185d0", "#00b5ad", "#21ba45", "#fbbd08", "#f2711c", "#db2828", "#a333c8", "#e03997", "#767676"];
 
         self.myOrganizingIds = new Set();
         self.myParticipatingIds = new Set();
 
         self.on('mount', () => {
+            self.syncTabFromHash();
+            window.addEventListener('hashchange', self.syncTabFromHash);
             self.fetchData();
             self.fetchUserCompetitionIds();
+        });
+
+        self.on('unmount', () => {
+            window.removeEventListener('hashchange', self.syncTabFromHash);
         });
 
         self.fetchUserCompetitionIds = () => {
@@ -96,14 +235,13 @@
                 var collectedIds = new Set();
                 const getPage = (url) => {
                     CODALAB.api.request('GET', url)
-                        .done((resp) => {
-                            var items = (resp && resp.results) ? resp.results : [];
-                            items.forEach((c) => collectedIds.add(c.id));
-                            if (resp && resp.next) {
-                                var parser = document.createElement('a');
-                                parser.href = resp.next;
-                                var relativeUrl = parser.pathname + parser.search;
-                                getPage(relativeUrl);
+                        .done((response) => {
+                            var results = response.results || (Array.isArray(response) ? response : []);
+                            results.forEach((item) => {
+                                if (item && item.id) collectedIds.add(item.id);
+                            });
+                            if (response.next) {
+                                getPage(response.next);
                             } else {
                                 onComplete(collectedIds);
                             }
@@ -115,99 +253,70 @@
                 getPage(initialUrl);
             };
 
-            var baseApi = (typeof URLS !== "undefined" && URLS.API) ? URLS.API : "/api/";
-            fetchAllIds(baseApi + "competitions/?mine=true&page_size=1000", (ids) => {
+            fetchAllIds(URLS.API + 'competitions/?mine=true&page_size=100', (ids) => {
                 self.myOrganizingIds = ids;
                 if (self.state.organizing) {
                     self.applyFilters();
                     self.update();
-                    setTimeout(self.initOrUpdateCharts, 50);
                 }
             });
 
-            fetchAllIds(baseApi + "competitions/?participating_in=true&page_size=1000", (ids) => {
+            fetchAllIds(URLS.API + 'competitions/?participating_in=true&page_size=100', (ids) => {
                 self.myParticipatingIds = ids;
                 if (self.state.participating_in) {
                     self.applyFilters();
                     self.update();
-                    setTimeout(self.initOrUpdateCharts, 50);
                 }
             });
         };
 
-        // Fetch all competitions using recursive pagination to enable client-side filtering
         self.fetchData = () => {
             self.loading = true;
             self.update();
 
-            var allResults = [];
-            var apiUrl = (typeof URLS !== "undefined" && URLS.API) ? URLS.API + "competitions/?page_size=1000" : "/api/competitions/?page_size=1000";
-            if (self.isAdmin) {
-                apiUrl += "&visibility=all";
-            } else {
-                apiUrl += "&visibility=public";
-            }
-
-            var tagsUrl = (typeof URLS !== "undefined" && URLS.API) ? URLS.API + "tags/" : "/api/tags/";
-            self.globalCategoryTags = self.globalCategoryTags || {};
-            CODALAB.api.request('GET', tagsUrl)
-                .done((tagsData) => {
-                    if (Array.isArray(tagsData)) {
-                        tagsData.forEach((tag) => {
-                            var cat = tag.category_name || "Other";
-                            if (!self.globalCategoryTags[cat]) self.globalCategoryTags[cat] = {};
-                            self.globalCategoryTags[cat][tag.name] = true;
-                        });
-                    }
-                    fetchPage(apiUrl);
-                })
-                .fail(() => {
-                    // Fall back to extracting tags from competitions data
-                    fetchPage(apiUrl);
-                });
+            var endpoint = (typeof URLS !== "undefined" && URLS.API) ? (URLS.API + "competitions/public/?page_size=5000") : "/api/competitions/public/?page_size=5000";
+            var allRawCompetitions = [];
 
             const fetchPage = (url) => {
-                CODALAB.api.request('GET', url)
-                    .done((resp) => {
-                        var results = (resp && resp.results) ? resp.results : [];
-                        allResults = allResults.concat(results);
+                var req = (typeof CODALAB !== "undefined" && CODALAB.api && CODALAB.api.request)
+                    ? CODALAB.api.request("GET", url)
+                    : fetch(url).then((r) => r.json());
 
-                        if (resp && resp.next) {
-                            var parser = document.createElement('a');
-                            parser.href = resp.next;
-                            var relativeUrl = parser.pathname + parser.search;
-                            fetchPage(relativeUrl);
-                        } else {
-                            self.allCompetitions = self.classifyCompetitions(allResults);
-                            self.dataSource = "api";
-                            self.onDataLoaded();
-                        }
-                    })
-                    .fail(() => {
-                        if (typeof toastr !== "undefined") toastr.error("Failed to load competitions data");
-                        if (allResults.length > 0) {
-                            self.allCompetitions = self.classifyCompetitions(allResults);
-                        } else {
-                            self.allCompetitions = [];
-                        }
-                        self.dataSource = "api";
+                const handleSuccess = (response) => {
+                    var rawList = Array.isArray(response) ? response : (response.results || []);
+                    allRawCompetitions = allRawCompetitions.concat(rawList);
+                    if (response && response.next) {
+                        fetchPage(response.next);
+                    } else {
+                        self.allCompetitions = self.classifyCompetitions(allRawCompetitions);
                         self.onDataLoaded();
-                    });
-            }
+                    }
+                };
+
+                const handleError = () => {
+                    self.allCompetitions = self.classifyCompetitions(allRawCompetitions);
+                    self.onDataLoaded();
+                };
+
+                if (req && typeof req.done === "function") {
+                    req.done(handleSuccess).fail(handleError);
+                } else if (req && typeof req.then === "function") {
+                    req.then(handleSuccess).catch(handleError);
+                }
+            };
+
+            fetchPage(endpoint);
         };
 
         self.onDataLoaded = () => {
             self.loading = false;
             self.applyFilters();
             self.update();
-            setTimeout(() => {
-                self.initOrUpdateCharts();
-            }, 50);
         };
 
         // Extract categories and tags from raw API response to build filter menus
         self.classifyCompetitions = (list) => {
-            if (!self.globalCategoryTags) self.globalCategoryTags = {};
+            self.globalCategoryTags = {};
 
             var mapped = list.map((item) => {
                 var compUrl = (typeof URLS !== "undefined" && URLS.COMPETITION_DETAIL) ? URLS.COMPETITION_DETAIL(item.id) : ("/competitions/" + item.id + "/");
@@ -228,7 +337,7 @@
 
                 if (item.tags && Array.isArray(item.tags)) {
                     item.tags.forEach((tag) => {
-                        var cat = tag.category || "Other";
+                        var cat = tag.category_name || tag.category || "Other";
                         if (!comp.tagsByCategory[cat]) comp.tagsByCategory[cat] = [];
                         comp.tagsByCategory[cat].push(tag.name);
 
@@ -240,9 +349,7 @@
             });
 
             self.availableCategories = Object.keys(self.globalCategoryTags).sort();
-
             self.state.selectedTags = {};
-            self.chartCards = [];
 
             self.availableCategories.forEach((cat) => {
                 self.state.selectedTags[cat] = {};
@@ -260,7 +367,6 @@
         self.handleFilterChange = function (filters) {
             self.state.search = (filters.search || "").toLowerCase();
             self.state.mode = filters.filter_mode || filters.mode || "or";
-            self.state.filter_mode = self.state.mode;
             self.state.visibility = filters.visibility || "public";
             self.state.participating_in = Boolean(filters.participating_in);
             self.state.organizing = Boolean(filters.organizing);
@@ -269,90 +375,43 @@
             self.state.endDate = filters.endDate || (filters.end_date ? new Date(filters.end_date) : null);
             self.state.selectedTags = filters.selected_tags_by_cat || {};
 
-            self.currentPage = 1;
             self.applyFilters();
             self.update();
-            setTimeout(self.initOrUpdateCharts, 50);
-        };
-
-        self.sortTableId = () => {
-            self.sortTable('id');
-        };
-        self.sortTableTitle = () => {
-            self.sortTable('title');
-        };
-        self.sortTableOrg = () => {
-            self.sortTable('organizer');
-        };
-
-        self.sortTable = (key) => {
-            if (self.state.sortKey === key) {
-                self.state.sortDir *= -1;
-            } else {
-                self.state.sortKey = key;
-                self.state.sortDir = 1;
-            }
-            self.applyFilters();
-            self.update();
-        };
-
-        self.changePagePrev = () => {
-            var p = self.currentPage - 1;
-            if (p >= 1 && p <= self.totalPages) {
-                self.currentPage = p;
-                self.updatePagination();
-            }
-        };
-
-        self.changePageNext = () => {
-            var p = self.currentPage + 1;
-            if (p >= 1 && p <= self.totalPages) {
-                self.currentPage = p;
-                self.updatePagination();
-            }
         };
 
         // Check if competition tags match selected filters (AND/OR mode)
         function tagMatch(compTagsByCat, selectedTagsByCat) {
-            var hasAnySelection = false;
             var cats = Object.keys(selectedTagsByCat);
-            for (var i = 0; i < cats.length; i++) {
-                if (Object.keys(selectedTagsByCat[cats[i]]).length > 0) {
-                    hasAnySelection = true;
-                }
-            }
-            if (!hasAnySelection) return true;
-
             if (self.state.mode === "and") {
                 for (var i = 0; i < cats.length; i++) {
                     var cat = cats[i];
                     var selected = Object.keys(selectedTagsByCat[cat]);
+                    if (selected.length === 0) continue;
                     var compTags = compTagsByCat[cat] || [];
-                    var allMatch = true;
-                    selected.forEach((it) => {
+                    for (var j = 0; j < selected.length; j++) {
+                        var it = selected[j];
                         if (it === '_no_tags_') {
-                            if (compTags.length > 0) allMatch = false;
+                            if (compTags.length > 0) return false;
                         } else {
-                            if (compTags.indexOf(it) === -1) allMatch = false;
+                            if (compTags.indexOf(it) === -1) return false;
                         }
-                    });
-                    if (!allMatch) return false;
+                    }
                 }
                 return true;
             } else {
                 for (var i = 0; i < cats.length; i++) {
                     var cat = cats[i];
                     var selected = Object.keys(selectedTagsByCat[cat]);
+                    if (selected.length === 0) continue;
                     var compTags = compTagsByCat[cat] || [];
-                    var anyMatch = false;
-                    selected.forEach((it) => {
+                    for (var j = 0; j < selected.length; j++) {
+                        var it = selected[j];
                         if (it === '_no_tags_') {
-                            if (compTags.length === 0) anyMatch = true;
+                            if (compTags.length === 0) return true;
                         } else {
-                            if (compTags.indexOf(it) !== -1) anyMatch = true;
+                            if (compTags.indexOf(it) !== -1) return true;
                         }
-                    });
-                    if (anyMatch) return true;
+                    }
                 }
                 return false;
             }
@@ -361,7 +420,6 @@
         // Main filter pipeline: Text search -> Dates -> Visibility -> Type -> Facets (User Comps / Reward / Tags)
         self.applyFilters = () => {
             var s = self.state.search;
-            var isAndMode = self.state.mode === "and";
             var userCompActive = Boolean(self.state.participating_in || self.state.organizing);
             var rewardActive = Boolean(self.state.has_reward);
 
@@ -373,8 +431,6 @@
                     break;
                 }
             }
-            var hasActiveFacet = userCompActive || rewardActive || tagsActive;
-            var myUsername = (CODALAB.state.user && CODALAB.state.user.username) || "";
 
             self.filteredCompetitions = self.allCompetitions.filter((c) => {
                 if (self.isAdmin) {
@@ -391,7 +447,6 @@
 
                     if (self.state.startDate && compDate < self.state.startDate) return false;
 
-                    // We must include the entire end date up to midnight
                     if (self.state.endDate) {
                         var endLimit = new Date(self.state.endDate);
                         endLimit.setHours(23, 59, 59, 999);
@@ -404,438 +459,120 @@
                     if (!matchTitle && !matchOrg) return false;
                 }
 
-                if (hasActiveFacet) {
-                    var userCompMatch = false;
-                    if (userCompActive) {
-                        var isOrganizer = (self.myOrganizingIds && self.myOrganizingIds.has(c.id)) || Boolean(myUsername && c.organizer === myUsername);
-                        var isParticipant = Boolean(self.myParticipatingIds && self.myParticipatingIds.has(c.id));
-                        userCompMatch = (self.state.participating_in && self.state.organizing)
-                            ? (isParticipant || isOrganizer)
-                            : (self.state.participating_in ? isParticipant : isOrganizer);
-                    }
-
-                    var rewardMatch = rewardActive && Boolean(c.has_reward);
-                    var tagsMatch = tagsActive && tagMatch(c.tagsByCategory, self.state.selectedTags);
-
-                    if (isAndMode) {
-                        if (userCompActive && !userCompMatch) return false;
-                        if (rewardActive && !rewardMatch) return false;
-                        if (tagsActive && !tagsMatch) return false;
-                    } else {
-                        if (!userCompMatch && !rewardMatch && !tagsMatch) return false;
+                if (self.state.mode === "and") {
+                    if (self.state.participating_in && !self.myParticipatingIds.has(c.id)) return false;
+                    if (self.state.organizing && !self.myOrganizingIds.has(c.id)) return false;
+                    if (self.state.has_reward && !c.has_reward) return false;
+                    if (tagsActive && !tagMatch(c.tagsByCategory, self.state.selectedTags)) return false;
+                } else {
+                    if (userCompActive || rewardActive || tagsActive) {
+                        var matchesAny = false;
+                        if (self.state.participating_in && self.myParticipatingIds.has(c.id)) matchesAny = true;
+                        if (self.state.organizing && self.myOrganizingIds.has(c.id)) matchesAny = true;
+                        if (self.state.has_reward && c.has_reward) matchesAny = true;
+                        if (tagsActive && tagMatch(c.tagsByCategory, self.state.selectedTags)) matchesAny = true;
+                        if (!matchesAny) return false;
                     }
                 }
-
                 return true;
             });
 
-            self.filteredCompetitions.sort((a, b) => {
-                var vA = a[self.state.sortKey];
-                var vB = b[self.state.sortKey];
-                if (typeof vA === "string") vA = vA.toLowerCase();
-                if (typeof vB === "string") vB = vB.toLowerCase();
-                if (vA < vB) return -1 * self.state.sortDir;
-                if (vA > vB) return 1 * self.state.sortDir;
-                return 0;
+            // Calculate KPIs
+            var totalPart = 0, totalSub = 0;
+            var orgSet = new Set();
+            self.filteredCompetitions.forEach((c) => {
+                totalPart += (c.participants_count || 0);
+                totalSub += (c.submissions_count || 0);
+                if (c.organizer) orgSet.add(c.organizer);
+            });
+            self.kpis.distinctOrganizers = orgSet.size;
+            self.kpis.participants = totalPart;
+            self.kpis.submissions = totalSub;
+
+            // Compute dynamic tag counts
+            self.categoryTagsCounts = {};
+            self.availableCategories.forEach((cat) => {
+                self.categoryTagsCounts[cat] = {};
             });
 
-            var orgs = {};
-            self.categoryTagsCounts = {};
-            var totalTags = 0;
-            var totalParticipants = 0;
-            var totalSubmissions = 0;
-            self.noTagsCounts = {};
             self.filteredCompetitions.forEach((c) => {
-                orgs[c.organizer] = true;
-                totalParticipants += (c.participants_count || 0);
-                totalSubmissions += (c.submissions_count || 0);
-
                 Object.keys(c.tagsByCategory).forEach((cat) => {
                     if (!self.categoryTagsCounts[cat]) self.categoryTagsCounts[cat] = {};
                     c.tagsByCategory[cat].forEach((t) => {
-                        totalTags++;
                         self.categoryTagsCounts[cat][t] = (self.categoryTagsCounts[cat][t] || 0) + 1;
                     });
                 });
-
-                self.availableCategories.forEach((cat) => {
-                    if (!c.tagsByCategory[cat] || c.tagsByCategory[cat].length === 0) {
-                        self.noTagsCounts[cat] = (self.noTagsCounts[cat] || 0) + 1;
-                    }
-                });
             });
 
-            self.kpis.distinctOrganizers = Object.keys(orgs).length;
-            self.kpis.tagsAssigned = totalTags;
-            self.kpis.participants = totalParticipants;
-            self.kpis.submissions = totalSubmissions;
+            // Dynamic filter panel categories
+            self.categoryFilters = self.availableCategories.map((cat) => {
+                var globalTagsObj = self.globalCategoryTags[cat] || {};
+                var allTagNames = Object.keys(globalTagsObj);
+                var activeCounts = self.categoryTagsCounts[cat] || {};
 
-            self.categoryFilters = [];
-            self.availableCategories.forEach((cat) => {
-                var counts = self.categoryTagsCounts[cat] || {};
-                var allTagsForCat = Object.keys(self.globalCategoryTags[cat]);
-
-                var tagsArr = allTagsForCat.map((k) => {
-                    var isChecked = false;
-                    if (self.state.selectedTags[cat] && self.state.selectedTags[cat][k]) {
-                        isChecked = true;
-                    }
+                var tagsList = allTagNames.map((name) => {
                     return {
-                        name: k,
-                        count: (counts[k] || 0),
-                        checked: isChecked
+                        id: name,
+                        name: name,
+                        count: activeCounts[name] || 0
                     };
                 });
 
-                var noTagsChecked = (self.state.selectedTags[cat] && self.state.selectedTags[cat]['_no_tags_']) ? true : false;
-
-                self.categoryFilters.push({
-                    name: cat,
-                    tags: tagsArr,
-                    noTagsCount: self.noTagsCounts[cat] || 0,
-                    noTagsChecked: noTagsChecked
+                var noTagsCount = 0;
+                self.filteredCompetitions.forEach((c) => {
+                    var compTags = (c.tagsByCategory && c.tagsByCategory[cat]) || [];
+                    if (compTags.length === 0) {
+                        noTagsCount++;
+                    }
                 });
+
+                var isNoTagsChecked = Boolean(
+                    self.state.selectedTags &&
+                    self.state.selectedTags[cat] &&
+                    self.state.selectedTags[cat]['_no_tags_']
+                );
+
+                return {
+                    id: cat,
+                    name: cat,
+                    noTagsCount: noTagsCount,
+                    noTagsChecked: isNoTagsChecked,
+                    tags: tagsList
+                };
             });
 
-            var oPairs = countOrgs(self.filteredCompetitions, 10);
-            self.showOrgsChart = oPairs.length > 0;
-
-            var cPairs = self.filteredCompetitions
-                .filter((c) => (c.participants_count || 0) > 0)
-                .map((c) => {
-                    var shortTitle = c.title.length > 25 ? c.title.substring(0, 25) + '...' : c.title;
-                    return [shortTitle, c.participants_count || 0];
-                })
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 10);
-            self.showCompsChart = cPairs.length > 0;
-
+            // Prepare categories with active tags
             self.chartCards = [];
-            self.availableCategories.forEach((cat, catIdx) => {
+            self.categoriesWithTags = [];
+            self.availableCategories.forEach((cat, idx) => {
                 var counts = self.categoryTagsCounts[cat] || {};
-                var hasData = Object.keys(counts).some((k) => counts[k] > 0);
-                if (hasData) {
+                var activeTagKeys = Object.keys(counts).filter((k) => counts[k] > 0);
+                if (activeTagKeys.length > 0) {
+                    self.categoriesWithTags.push(cat);
+                    var cardId = "chCat_" + cat.replace(/[^a-zA-Z0-9]/g, "_");
                     self.chartCards.push({
+                        id: cardId,
                         catName: cat,
-                        id: "chart_cat_" + cat.replace(/[^a-zA-Z0-9]/g, "_"),
-                        typeIdx: catIdx
+                        typeIdx: idx
                     });
                 }
             });
 
-            self.totalPages = Math.max(1, Math.ceil(self.filteredCompetitions.length / self.pageSize));
-            self.currentPage = Math.min(self.currentPage, self.totalPages);
-            self.updatePagination();
-        };
+            // Overview flags
+            self.showOrgsChart = self.filteredCompetitions.length > 0 && self.kpis.distinctOrganizers > 1;
 
-        self.updatePagination = () => {
-            var start = (self.currentPage - 1) * self.pageSize;
-            self.pagedCompetitions = self.filteredCompetitions.slice(start, start + self.pageSize);
-        };
-
-        function countOrgs(list, limit) {
-            var map = {};
-            list.forEach((c) => {
-                map[c.organizer] = (map[c.organizer] || 0) + 1;
+            var benchmarkComps = self.filteredCompetitions.filter((c) => c.competition_type === "benchmark");
+            var pool = benchmarkComps.length > 0 ? benchmarkComps : self.filteredCompetitions;
+            var sortedPool = pool.slice().sort((a, b) => {
+                var pDiff = (b.participants_count || 0) - (a.participants_count || 0);
+                if (pDiff !== 0) return pDiff;
+                return (b.submissions_count || 0) - (a.submissions_count || 0);
             });
-            var entries = Object.keys(map).map((k) => {
-                return [k, map[k]];
-            });
-            entries.sort((a, b) => {
-                return b[1] - a[1];
-            });
-            return entries.slice(0, limit);
-        }
+            self.popularCompetitions = sortedPool.slice(0, 10);
+            self.showCompsChart = self.popularCompetitions.length > 0;
 
-        // Cycle through Bar, Doughnut, and Vertical Bar charts for tag categories
-        self.initOrUpdateCharts = () => {
-            var rows = self.filteredCompetitions;
-
-            var visibleIds = new Set();
-            if (self.showOrgsChart) visibleIds.add("chOrgs");
-            if (self.showCompsChart) visibleIds.add("chComps");
-            self.chartCards.forEach((c) => visibleIds.add(c.id));
-
-            Object.keys(self.charts).forEach((id) => {
-                if (!visibleIds.has(id)) {
-                    if (self.charts[id]) {
-                        self.charts[id].destroy();
-                        delete self.charts[id];
-                    }
-                }
-            });
-
-            if (self.showOrgsChart) {
-                var oPairs = countOrgs(rows, 10);
-                self.renderHorizontalBar("chOrgs", oPairs, "#21ba45");
-            }
-
-            if (self.showCompsChart) {
-                var cPairs = rows
-                    .filter((c) => (c.participants_count || 0) > 0)
-                    .map((c) => {
-                        var shortTitle = c.title.length > 25 ? c.title.substring(0, 25) + '...' : c.title;
-                        return [shortTitle, c.participants_count || 0];
-                    })
-                    .sort((a, b) => b[1] - a[1])
-                    .slice(0, 10);
-                self.renderHorizontalBar("chComps", cPairs, "#fbbd08");
-            }
-
-            self.chartCards.forEach((chart) => {
-                var cat = chart.catName;
-                var counts = self.categoryTagsCounts[cat] || {};
-                var pairs = Object.keys(counts).map((k) => {
-                    return [k, counts[k]];
-                });
-                pairs.sort((a, b) => {
-                    return b[1] - a[1];
-                });
-                pairs = pairs.slice(0, 15);
-
-                var canvasId = chart.id;
-                var el = document.getElementById(canvasId);
-                var color = PALETTE[chart.typeIdx % PALETTE.length];
-
-                if (el) {
-                    if (chart.typeIdx % 3 === 0) {
-                        self.renderHorizontalBarId(canvasId, pairs, color, el);
-                    } else if (chart.typeIdx % 3 === 1) {
-                        self.renderDoughnutId(canvasId, pairs, el);
-                    } else {
-                        self.renderVerticalBarId(canvasId, pairs, color, el);
-                    }
-                }
-            });
+            self.showCumTagsChart = self.filteredCompetitions.length > 0 && self.categoriesWithTags.length > 0;
+            self.showHeatmapChart = self.filteredCompetitions.length > 0 && self.categoriesWithTags.length >= 2;
         };
-
-        self.renderHorizontalBar = (refName, pairs, color) => {
-            var el = (self.refs && self.refs[refName]) || document.getElementById(refName);
-            if (!el) return;
-            self.renderHorizontalBarId(refName, pairs, color, el);
-        };
-
-        self.renderHorizontalBarId = (id, pairs, color, elementObj) => {
-            var el = elementObj || document.getElementById(id);
-            if (!el) return;
-            var labels = pairs.map((p) => p[0]);
-            var dataVals = pairs.map((p) => p[1]);
-
-            if (self.charts[id] && self.charts[id].ctx && self.charts[id].ctx.canvas === el) {
-                self.charts[id].data.labels = labels;
-                self.charts[id].data.datasets[0].data = dataVals;
-                self.charts[id].update();
-            } else {
-                if (self.charts[id]) {
-                    self.charts[id].destroy();
-                }
-                self.charts[id] = new Chart(el, {
-                    type: "horizontalBar",
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            data: dataVals,
-                            backgroundColor: color || "#2185d0",
-                            borderWidth: 0
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        legend: {
-                            display: false
-                        },
-                        scales: {
-                            xAxes: [{
-                                ticks: {
-                                    beginAtZero: true,
-                                    precision: 0
-                                }
-                            }],
-                            yAxes: [{
-                                gridLines: {
-                                    display: false
-                                }
-                            }]
-                        }
-                    }
-                });
-            }
-        };
-
-        self.renderDoughnutId = (id, pairs, elementObj) => {
-            var el = elementObj || document.getElementById(id);
-            if (!el) return;
-            var labels = pairs.map((p) => p[0]);
-            var dataVals = pairs.map((p) => p[1]);
-
-            if (self.charts[id] && self.charts[id].ctx && self.charts[id].ctx.canvas === el) {
-                self.charts[id].data.labels = labels;
-                self.charts[id].data.datasets[0].data = dataVals;
-                self.charts[id].data.datasets[0].backgroundColor = labels.map((_, i) => {
-                    return PALETTE[(i + 5) % PALETTE.length];
-                });
-                self.charts[id].update();
-            } else {
-                if (self.charts[id]) {
-                    self.charts[id].destroy();
-                }
-                self.charts[id] = new Chart(el, {
-                    type: "doughnut",
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            data: dataVals,
-                            backgroundColor: labels.map((_, i) => {
-                                return PALETTE[(i + 5) % PALETTE.length];
-                            })
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        cutoutPercentage: 55,
-                        legend: {
-                            position: "right",
-                            labels: {
-                                boxWidth: 12,
-                                fontSize: 11
-                            }
-                        }
-                    }
-                });
-            }
-        };
-
-        self.renderVerticalBarId = (id, pairs, color, elementObj) => {
-            var el = elementObj || document.getElementById(id);
-            if (!el) return;
-            var labels = pairs.map((p) => p[0]);
-            var dataVals = pairs.map((p) => p[1]);
-
-            if (self.charts[id] && self.charts[id].ctx && self.charts[id].ctx.canvas === el) {
-                self.charts[id].data.labels = labels;
-                self.charts[id].data.datasets[0].data = dataVals;
-                self.charts[id].update();
-            } else {
-                if (self.charts[id]) {
-                    self.charts[id].destroy();
-                }
-                self.charts[id] = new Chart(el, {
-                    type: "bar",
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            data: dataVals,
-                            backgroundColor: color || "#a333c8",
-                            borderWidth: 0
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        legend: {
-                            display: false
-                        },
-                        scales: {
-                            yAxes: [{
-                                ticks: {
-                                    beginAtZero: true,
-                                    precision: 0
-                                }
-                            }],
-                            xAxes: [{
-                                gridLines: {
-                                    display: false
-                                }
-                            }]
-                        }
-                    }
-                });
-            }
-        };
-
-        // Export currently filtered competitions to CSV
-        self.downloadCSV = () => {
-            var rows = self.filteredCompetitions;
-            var esc = (v) => {
-                var s = String(v == null ? '' : v);
-                // Escape leading characters that could be interpreted as formulas in Excel
-                if (/^[=+\-@\t\r]/.test(s)) {
-                    s = "'" + s;
-                }
-                return '"' + s.replace(/"/g, '""') + '"';
-            };
-            var headers = ["id", "title", "organizer", "reward", "url"].concat(self.availableCategories).map(esc);
-            var lines = [headers.join(",")];
-            rows.forEach((c) => {
-                var rowData = [
-                    c.id,
-                    esc(c.title),
-                    esc(c.organizer),
-                    esc(c.reward),
-                    esc(c.url)
-                ];
-                self.availableCategories.forEach((cat) => {
-                    rowData.push(esc((c.tagsByCategory[cat] || []).join("; ")));
-                });
-                lines.push(rowData.join(","));
-            });
-            var blob = new Blob(["\uFEFF" + lines.join("\r\n")], {
-                type: "text/csv;charset=utf-8;"
-            });
-            var link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = "codabench_competitions_filtered.csv";
-            link.click();
-            URL.revokeObjectURL(link.href);
-        };
-
-        self.on('unmount', () => {
-            Object.keys(self.charts).forEach((id) => {
-                if (self.charts[id]) {
-                    self.charts[id].destroy();
-                }
-            });
-            self.charts = {};
-        });
     </script>
-
-    <style type="text/stylus" scoped>
-        .kpi-stats
-            display flex !important
-            justify-content space-around !important
-            flex-wrap wrap !important
-            margin-bottom 1.2rem !important
-
-        .chart-card
-            padding 12px 14px !important
-
-        .table-card
-            padding 14px !important
-            margin-top 16px !important
-
-        .table-top-bar
-            display flex
-            justify-content space-between
-            align-items center
-            margin-bottom 12px
-
-        .table-scroll-wrap
-            max-height 480px
-            overflow-y auto
-
-        .pagination-footer
-            display flex
-            justify-content center
-            margin-top 12px
-        .dashboard-container
-            margin-top 15px
-            margin-bottom 40px
-
-        .canvas-wrap
-            position relative
-            height 250px
-            width 100%
-    </style>
 </dashboard>

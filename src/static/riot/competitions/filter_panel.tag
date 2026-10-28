@@ -44,15 +44,16 @@
 
     <!-- Order By (only if opts.show_ordering is true) -->
     <div class="ui segment" if="{ opts.show_ordering }">
-      <h5 class="ui header" style="margin-bottom: 8px;">Order By</h5>
-      <div class="filter-item">
-        <label><input type="radio" name="order" value="popular" checked="{ filter_state.ordering === 'popular' }" onchange="{ set_ordering }"> Most popular first</label>
-      </div>
-      <div class="filter-item">
-        <label><input type="radio" name="order" value="recent" checked="{ filter_state.ordering === 'recent' }" onchange="{ set_ordering }"> Recently added first</label>
-      </div>
-      <div class="filter-item">
-        <label><input type="radio" name="order" value="with_most_submissions" checked="{ filter_state.ordering === 'with_most_submissions' }" onchange="{ set_ordering }"> With most submissions first</label>
+      <h5 class="ui header" style="margin-bottom: 8px;">Order by</h5>
+      <div class="ui fluid selection dropdown" ref="order_by_dropdown">
+        <input type="hidden" name="order" value="{ filter_state.ordering || 'recent' }">
+        <i class="dropdown icon"></i>
+        <div class="text">{ get_ordering_label(filter_state.ordering) }</div>
+        <div class="menu">
+          <div class="item" data-value="recent">Recently Added</div>
+          <div class="item" data-value="popular">Most Popular</div>
+          <div class="item" data-value="with_most_submissions">Most Submissions</div>
+        </div>
       </div>
     </div>
 
@@ -84,7 +85,7 @@
         { cat.name }
         <i class="dropdown icon" style="float: right;"></i>
       </h5>
-      <div class="content { open_cats[cat.name] !== false ? 'active' : '' }" data-catname="{ cat.name }" style="margin-top: 10px;">
+      <div class="content { open_cats[cat.name] !== false ? 'active' : '' }" data-catname="{ cat.name }" style="margin-top: 4px;">
         <div class="tag-pills-container">
           <button type="button"
                   class="tag-pill { active: is_cat_no_tags_checked(cat) }"
@@ -106,7 +107,7 @@
 
     <!-- Reset / Clear Filters -->
     <div class="ui secondary segment">
-      <button type="button" class="ui fluid basic compact button" onclick="{ reset_all_filters }">
+      <button type="button" class="ui fluid basic compact button clear-filters-btn" onclick="{ reset_all_filters }">
         <i class="undo icon"></i> Clear All Filters
       </button>
     </div>
@@ -133,7 +134,7 @@
             filter_mode: initial.filter_mode || initial.mode || 'or',
             mode: initial.filter_mode || initial.mode || 'or',
             visibility: initial.visibility || 'public',
-            ordering: initial.ordering || '',
+            ordering: initial.ordering || (opts.show_ordering ? 'recent' : ''),
             start_date: initial.start_date || '',
             end_date: initial.end_date || '',
             startDate: initial.startDate || (initial.start_date ? new Date(initial.start_date) : null),
@@ -146,7 +147,7 @@
             selected_tags_by_cat: initial.selected_tags_by_cat ? JSON.parse(JSON.stringify(initial.selected_tags_by_cat)) : {}
         }
 
-        if (!force_clean && opts.show_ordering && !defaults.ordering && typeof window !== "undefined" && window.location) {
+        if (!force_clean && opts.show_ordering && typeof window !== "undefined" && window.location) {
             var urlParams = new URLSearchParams(window.location.search)
             if (urlParams.has("ordering")) {
                 var ord = urlParams.get("ordering")
@@ -157,6 +158,12 @@
         }
 
         return defaults
+    }
+
+    self.get_ordering_label = function (val) {
+        if (val === 'popular') return 'Most Popular'
+        if (val === 'with_most_submissions') return 'Most Submissions'
+        return 'Recently Added'
     }
 
     self.filter_state = self.get_initial_filter_state(false)
@@ -189,18 +196,20 @@
     }
 
     // Filter match mode
-    self.set_filter_mode = function (mode) {
+    self.set_filter_mode = function (mode, e) {
+        if (e && e.currentTarget && e.currentTarget.blur) e.currentTarget.blur()
         if (self.filter_state.filter_mode === mode) return
         self.filter_state.filter_mode = mode
         self.filter_state.mode = mode
         self.update()
         self.notify_filter_change()
     }
-    self.set_mode_or = function () { self.set_filter_mode('or') }
-    self.set_mode_and = function () { self.set_filter_mode('and') }
+    self.set_mode_or = function (e) { self.set_filter_mode('or', e) }
+    self.set_mode_and = function (e) { self.set_filter_mode('and', e) }
 
     // Visibility
-    self.set_visibility = function (val) {
+    self.set_visibility = function (val, e) {
+        if (e && e.currentTarget && e.currentTarget.blur) e.currentTarget.blur()
         if (self.filter_state.visibility === val) return
         self.filter_state.visibility = val
         self.update()
@@ -208,8 +217,10 @@
     }
 
     // Order By
-    self.set_ordering = function (e) {
-        self.filter_state.ordering = e.target.value
+    self.set_ordering = function (val) {
+        if (!val) val = 'recent'
+        if (self.filter_state.ordering === val) return
+        self.filter_state.ordering = val
         self.update()
         self.notify_filter_change()
     }
@@ -240,6 +251,7 @@
     // Category None toggle
     self.toggle_category_no_tags = function (cat, e) {
         if (e && e.preventDefault) e.preventDefault()
+        if (e && e.currentTarget && e.currentTarget.blur) e.currentTarget.blur()
         var is_checked
         if (e && e.target && typeof e.target.checked === 'boolean') {
             is_checked = e.target.checked
@@ -272,6 +284,7 @@
     // Specific tag toggle
     self.toggle_tag = function (cat_name, tag, e) {
         if (e && e.preventDefault) e.preventDefault()
+        if (e && e.currentTarget && e.currentTarget.blur) e.currentTarget.blur()
         var is_checked
         if (e && e.target && typeof e.target.checked === 'boolean') {
             is_checked = e.target.checked
@@ -335,7 +348,8 @@
     }
 
     // Reset filters
-    self.reset_all_filters = function () {
+    self.reset_all_filters = function (e) {
+        if (e && e.currentTarget && e.currentTarget.blur) e.currentTarget.blur()
         self.filter_state = self.get_initial_filter_state(true)
 
         var cats = self.get_categories()
@@ -359,6 +373,9 @@
         if (self.refs.end_calendar) {
             $(self.refs.end_calendar).calendar('clear')
         }
+        if (self.refs.order_by_dropdown) {
+            $(self.refs.order_by_dropdown).dropdown('set selected', 'recent')
+        }
 
         $(self.root).find('input[type="radio"]').prop('checked', false)
         $(self.root).find('input[type="checkbox"]').prop('checked', false)
@@ -368,6 +385,18 @@
     }
     self.resetFilters = self.reset_all_filters
     self.clear_all_filters = self.reset_all_filters
+
+    self.init_order_by_dropdown = function () {
+        if (!opts.show_ordering || !self.refs.order_by_dropdown) return
+        var $dropdown = $(self.refs.order_by_dropdown)
+        $dropdown.dropdown({
+            onChange: function (value, text, item) {
+                self.set_ordering(value)
+            }
+        })
+        var current_val = self.filter_state.ordering || 'recent'
+        $dropdown.dropdown('set selected', current_val)
+    }
 
     self.init_calendars = function () {
         var general_calendar_options = {
@@ -461,6 +490,7 @@
 
     self.one("mount", function () {
         self.init_calendars()
+        self.init_order_by_dropdown()
         self.fetch_tags()
         setTimeout(self.init_accordions, 50)
     })
@@ -480,17 +510,79 @@
     competition-filter-panel
       display block
 
-    .filters-panel
+    .filters-panel.ui.segments
       width 100%
       background #fff
-      border-radius 4px
+      border 1px solid #e3e7ec !important
+      border-radius 10px !important
+      box-shadow 0 1px 2px rgba(0, 0, 0, 0.04) !important
       margin-top 0 !important
       margin-bottom 15px
+      overflow hidden
+
+      > .ui.segment
+        background #fff !important
+        border-top 1px solid #f1f4f7 !important
+        padding 12px 14px !important
+        margin 0 !important
+
+        &:first-child
+          border-top none !important
+
+      .ui.header
+        color #1b1b1b !important
+        font-family inherit !important
+        font-weight 700 !important
+        font-size 15px !important
+        letter-spacing -0.01em
+        margin 0 0 8px 0
+
+      h4.ui.header
+        font-size 15px !important
+
+      h5.ui.header
+        font-size 14.5px !important
+
+      // Search & Date Inputs
+      .ui.input input
+        border 1px solid #e3e7ec !important
+        border-radius 6px !important
+        font-size 13px
+        color #1b1b1b
+        background #fff
+        padding 8px 10px 8px 34px !important
+        transition border-color 0.15s ease, box-shadow 0.15s ease
+
+        &:focus
+          border-color #43637a !important
+          box-shadow 0 0 0 2px rgba(67, 99, 122, 0.15) !important
+          outline none
+
+      .ui.icon.input > i.icon
+        color #2e2e2e !important
+        opacity 0.5 !important
+        transition opacity 0.3s ease !important
+
+      .ui.icon.input input:focus ~ i.icon
+        opacity 0.85 !important
 
       .filter-item
         display block !important
         margin-bottom 6px !important
         font-size 13px
+        color #2e2e2e
+
+        label
+          cursor pointer
+          color #2e2e2e
+          font-size 13px
+
+          &:hover
+            color #1b1b1b
+
+        &.disabled
+          opacity 0.5
+          pointer-events none
 
       .filter-count
         color #888
@@ -505,15 +597,39 @@
       .category-accordion
         margin 0 !important
         border-radius 0 !important
+        border-top 1px solid #f1f4f7 !important
+        background #fff !important
 
         .title
-          font-size 13px !important
-          font-weight bold !important
+          font-family inherit !important
+          font-size 14.5px !important
+          font-weight 700 !important
+          color #1b1b1b !important
           cursor pointer
           user-select none
+          display flex
+          align-items center
+          justify-content space-between
+          padding 2px 0
+          transition color 0.15s ease
+
+          &:hover
+            color #1b1b1b !important
+
+          i.dropdown.icon
+            float none !important
+            color #555 !important
+            opacity 0.7
+            margin 0
+            font-size 11px
+            transition transform 0.2s ease
+
+          &.active i.dropdown.icon
+            transform rotate(90deg)
 
         .content
-          padding-top 8px !important
+          padding-top 2px !important
+          padding-bottom 2px !important
 
       .mode-pills-container
         display flex
@@ -538,35 +654,56 @@
         display inline-flex
         align-items center
         gap 4px
-        padding 4px 8px
+        padding 4px 9px
         font-size 12px
-        font-weight normal
+        font-weight 500
         line-height 1.2
-        color #374151
-        background-color #f3f4f6
-        border 1px solid #e5e7eb
-        border-radius 4px
+        color var(--cb-navy-700, #36536d)
+        background-color #f1f4f7
+        border 1px solid #e2e8f0
+        border-radius 6px
         cursor pointer
         transition all 0.15s ease-in-out
         user-select none
-        outline none
-        box-shadow none
+        box-shadow none !important
         text-align left
         max-width 100%
 
         &:hover
-          background-color #e5e7eb
-          border-color #d1d5db
-          color #111827
+          background-color #e5ebf1
+          border-color #cbd5e1
+          color var(--cb-navy-900, #1b2f40)
+          box-shadow none !important
 
-        &:focus
-          outline none
+        &:focus,
+        &:active
+          background-color #f1f4f7 !important
+          border-color #e2e8f0 !important
+          color var(--cb-navy-700, #36536d) !important
+          outline none !important
+          box-shadow none !important
 
         &.active
-          background-color #1e88e5
-          border-color #1565c0
-          color #ffffff
-          box-shadow 0 1px 2px rgba(30, 136, 229, 0.25)
+          background-color #43637a !important
+          border-color #43637a !important
+          color #ffffff !important
+          box-shadow none !important
+
+          &:hover
+            background-color #2d3f4d !important
+            border-color #2d3f4d !important
+            opacity 0.95
+            color #ffffff !important
+            box-shadow none !important
+
+          &:focus,
+          &:active
+            background-color #43637a !important
+            border-color #43637a !important
+            color #ffffff !important
+            opacity 1 !important
+            box-shadow none !important
+            outline none !important
 
           .tag-pill-name
             color #ffffff
@@ -582,15 +719,47 @@
         .tag-pill-count
           font-size 10px
           line-height 1
-          padding 2px 4px
-          border-radius 3px
-          background-color #e5e7eb
-          color #4b5563
-          font-weight normal
+          padding 2px 5px
+          border-radius 4px
+          background-color #e2e8f0
+          color #475569
+          font-weight 600
           margin-left 2px
+
+      .clear-filters-btn
+        border 1px solid #e3e7ec !important
+        border-radius 4px !important
+        background-color #f8fafc !important
+        color #2e2e2e !important
+        font-weight 500 !important
+        font-size 13px !important
+        padding 9px 12px !important
+        box-shadow none !important
+        outline none !important
+        transition all 0.15s ease-in-out !important
+
+        i.icon
+          color #555 !important
+          opacity 0.85
+
+        &:hover
+          background-color #f1f4f7 !important
+          border-color #cbd5e1 !important
+          color #1b1b1b !important
+          box-shadow none !important
+          outline none !important
+
+        &:focus,
+        &:active
+          background-color #f8fafc !important
+          border-color #e3e7ec !important
+          color #2e2e2e !important
+          box-shadow none !important
+          outline none !important
 
       input[type="radio"],
       input[type="checkbox"]
-        margin-right 5px
+        margin-right 6px
+        accent-color #43637a
   </style>
 </competition-filter-panel>
