@@ -4,6 +4,9 @@
             <h3 class="ui header" style="margin: 0; color: #1b1b1b;">
                 Data Explorer
             </h3>
+            <button class="ui green button" onclick="{ downloadTabularCSV }">
+                <i class="icon download"></i>Download as CSV
+            </button>
         </div>
 
         <div class="explorer-controls-grid">
@@ -14,6 +17,7 @@
                     <div class="text">{ getDimLabel(customDim1) }</div>
                     <i class="dropdown icon"></i>
                     <div class="menu">
+                        <div class="item" data-value="competition">Competition</div>
                         <div class="item" data-value="organizer">Organizer</div>
                         <div class="item" data-value="has_reward">Has Reward</div>
                         <div class="item" data-value="created_year">Creation Year</div>
@@ -57,67 +61,24 @@
 
             <div class="control-item control-item-limit">
                 <label>Limit:</label>
-                <div class="custom-limit-group">
-                    <div class="ui selection dropdown custom-dropdown" ref="customLimitDropdown">
-                        <input type="hidden" name="custom_limit" value="{ customLimit }">
-                        <div class="text">{ getLimitLabel(customLimit) }</div>
-                        <i class="dropdown icon"></i>
-                        <div class="menu">
-                            <div class="item" data-value="5">Top 5</div>
-                            <div class="item" data-value="10">Top 10</div>
-                            <div class="item" data-value="15">Top 15</div>
-                            <div class="item" data-value="25">Top 25</div>
-                            <div class="item" data-value="50">Top 50</div>
-                            <div class="ui divider" style="margin: 4px 0;"></div>
-                            <div class="item" data-value="none">None (All)</div>
-                            <div class="item" data-value="custom">Custom...</div>
-                        </div>
-                    </div>
-                    <div class="ui input small custom-limit-input" if="{ customLimit === 'custom' }">
-                        <input type="number" min="1" max="5000" placeholder="20" value="{ customLimitValue }" oninput="{ onCustomLimitInput }">
-                    </div>
+                <div class="ui input custom-limit-input">
+                    <input type="number" min="1" max="5000" placeholder="All" value="{ customLimitValue }" oninput="{ onCustomLimitInput }">
                 </div>
             </div>
         </div>
 
         <!-- Split By Secondary Categories Selector (visible only when a breakdown is active) -->
-        <div class="split-by-subcontrols" if="{ isBreakdownActive && availableSecCategories.length > 0 }">
-            <div class="split-by-header">
-                <span class="split-by-title">
-                    <i class="tags icon"></i>
-                    Categories in Split by <strong>{ getDimLabel(customDim2).replace('Split by ', '') }</strong>
-                    <span class="split-by-count">({ getSelectedSecCount() } of { availableSecCategories.length } selected)</span>
-                </span>
-                <div class="split-by-actions">
-                    <button type="button" class="ui mini basic compact button" onclick="{ selectAllSplitCategories }">All</button>
-                    <button type="button" class="ui mini basic compact button" if="{ availableSecCategories.length > 5 }" onclick="{ selectTop5SplitCategories }">Top 5</button>
-                    <button type="button" class="ui mini basic compact button" if="{ availableSecCategories.length > 10 }" onclick="{ selectTop10SplitCategories }">Top 10</button>
-                    <button type="button" class="ui mini basic compact button" onclick="{ clearSplitCategories }">Reset</button>
-                </div>
-            </div>
-            <div class="split-by-pills">
-                <button type="button"
-                        class="tag-pill { active: isSecCategorySelected(val) }"
-                        each="{ val in availableSecCategories }"
-                        onclick="{ toggleSecCategory.bind(this, val) }">
-                    <span class="tag-pill-name">{ val }</span>
-                    <span class="tag-pill-count">{ getSecCategoryCount(val) }</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- Tabular Top Bar / Actions (when tabular view is selected) -->
-        <div class="table-top-bar tabular-top-bar" show="{ customChartType === 'tabular' }">
-            <h4 class="ui sub header" style="margin: 0; color: #4a5568; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">
-                Tabular View &middot; { !isBreakdownActive ? (tabularData1D || []).length + ' rows' : (tabularRows2D || []).length + ' rows × ' + (tabularCols2D || []).length + ' cols' }
-            </h4>
-            <button class="ui green button" onclick="{ downloadTabularCSV }">
-                <i class="icon download"></i>Download as CSV
+        <div class="split-by-pills" if="{ isBreakdownActive && availableSecCategories.length > 0 }">
+            <button type="button"
+                    class="tag-pill { active: isSecCategorySelected(val) }"
+                    each="{ val in availableSecCategories }"
+                    onclick="{ toggleSecCategory.bind(this, val) }">
+                { val }
             </button>
         </div>
 
         <!-- Visualization Display: Tabular View (1D) -->
-        <div class="custom-tabular-wrap" show="{ customChartType === 'tabular' && !isBreakdownActive }" style="max-height: 420px; margin-top: 8px;">
+        <div class="custom-tabular-wrap" show="{ customChartType === 'tabular' && !isBreakdownActive }" style="max-height: 420px; margin-top: 14px;">
             <table class="ui celled compact striped table">
                 <thead>
                     <tr>
@@ -146,7 +107,7 @@
         </div>
 
         <!-- Visualization Display: Tabular View (2D Breakdown) -->
-        <div class="custom-tabular-wrap" show="{ customChartType === 'tabular' && isBreakdownActive }" style="max-height: 420px; margin-top: 8px;">
+        <div class="custom-tabular-wrap" show="{ customChartType === 'tabular' && isBreakdownActive }" style="max-height: 420px; margin-top: 14px;">
             <table class="ui celled compact striped table">
                 <thead>
                     <tr>
@@ -193,8 +154,7 @@
         self.customDim1 = 'organizer';
         self.customDim2 = 'count';
         self.customChartType = 'horizontalBar';
-        self.customLimit = '10';
-        self.customLimitValue = 20;
+        self.customLimitValue = 10;
         self.isBreakdownActive = false;
 
         // Split By Category Selection State
@@ -213,6 +173,31 @@
         self.tabular2DSortDir = -1;
 
         var PALETTE = ["#2185d0", "#00b5ad", "#21ba45", "#fbbd08", "#f2711c", "#db2828", "#a333c8", "#e03997", "#767676"];
+
+        var DISTINCT_COLORS = [
+            "#2185d0", "#21ba45", "#f2711c", "#a333c8", "#db2828",
+            "#00b5ad", "#fbbd08", "#e03997", "#16a085", "#e67e22",
+            "#8e44ad", "#2980b9", "#27ae60", "#d35400", "#c0392b",
+            "#1abc9c", "#3498db", "#9b59b6", "#f39c12", "#e74c3c",
+            "#34495e", "#00cec9", "#6c5ce7", "#fd79a8", "#0984e3",
+            "#b2bec3", "#e17055", "#fdcb6e", "#636e72", "#d63031"
+        ];
+
+        function getDistinctColors(count) {
+            if (count <= DISTINCT_COLORS.length) {
+                return DISTINCT_COLORS.slice(0, count);
+            }
+            var list = DISTINCT_COLORS.slice();
+            var goldenRatio = 0.618033988749895;
+            var h = 0.15;
+            for (var i = DISTINCT_COLORS.length; i < count; i++) {
+                h = (h + goldenRatio) % 1;
+                var s = 65 + (i % 3) * 10;
+                var l = 45 + (i % 4) * 8;
+                list.push("hsl(" + Math.round(h * 360) + ", " + s + "%, " + l + "%)");
+            }
+            return list;
+        }
 
         self.format_number = function (num) {
             if (num === null || num === undefined) return "0";
@@ -363,19 +348,6 @@
         };
 
         // Split By Secondary Categories Selection Methods
-        self.getSelectedSecCount = function () {
-            if (!self.selectedSplitCategoriesMap) return 0;
-            var cnt = 0;
-            (self.availableSecCategories || []).forEach(function (k) {
-                if (self.selectedSplitCategoriesMap[k]) cnt++;
-            });
-            return cnt;
-        };
-
-        self.getSecCategoryCount = function (val) {
-            return (self.availableSecCounts && self.availableSecCounts[val]) || 0;
-        };
-
         self.isSecCategorySelected = function (val) {
             return self.selectedSplitCategoriesMap ? Boolean(self.selectedSplitCategoriesMap[val]) : false;
         };
@@ -398,49 +370,9 @@
             self.update();
         };
 
-        self.selectAllSplitCategories = function (e) {
-            if (e && e.preventDefault) e.preventDefault();
-            self.selectedSplitCategoriesMap = {};
-            (self.availableSecCategories || []).forEach(function (k) {
-                self.selectedSplitCategoriesMap[k] = true;
-            });
-            self.renderCustomChart();
-            self.update();
-        };
-
-        self.selectTop5SplitCategories = function (e) {
-            if (e && e.preventDefault) e.preventDefault();
-            self.selectedSplitCategoriesMap = {};
-            (self.availableSecCategories || []).slice(0, 5).forEach(function (k) {
-                self.selectedSplitCategoriesMap[k] = true;
-            });
-            self.renderCustomChart();
-            self.update();
-        };
-
-        self.selectTop10SplitCategories = function (e) {
-            if (e && e.preventDefault) e.preventDefault();
-            self.selectedSplitCategoriesMap = {};
-            (self.availableSecCategories || []).slice(0, 10).forEach(function (k) {
-                self.selectedSplitCategoriesMap[k] = true;
-            });
-            self.renderCustomChart();
-            self.update();
-        };
-
-        self.clearSplitCategories = function (e) {
-            if (e && e.preventDefault) e.preventDefault();
-            self.selectedSplitCategoriesMap = {};
-            var defaultCount = (self.availableSecCategories || []).length <= 8 ? (self.availableSecCategories || []).length : 8;
-            (self.availableSecCategories || []).slice(0, defaultCount).forEach(function (k) {
-                self.selectedSplitCategoriesMap[k] = true;
-            });
-            self.renderCustomChart();
-            self.update();
-        };
-
         self.getDimLabel = function (val) {
             if (!val) return "";
+            if (val === 'competition') return 'Competition';
             if (val === 'organizer') return 'Organizer';
             if (val === 'has_reward') return 'Has Reward';
             if (val === 'created_year') return 'Creation Year';
@@ -464,28 +396,24 @@
             return val;
         };
 
-        self.getLimitLabel = function (val) {
-            if (val === 'none') return 'None (All)';
-            if (val === 'custom') return 'Custom';
-            return 'Top ' + val;
-        };
-
         self.getEffectiveLimit = function () {
-            if (self.customLimit === 'none') return Infinity;
-            if (self.customLimit === 'custom') return Math.max(1, parseInt(self.customLimitValue, 10) || 10);
-            return parseInt(self.customLimit, 10) || 10;
+            if (self.customLimitValue === '' || self.customLimitValue === null || self.customLimitValue === undefined) {
+                return Infinity;
+            }
+            var n = parseInt(self.customLimitValue, 10);
+            return (!isNaN(n) && n > 0) ? n : Infinity;
         };
 
         self.onCustomLimitInput = function (e) {
-            var val = parseInt(e.target.value, 10);
-            if (!isNaN(val) && val > 0) {
-                self.customLimitValue = val;
-                self.renderCustomChart();
+            self.customLimitValue = e.target.value;
+            self.renderCustomChart();
+            if (self.customChartType === 'tabular') {
                 self.update();
             }
         };
 
         function extractValues(comp, dim) {
+            if (dim === "competition") return [comp.title || ("Competition #" + comp.id) || "Unknown"];
             if (dim === "organizer") return [comp.organizer || "Unknown"];
             if (dim === "has_reward") return [comp.has_reward ? "Reward" : "No Reward"];
             if (dim === "created_year") {
@@ -586,10 +514,21 @@
                 var el = self.refs.chCustom || document.getElementById("chCustom");
                 if (!el) return;
 
+                var fullLabels = entries.map(function (e) { return e.key; });
                 var labels = entries.map(function (e) {
                     return e.key.length > 30 ? e.key.substring(0, 27) + "..." : e.key;
                 });
                 var dataVals = entries.map(function (e) { return e.val; });
+
+                var tooltipOpt = {
+                    callbacks: {
+                        title: function (tooltipItems) {
+                            if (!tooltipItems || tooltipItems.length === 0) return "";
+                            var idx = tooltipItems[0].index;
+                            return fullLabels[idx] || tooltipItems[0].label || "";
+                        }
+                    }
+                };
 
                 var config = null;
                 if (chartType === "horizontalBar" || chartType === "bar") {
@@ -603,6 +542,7 @@
                             responsive: true,
                             maintainAspectRatio: false,
                             legend: { display: false },
+                            tooltips: tooltipOpt,
                             scales: chartType === "horizontalBar" ? {
                                 xAxes: [{ ticks: { beginAtZero: true, precision: 0 } }],
                                 yAxes: [{ gridLines: { display: false }, ticks: { fontSize: 11, fontColor: "#334155" } }]
@@ -631,6 +571,7 @@
                             responsive: true,
                             maintainAspectRatio: false,
                             legend: { display: false },
+                            tooltips: tooltipOpt,
                             elements: { line: { tension: 0 } },
                             scales: {
                                 yAxes: [{ ticks: { beginAtZero: true, precision: 0 } }],
@@ -645,13 +586,14 @@
                             labels: labels,
                             datasets: [{
                                 data: dataVals,
-                                backgroundColor: labels.map(function (_, i) { return PALETTE[i % PALETTE.length]; })
+                                backgroundColor: getDistinctColors(labels.length)
                             }]
                         },
                         options: {
                             responsive: true,
                             maintainAspectRatio: false,
-                            legend: { position: "right", labels: { boxWidth: 12, fontSize: 11 } }
+                            legend: { position: "right", labels: { boxWidth: 12, fontSize: 11 } },
+                            tooltips: tooltipOpt
                         }
                     };
                 }
@@ -770,6 +712,15 @@
                         maintainAspectRatio: false,
                         legend: { position: "top", labels: { boxWidth: 12, fontSize: 11 } },
                         elements: { line: { tension: 0 } },
+                        tooltips: {
+                            callbacks: {
+                                title: function (tooltipItems) {
+                                    if (!tooltipItems || tooltipItems.length === 0) return "";
+                                    var idx = tooltipItems[0].index;
+                                    return sortedPrimaries[idx] || tooltipItems[0].label || "";
+                                }
+                            }
+                        },
                         scales: effType === "horizontalBar" ? {
                             xAxes: [{ ticks: { beginAtZero: true, precision: 0 } }],
                             yAxes: [{ gridLines: { display: false }, ticks: { fontSize: 11, fontColor: "#334155" } }]
@@ -805,6 +756,12 @@
                         if (self.customDim2.indexOf("breakdown_") === 0 && !avBreakdowns.includes(self.customDim2)) {
                             self.customDim2 = "count";
                         }
+                        if (v === 'competition' && self.customDim2 === 'count') {
+                            self.customDim2 = 'participants_sum';
+                            if (self.refs.customDim2Dropdown) {
+                                $(self.refs.customDim2Dropdown).dropdown('set selected', 'participants_sum');
+                            }
+                        }
                         self.renderCustomChart();
                         self.update();
                     }
@@ -829,15 +786,6 @@
                     getVal: function () { return self.customChartType; },
                     setVal: function (v) {
                         self.customChartType = v;
-                        self.renderCustomChart();
-                        self.update();
-                    }
-                },
-                {
-                    ref: 'customLimitDropdown',
-                    getVal: function () { return self.customLimit; },
-                    setVal: function (v) {
-                        self.customLimit = v;
                         self.renderCustomChart();
                         self.update();
                     }

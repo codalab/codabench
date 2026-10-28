@@ -54,7 +54,7 @@
                     <h4 class="chart-title">Tag Co-occurrence Heatmap</h4>
                     <div class="chart-controls">
                         <div class="control-group">
-                            <span class="control-label">Rows (Category 1):</span>
+                            <span class="control-label">Rows:</span>
                             <div class="ui selection dropdown chart-dropdown" ref="heatmapCat1Dropdown">
                                 <input type="hidden" name="heatmap_cat1" value="{ heatmapCat1 }">
                                 <div class="text">{ heatmapCat1 || 'Category 1' }</div>
@@ -65,7 +65,7 @@
                             </div>
                         </div>
                         <div class="control-group">
-                            <span class="control-label">Cols (Category 2):</span>
+                            <span class="control-label">Cols:</span>
                             <div class="ui selection dropdown chart-dropdown" ref="heatmapCat2Dropdown">
                                 <input type="hidden" name="heatmap_cat2" value="{ heatmapCat2 }">
                                 <div class="text">{ heatmapCat2 || 'Category 2' }</div>
@@ -78,7 +78,7 @@
                         <div class="control-group">
                             <div class="ui checkbox" ref="heatmapNormalizeCheckbox" style="margin-left: 8px;">
                                 <input type="checkbox" ref="heatmapNormalizeInput" checked="{ heatmapNormalize }" onchange="{ onHeatmapNormalizeChange }">
-                                <label style="cursor: pointer; user-select: none; font-weight: 600;">Normalize</label>
+                                <label class="control-label" style="cursor: pointer; user-select: none;">Normalize</label>
                             </div>
                         </div>
                     </div>
@@ -102,6 +102,31 @@
         var PALETTE = ["#2185d0", "#00b5ad", "#21ba45", "#fbbd08", "#f2711c", "#db2828", "#a333c8", "#e03997", "#767676"];
         var CUM_PALETTE = ["#2980b9", "#27ae60", "#e67e22", "#8e44ad", "#e74c3c", "#16a085", "#f39c12", "#d35400", "#2c3e50", "#c0392b"];
 
+        var DISTINCT_COLORS = [
+            "#2185d0", "#21ba45", "#f2711c", "#a333c8", "#db2828",
+            "#00b5ad", "#fbbd08", "#e03997", "#16a085", "#e67e22",
+            "#8e44ad", "#2980b9", "#27ae60", "#d35400", "#c0392b",
+            "#1abc9c", "#3498db", "#9b59b6", "#f39c12", "#e74c3c",
+            "#34495e", "#00cec9", "#6c5ce7", "#fd79a8", "#0984e3",
+            "#b2bec3", "#e17055", "#fdcb6e", "#636e72", "#d63031"
+        ];
+
+        function getDistinctColors(count) {
+            if (count <= DISTINCT_COLORS.length) {
+                return DISTINCT_COLORS.slice(0, count);
+            }
+            var list = DISTINCT_COLORS.slice();
+            var goldenRatio = 0.618033988749895;
+            var h = 0.15;
+            for (var i = DISTINCT_COLORS.length; i < count; i++) {
+                h = (h + goldenRatio) % 1;
+                var s = 65 + (i % 3) * 10;
+                var l = 45 + (i % 4) * 8;
+                list.push("hsl(" + Math.round(h * 360) + ", " + s + "%, " + l + "%)");
+            }
+            return list;
+        }
+
         self.getCategoryChartType = function (cat) {
             return self.categoryChartTypes[cat] || "horizontalBar";
         };
@@ -109,11 +134,12 @@
         self.onChangeCategoryType = function (cat, type, e) {
             if (e) e.preventDefault();
             self.categoryChartTypes[cat] = type;
-            self.renderCharts();
+            self.renderCategoryCharts();
             self.update();
         };
 
         self.onHeatmapNormalizeChange = function (e) {
+            if (e) e.preventUpdate = true;
             self.heatmapNormalize = Boolean(e && e.target && e.target.checked);
             self.renderHeatmapChart();
         };
@@ -169,6 +195,9 @@
                 if (self.charts[canvasId] && self.charts[canvasId].config && self.charts[canvasId].config.type === chartType && self.charts[canvasId].ctx && self.charts[canvasId].ctx.canvas === el) {
                     self.charts[canvasId].data.labels = labels;
                     self.charts[canvasId].data.datasets[0].data = dataVals;
+                    if (chartType === "doughnut") {
+                        self.charts[canvasId].data.datasets[0].backgroundColor = getDistinctColors(labels.length);
+                    }
                     self.charts[canvasId].update();
                 } else {
                     if (self.charts[canvasId]) self.charts[canvasId].destroy();
@@ -198,7 +227,7 @@
                                 datasets: [{
                                     label: "Competitions",
                                     data: dataVals,
-                                    backgroundColor: labels.map(function (_, i) { return PALETTE[(i + 5) % PALETTE.length]; })
+                                    backgroundColor: getDistinctColors(labels.length)
                                 }]
                             },
                             options: {
@@ -322,7 +351,7 @@
                     label: t + " (" + tagTotals[t] + ")",
                     data: series,
                     borderColor: col,
-                    backgroundColor: "transparent",
+                    backgroundColor: col,
                     borderWidth: 2,
                     pointRadius: months.length > 36 ? 0 : 2,
                     pointHoverRadius: 4,
@@ -582,7 +611,6 @@
                     setVal: function (v) {
                         self.selectedCumCat = v;
                         self.renderCumTagsChart();
-                        self.update();
                     }
                 },
                 {
@@ -591,7 +619,6 @@
                     setVal: function (v) {
                         self.heatmapCat1 = v;
                         self.renderHeatmapChart();
-                        self.update();
                     }
                 },
                 {
@@ -600,7 +627,6 @@
                     setVal: function (v) {
                         self.heatmapCat2 = v;
                         self.renderHeatmapChart();
-                        self.update();
                     }
                 }
             ];
@@ -634,14 +660,43 @@
             self.charts = {};
         };
 
+        self.lastFilteredRows = null;
+        self.lastActiveTab = null;
+        self.lastCardsLen = null;
+        self.lastShowCum = null;
+        self.lastShowHeat = null;
+
         self.on('mount', function () {
             initDropdowns();
+            var rows = (opts.p && opts.p.filteredCompetitions) || [];
+            self.lastFilteredRows = rows;
+            self.lastActiveTab = opts.p && opts.p.activeTab;
+            self.lastCardsLen = (opts.p && opts.p.chartCards && opts.p.chartCards.length) || 0;
+            self.lastShowCum = Boolean(opts.p && opts.p.showCumTagsChart);
+            self.lastShowHeat = Boolean(opts.p && opts.p.showHeatmapChart);
             self.renderCharts();
         });
 
         self.on('updated', function () {
             initDropdowns();
-            self.renderCharts();
+            var rows = (opts.p && opts.p.filteredCompetitions) || [];
+            var activeTab = opts.p && opts.p.activeTab;
+            var cardsLen = (opts.p && opts.p.chartCards && opts.p.chartCards.length) || 0;
+            var showCum = Boolean(opts.p && opts.p.showCumTagsChart);
+            var showHeat = Boolean(opts.p && opts.p.showHeatmapChart);
+
+            if (self.lastFilteredRows !== rows ||
+                self.lastActiveTab !== activeTab ||
+                self.lastCardsLen !== cardsLen ||
+                self.lastShowCum !== showCum ||
+                self.lastShowHeat !== showHeat) {
+                self.lastFilteredRows = rows;
+                self.lastActiveTab = activeTab;
+                self.lastCardsLen = cardsLen;
+                self.lastShowCum = showCum;
+                self.lastShowHeat = showHeat;
+                self.renderCharts();
+            }
         });
 
         self.on('unmount', function () {

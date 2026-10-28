@@ -23,9 +23,9 @@
             <main class="dashboard-main">
                 <!-- Navigation Tabs (Full width of the main content, excluding filter sidebar) -->
                 <div class="ui tiny fluid three secondary pointing tabular menu details-menu dashboard-tabs-menu">
-                    <a class="item { active: activeTab === 'overview' }" onclick="{ setActiveTab.bind(this, 'overview') }">Overview</a>
-                    <a class="item { active: activeTab === 'tags' }" onclick="{ setActiveTab.bind(this, 'tags') }">Tags Statistics</a>
-                    <a class="item { active: activeTab === 'explorer' }" onclick="{ setActiveTab.bind(this, 'explorer') }">Data Exploration</a>
+                    <div class="item { active: activeTab === 'overview' }" onclick="{ setActiveTab.bind(this, 'overview') }">Overview</div>
+                    <div class="item { active: activeTab === 'tags' }" onclick="{ setActiveTab.bind(this, 'tags') }">Tags Statistics</div>
+                    <div class="item { active: activeTab === 'explorer' }" onclick="{ setActiveTab.bind(this, 'explorer') }">Data Exploration</div>
                 </div>
 
                 <!-- Show when there are no competitions matching filters -->

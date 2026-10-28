@@ -75,22 +75,19 @@
             <!-- 2. Top Organizers (Full width) -->
             <div class="dashboard-chart-card full-width" if="{ opts.p.showOrgsChart }">
                 <div class="chart-header">
-                    <h4 class="chart-title">
-                        <i class="chart bar icon"></i>
-                        Top Organizers
-                    </h4>
+                    <h4 class="chart-title">Top Organizers</h4>
                 </div>
                 <div class="canvas-wrap canvas-wrap-orgs">
                     <canvas id="chOrgs" ref="chOrgs"></canvas>
                 </div>
             </div>
 
-            <!-- 3. Cumulative Growth (Full width) -->
+            <!-- 3. Cumulative Competition Launches Over Time (Full width) -->
             <div class="dashboard-chart-card full-width" if="{ opts.p.filteredCompetitions.length > 0 }">
                 <div class="chart-header">
-                    <h4 class="chart-title">Cumulative Growth</h4>
+                    <h4 class="chart-title">Cumulative Competition Launches Over Time</h4>
                 </div>
-                <div class="canvas-wrap">
+                <div class="canvas-wrap canvas-wrap-cum">
                     <canvas id="chCumulativeGrowth" ref="chCumulativeGrowth"></canvas>
                 </div>
             </div>
@@ -338,7 +335,7 @@
                     data: {
                         labels: months,
                         datasets: [{
-                            label: "Cumulative Competitions",
+                            label: "Cumulative Competition Launches",
                             data: cumData,
                             borderColor: "#2980b9",
                             backgroundColor: "rgba(41, 128, 185, 0.08)",
