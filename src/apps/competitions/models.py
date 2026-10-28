@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 class TagCategory(models.Model):
-    name = models.CharField(max_length=256, unique=True)
+    name = models.CharField(max_length=256, unique=True, default="Other")
 
     class Meta:
         verbose_name_plural = "Tag categories"
@@ -34,7 +34,7 @@ class TagCategory(models.Model):
         return self.name
 
 class Tag(models.Model):
-    name = models.CharField(max_length=256)
+    name = models.CharField(max_length=256, default="Other")
     category = models.ForeignKey(TagCategory, on_delete=models.CASCADE, related_name='tags')
 
     class Meta:
