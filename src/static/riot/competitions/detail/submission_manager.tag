@@ -179,11 +179,10 @@
                         <!--  run: status = submitting auto_run = false  -->
                         <!--  rerun: else   -->
                         <span
-                            data-tooltip="{ submission.status === 'Submitting' && !submission.auto_run ? 'Run Submission' : 'Rerun Submission' }"
+                            data-tooltip="{ is_manual_run(submission) ? (submission.has_children ? 'Run all remaining children' : 'Run Submission') : 'Rerun Submission' }"
                             data-inverted=""
-                            onclick="{ submission.status === 'Submitting' && !submission.auto_run ? run_submission.bind(this, submission) : rerun_submission.bind(this, submission) }">
-                            <i
-                                class="icon { submission.status === 'Submitting' && !submission.auto_run ? 'green play' : 'purple history' }"></i>
+                            onclick="{ is_manual_run(submission) ? run_submission.bind(this, submission) : rerun_submission.bind(this, submission) }">
+                            <i class="icon { is_manual_run(submission) ? 'green play' : 'purple history' }"></i>
                         </span>
                         <!-- resubmit on current tasks (re-run keeps the original task) -->
                         <span if="{ _.includes(['Finished', 'Failed', 'Cancelled'], submission.status) }"
@@ -287,7 +286,12 @@
                                 <td if="{ has_multiple_tasks(submission) }">{ child.task ? child.task.name : '' }</td>
                                 <td>{ child.participant_group_name || '-' }</td>
                                 <td>{ pretty_date(child.created_when) }</td>
-                                <td>{ child.status }</td>
+                                <td class="right aligned collapsing">
+                                    { child.status }
+                                    <sup if="{ pending_info(child) }" data-tooltip="{ pending_info(child).message }" data-inverted="">
+                                        <i class="question circle icon" style="color: { pending_info(child).color };"></i>
+                                    </sup>
+                                </td>
                                 <td>{ get_score(child) }</td>
 
                                 <td if="{ child.is_soft_deleted }">
@@ -301,11 +305,10 @@
                                 <td class="center aligned" if="{ !child.is_soft_deleted }">
                                     <virtual if="{ opts.admin}">
                                         <span
-                                            data-tooltip="{ child.status === 'Submitting' && !child.auto_run ? 'Run Submission' : 'Rerun Submission' }"
+                                            data-tooltip="{ child.status === 'Submitting' && !child.auto_run ? 'Run this task' : 'Rerun Submission' }"
                                             data-inverted=""
                                             onclick="{ child.status === 'Submitting' && !child.auto_run ? run_submission.bind(this, child) : rerun_submission.bind(this, child) }">
-                                            <i
-                                                class="icon { child.status === 'Submitting' && !child.auto_run ? 'green play' : 'purple history' }"></i>
+                                            <i class="icon { child.status === 'Submitting' && !child.auto_run ? 'green play' : 'purple history' }"></i>
                                         </span>
                                         <span data-tooltip="Delete Submission" data-inverted=""
                                             onclick="{ delete_submission.bind(this, child) }">
@@ -650,6 +653,19 @@
             })
         }
 
+        self.pending_children = function (submission) {
+            return _.filter(self.submissions, sub => sub.parent === submission.id && sub.status === 'Submitting')
+        }
+
+        self.has_pending_children = function (submission) {
+            return self.pending_children(submission).length > 0
+        }
+
+        self.is_manual_run = function (submission) {
+            if (submission.auto_run) return false
+            return submission.status === 'Submitting' || self.has_pending_children(submission)
+        }
+
         self.update_submissions = function (filters) {
             self.loading = true
             self.update()
@@ -752,6 +768,15 @@
                     } else {
                         self.submissions = _.filter(results, sub => sub.owner === CODALAB.state.user.username)
                     }
+
+                    self.auto_expanded = self.auto_expanded || {}
+                    _.forEach(self.filter_children(self.submissions), parent => {
+                        if (!parent.auto_run && parent.has_children && !self.auto_expanded[parent.id]
+                            && self.has_pending_children(parent)) {
+                            self.expanded_submissions[parent.id] = true
+                            self.auto_expanded[parent.id] = true
+                        }
+                    })
 
                     if (!opts.admin) {
                         CODALAB.events.trigger('submissions_loaded', self.submissions)
@@ -867,21 +892,21 @@
             }, 100)
         }
 
-        self.run_submission = function (submission) {
+        self.run_submission = function (submission, event) {
+            if (event) event.stopPropagation()
             CODALAB.api.run_submission(submission.id)
                 .done(function (response) {
                     toastr.success('Submission queued')
                     self.update_submissions()
+                    _.delay(self.update_submissions, 2000)
                 })
                 .fail(function (response) {
-                    if (response.responseJSON.detail) {
+                    if (response.responseJSON && response.responseJSON.detail) {
                         toastr.error(response.responseJSON.detail)
                     } else {
                         toastr.error(response.responseText)
                     }
                 })
-            event.stopPropagation()
-
         }
 
         self.rerun_submission = function (submission) {
@@ -1311,6 +1336,10 @@
         CODALAB.events.on('new_submission_created', function (new_submission_data) {
             self.submissions.unshift(new_submission_data)
             self.update()
+            if (!new_submission_data.auto_run) {
+                _.delay(self.update_submissions, 2000)
+                _.delay(self.update_submissions, 6000)
+            }
         })
 
         CODALAB.events.on('score_updated', () => {

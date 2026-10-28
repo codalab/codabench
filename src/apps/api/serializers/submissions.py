@@ -158,12 +158,13 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
         sub = super().create(validated_data)
 
         # Save the group(s) selected by the user, usefull for when Auto-Run Submission is unchecked
-        if selected_groups is not None:
-            sub.selected_groups.set(selected_groups)
-
         if sub.phase.competition.auto_run_submissions:
             group_ids = [g.id for g in selected_groups] if selected_groups is not None else None
             sub.start(tasks=tasks, group_ids=group_ids)
+        else:
+            # Create the children now (status Submitting) so the organizer can run them one by one.
+            group_ids = list(sub.selected_groups.values_list('id', flat=True))
+            sub.start(tasks=None, group_ids=group_ids, create_only=True)
 
         return sub
 
