@@ -29,8 +29,8 @@
                         </td>
                         <td>{ comp.organizer }</td>
                         <td each="{ colStr in comp.categoryColumns }">
-                            <span if="{ colStr }" style="color: #1678c2; font-weight: bold; font-size: 12px;">{ colStr }</span>
-                            <span if="{ !colStr }" style="color: #888;">—</span>
+                            <span if="{ colStr }" class="tag-cell-present">{ colStr }</span>
+                            <span if="{ !colStr }" class="tag-cell-empty">—</span>
                         </td>
                         <td class="center aligned">
                             <a href="{ comp.url }" class="ui mini primary icon button" target="_blank" title="View Competition">
@@ -39,7 +39,7 @@
                         </td>
                     </tr>
                     <tr if="{ !opts.p.filteredCompetitions || opts.p.filteredCompetitions.length === 0 }">
-                        <td colspan="{ 4 + (opts.p.availableCategories || []).length }" class="center aligned" style="padding: 20px; color: #888;">
+                        <td colspan="{ 4 + (opts.p.availableCategories || []).length }" class="center aligned table-empty-row">
                             <em>No competitions match the selected filters.</em>
                         </td>
                     </tr>
@@ -47,7 +47,7 @@
             </table>
         </div>
 
-        <div class="pagination-footer" if="{ totalPages > 1 }" style="display: flex; justify-content: center; align-items: center; margin-top: 12px; gap: 10px;">
+        <div class="pagination-footer" if="{ totalPages > 1 }">
             <div class="ui secondary compact menu">
                 <a class="item { disabled: currentPage === 1 }" onclick="{ changePagePrev }">
                     <i class="chevron left icon"></i> Prev
@@ -82,14 +82,12 @@
                 self.sortKey = key;
                 self.sortDir = 1;
             }
-            self.applyTableSortAndPage();
             self.update();
         };
 
         self.changePagePrev = function () {
             if (self.currentPage > 1) {
                 self.currentPage--;
-                self.applyTableSortAndPage();
                 self.update();
             }
         };
@@ -97,7 +95,6 @@
         self.changePageNext = function () {
             if (self.currentPage < self.totalPages) {
                 self.currentPage++;
-                self.applyTableSortAndPage();
                 self.update();
             }
         };
@@ -128,11 +125,7 @@
             if (e) e.preventDefault();
             var rows = (opts.p && opts.p.filteredCompetitions) || [];
             if (rows.length === 0) return;
-            var esc = function (v) {
-                var s = String(v == null ? '' : v);
-                if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
-                return '"' + s.replace(/"/g, '""') + '"';
-            };
+            var esc = (opts.p && opts.p.escapeCsv) || function (v) { return '"' + String(v || '').replace(/"/g, '""') + '"'; };
             var cats = (opts.p && opts.p.availableCategories) || [];
             var headers = ["id", "title", "organizer", "competition_type", "published", "participants_count", "submissions_count", "reward", "created_when"].concat(cats).map(esc);
             var lines = [headers.join(",")];
@@ -154,12 +147,9 @@
                 });
                 lines.push(rowData.join(","));
             });
-            var blob = new Blob(["\uFEFF" + lines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
-            var link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = "codabench_competitions_export.csv";
-            link.click();
-            URL.revokeObjectURL(link.href);
+            if (opts.p && opts.p.downloadCsv) {
+                opts.p.downloadCsv("codabench_competitions_export.csv", lines);
+            }
         };
 
         self.on('mount', function () {

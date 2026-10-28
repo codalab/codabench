@@ -1,7 +1,6 @@
 <dashboard>
-    <div class="dashboard-page-container">
-        <!-- Dashboard Header -->
-        <div class="dashboard-header">
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
             <div class="dashboard-title-group">
                 <h1 class="dashboard-title">
                     <i class="chart pie icon"></i>
@@ -11,42 +10,54 @@
             </div>
         </div>
 
-        <div class="ui active inverted dimmer" if="{ loading }">
-            <div class="ui large text loader">Fetching data...</div>
-        </div>
-
-        <div class="dashboard-layout" show="{ !loading }">
+        <div class="dashboard-layout">
             <aside class="dashboard-sidebar">
                 <competition-filter-panel show_visibility="{ isAdmin }" show_counts="{ true }" categories="{ categoryFilters }" onfilterchange="{ handleFilterChange }"></competition-filter-panel>
             </aside>
 
             <main class="dashboard-main">
-                <!-- Navigation Tabs (Full width of the main content, excluding filter sidebar) -->
-                <div class="ui tiny fluid three secondary pointing tabular menu details-menu dashboard-tabs-menu">
-                    <div class="item { active: activeTab === 'overview' }" onclick="{ setActiveTab.bind(this, 'overview') }">Overview</div>
-                    <div class="item { active: activeTab === 'tags' }" onclick="{ setActiveTab.bind(this, 'tags') }">Tags Statistics</div>
-                    <div class="item { active: activeTab === 'explorer' }" onclick="{ setActiveTab.bind(this, 'explorer') }">Data Exploration</div>
+                <!-- Loading indicator matching competitions/public and datasets/public -->
+                <div id="loading" class="loading-indicator" show="{ loading }">
+                    <div class="loading-text">Fetching data...</div>
+                    <div class="spinner"></div>
                 </div>
 
-                <!-- Show when there are no competitions matching filters -->
-                <div class="no-results-message" if="{ filteredCompetitions.length === 0 }" style="margin-bottom: 20px;">
-                    <div class="ui warning message">
-                        <div class="header">No competitions found</div>
-                        Try changing your filters or search term.
+                <div show="{ !loading }">
+                    <!-- Navigation Tabs (Full width of the main content, excluding filter sidebar) -->
+                    <div class="ui tiny fluid three secondary pointing tabular menu details-menu dashboard-tabs-menu">
+                        <div class="item { active: activeTab === 'overview' }" onclick="{ setActiveTab.bind(this, 'overview') }">Overview</div>
+                        <div class="item { active: activeTab === 'tags' }" onclick="{ setActiveTab.bind(this, 'tags') }">Tags Statistics</div>
+                        <div class="item { active: activeTab === 'explorer' }" onclick="{ setActiveTab.bind(this, 'explorer') }">Data Exploration</div>
+                    </div>
+
+                    <!-- Show when there are no competitions matching filters -->
+                    <div class="no-results-message" if="{ filteredCompetitions.length === 0 }">
+                        <div class="ui warning message">
+                            <div class="header">No competitions found</div>
+                            Try changing your filters or search term.
+                        </div>
+                    </div>
+
+                    <!-- Tab 1: Overview -->
+                    <dashboard-overview p="{ this }"></dashboard-overview>
+
+                    <!-- Tab 2: Tags Statistics -->
+                    <div class="dashboard-tab-pane" show="{ activeTab === 'tags' }">
+                        <div class="dashboard-charts-grid">
+                            <dashboard-tags-category-charts p="{ this }"></dashboard-tags-category-charts>
+                            <dashboard-tags-cumulative p="{ this }"></dashboard-tags-cumulative>
+                            <dashboard-tags-heatmap p="{ this }"></dashboard-tags-heatmap>
+                        </div>
+                    </div>
+
+                    <!-- Tab 3: Data Exploration -->
+                    <div class="dashboard-tab-pane" show="{ activeTab === 'explorer' }">
+                        <dashboard-data-explorer p="{ this }"></dashboard-data-explorer>
+                        <dashboard-competitions-table p="{ this }"></dashboard-competitions-table>
                     </div>
                 </div>
-
-                <!-- Tab 1: Overview -->
-                <dashboard-overview p="{ this }"></dashboard-overview>
-
-                <!-- Tab 2: Tags Statistics -->
-                <dashboard-tags-stats p="{ this }"></dashboard-tags-stats>
-
-                <!-- Tab 3: Data Exploration -->
-                <dashboard-table p="{ this }"></dashboard-table>
             </main>
         </div>
-    </div>
 
     <script>
         var self = this;
@@ -74,6 +85,101 @@
             submissions: 0
         };
 
+        // Distinct Colors Palette (Unified 30 distinct accessible colors)
+        self.DISTINCT_COLORS = [
+            "#2185d0", "#21ba45", "#f2711c", "#a333c8", "#db2828",
+            "#00b5ad", "#fbbd08", "#e03997", "#16a085", "#e67e22",
+            "#8e44ad", "#2980b9", "#27ae60", "#d35400", "#c0392b",
+            "#1abc9c", "#3498db", "#9b59b6", "#f39c12", "#e74c3c",
+            "#34495e", "#00cec9", "#6c5ce7", "#fd79a8", "#0984e3",
+            "#b2bec3", "#e17055", "#fdcb6e", "#636e72", "#d63031"
+        ];
+
+        self.getDistinctColors = function (count) {
+            var list = [];
+            for (var i = 0; i < count; i++) {
+                list.push(self.DISTINCT_COLORS[i % self.DISTINCT_COLORS.length]);
+            }
+            return list;
+        };
+
+        // Number Formatter
+        self.format_number = function (num) {
+            if (num === null || num === undefined) return "0";
+            return Number(num).toLocaleString();
+        };
+
+        // CSV Export & RFC 4180 Escaping (prevents CSV formula injection)
+        self.escapeCsv = function (v) {
+            var s = String(v == null ? '' : v);
+            if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+            return '"' + s.replace(/"/g, '""') + '"';
+        };
+
+        self.downloadCsv = function (filename, lines) {
+            var blob = new Blob(["\uFEFF" + lines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+            var link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+            URL.revokeObjectURL(link.href);
+        };
+
+        // Month Range Generators
+        self.getMonthRange = function (startDate, endDate) {
+            var s = new Date(startDate);
+            var e = new Date(endDate);
+            if (isNaN(s.getTime()) || isNaN(e.getTime())) return [];
+            var months = [];
+            var curY = s.getUTCFullYear(), curM = s.getUTCMonth();
+            var endY = e.getUTCFullYear(), endM = e.getUTCMonth();
+            while (curY < endY || (curY === endY && curM <= endM)) {
+                months.push(curY + "-" + (curM + 1 < 10 ? "0" : "") + (curM + 1));
+                curM++;
+                if (curM > 11) {
+                    curM = 0;
+                    curY++;
+                }
+            }
+            return months;
+        };
+
+        self.getCompetitionsMonthRange = function (comps) {
+            var dates = (comps || []).map(function (c) {
+                return new Date(c.created_when);
+            }).filter(function (d) {
+                return !isNaN(d.getTime());
+            });
+            if (dates.length === 0) return [];
+            var minDate = new Date(Math.min.apply(null, dates));
+            var maxDate = new Date(Math.max.apply(null, dates));
+            return self.getMonthRange(minDate, maxDate);
+        };
+
+        // Dropdown Initializer
+        self.initDropdowns = function (scope, drops) {
+            drops.forEach(function (item) {
+                var el = scope.refs ? scope.refs[item.ref] : null;
+                if (!el) return;
+                var $d = $(el);
+                if (!$d.data('module-dropdown')) {
+                    $d.dropdown({
+                        onChange: function (val) {
+                            if (val && val !== item.getVal()) {
+                                item.setVal(val);
+                            }
+                        }
+                    });
+                } else {
+                    $d.dropdown('refresh');
+                }
+                var cur = item.getVal();
+                if (cur) {
+                    $d.dropdown('set selected', cur);
+                }
+            });
+        };
+
         // Tabs & Navigation State
         self.activeTab = 'overview';
         self.setActiveTab = (tab) => {
@@ -98,7 +204,6 @@
         self.state = {
             search: "",
             mode: "or",
-            filter_mode: "or",
             visibility: "public",
             participating_in: false,
             organizing: false,
@@ -245,7 +350,6 @@
 
             self.availableCategories = Object.keys(self.globalCategoryTags).sort();
             self.state.selectedTags = {};
-            self.chartCards = [];
 
             self.availableCategories.forEach((cat) => {
                 self.state.selectedTags[cat] = {};
@@ -263,7 +367,6 @@
         self.handleFilterChange = function (filters) {
             self.state.search = (filters.search || "").toLowerCase();
             self.state.mode = filters.filter_mode || filters.mode || "or";
-            self.state.filter_mode = self.state.mode;
             self.state.visibility = filters.visibility || "public";
             self.state.participating_in = Boolean(filters.participating_in);
             self.state.organizing = Boolean(filters.organizing);
@@ -278,46 +381,37 @@
 
         // Check if competition tags match selected filters (AND/OR mode)
         function tagMatch(compTagsByCat, selectedTagsByCat) {
-            var hasAnySelection = false;
             var cats = Object.keys(selectedTagsByCat);
-            for (var i = 0; i < cats.length; i++) {
-                if (Object.keys(selectedTagsByCat[cats[i]]).length > 0) {
-                    hasAnySelection = true;
-                    break;
-                }
-            }
-            if (!hasAnySelection) return true;
-
             if (self.state.mode === "and") {
                 for (var i = 0; i < cats.length; i++) {
                     var cat = cats[i];
                     var selected = Object.keys(selectedTagsByCat[cat]);
+                    if (selected.length === 0) continue;
                     var compTags = compTagsByCat[cat] || [];
-                    var allMatch = true;
-                    selected.forEach((it) => {
+                    for (var j = 0; j < selected.length; j++) {
+                        var it = selected[j];
                         if (it === '_no_tags_') {
-                            if (compTags.length > 0) allMatch = false;
+                            if (compTags.length > 0) return false;
                         } else {
-                            if (compTags.indexOf(it) === -1) allMatch = false;
+                            if (compTags.indexOf(it) === -1) return false;
                         }
-                    });
-                    if (!allMatch) return false;
+                    }
                 }
                 return true;
             } else {
                 for (var i = 0; i < cats.length; i++) {
                     var cat = cats[i];
                     var selected = Object.keys(selectedTagsByCat[cat]);
+                    if (selected.length === 0) continue;
                     var compTags = compTagsByCat[cat] || [];
-                    var anyMatch = false;
-                    selected.forEach((it) => {
+                    for (var j = 0; j < selected.length; j++) {
+                        var it = selected[j];
                         if (it === '_no_tags_') {
-                            if (compTags.length === 0) anyMatch = true;
+                            if (compTags.length === 0) return true;
                         } else {
-                            if (compTags.indexOf(it) !== -1) anyMatch = true;
+                            if (compTags.indexOf(it) !== -1) return true;
                         }
-                    });
-                    if (anyMatch) return true;
+                    }
                 }
                 return false;
             }

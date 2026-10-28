@@ -1,22 +1,29 @@
-/* Dashboard & Analytics Stylesheet */
+/* --------------------------------------------------------------------------------------
+ Competitions Dashboard (riot/dashboard/)
+ Styles for overview stats, category charts, heatmaps, and data exploration.
+ */
 
+/* Custom elements display */
 dashboard
     display block
     width 100%
+    margin-bottom 40px
 
 dashboard-overview,
-dashboard-tags-stats,
-dashboard-table,
+dashboard-tags-category-charts,
+dashboard-tags-cumulative,
+dashboard-tags-heatmap,
 dashboard-data-explorer,
 dashboard-competitions-table
     display block
     width 100%
 
-.dashboard-page-container
-    max-width 1440px
-    margin 0 auto
-    padding 15px 20px 40px 20px
+dashboard-tags-category-charts,
+dashboard-tags-cumulative,
+dashboard-tags-heatmap
+    grid-column 1 / -1
 
+/* Page header & title */
 .dashboard-header
     display flex
     justify-content space-between
@@ -50,10 +57,11 @@ dashboard-competitions-table
     color #64748b
     line-height 1.4
 
+/* Layout & sidebar */
 .dashboard-layout
     display flex
     align-items flex-start
-    gap 20px
+    gap 15px
     width 100%
 
 .dashboard-sidebar
@@ -64,6 +72,40 @@ dashboard-competitions-table
     flex 1
     min-width 0
 
+/* Loading indicator & spinner matching competitions/public */
+.loading-indicator
+    display flex
+    flex-direction column
+    align-items center
+    justify-content center
+    padding 60px 20px
+    width 100%
+    margin 0 auto
+    gap 14px
+
+.loading-text
+    font-family Roboto, "Helvetica Neue", Arial, sans-serif
+    font-size 14px
+    font-weight 500
+    color #555
+    letter-spacing 0.02em
+
+.spinner
+    border 4px solid rgba(0, 0, 0, 0.1)
+    width 36px
+    height 36px
+    border-radius 50%
+    border-top-color #3498db
+    animation spin 1s ease-in-out infinite
+
+@keyframes spin
+    0%
+        transform rotate(0deg)
+    100%
+        transform rotate(360deg)
+
+
+/* Navigation tabs (matches competition details-menu) */
 .dashboard-tabs-menu.ui.secondary.pointing.menu
     width 100%
     margin 0 0 20px 0
@@ -82,19 +124,38 @@ dashboard-competitions-table
         &:hover
             color rgba(0, 0, 0, 0.87)
 
-        &.active
+        &.active,
+        &.active:hover
             border-color rgba(42, 68, 88, 0.5) !important
             color rgb(42, 68, 88) !important
             font-weight 700
 
-        &.active:hover
-            border-color rgba(42, 68, 88, 0.5) !important
-            color rgb(42, 68, 88) !important
+.no-results-message
+    margin-bottom 20px
+
+.table-empty-row
+    padding 20px !important
+    color #888
+
+.pagination-footer
+    display flex
+    justify-content center
+    align-items center
+    margin-top 12px
+    gap 10px
+
+.tag-cell-present
+    color #1678c2
+    font-weight bold
+    font-size 12px
+
+.tag-cell-empty
+    color #888
 
 .dashboard-tab-pane
     width 100%
 
-/* Overview: Stats Bar */
+/* Overview: Stats summary bar */
 .dashboard-stats-bar
     display flex
     justify-content space-between
@@ -127,7 +188,7 @@ dashboard-competitions-table
     color #64748b
     margin-top 6px
 
-/* Dashboard Grid & Chart Cards */
+/* Dashboard charts grid & card containers */
 .dashboard-charts-grid
     display grid
     grid-template-columns repeat(2, minmax(0, 1fr))
@@ -223,10 +284,12 @@ dashboard-competitions-table
         height 250px
         width 100%
 
+// Full-width chart card modifier
 .full-width,
 .dashboard-chart-card.tag-category-card:last-child:nth-child(odd)
     grid-column 1 / -1
 
+/* Chart canvas heights */
 .canvas-wrap-orgs
     height 300px !important
 
@@ -245,12 +308,68 @@ dashboard-competitions-table
 .canvas-wrap-custom
     height 380px !important
 
+/* Native Chart.js style HTML tooltip (floating above canvas to avoid clipping) */
+.chartjs-html-tooltip
+    position absolute
+    z-index 1000
+    pointer-events none
+    background rgba(0, 0, 0, 0.8)
+    color #fff
+    border-radius 6px
+    padding 6px 10px
+    font-size 12px
+    font-family -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif
+    line-height 1.4
+    box-shadow 0 2px 4px rgba(0, 0, 0, 0.2)
+    transition opacity 0.1s ease
+    white-space nowrap
+
+    .tooltip-title
+        font-weight bold
+        font-size 12px
+        margin-bottom 6px
+        color #fff
+
+    .tooltip-body
+        display flex
+        flex-direction column
+        gap 3px
+
+    .tooltip-row
+        display flex
+        align-items center
+        gap 8px
+        font-size 12px
+        color #fff
+
+    .tooltip-color-box
+        width 10px
+        height 10px
+        border-radius 2px
+        flex 0 0 10px
+        display inline-block
+
+    .tooltip-label
+        color #fff
+
+/* Chart type switcher buttons */
 .chart-type-buttons
+    border 1px solid #e2e8f0 !important
+    border-radius 4px !important
+    box-shadow none !important
+    overflow hidden
+
     .ui.button
         padding 6px 9px !important
         background #f8fafc
-        border-color #e2e8f0
+        border none !important
+        box-shadow none !important
         color #64748b
+        border-left 1px solid #e2e8f0 !important
+        margin 0 !important
+
+        &:first-child
+            border-left none !important
 
         &:hover
             background #f1f5f9
@@ -259,8 +378,12 @@ dashboard-competitions-table
         &.active
             background #2185d0 !important
             color #fff !important
-            border-color #2185d0 !important
+            border-left none !important
 
+        &.active + .ui.button
+            border-left none !important
+
+// Tag category card header layout
 .tag-category-card
     .chart-header-with-controls
         flex-direction row !important
@@ -281,7 +404,7 @@ dashboard-competitions-table
         align-self flex-start
         margin 0 !important
 
-/* Tables & Table Cards */
+/* Competitions table card & scroll container */
 .table-card
     background #fff !important
     border 1px solid #e3e7ec !important
@@ -303,7 +426,7 @@ dashboard-competitions-table
     -webkit-overflow-scrolling touch
     touch-action pan-x pan-y
 
-/* Explorer / Chart Builder Card */
+/* Data Explorer builder card */
 .explorer-card
     background #fff !important
     border 1px solid #e3e7ec !important
@@ -363,6 +486,7 @@ dashboard-competitions-table
             border-color #85b7d9
             box-shadow 0 0 0 1px #85b7d9
 
+/* Split-by category tag pills */
 .split-by-pills
     display flex
     flex-wrap wrap
@@ -405,6 +529,7 @@ dashboard-competitions-table
             background-color #2d3f4d !important
             border-color #2d3f4d !important
 
+/* Data Explorer tabular view */
 .custom-tabular-wrap
     width 100%
     border 1px solid #e3e7ec
@@ -430,7 +555,7 @@ dashboard-competitions-table
             &:hover i.icon
                 opacity 1
 
-/* Responsive Queries */
+/* Responsive Media Queries */
 @media (max-width 991px)
     .dashboard-chart-card .chart-header-with-controls
         flex-direction column
@@ -451,6 +576,7 @@ dashboard-competitions-table
     .dashboard-sidebar
         width 100%
 
+    // Horizontal scrollable tabs menu on tablet / mobile
     .dashboard-tabs-menu.ui.secondary.pointing.menu
         overflow-x auto
         flex-wrap nowrap !important
@@ -461,6 +587,7 @@ dashboard-competitions-table
             white-space nowrap !important
             flex 1 0 auto !important
 
+    // 2x2 grid for stats summary on mobile
     .dashboard-stats-bar
         display grid
         grid-template-columns repeat(2, 1fr)
@@ -532,7 +659,12 @@ dashboard-competitions-table
     .canvas-wrap-custom
         height 280px !important
 
+    .chartjs-html-tooltip
+        max-width 90vw !important
+        white-space normal !important
+
 @media (max-width 480px)
+    // Single column stats bar on small mobile screens
     .dashboard-stats-bar
         grid-template-columns 1fr
         gap 8px

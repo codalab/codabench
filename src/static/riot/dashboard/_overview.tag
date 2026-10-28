@@ -63,7 +63,7 @@
                                 </td>
                             </tr>
                             <tr if="{ !opts.p.popularCompetitions || opts.p.popularCompetitions.length === 0 }">
-                                <td colspan="7" class="center aligned" style="padding: 20px; color: #888;">
+                                <td colspan="7" class="center aligned table-empty-row">
                                     <em>No benchmarks match the selected filters.</em>
                                 </td>
                             </tr>
@@ -145,8 +145,7 @@
         self.launchesEndDateStr = '';
 
         self.format_number = function (num) {
-            if (num === null || num === undefined) return "0";
-            return Number(num).toLocaleString();
+            return (opts.p && opts.p.format_number) ? opts.p.format_number(num) : Number(num || 0).toLocaleString();
         };
 
         self.pretty_date = function (date_string) {
@@ -164,21 +163,15 @@
         };
 
         self.formatInterval = function (interval) {
-            if (interval === 'semiannual') return 'Semiannual';
-            if (interval === 'monthly') return 'Monthly';
-            if (interval === 'weekly') return 'Weekly';
-            return 'Yearly';
+            if (!interval) return 'Yearly';
+            return interval.charAt(0).toUpperCase() + interval.slice(1);
         };
 
         self.downloadLeaderboardCSV = function (e) {
             if (e) e.preventDefault();
             var rows = (opts.p && opts.p.popularCompetitions) || [];
             if (rows.length === 0) return;
-            var esc = function (v) {
-                var s = String(v == null ? '' : v);
-                if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
-                return '"' + s.replace(/"/g, '""') + '"';
-            };
+            var esc = (opts.p && opts.p.escapeCsv) || function (v) { return '"' + String(v || '').replace(/"/g, '""') + '"'; };
             var headers = ["rank", "id", "title", "organizer", "participants", "submissions", "created_when", "url"].map(esc);
             var lines = [headers.join(",")];
             rows.forEach(function (c, idx) {
@@ -194,12 +187,9 @@
                 ];
                 lines.push(rowData.join(","));
             });
-            var blob = new Blob(["\uFEFF" + lines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
-            var link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = "codabench_popular_benchmarks.csv";
-            link.click();
-            URL.revokeObjectURL(link.href);
+            if (opts.p && opts.p.downloadCsv) {
+                opts.p.downloadCsv("codabench_popular_benchmarks.csv", lines);
+            }
         };
 
         self.onClearLaunchesDates = function () {
@@ -212,7 +202,10 @@
         };
 
         self.renderCharts = function () {
-            if (!opts.p || opts.p.activeTab !== 'overview') return;
+            if (!opts.p || opts.p.activeTab !== 'overview') {
+                self.destroyAllCharts();
+                return;
+            }
             var rows = opts.p.filteredCompetitions || [];
             if (rows.length === 0) {
                 self.destroyAllCharts();
@@ -291,24 +284,7 @@
                 return;
             }
 
-            var dates = validComps.map(function (c) { return new Date(c.created_when); });
-            var minDate = new Date(Math.min.apply(null, dates));
-            var maxDate = new Date(Math.max.apply(null, dates));
-
-            var months = [];
-            var curY = minDate.getUTCFullYear();
-            var curM = minDate.getUTCMonth();
-            var endY = maxDate.getUTCFullYear();
-            var endM = maxDate.getUTCMonth();
-
-            while (curY < endY || (curY === endY && curM <= endM)) {
-                months.push(curY + "-" + (curM + 1 < 10 ? "0" : "") + (curM + 1));
-                curM++;
-                if (curM > 11) {
-                    curM = 0;
-                    curY++;
-                }
-            }
+            var months = (opts.p && opts.p.getCompetitionsMonthRange) ? opts.p.getCompetitionsMonthRange(validComps) : [];
 
             var countsByMonth = {};
             validComps.forEach(function (c) {
@@ -437,19 +413,11 @@
             if (interval === "monthly" && labels.length > 1) {
                 var first = labels[0].split("-");
                 var last = labels[labels.length - 1].split("-");
-                var sY = parseInt(first[0], 10), sM = parseInt(first[1], 10) - 1;
-                var eY = parseInt(last[0], 10), eM = parseInt(last[1], 10) - 1;
-                var fullM = [];
-                var curY = sY, curM = sM;
-                while (curY < eY || (curY === eY && curM <= eM)) {
-                    fullM.push(curY + "-" + (curM + 1 < 10 ? "0" : "") + (curM + 1));
-                    curM++;
-                    if (curM > 11) {
-                        curM = 0;
-                        curY++;
-                    }
+                if (opts.p && opts.p.getMonthRange) {
+                    var sDate = new Date(Date.UTC(parseInt(first[0], 10), parseInt(first[1], 10) - 1, 1));
+                    var eDate = new Date(Date.UTC(parseInt(last[0], 10), parseInt(last[1], 10) - 1, 1));
+                    labels = opts.p.getMonthRange(sDate, eDate);
                 }
-                labels = fullM;
             }
 
             var dataVals = labels.map(function (k) {
@@ -567,15 +535,21 @@
         };
 
         self.on('mount', function () {
-            initCalendars();
-            initIntervalDropdown();
-            self.renderCharts();
+            if (opts.p && opts.p.activeTab === 'overview') {
+                initCalendars();
+                initIntervalDropdown();
+                self.renderCharts();
+            }
         });
 
         self.on('updated', function () {
-            initCalendars();
-            initIntervalDropdown();
-            self.renderCharts();
+            if (opts.p && opts.p.activeTab === 'overview') {
+                initCalendars();
+                initIntervalDropdown();
+                self.renderCharts();
+            } else {
+                self.destroyAllCharts();
+            }
         });
 
         self.on('unmount', function () {

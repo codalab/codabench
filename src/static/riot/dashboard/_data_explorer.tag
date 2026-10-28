@@ -2,7 +2,7 @@
     <div class="ui segment explorer-card" if="{ (opts.p.filteredCompetitions || []).length > 0 }">
         <div class="explorer-header">
             <h3 class="ui header" style="margin: 0; color: #1b1b1b;">
-                Data Explorer
+                Competitions Data Explorer
             </h3>
             <button class="ui green button" onclick="{ downloadTabularCSV }">
                 <i class="icon download"></i>Download as CSV
@@ -100,7 +100,7 @@
                         <td class="right aligned" style="font-weight: 600;">{ format_number(row.val) }</td>
                     </tr>
                     <tr if="{ !tabularData1D || tabularData1D.length === 0 }">
-                        <td colspan="3" class="center aligned" style="color: #888;">No data available.</td>
+                        <td colspan="3" class="center aligned table-empty-row">No data available.</td>
                     </tr>
                 </tbody>
             </table>
@@ -134,7 +134,7 @@
                         <td class="right aligned" style="font-weight: bold; background: #f8fafc;">{ format_number(row.total) }</td>
                     </tr>
                     <tr if="{ !tabularRows2D || tabularRows2D.length === 0 }">
-                        <td colspan="{ 3 + tabularCols2D.length }" class="center aligned" style="color: #888;">No data available.</td>
+                        <td colspan="{ 3 + tabularCols2D.length }" class="center aligned table-empty-row">No data available.</td>
                     </tr>
                 </tbody>
             </table>
@@ -172,36 +172,14 @@
         self.tabular2DSortKey = 'total';
         self.tabular2DSortDir = -1;
 
-        var PALETTE = ["#2185d0", "#00b5ad", "#21ba45", "#fbbd08", "#f2711c", "#db2828", "#a333c8", "#e03997", "#767676"];
-
-        var DISTINCT_COLORS = [
-            "#2185d0", "#21ba45", "#f2711c", "#a333c8", "#db2828",
-            "#00b5ad", "#fbbd08", "#e03997", "#16a085", "#e67e22",
-            "#8e44ad", "#2980b9", "#27ae60", "#d35400", "#c0392b",
-            "#1abc9c", "#3498db", "#9b59b6", "#f39c12", "#e74c3c",
-            "#34495e", "#00cec9", "#6c5ce7", "#fd79a8", "#0984e3",
-            "#b2bec3", "#e17055", "#fdcb6e", "#636e72", "#d63031"
-        ];
-
+        var DISTINCT_COLORS = (opts.p && opts.p.DISTINCT_COLORS) || [];
         function getDistinctColors(count) {
-            if (count <= DISTINCT_COLORS.length) {
-                return DISTINCT_COLORS.slice(0, count);
-            }
-            var list = DISTINCT_COLORS.slice();
-            var goldenRatio = 0.618033988749895;
-            var h = 0.15;
-            for (var i = DISTINCT_COLORS.length; i < count; i++) {
-                h = (h + goldenRatio) % 1;
-                var s = 65 + (i % 3) * 10;
-                var l = 45 + (i % 4) * 8;
-                list.push("hsl(" + Math.round(h * 360) + ", " + s + "%, " + l + "%)");
-            }
-            return list;
+            if (opts.p && opts.p.getDistinctColors) return opts.p.getDistinctColors(count);
+            return [];
         }
 
         self.format_number = function (num) {
-            if (num === null || num === undefined) return "0";
-            return Number(num).toLocaleString();
+            return (opts.p && opts.p.format_number) ? opts.p.format_number(num) : Number(num || 0).toLocaleString();
         };
 
         // Tabular Sorting Methods
@@ -266,11 +244,7 @@
 
         self.downloadTabularCSV = function (e) {
             if (e && e.preventDefault) e.preventDefault();
-            var esc = function (v) {
-                var s = String(v == null ? '' : v);
-                if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
-                return '"' + s.replace(/"/g, '""') + '"';
-            };
+            var esc = (opts.p && opts.p.escapeCsv) || function (v) { return '"' + String(v || '').replace(/"/g, '""') + '"'; };
 
             var lines = [];
             if (!self.isBreakdownActive) {
@@ -305,12 +279,9 @@
             var dim2Name = String(self.customDim2 || "dim2").replace(/[^a-zA-Z0-9_]/g, "_");
             var filename = "codabench_explorer_" + dim1Name + "_" + dim2Name + ".csv";
 
-            var blob = new Blob(["\uFEFF" + lines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
-            var link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = filename;
-            link.click();
-            URL.revokeObjectURL(link.href);
+            if (opts.p && opts.p.downloadCsv) {
+                opts.p.downloadCsv(filename, lines);
+            }
         };
 
         self.getAvailableChartTypes = function () {
@@ -430,6 +401,13 @@
         }
 
         self.renderCustomChart = function () {
+            if (!opts.p || opts.p.activeTab !== 'explorer') {
+                if (self.chart) {
+                    self.chart.destroy();
+                    self.chart = null;
+                }
+                return;
+            }
             var rows = (opts.p && opts.p.filteredCompetitions) || [];
             var dim1 = self.customDim1 || "organizer";
             var dim2 = self.customDim2 || "count";
@@ -536,7 +514,7 @@
                         type: chartType,
                         data: {
                             labels: labels,
-                            datasets: [{ label: metricLabel, data: dataVals, backgroundColor: PALETTE[0], borderWidth: 0 }]
+                            datasets: [{ label: metricLabel, data: dataVals, backgroundColor: DISTINCT_COLORS[0], borderWidth: 0 }]
                         },
                         options: {
                             responsive: true,
@@ -560,7 +538,7 @@
                             datasets: [{
                                 label: metricLabel,
                                 data: dataVals,
-                                borderColor: PALETTE[0],
+                                borderColor: DISTINCT_COLORS[0],
                                 backgroundColor: "rgba(33, 133, 208, 0.12)",
                                 borderWidth: 2.5,
                                 fill: true,
@@ -695,8 +673,8 @@
                     return {
                         label: sVal,
                         data: dataArr,
-                        backgroundColor: PALETTE[sIdx % PALETTE.length],
-                        borderColor: PALETTE[sIdx % PALETTE.length],
+                        backgroundColor: DISTINCT_COLORS[sIdx % DISTINCT_COLORS.length],
+                        borderColor: DISTINCT_COLORS[sIdx % DISTINCT_COLORS.length],
                         borderWidth: chartType === "line" ? 2 : 0,
                         fill: chartType === "line" ? false : undefined,
                         lineTension: 0
@@ -792,26 +770,9 @@
                 }
             ];
 
-            drops.forEach(function (item) {
-                var el = self.refs[item.ref];
-                if (!el) return;
-                var $d = $(el);
-                if (!$d.data('module-dropdown')) {
-                    $d.dropdown({
-                        onChange: function (val) {
-                            if (val && val !== item.getVal()) {
-                                item.setVal(val);
-                            }
-                        }
-                    });
-                } else {
-                    $d.dropdown('refresh');
-                }
-                var cur = item.getVal();
-                if (cur) {
-                    $d.dropdown('set selected', cur);
-                }
-            });
+            if (opts.p && opts.p.initDropdowns) {
+                opts.p.initDropdowns(self, drops);
+            }
         }
 
         self.on('mount', function () {
@@ -822,9 +783,12 @@
         });
 
         self.on('updated', function () {
-            initCustomDropdowns();
             if (opts.p && opts.p.activeTab === 'explorer') {
+                initCustomDropdowns();
                 self.renderCustomChart();
+            } else if (self.chart) {
+                self.chart.destroy();
+                self.chart = null;
             }
         });
 
