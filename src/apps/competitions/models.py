@@ -132,6 +132,14 @@ class Competition(models.Model):
         :param next_phase: The new phase object we are entering
         """
 
+        if next_phase.competition_id != self.pk or current_phase.pk == next_phase.pk:
+            logger.error(f"Invalid migration request on competition pk={self.pk}: phases pk={current_phase.pk} -> pk={next_phase.pk}")
+            return
+
+        if next_phase.end and next_phase.end < now():
+            logger.warning(f"Migration to phase pk={next_phase.pk} refused: the phase has ended ({next_phase.end})")
+            return
+
         if not force_migration:
             logger.info(f"Checking for submissions that may still be running competition pk={self.pk}")
             status_list = [Submission.CANCELLED, Submission.FINISHED, Submission.FAILED, Submission.NONE]
@@ -304,6 +312,8 @@ class Phase(models.Model):
     index = models.PositiveIntegerField()
     start = models.DateTimeField()
     end = models.DateTimeField(null=True, blank=True)
+    is_parallel = models.BooleanField(default=False)
+    is_locked_phase = models.BooleanField(default=False)
     name = models.CharField(max_length=256)
     description = models.TextField(null=True, blank=True)
     execution_time_limit = models.PositiveIntegerField(default=60 * 10)
@@ -336,11 +346,12 @@ class Phase(models.Model):
         return self.competition.published
 
     def can_user_make_submissions(self, user):
-        """Takes a user and checks how many submissions they've made vs the max.
-
-        Returns:
-            (can_make_submissions, reason_if_not)
         """
+        Takes a user and checks how many submissions they've made vs the max.
+        Returns: (can_make_submissions, reason_if_not)
+        """
+        if self.is_locked_phase:
+            return False, 'This phase is locked: it only accepts migrated submissions'
         if not self.has_max_submissions:
             return True, None
 
@@ -369,21 +380,18 @@ class Phase(models.Model):
         """
         Checks for if we need to migrate current phase submissions to next phase.
         """
-        current_phase = self.competition.phases.get(index=self.index - 1)
         next_phase = self
+        current_phase = self.competition.phases.filter(index=self.index - 1).first()
 
-        # Check for next phase and see if it has auto_migration enabled
-        try:
-            if not next_phase.has_been_migrated:
-                logger.info(
-                    f"Checking for needed migrations on competition pk={self.competition.pk}, "
-                    f"current phase: {current_phase.index}, next phase: {next_phase.index}")
-                self.competition.apply_phase_migration(current_phase, next_phase)
+        if current_phase is None:
+            logger.error("This competition is missing the previous phase to migrate from.")
+            return
 
-        except next_phase.DoesNotExist:
-            logger.error(f"This competition is missing the next phase to migrate to.")
-        except current_phase.DoesNotExist:
-            logger.error(f"This competition is missing the previous phase to migrate from.")
+        if not next_phase.has_been_migrated:
+            logger.info(
+                f"Checking for needed migrations on competition pk={self.competition.pk}, "
+                f"current phase: {current_phase.index}, next phase: {next_phase.index}")
+            self.competition.apply_phase_migration(current_phase, next_phase)
 
 
 class PhaseTaskInstance(models.Model):
