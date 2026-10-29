@@ -11,32 +11,7 @@
   <div class="content-container">
 
     <!-- Filters -->
-    <div class="filters-panel">
-        <h3>Filters</h3>
-
-        <div class="filter-group">
-            <label class="filter-label" for="search-title-description"><strong>Search by Title/Description</strong></label>
-            <div class="ui input">
-              <input type="text" id="search-title-description" oninput="{on_title_description_input}" placeholder="Enter title/description...">
-            </div>
-        </div>
-
-        <div class="filter-group">
-            <strong class="filter-label">Order By</strong>
-            <label><input type="radio" name="order" value="most_downloaded" onchange="{set_ordering}"> Most downloaded first</label>
-            <label><input type="radio" name="order" value="recently_added" onchange="{set_ordering}"> Recently added first</label>
-        </div>
-
-        <div class="filter-group">
-            <strong class="filter-label">Dataset properties</strong>
-            <label><input type="checkbox" onchange="{toggle_has_license}"> Has License</label>
-            <label><input type="checkbox" onchange="{toggle_is_verified}"> Is Verified</label>
-        </div>
-
-        <div class="filter-group" show="{should_show_clear_filters()}">
-            <button class="clear-filters-btn ui button" onclick="{clear_all_filters}">Clear All Filters</button>
-        </div>
-    </div>
+    <dataset-filter-panel initial_filters="{ filter_state }" onfilterchange="{ handle_filter_change }"></dataset-filter-panel>
 
     <!-- Datasets -->
     <div class="list-panel">
@@ -87,7 +62,6 @@
 
   <script>
     var self = this
-    self.search_timer = null
     self.datasets = {}
 
     self.filter_state = {
@@ -97,49 +71,8 @@
         is_verified: false,
     }
 
-    self.on_title_description_input = function(e) {
-        const value = e.target.value
-        self.filter_state.search = value
-        self.update()
-        if (self.search_timer) clearTimeout(self.search_timer)
-        self.search_timer = setTimeout(() => {
-            self.update_datasets_list(1)
-        }, 1000)
-    }
-
-    self.set_ordering = function (e) {
-        self.filter_state.ordering = e.target.value
-        self.update()
-        self.update_datasets_list(1)
-    }
-
-    self.toggle_has_license = function(e) {
-        self.filter_state.has_license = e.target.checked
-        self.update()
-        self.update_datasets_list(1)
-    }
-
-    self.toggle_is_verified = function(e) {
-        self.filter_state.is_verified = e.target.checked
-        self.update()
-        self.update_datasets_list(1)
-    }
-
-    self.should_show_clear_filters = function () {
-        const f = self.filter_state
-        return f.search || f.ordering || f.has_license || f.is_verified
-    }
-
-    self.clear_all_filters = function() {
-        self.filter_state = {
-            search: '',
-            ordering: '',
-            has_license: false,
-            is_verified: false,
-        }
-        document.getElementById('search-title-description').value = ''
-        document.querySelectorAll('input[name="order"]').forEach(r => r.checked = false)
-        document.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false)
+    self.handle_filter_change = function (filters) {
+        self.filter_state = filters
         self.update_datasets_list(1)
     }
 
@@ -250,38 +183,10 @@
       display flex
       width 100%
 
-    .filters-panel
-      width 250px
+    dataset-filter-panel
+      width 270px
       flex-shrink 0
-      border 1px solid #ddd
-      padding 10px
-      margin-right 10px
-      background #f9f9f9
-
-      input[type="text"]
-        width 100%
-        padding 5px
-        margin 5px 0 5px 0
-        border 1px solid #ddd
-        border-radius 4px
-
-      input[type="radio"],
-      input[type="checkbox"]
-        margin-right 5px
-
-    .filter-group
-      margin-bottom 20px
-
-    .filter-label
-      font-size 14px
-      font-weight bold
-      display block
-      margin-bottom 8px
-
-    .filter-group label
-      display block
-      font-size 13px
-      margin-bottom 6px
+      margin-right 15px
 
     .list-panel
       flex-grow 1
@@ -354,10 +259,6 @@
       display flex
       align-items center
       gap 0.4em
-
-    .ui.mini.primary.button
-      padding 0.4em 0.8em
-      font-size 0.85em
 
     .loading-indicator
       display flex

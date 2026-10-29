@@ -14,7 +14,8 @@ def get_featured_benchmarks(limit=3):
     :param limit: Amount of benchmarks to return. Default is 3.
     :rtype: list
     """
-    featured = list(Competition.objects.filter(published=True, is_featured=True))
+    featured = list(Competition.objects.filter(published=True, is_featured=True)
+                    .prefetch_related('tags__category'))
     return random.sample(featured, min(limit, len(featured)))
 
 
@@ -28,6 +29,7 @@ def get_popular_benchmarks(limit=3, pool_size=8):
     :rtype: list
     """
     pool = list(Competition.objects.filter(published=True, is_featured=False)
+                .prefetch_related('tags__category')
                 .order_by('-participants_count')[:pool_size])
     return random.sample(pool, min(limit, len(pool)))
 
@@ -43,6 +45,7 @@ def get_recent_benchmarks(exclude_ids=None, limit=3, pool_size=8):
     :rtype: list
     """
     pool = list(Competition.objects.filter(published=True, is_featured=False)
+                .prefetch_related('tags__category')
                 .exclude(id__in=exclude_ids or [])
                 .order_by('-created_when')[:pool_size])
     return random.sample(pool, min(limit, len(pool)))

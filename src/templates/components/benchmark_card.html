@@ -25,6 +25,14 @@
 
     <p class="bc-desc">{{ benchmark.description|default:"" }}</p>
 
+    {% if benchmark.tags %}
+        <div class="comp-tags">
+            {% for tag in benchmark.tags %}
+                <span class="comp-tag mini" style="--tag-color: {{ tag.color }};" title="{{ tag.category }}">{{ tag.name }}</span>
+            {% endfor %}
+        </div>
+    {% endif %}
+
     <div class="bc-meta">
         <!-- Line 1: organizer, date and prize -->
         <div class="bc-meta-row bc-meta-row-first">
