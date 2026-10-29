@@ -8,7 +8,7 @@ DB_NAME=
 DB_USERNAME=
 DB_PASSWORD=
 DUMP_NAME=
-docker exec codabench-db-1 bash -c "PGPASSWORD=$DB_PASSWORD pg_dump -Fc -U $DB_USERNAME $DB_NAME > /app/backups/$DUMP_NAME.dump"
+docker exec db bash -c "PGPASSWORD=$DB_PASSWORD pg_dump -Fc -U $DB_USERNAME $DB_NAME > /app/backups/$DUMP_NAME.dump"
 ```
 
 ### Upload

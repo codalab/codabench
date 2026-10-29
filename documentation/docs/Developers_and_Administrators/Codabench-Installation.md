@@ -83,7 +83,7 @@ To enable SSL:
 
 - If you already have a DNS for your server that is appropriate, in the `.env` simply set `DOMAIN_NAME` to your DNS. Remove any port designation like `:80`. This will have Caddy serve both HTTP and HTTPS.
 
-!!! warning "For a public instance, HTTPS is strongly recomended"
+!!! warning "For a public instance, HTTPS is strongly recommended"
 
 ### Validate user account on local instance
 
@@ -92,9 +92,9 @@ When deploying a local instance, the email server is not configured by default, 
 To manually confirm your account:
 
 1. Find the confirmation link in the Django logs using `docker compose logs -f django`
-2. Replace `example.com` by `localhost`on the URL and open it in your browser.
+2. Replace `example.com` by `localhost` on the URL and open it in your browser.
 
-Another way is to go inside the Django containers and use commands like in [administrative procedures](Administrator-procedures.md).
+Another way is to go inside the Django container and use commands like in [administrative procedures](Administrator-procedures.md).
 
 ### Troubleshooting storage endpoint URL
 
@@ -107,7 +107,7 @@ Here is a possible fix:
 minio_1           | Browser Access:
 minio_1           |    http://172.27.0.5:9000  http://127.0.0.1:9000
 ```
-3. Set `AWS_S3_ENDPOINT_URL=http://172.27.0.5:9000`in your `.env` file.
+3. Set `AWS_S3_ENDPOINT_URL=http://172.27.0.5:9000` in your `.env` file.
 
 ### Static files not loading on local setup
 
@@ -148,6 +148,6 @@ Also, adding `DEBUG=True` to the `.env` file can help with troubleshooting the d
 
 Open a [Github issue](https://github.com/codalab/codabench/issues) to find help with your installation
 
-## Online Deployement
+## Online Deployment
 
 For information about online deployment of Codabench, go to the [following page](How-to-deploy-Codabench-on-your-server.md)

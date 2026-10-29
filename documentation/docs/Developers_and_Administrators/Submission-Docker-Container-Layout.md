@@ -10,7 +10,7 @@ Is a remote and/or local celery worker that listens to the main RabbitMQ server 
 - [Compute Worker Management and Setup](../Organizers/Running_a_benchmark/Compute-Worker-Management---Setup.md)
 
 ## Submission Container
-The submission container is the container that participant's submissions get ran in. The image used to create this container is either the Codabench default if the organizer's haven't specified an image, or the custom image they specified in the competition.
+The submission container is the container that participants' submissions get run in. The image used to create this container is either the Codabench default if the organizers haven't specified an image, or the custom image they specified in the competition.
 The default docker image is `codalab/codalab-legacy:py37`. Organizers can specify their own image using either the [YAML file](../Organizers/Benchmark_Creation/Yaml-Structure.md) or the [editor](../Organizers/Running_a_benchmark/Competition-Management-&-List.md#edit-competition-button).
 
 This container is also created with some specific directories, some of which are only available at specific steps of the run. For example, generally for a submission there are 2 steps. The prediction step (If the submission needs to make predictions) and the scoring step, where the predictions are scored against the truth reference data.

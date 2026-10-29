@@ -3,10 +3,10 @@
 
 Since we are now using Poetry, we need to rebuild all our docker images to include it.
 
-You can achieve this by running the following commands : 
+You can achieve this by running the following commands:
 
 !!! warning 
-    If your machine has other images or containers that you want to keep, do not run `docker system prune -af`. Instead, manually delete all the images related to codabench
+    If your machine has other images or containers that you want to keep, do not run `docker system prune -af`. Instead, manually delete all the images related to Codabench
 
 ```bash
 docker compose build && docker compose up -d

@@ -37,7 +37,7 @@ The HITL feature applies **only to private Compute Workers**.
 
 ### Competition configuration
 
-Each competition exposes the following option:
+Each competition exposes the following option: **Enable Human in the Loop validation**.
 
 When enabled, every submission routed to a private Compute Worker is executed in HITL mode.
 ![image1](_attachments/doc_HITL_1.png)
@@ -60,7 +60,7 @@ The absence of the variable is interpreted as **False**, ensuring full backward 
 ## Safety checks
 
 To prevent configuration errors, the Compute Worker verifies that both sides agree on the HITL configuration.
-The Site Worker includes the following field in every Celery task.
+The Site Worker includes the following field in every Celery task: `human_in_the_loop`.
 
 Before starting the execution, the Compute Worker compares:
 
@@ -76,7 +76,7 @@ The Compute Worker updates the submission status to **Failed** and reports the c
 
 ``` title="Example logs:"
 Task rejected because the Site Worker and Compute Worker
-do not share the same HUMAN_IN_THE_LOOP configuration
+do not have the same HUMAN_IN_THE_LOOP configuration
 (task=True, compute_worker=False)
 ```
 
@@ -109,7 +109,7 @@ After scoring completes, the Compute Worker pauses before publishing any result.
 
 ## Awaiting validation status
 
-A new submission status is introduced:
+A new submission status is introduced: **Awaiting validation**.
 
 This status indicates:
 
@@ -127,7 +127,7 @@ This status allows users and organizers to distinguish between:
 ## Manual validation
 
 Once execution finishes, the Compute Worker logs instructions similar to:
-``` title="Compute worker terminal command (exemple with docker)"
+``` title="Compute worker terminal command (example with docker)"
 docker compose logs -f [container name]
 ```
 
@@ -180,7 +180,7 @@ No scoring results are published.
 
 If no decision is received within 24 hours, the submission automatically fails.
 The Compute Worker reports a timeout error.
-The compute worker is enable to run another submission while waiting for HITL approval.
+The compute worker is unable to run another submission while waiting for HITL approval.
 
 ---
 
