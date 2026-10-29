@@ -56,6 +56,8 @@ class PhaseSerializer(WritableNestedModelSerializer):
             'public_data',
             'starting_kit',
             'is_final_phase',
+            'is_parallel',
+            'is_locked_phase',
         )
 
     def get_is_final_phase(self, obj):
@@ -140,8 +142,9 @@ class PhaseDetailSerializer(serializers.ModelSerializer):
             'starting_kit',
             'is_final_phase',
             'used_submissions_per_day',
-            'used_submissions_per_person'
-
+            'used_submissions_per_person',
+            'is_parallel',
+            'is_locked_phase',
         )
 
     def get_status(self, obj):
