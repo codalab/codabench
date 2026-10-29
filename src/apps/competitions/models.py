@@ -132,6 +132,14 @@ class Competition(models.Model):
         :param next_phase: The new phase object we are entering
         """
 
+        if next_phase.competition_id != self.pk or current_phase.pk == next_phase.pk:
+            logger.error(f"Invalid migration request on competition pk={self.pk}: phases pk={current_phase.pk} -> pk={next_phase.pk}")
+            return
+
+        if next_phase.end and next_phase.end < now():
+            logger.warning(f"Migration to phase pk={next_phase.pk} refused: the phase has ended ({next_phase.end})")
+            return
+
         if not force_migration:
             logger.info(f"Checking for submissions that may still be running competition pk={self.pk}")
             status_list = [Submission.CANCELLED, Submission.FINISHED, Submission.FAILED, Submission.NONE]
@@ -304,6 +312,8 @@ class Phase(models.Model):
     index = models.PositiveIntegerField()
     start = models.DateTimeField()
     end = models.DateTimeField(null=True, blank=True)
+    is_parallel = models.BooleanField(default=False)
+    is_locked_phase = models.BooleanField(default=False)
     name = models.CharField(max_length=256)
     description = models.TextField(null=True, blank=True)
     execution_time_limit = models.PositiveIntegerField(default=60 * 10)
@@ -336,15 +346,17 @@ class Phase(models.Model):
         return self.competition.published
 
     def can_user_make_submissions(self, user):
-        """Takes a user and checks how many submissions they've made vs the max.
-
-        Returns:
-            (can_make_submissions, reason_if_not)
         """
+        Takes a user and checks how many submissions they've made vs the max.
+        Returns: (can_make_submissions, reason_if_not)
+        """
+        if self.is_locked_phase:
+            return False, 'This phase is locked: it only accepts migrated submissions'
         if not self.has_max_submissions:
             return True, None
 
-        qs = self.submissions.filter(owner=user, parent__isnull=True).exclude(status='Failed')
+        # Resubmissions are started by organizers and do not use the participant's quota
+        qs = self.submissions.filter(owner=user, parent__isnull=True, resubmitted_from__isnull=True).exclude(status='Failed')
         total_submission_count = qs.count()
         daily_submission_count = qs.filter(created_when__date=now().date()).count()
 
@@ -368,21 +380,18 @@ class Phase(models.Model):
         """
         Checks for if we need to migrate current phase submissions to next phase.
         """
-        current_phase = self.competition.phases.get(index=self.index - 1)
         next_phase = self
+        current_phase = self.competition.phases.filter(index=self.index - 1).first()
 
-        # Check for next phase and see if it has auto_migration enabled
-        try:
-            if not next_phase.has_been_migrated:
-                logger.info(
-                    f"Checking for needed migrations on competition pk={self.competition.pk}, "
-                    f"current phase: {current_phase.index}, next phase: {next_phase.index}")
-                self.competition.apply_phase_migration(current_phase, next_phase)
+        if current_phase is None:
+            logger.error("This competition is missing the previous phase to migrate from.")
+            return
 
-        except next_phase.DoesNotExist:
-            logger.error(f"This competition is missing the next phase to migrate to.")
-        except current_phase.DoesNotExist:
-            logger.error(f"This competition is missing the previous phase to migrate from.")
+        if not next_phase.has_been_migrated:
+            logger.info(
+                f"Checking for needed migrations on competition pk={self.competition.pk}, "
+                f"current phase: {current_phase.index}, next phase: {next_phase.index}")
+            self.competition.apply_phase_migration(current_phase, next_phase)
 
 
 class PhaseTaskInstance(models.Model):
@@ -508,6 +517,8 @@ class Submission(models.Model):
 
     has_children = models.BooleanField(default=False)
     parent = models.ForeignKey('Submission', on_delete=models.CASCADE, blank=True, null=True, related_name='children')
+    # Set when an organizer resubmits a submission on the current phase tasks
+    resubmitted_from = models.ForeignKey('Submission', on_delete=models.SET_NULL, blank=True, null=True, related_name='resubmissions')
 
     fact_sheet_answers = models.JSONField(null=True, blank=True, max_length=4096)
 
@@ -628,6 +639,28 @@ class Submission(models.Model):
         self.start(tasks=tasks, group_ids=group_ids)
         return self
 
+    def resubmit(self):
+        """New submission with the same upload, run on the current phase tasks as if the participant submitted it again"""
+        # A child only ran on one task, resubmit the whole parent submission instead
+        if self.parent:
+            return self.parent.resubmit()
+        sub = Submission(
+            owner=self.owner,
+            participant=self.participant,
+            phase=self.phase,
+            data=self.data,
+            md5=self.md5,
+            name=self.name,
+            description=self.description,
+            fact_sheet_answers=self.fact_sheet_answers,
+            queue=self.phase.competition.queue,
+            organization=self.organization,
+            resubmitted_from=self,
+        )
+        sub.save(ignore_submission_limit=True)
+        sub.selected_groups.set(self.selected_groups.all())
+        return sub.run()
+
     def re_run(self, task=None):
 
         # task to use in the new submission
@@ -698,10 +731,41 @@ class Submission(models.Model):
         return False
 
     def check_child_submission_statuses(self):
+        """
+        Sets the status of this parent submission from the statuses of its children.
+
+        A parent has one child per task, in phases with more than one task.
+
+        Nothing changes until every child is done (Finished, Failed or Cancelled).
+        Then the parent gets one status for all its children:
+            - Finished: if at least one child finished.
+            - Failed: if no child finished, but at least one failed.
+            - Cancelled: if all children were cancelled.
+
+        Examples, with 2 or more children:
+            all Finished                    -> Finished
+            all Failed                      -> Failed
+            all Cancelled                   -> Cancelled
+            Finished + Failed               -> Finished
+            Finished + Cancelled            -> Finished
+            Failed + Cancelled              -> Failed
+            Finished + Failed + Cancelled   -> Finished
+            Failed + Running                -> no change (a child is not done yet)
+        """
+        statuses = list(self.children.values_list('status', flat=True))
         done_statuses = [self.FINISHED, self.FAILED, self.CANCELLED]
-        if all([status in done_statuses for status in self.children.values_list('status', flat=True)]):
-            self.status = 'Finished'
-            self.save()
+
+        # Wait until every child is done
+        if not all(status in done_statuses for status in statuses):
+            return
+
+        if self.FINISHED in statuses:
+            self.status = self.FINISHED
+        elif self.FAILED in statuses:
+            self.status = self.FAILED
+        else:
+            self.status = self.CANCELLED
+        self.save()
 
     def calculate_scores(self):
         # leaderboards = self.phase.competition.leaderboards.all()

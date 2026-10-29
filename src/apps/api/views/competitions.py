@@ -23,20 +23,20 @@ from api.renderers import ZipRenderer
 from rest_framework.viewsets import ModelViewSet
 from api.serializers.competitions import CompetitionSerializerSimple, PhaseSerializer, \
     CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer, CompetitionParticipantSerializer, \
-    FrontPageCompetitionsSerializer, PhaseResultsSerializer, CompetitionUpdateSerializer, CompetitionCreateSerializer
+    PhaseResultsSerializer, CompetitionUpdateSerializer, CompetitionCreateSerializer
 from api.serializers.leaderboards import LeaderboardPhaseSerializer, LeaderboardSerializer
 from competitions.emails import send_participation_requested_emails, send_participation_accepted_emails, \
     send_participation_denied_emails, send_direct_participant_email
 from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant, Submission
 from datasets.models import Data
 from competitions.tasks import batch_send_email, manual_migration, create_competition_dump
-from competitions.utils import get_popular_competitions, get_recent_competitions
 from leaderboards.models import Leaderboard, Column
 from leaderboards.ranking import inject_average_ranks
 from utils.data import make_url_sassy
 from api.permissions import IsOrganizerOrCollaborator
 from django.db import transaction
 from django.conf import settings
+from django.utils.timezone import now
 
 
 class CompetitionViewSet(ModelViewSet):
@@ -544,19 +544,6 @@ class CompetitionViewSet(ModelViewSet):
 
         return Response(serializer.data)
 
-    # @swagger_auto_schema(responses={200: FrontPageCompetitionsSerializer()})
-    @extend_schema(responses={200: FrontPageCompetitionsSerializer})
-    @action(detail=False, methods=('GET',), permission_classes=(AllowAny,))
-    def front_page(self, request):
-        popular_comps = get_popular_competitions()
-        recent_comps = get_recent_competitions(exclude_comps=popular_comps)
-        popular_comps_serializer = CompetitionSerializerSimple(popular_comps, many=True)
-        recent_comps_serializer = CompetitionSerializerSimple(recent_comps, many=True)
-        return Response(data={
-            "popular_comps": popular_comps_serializer.data,
-            "recent_comps": recent_comps_serializer.data
-        })
-
     # @swagger_auto_schema(request_body=no_body, responses={201: CompetitionCreationTaskStatusSerializer()})
     @extend_schema(request=None, responses={201: CompetitionCreationTaskStatusSerializer})
     @action(detail=True, methods=('POST',), serializer_class=CompetitionCreationTaskStatusSerializer)
@@ -733,15 +720,35 @@ class PhaseViewSet(ModelViewSet):
 
     @action(detail=True, methods=('POST',), url_name='manually_migrate')
     def manually_migrate(self, request, pk):
-        """Manually migrates _from_ this phase. The destination phase does not need auto migration set to True"""
+        """Manually migrates _from_ this phase to `destination_phase` (id), or to the next index if omitted."""
         phase = self.get_object()
         if not phase.competition.user_has_admin_permission(request.user):
             return Response(
                 {"detail": "You do not have administrative permissions for this competition"},
                 status=status.HTTP_403_FORBIDDEN
             )
-        # import pdb; pdb.set_trace()
-        manual_migration.apply_async((pk,))
+
+        destination_id = request.data.get('destination_phase')
+        if destination_id:
+            try:
+                destination = phase.competition.phases.get(pk=destination_id)
+            except (Phase.DoesNotExist, ValueError, TypeError):
+                return Response({"detail": "Destination phase not found in this competition."},
+                                status=status.HTTP_400_BAD_REQUEST)
+        else:
+            destination = phase.competition.phases.filter(index=phase.index + 1).first()
+            if destination is None:
+                return Response({"detail": "There is no next phase to migrate to."},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+        if destination.pk == phase.pk:
+            return Response({"detail": "Source and destination phases must be different."},
+                            status=status.HTTP_400_BAD_REQUEST)
+        if destination.end and destination.end < now():
+            return Response({"detail": "The destination phase has ended."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        manual_migration.apply_async((pk, destination.pk))
         return Response({}, status=status.HTTP_200_OK)
 
     @action(detail=True, url_name='rerun_submissions')
@@ -912,7 +919,7 @@ class PhaseViewSet(ModelViewSet):
             if submission_key not in submissions_keys:
                 submissions_keys[submission_key] = len(response['submissions'])
                 response['submissions'].append({
-                    'id': submission['id'],
+                    'id': submission_parent_id,
                     'owner': submission['display_name'] or submission['owner'],
                     'scores': [],
                     'detailed_results': [],

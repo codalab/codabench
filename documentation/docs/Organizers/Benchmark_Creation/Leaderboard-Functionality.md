@@ -4,7 +4,7 @@ For specific information on leaderboard and column fields, see the explanations 
 A leaderboard and column are written to via their keys.
 A leaderboard declaration like so
 ```yaml
-leaderboard:
+leaderboards:
   - title: Results
     key: main
     submission_rule: "Force_Last"
@@ -68,18 +68,18 @@ Example (with Max Accuracy set as the primary column):
 |   3  |              0.6 |              0.6 |          0.6 |      100 |  # submitted at Jan 1, 2020
 |   4  |              0.6 |              0.6 |          0.6 |      100 |  # submitted at Jan 2, 2020
 ```
-So we sort the submissions by the primary column, (Max Accuracy) and then by columns from left to right, so accuracy 1, then accuracy 2, then duration, then by submission_at.
+So we sort the submissions by the primary column, (Max Accuracy) and then by columns from left to right, so accuracy 1, then accuracy 2, then duration, then by `submitted_at`.
 
 ## Submission rules
 
-The submission rule set the behavior of the leaderboard regarding new submissions. Submissions can be forced to the leaderboard or manually selected, can be unique or multiple on the leaderboard, etc.
+The submission rule sets the behavior of the leaderboard regarding new submissions. Submissions can be forced to the leaderboard or manually selected, can be unique or multiple on the leaderboard, etc.
 
 - **Add**: Only allow adding one submission
 - **Add And Delete**: Allow users to add a single submission and remove that submission
 - **Add And Delete Multiple**: Allow users to add multiple submissions and remove those submissions
 - **Force Last**: Force only the last submission
 - **Force Latest Multiple**: Force latest submission to be added to leaderboard (multiple)
-- **Force Best**: Force only the best submission to the leaderboard
+- **Force Best**: Force only the best submission to the leaderboard. The best submission is chosen by the primary column, then the other columns from left to right. If two submissions have exactly the same scores, the older one is kept, so a new submission only replaces the current one if it scores better.
 
 Here are the corresponding values for the YAML field `submission_rule`: "Add", "Add_And_Delete", "Add_And_Delete_Multiple", "Force_Last", "Force_Latest_Multiple" or "Force_Best".
 
@@ -87,5 +87,5 @@ Here are the corresponding values for the YAML field `submission_rule`: "Add", "
 If a leaderboard is marked as hidden, it will not be visible to participants in the competition. It will only be visible to platform administrators, competition administrators, and competition collaborators.
 
 ## Downloading Leaderboard Data
-If an administrator, competition administrator, and competition collaborator would like to download the current leaderboard data, they will have access to a button labeled "CSV" on the leaderboard page. This creates a downloadable ZIP file. Each CSV file inside will be titled with the name of the leaderboard. The first row of the CSV is the title for each column, followed by all the submissions on the leaderboard.
-This can be access directly through the API by sending a GET request to `[HOSTNAME]/api/competitions/'ID'/get_csv` where 'ID' is the competition ID.
+If an administrator, competition administrator, or competition collaborator would like to download the current leaderboard data, they will have access to a button labeled "CSV" on the leaderboard page. This creates a downloadable ZIP file. Each CSV file inside will be titled with the name of the leaderboard. The first row of the CSV is the title for each column, followed by all the submissions on the leaderboard.
+This can be accessed directly through the API by sending a GET request to `[HOSTNAME]/api/competitions/'ID'/get_csv` where 'ID' is the competition ID.

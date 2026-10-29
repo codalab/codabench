@@ -84,14 +84,14 @@ CONTAINER_ENGINE_EXECUTABLE=docker
 #######################################################################
 #COMPETITION_CONTAINER_NETWORK_DISABLED=False
 
-#COMPETITION_CONTAINER_HTTP_PROXY=https://example_proxy:123
-#COMPETITION_CONTAINER_HTTPS_PROXY=http://example_proxy:1233
+#COMPETITION_CONTAINER_HTTP_PROXY=http://example_proxy:123
+#COMPETITION_CONTAINER_HTTPS_PROXY=https://example_proxy:1233
 ```
 By default, the competition container created by the compute worker has access to internet. If you want to remove this access, you can uncomment `COMPETITION_CONTAINER_NETWORK_DISABLED` and set it to `True`
 
 If the VM hosting the compute worker is behind a proxy, and you want to allow the competition container to access internet, you will also need to set the proxy for the competition container to use, in which case you can use `COMPETITION_CONTAINER_HTTP_PROXY`
 
-To control the scoring output before sending it to the instance, you can use the human in the loop feature the check the scoring file (json or txt) before sending anything to the instance, see: [HITL documentation](https://docs.codabench.org/latest/Organizers/Running_a_benchmark/Competition-HITL/)
+To control the scoring output before sending it to the instance, you can use the human in the loop feature to check the scoring file (json or txt) before sending anything to the instance, see: [HITL documentation](Competition-HITL.md)
 
 !!! note
     - The broker URL is a unique identifier of the job queue that the worker should listen to. To create a queue or obtain the broker URL of an existing queue, you can refer to [Queue Management](Queue-Management.md) docs page.
@@ -119,10 +119,8 @@ services:
 
 ```
 !!! note 
-    `hostname: ${HOSTNAME}` allows you to set the hostname of the compute worker container, which will then be shown in the [server status](Server-status-page.md) page on Codabench. This can be set to anything you want, by setting the `HOSTNAME` environment variable on the machine hosting the Compute Worker, then uncommenting the line the `docker-compose.yml` before launching the compute worker.
+    `hostname: ${HOSTNAME}` allows you to set the hostname of the compute worker container, which will then be shown in the [server status](Server-status-page.md) page on Codabench. This can be set to anything you want, by setting the `HOSTNAME` environment variable on the machine hosting the Compute Worker, then uncommenting the line in the `docker-compose.yml` before launching the compute worker.
 
-!!! note
-    Starting from `codalab/competitions-v2-compute-worker:v1.22` the images are now unifed for Podman and Docker CPU/GPU
 
 You can then launch the worker by running this command in the terminal where the `docker-compose.yml` file is located:
 ```bash
@@ -159,17 +157,15 @@ services:
                 max-file: 3
 ```
 !!! note 
-    `hostname: ${HOSTNAME}` allows you to set the hostname of the compute worker container, which will then be shown in the [server status](Server-status-page.md) page on Codabench. This can be set to anything you want, by setting the `HOSTNAME` environment variable on the machine hosting the Compute Worker, then uncommenting the line the `docker-compose.yml` before launching the compute worker.
-
-!!! note
-    Starting from `codalab/competitions-v2-compute-worker:v1.22` the images are now unifed for Podman and Docker CPU/GPU
+    `hostname: ${HOSTNAME}` allows you to set the hostname of the compute worker container, which will then be shown in the [server status](Server-status-page.md) page on Codabench. This can be set to anything you want, by setting the `HOSTNAME` environment variable on the machine hosting the Compute Worker, then uncommenting the line in the `docker-compose.yml` before launching the compute worker.
 
 You can then launch the worker by running this command in the terminal where the `docker-compose.yml` file is located:
 ```bash
 docker compose up -d
 ```
 
-Note that a competition docker image including CUDA and other GPU libraries, such as `codalab/codalab-legacy:gpu`, is then required.
+!!! tip
+    Make sure to add the necessary packages inside the competition image to allow the use of the connected GPU
 
 ## Check logs
 
@@ -209,19 +205,24 @@ For each submission made to your queue, you can know what worker computed the in
 
 ---
 
-## Optional: put data directly inside the compute worker
-
-The folder `$HOST_DIRECTORY/data`, usually `/codabench/data`, is shared between the host (the compute worker) and the container running the submission (a new container is created for each submission). It is mounted inside the container as `/app/data`. This means that you can put data in your worker, in `$HOST_DIRECTORY/data`, so it can be read-only accessed during the job's process. You'll need to modify the scoring and/or ingestion programs accordingly, to points to `/app/data`. This is especially useful if you work with confidential data, or with a heavy dataset.
+## Optional: Put data directly inside the compute worker
+### Datasets
+The folder `$HOST_DIRECTORY/data`, usually `/codabench/data`, is shared between the host (the compute worker) and the container running the submission (a new container is created for each submission). It is mounted inside the container as `/app/data`. This means that you can put data in your worker, in `$HOST_DIRECTORY/data`, so it can be read-only accessed during the job's process. You'll need to modify the scoring and/or ingestion programs accordingly, to point to `/app/data`. This is especially useful if you work with confidential data, or with a heavy dataset.
 
 !!! note "If you have several workers in your queue, remember to have the data accessible for each one."
 
 ![](_attachments/4259c2e5-d119-4ca2-8fc8-b69196f1528c_17534367097493236.jpg)
 
+### Reference Data
+You can also add your reference data, used during the scoring phase, inside a folder on the compute worker. This folder, `$HOST_DIRECTORY/reference`, will be mounted during the scoring phase as `/app/reference` inside the container. Contrary to `$HOST_DIRECTORY/data`, this folder is only mounted during the scoring phase. 
+
+!!! warning "Do not put reference data in `$HOST_DIRECTORY/data`"
+    `/app/data` is also mounted during ingestion, where participant code runs, so anything in it can be read by submissions. Use `$HOST_DIRECTORY/reference` for anything participants must not see.
 
 !!! warning 
     Make sure to make the owner of the folder(s) and file(s) the same as the one launching the compute worker.  
-       - `root` for Docker rootfull  
-       - `codalab` for Podman and Docker rootless if you created a user name codalab to launch podman and docker rootless from
+       - `root` for Docker rootful  
+       - `codabench` for Podman and Docker rootless if you created a user named `codabench` to launch podman and docker rootless from
 
 
 !!! tip "If you simply wish to set up some compute workers to increase the computing power of your benchmark, you don't need to scroll this page any further."
@@ -235,13 +236,13 @@ This is helpful only if you want to build the compute worker image. It is not ne
 To build the normal image:
 
 ```bash
-docker build -t codalab/codabench-compute-worker:latest -f packaging/container/Containerfile.compute_worker .
+docker build -t *account_name*/codabench-compute-worker:latest -f packaging/container/Containerfile.compute_worker .
 ```
 
-To update the image (add tag `:latest`, `:gpu` or else if needed)
+To update the image
 
 ```bash
-docker push codalab/codabench-compute-worker
+docker push *account_name*/codabench-compute-worker:latest
 ```
 
 !!! note "If you have running compute workers, you'll need to pull again the image and to restart the workers to take into account the changes."

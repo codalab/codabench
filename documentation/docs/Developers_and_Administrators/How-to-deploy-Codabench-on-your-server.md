@@ -32,7 +32,7 @@ For an online deployment, you'll need to fill in the IP address or domain name i
 
 #### Using an IP address
 
-b) For an online deployment using IP address:
+For an online deployment using an IP address:
 !!! note 
     To get the IP address of the machine. You can use one of the following commands:
 
@@ -91,7 +91,8 @@ AWS_SECRET_ACCESS_KEY=testsecret
 
 !!! note
     `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY` are the MinIO credentials, and `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` are the credentials Codabench uses to access the storage. If you use the local MinIO container, both pairs must have the same values. If you use an external storage provider (e.g. AWS S3), only `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` are used.
-!!! warning "It is very important to set up an SSL certificate for Public deployement"
+
+!!! warning "It is very important to set up an SSL certificate for Public deployment"
 
 ### Configure email
 
@@ -143,45 +144,11 @@ If you are deploying on a Linux server, which usually has a firewall, you need t
 
 ## Modify django-related configuration
 
-- Go to the folder where codabench is located
-- Go to the settings directory and modify `base.py` file
-    - `cd src/settings/`
-    - `nano base.py`
-- Change the value of `DEBUG` to `True`
-    - `DEBUG = os.environ.get("DEBUG", True)`
-!!! note "If DEBUG is not set to true, then you will not be able to load to the static resource file"
-- Comment out the following code
-```py
-# =============================================================================
-# Debug
-# =============================================================================
-#if DEBUG:
-#    INSTALLED_APPS += ('debug_toolbar',)
-#    MIDDLEWARE = ('debug_toolbar.middleware.DebugToolbarMiddleware',
-#                  'querycount.middleware.QueryCountMiddleware',
-#                  ) + MIDDLEWARE  # we want Debug Middleware at the top
-#    # tricks to have debug toolbar when developing with docker
-#
-#    INTERNAL_IPS = ['127.0.0.1']
-#
-#    import socket
-#
-#    try:
-#        INTERNAL_IPS.append(socket.gethostbyname(socket.gethostname())[:-1])
-#    except socket.gaierror:
-#        pass
-#
-#    QUERYCOUNT = {
-#        'IGNORE_REQUEST_PATTERNS': [
-#            r'^/admin/',
-#            r'^/static/',
-#        ]
-#    }
-#
-#    DEBUG_TOOLBAR_CONFIG = {
-#        "SHOW_TOOLBAR_CALLBACK": lambda request: True
-#    }
-```
+- In the `.env` file, set `DEBUG` to `True`:
+    - `DEBUG=True`
+
+!!! note "If DEBUG is not set to true, then you will not be able to load the static resource files"
+
 ## Start service
 
 - Execute command `docker compose up -d`
@@ -205,7 +172,7 @@ codabench_redis_1            "docker-entrypoint.s…"   running      0.0.0.0:637
 - Generate the required static resource files: `docker compose exec django ./manage.py collectstatic --noinput`
   
 !!! tip
-    You can generate mock data with `docker compose exec django ./manage.py generate_data` if you want to test the website. However, it is not recomended to do that on an installation that you intend to use for Production
+    You can generate mock data with `docker compose exec django ./manage.py generate_data` if you want to test the website. However, it is not recommended to do that on an installation that you intend to use for Production
 
 ## Set public bucket policy to read/write
 
@@ -252,7 +219,7 @@ services:
 ```
 
 !!! warning
-    This will force the following container from exiting on start:
+    This will force the following containers to exit on start:
 
       - Compute Worker
       - MinIO
@@ -298,7 +265,7 @@ You can update these by:
 
 ### Invalid HTTP method
 
-Exception detail (by using `docker logs -f codabench_django_1`)
+Exception detail (by using `docker logs -f django`)
 
 ```java
 Traceback (most recent call last):
@@ -329,23 +296,14 @@ docker compose up -d
 
 ### Missing static resources (css/js)
 
-Solution: Change the value of the `DEBUG` parameter to `True`
-
-- `nano competitions-v2/src/settings/base.py`
-- `DEBUG = os.environ.get("DEBUG", True)`
-
-![image](../_attachments/113236839-44375400-92d8-11eb-9c12-9d8654423662_17528513112593784.png)
-
-- Also comment out the following code in `base.py`
-
-![image](../_attachments/113236871-544f3380-92d8-11eb-86bf-05ffb9fac5d2_17528513120945034.png)
+Solution: Set `DEBUG=True` in the `.env` file, then restart the services with `docker compose up -d`.
 
 ### CORS Error (could not upload bundle)
 
-Exception detail (by checkout google develop tools)
+Exception detail (by checking Google Chrome developer tools)
 
 ```java
-botocore.exceptions.EndpointConnectionError: Could not connect to the endpoint URL: "[http://docker.for.mac.localhost:9000/private/dataset/2021-02-18-1613624215/24533cfc523e/competition.zip](http://docker.for.mac.localhost:9000/private/dataset/2021-02-18-1613624215/24533cfc523e/competition.zip)"
+botocore.exceptions.EndpointConnectionError: Could not connect to the endpoint URL: "http://docker.for.mac.localhost:9000/private/dataset/2021-02-18-1613624215/24533cfc523e/competition.zip"
 ```
 
 Solution: Set AWS_S3_ENDPOINT_URL to an address that is accessible to the external network
@@ -354,15 +312,15 @@ Solution: Set AWS_S3_ENDPOINT_URL to an address that is accessible to the extern
 
 ![image](../_attachments/113236903-66c96d00-92d8-11eb-9186-2fac1b0a6918_17528513113931694.png)
 
-Make sure the IP address and port number is accessible by external network, You can check this by :
+Make sure the IP address and port number are accessible from the external network. You can check this by:
 
 - `telnet {ip-address-filling-in AWS_S3_ENDPOINT_URL} {port-filling-in AWS_S3_ENDPOINT_URL}`
-- Make sure the firewall is closed on port 9000
+- Make sure the firewall is open on port 9000
 
 !!! note "This problem may also be caused by a bug in MinIO, in which case you will need to follow these steps"
 
     - Upgrade the minio docker image to the latest version
-    - Delete the previous minio directory folder in your codabench folder under `/var/minio` directory
+    - Delete the previous minio directory folder in your codabench folder under the `var/minio` directory
     - Stop the current minio container
     - Delete the current minio container and the corresponding image
     - Re-execute `docker compose up -d`

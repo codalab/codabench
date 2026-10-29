@@ -6,16 +6,16 @@
 
 ## Setting up a local instance of Codabench
 
-- Follow the tutorial in codabench [Docs](../Developers_and_Administrators/Codabench-Installation.md). According to your hosting OS, you might have to tune your environment file a bit. Try without enabling the SSL protocol (doing so, you don't need a domain name for the server). Try using the embedded Minio storage solution instead of a private cloud storage.
+- Follow the tutorial in Codabench [Docs](../Developers_and_Administrators/Codabench-Installation.md). According to your hosting OS, you might have to tune your environment file a bit. Try without enabling the SSL protocol (doing so, you don't need a domain name for the server). Try using the embedded Minio storage solution instead of a private cloud storage.
 - If needed, you can also look into [How to deploy Codabench on your server](../Developers_and_Administrators/How-to-deploy-Codabench-on-your-server.md)
 
 ### Using your local instance
 
 - Create your own competition and play with it. You can look at the output logs of each different docker container.
-- Setting you as an [admin](../Developers_and_Administrators/Administrator-procedures.md#give-superuser-privileges-to-a-user) of your platform and visit the Django Admin menu.
+- Set yourself as an [admin](../Developers_and_Administrators/Administrator-procedures.md#give-superuser-privileges-to-a-user) of your platform and visit the Django Admin menu.
 
 ## Setting up an autonomous Compute Worker on a machine
 
 - Configure and launch a [compute worker](../Organizers/Running_a_benchmark/Compute-Worker-Management---Setup.md) docker container.
-- Create a private [Queue](../Organizers/Running_a_benchmark/Queue-Management.md#create-queue) on your new own competition on the production server codabench.org
+- Create a private [Queue](../Organizers/Running_a_benchmark/Queue-Management.md#create-queue) on your own new competition on the production server codabench.org
 - Assign your own compute-worker to this private queue instead of the default queue.
