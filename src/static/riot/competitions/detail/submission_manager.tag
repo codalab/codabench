@@ -641,10 +641,13 @@
 
             if (!phase) return []
 
-            return _.filter(
-                opts.competition.phases,
-                p => p.index > phase.index
-            )
+            const now = new Date()
+            // Any other phase of the competition that has not ended can receive the submission
+            return _.filter(opts.competition.phases, p => {
+                if (p.id === phase.id) return false
+                if (p.end && new Date(p.end) < now) return false
+                return true
+            })
         }
 
         self.update_submissions = function (filters) {
