@@ -1,6 +1,6 @@
 DEFAULT_TAXONOMY = {
     "Machine Learning Domain": [
-        "Computer Vision", 
+        "Computer Vision",
         "NLP",
         "Tabular",
         "Time Series",

@@ -27,7 +27,7 @@ from api.serializers.competitions import TagSerializer, CompetitionSerializerSim
 from api.serializers.leaderboards import LeaderboardPhaseSerializer, LeaderboardSerializer
 from competitions.emails import send_participation_requested_emails, send_participation_accepted_emails, \
     send_participation_denied_emails, send_direct_participant_email
-from competitions.models import Tag, TagCategory, Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant, Submission
+from competitions.models import Tag, Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant, Submission
 from datasets.models import Data
 from competitions.tasks import batch_send_email, manual_migration, create_competition_dump
 from leaderboards.models import Leaderboard, Column
@@ -56,7 +56,7 @@ class CompetitionViewSet(ModelViewSet):
             # If the visibility is not 'public' and the user is not a staff or superuser, raise a permission denied error
             if visibility != 'public' and not (self.request.user.is_authenticated and (self.request.user.is_staff or self.request.user.is_superuser)):
                 raise PermissionDenied("You cannot view private competitions if you are not a superuser.")
-            
+
             if visibility == 'public':
                 qs = qs.filter(published=True)
             elif visibility == 'private':
@@ -771,11 +771,13 @@ class CompetitionViewSet(ModelViewSet):
             if new_tasks:
                 self.run_new_task_submissions(instance.phases.get(pk=phase_id), new_tasks)
 
+
 class TagViewSet(ReadOnlyModelViewSet):
     queryset = Tag.objects.all().select_related('category')
     serializer_class = TagSerializer
     permission_classes = (AllowAny,)
     pagination_class = None
+
 
 class PhaseViewSet(ModelViewSet):
     serializer_class = PhaseSerializer
