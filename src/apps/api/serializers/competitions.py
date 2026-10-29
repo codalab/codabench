@@ -9,7 +9,7 @@ from api.serializers.leaderboards import LeaderboardSerializer, ColumnSerializer
 from api.serializers.profiles import CollaboratorSerializer
 from api.serializers.submissions import SubmissionScoreSerializer
 from api.serializers.tasks import PhaseTaskInstanceSerializer
-from competitions.models import Tag, TagCategory, Competition, Phase, Page, CompetitionCreationTaskStatus, CompetitionParticipant, CompetitionWhiteListEmail
+from competitions.models import Tag, Competition, Phase, Page, CompetitionCreationTaskStatus, CompetitionParticipant, CompetitionWhiteListEmail
 from forums.models import Forum
 from leaderboards.models import Leaderboard
 from profiles.models import User
@@ -26,6 +26,7 @@ class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
         fields = ('id', 'name', 'category', 'category_name')
+
 
 class PhaseSerializer(WritableNestedModelSerializer):
     tasks = serializers.SlugRelatedField(queryset=Task.objects.all(), required=True, allow_null=False, slug_field='key',
