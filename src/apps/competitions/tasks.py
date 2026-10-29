@@ -798,6 +798,12 @@ def create_competition_dump(competition_pk, keys_instead_of_files=False):
             yaml_data["phases"], key=lambda phase: phase["index"]
         )
 
+        # -------- Tags -------
+        yaml_data["tags"] = [
+            {"name": tag.name, "category": tag.category.name}
+            for tag in comp.tags.select_related("category").all()
+        ]
+
         # -------- Leaderboards -------
 
         yaml_data["leaderboards"] = []

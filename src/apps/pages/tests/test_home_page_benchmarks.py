@@ -267,3 +267,46 @@ class HomePageBenchmarkSectionsTests(TestCase):
         Expects the "No benchmarks yet." message in Popular and Recent.
         """
         assert self.get_home().content.decode().count("No benchmarks yet.") == 2
+
+    def test_card_shows_tags(self):
+        """
+        Creates a published benchmark with a tag and loads the home page.
+        Expects its card to show the tag name, category title and comp-tag class.
+        """
+        from competitions.models import Tag, TagCategory
+        category = TagCategory.objects.create(name="Domain")
+        tag = Tag.objects.create(name="Computer Vision", category=category)
+        competition = make_benchmark(published=True)
+        competition.tags.add(tag)
+
+        content = self.get_home().content.decode()
+
+        expected_color = int(((category.id + 45) * 137.5) % 360)
+        assert 'class="comp-tags"' in content
+        assert "Computer Vision" in content
+        assert 'title="Domain"' in content
+        assert f'style="--tag-color: {expected_color};"' in content
+
+    def test_card_limits_tags_to_five_per_category(self):
+        """
+        Creates a benchmark with 7 tags in one category and 2 in another.
+        Expects only the first 5 of the first category and both of the second.
+        """
+        from competitions.models import Tag, TagCategory
+        domain = TagCategory.objects.create(name="Domain")
+        field = TagCategory.objects.create(name="Field")
+        domain_tags = [Tag.objects.create(name=f"Domain {i}", category=domain) for i in range(7)]
+        field_tags = [Tag.objects.create(name=f"Field {i}", category=field) for i in range(2)]
+
+        competition = make_benchmark(published=True)
+        competition.tags.add(*domain_tags, *field_tags)
+
+        context = self.get_home().context
+        all_cards = context["featured_benchmarks"] + context["popular_benchmarks"] + context["recent_benchmarks"]
+        benchmark_data = next(b for b in all_cards if b["id"] == competition.id)
+
+        domain_serialized = [t for t in benchmark_data["tags"] if t["category"] == "Domain"]
+        field_serialized = [t for t in benchmark_data["tags"] if t["category"] == "Field"]
+
+        assert len(domain_serialized) == 5
+        assert len(field_serialized) == 2
