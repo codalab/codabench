@@ -29,9 +29,10 @@ class TagCategory(models.Model):
 
     class Meta:
         verbose_name_plural = "Tag categories"
-    
+
     def __str__(self):
         return self.name
+
 
 class Tag(models.Model):
     name = models.CharField(max_length=256, default="Other")
@@ -42,6 +43,7 @@ class Tag(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.category.name})"
+
 
 class Competition(models.Model):
     COMPETITION = "competition"
@@ -57,7 +59,7 @@ class Competition(models.Model):
     logo_icon = models.ImageField(upload_to=PathWrapper('logos', manual_override=True), null=True, blank=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
                                    related_name="competitions")
-    
+
     tags = models.ManyToManyField(Tag, blank=True, related_name='competitions')
     created_when = models.DateTimeField(default=now)
     collaborators = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name="collaborations", blank=True)
