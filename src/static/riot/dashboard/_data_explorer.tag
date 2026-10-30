@@ -201,6 +201,13 @@
             self.tabularData1D.sort(function (a, b) {
                 var va = a[k];
                 var vb = b[k];
+                if (k === 'label' && self.customDim1 === 'created_year') {
+                    if (va === 'Unknown') return -1 * dir;
+                    if (vb === 'Unknown') return 1 * dir;
+                    var ya = parseInt(va, 10);
+                    var yb = parseInt(vb, 10);
+                    if (!isNaN(ya) && !isNaN(yb)) return (ya - yb) * dir;
+                }
                 if (typeof va === 'string') va = va.toLowerCase();
                 if (typeof vb === 'string') vb = vb.toLowerCase();
                 if (va < vb) return -1 * dir;
@@ -227,6 +234,13 @@
             self.tabularRows2D.sort(function (a, b) {
                 var va, vb;
                 if (k === 'label') {
+                    if (self.customDim1 === 'created_year') {
+                        if (a.label === 'Unknown') return -1 * dir;
+                        if (b.label === 'Unknown') return 1 * dir;
+                        var ya = parseInt(a.label, 10);
+                        var yb = parseInt(b.label, 10);
+                        if (!isNaN(ya) && !isNaN(yb)) return (ya - yb) * dir;
+                    }
                     va = (a.label || '').toLowerCase();
                     vb = (b.label || '').toLowerCase();
                 } else if (k === 'total') {
@@ -470,9 +484,23 @@
                     return { key: k, val: val };
                 });
 
-                entries.sort(function (a, b) { return b.val - a.val; });
-                if (limit !== Infinity) {
-                    entries = entries.slice(0, limit);
+                if (dim1 === "created_year") {
+                    entries.sort(function (a, b) {
+                        if (a.key === "Unknown") return -1;
+                        if (b.key === "Unknown") return 1;
+                        var ya = parseInt(a.key, 10);
+                        var yb = parseInt(b.key, 10);
+                        if (!isNaN(ya) && !isNaN(yb)) return ya - yb;
+                        return a.key.localeCompare(b.key);
+                    });
+                    if (limit !== Infinity && entries.length > limit) {
+                        entries = entries.slice(-limit);
+                    }
+                } else {
+                    entries.sort(function (a, b) { return b.val - a.val; });
+                    if (limit !== Infinity) {
+                        entries = entries.slice(0, limit);
+                    }
                 }
 
                 // Populate 1D Tabular Data
@@ -605,11 +633,26 @@
                     });
                 });
 
-                var sortedPrimaries = Object.keys(primaryTotals).sort(function (a, b) {
-                    return primaryTotals[b] - primaryTotals[a];
-                });
-                if (limit !== Infinity) {
-                    sortedPrimaries = sortedPrimaries.slice(0, limit);
+                var sortedPrimaries;
+                if (dim1 === "created_year") {
+                    sortedPrimaries = Object.keys(primaryTotals).sort(function (a, b) {
+                        if (a === "Unknown") return -1;
+                        if (b === "Unknown") return 1;
+                        var ya = parseInt(a, 10);
+                        var yb = parseInt(b, 10);
+                        if (!isNaN(ya) && !isNaN(yb)) return ya - yb;
+                        return a.localeCompare(b);
+                    });
+                    if (limit !== Infinity && sortedPrimaries.length > limit) {
+                        sortedPrimaries = sortedPrimaries.slice(-limit);
+                    }
+                } else {
+                    sortedPrimaries = Object.keys(primaryTotals).sort(function (a, b) {
+                        return primaryTotals[b] - primaryTotals[a];
+                    });
+                    if (limit !== Infinity) {
+                        sortedPrimaries = sortedPrimaries.slice(0, limit);
+                    }
                 }
 
                 var allSecondaries = Object.keys(secTotals).sort(function (a, b) {
