@@ -22,11 +22,11 @@
 
         <!-- Charts Grid for Overview -->
         <div class="dashboard-charts-grid">
-            <!-- 1. Most Popular Benchmarks (Full width, exact same component style as CSV download table) -->
+            <!-- 1. Most popular Competitions (Full width, exact same component style as CSV download table) -->
             <div class="ui segment table-card full-width" if="{ opts.p.showCompsChart }">
                 <div class="table-top-bar">
                     <h3 class="ui header" style="margin: 0;">
-                        Most Popular Benchmarks
+                        Most popular Competitions
                     </h3>
                     <button class="ui green button" onclick="{ downloadLeaderboardCSV }">
                         <i class="icon download"></i>Download as CSV
@@ -38,7 +38,7 @@
                         <thead>
                             <tr>
                                 <th style="width: 50px; text-align: center;">#</th>
-                                <th>Benchmark</th>
+                                <th>Competition</th>
                                 <th style="width: 150px;">Organizer</th>
                                 <th style="width: 120px; text-align: right;">Participants</th>
                                 <th style="width: 120px; text-align: right;">Submissions</th>
@@ -57,14 +57,14 @@
                                 <td class="right aligned">{ format_number(comp.submissions_count) }</td>
                                 <td class="center aligned">{ pretty_date(comp.created_when) }</td>
                                 <td class="center aligned">
-                                    <a href="{ comp.url }" class="ui mini primary icon button" target="_blank" title="View Benchmark">
+                                    <a href="{ comp.url }" class="ui mini primary icon button" target="_blank" title="View Competition">
                                         <i class="external alternate icon"></i>
                                     </a>
                                 </td>
                             </tr>
                             <tr if="{ !opts.p.popularCompetitions || opts.p.popularCompetitions.length === 0 }">
                                 <td colspan="7" class="center aligned table-empty-row">
-                                    <em>No benchmarks match the selected filters.</em>
+                                    <em>No competitions match the selected filters.</em>
                                 </td>
                             </tr>
                         </tbody>
@@ -188,7 +188,7 @@
                 lines.push(rowData.join(","));
             });
             if (opts.p && opts.p.downloadCsv) {
-                opts.p.downloadCsv("codabench_popular_benchmarks.csv", lines);
+                opts.p.downloadCsv("codabench_popular_competitions.csv", lines);
             }
         };
 
