@@ -396,6 +396,7 @@ def _send_pending_children(parent):
                 continue
             _send_to_compute_worker(child, is_scoring=False)
 
+
 @app.task(queue="site-worker", soft_time_limit=60)
 def _run_submission(submission_pk, task_pks=None, is_scoring=False, group_ids=None, create_only=False):
     """Function wrapped so that when we run tests we can run this function without
@@ -419,6 +420,7 @@ def _run_submission(submission_pk, task_pks=None, is_scoring=False, group_ids=No
     qs = Submission.objects.select_related(*select_models).prefetch_related(
         *prefetch_models
     )
+
     submission = qs.get(pk=submission_pk)
 
     # ── HUMAN IN THE LOOP SECURE (private CW only)
@@ -426,8 +428,8 @@ def _run_submission(submission_pk, task_pks=None, is_scoring=False, group_ids=No
         if submission.queue is None:
             logger.error(
                 f"HITL: submission {submission_pk} rejected — "
-                "Human in the Loop is enabled but no private queue is configured "
-                "(competition or participant group)."
+                f"Human in the Loop is enabled but no private queue is configured "
+                f"(competition or participant group)."
             )
             submission.status = Submission.FAILED
             submission.status_details = (
@@ -452,6 +454,8 @@ def _run_submission(submission_pk, task_pks=None, is_scoring=False, group_ids=No
         return
 
     # ── MANUAL RUN OF A PARENT WHOSE CHILDREN ALREADY EXIST (created with create_only=True)
+    # We check that children really exist (and not `has_children`): re_run() creates a new
+    # parent with has_children=True but without any child, they must be created below.
     if not is_scoring and submission.children.exists():
         if not create_only:
             _send_pending_children(submission)
@@ -490,6 +494,13 @@ def _run_submission(submission_pk, task_pks=None, is_scoring=False, group_ids=No
         else:
             combos = [(tasks[0], queue) for queue in group_queues]
 
+        logger.info(
+            f"[manual-run] sub={submission_pk} create_only={create_only} is_scoring={is_scoring} "
+            f"group_ids={group_ids} tasks={[t.pk for t in tasks]} "
+            f"group_queues={[getattr(q, 'pk', q) for q in group_queues]} "
+            f"children_exist={submission.children.exists()}"
+        )
+
         created_children = []
         with transaction.atomic():
             submission.has_children = True
@@ -509,7 +520,6 @@ def _run_submission(submission_pk, task_pks=None, is_scoring=False, group_ids=No
                 child_sub.save(ignore_submission_limit=True)
                 created_children.append(child_sub)
 
-        # Notifications and sending happen after the commit
         send_parent_status(submission)
         for child_sub in created_children:
             if not create_only:

@@ -162,8 +162,8 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
             group_ids = [g.id for g in selected_groups] if selected_groups is not None else None
             sub.start(tasks=tasks, group_ids=group_ids)
         else:
-            # Create the children now (status Submitting) so the organizer can run them one by one.
-            group_ids = list(sub.selected_groups.values_list('id', flat=True))
+            # Use the groups received in the request, not the DB (not visible yet here)
+            group_ids = [g.id for g in selected_groups] if selected_groups is not None else None
             sub.start(tasks=None, group_ids=group_ids, create_only=True)
 
         return sub
