@@ -8,6 +8,7 @@ from factory.django import DjangoModelFactory
 from pytz import UTC
 
 from competitions.models import Competition, Phase, Submission, CompetitionParticipant, PhaseTaskInstance
+from consulting.models import ConsultingListing
 from datasets.models import Data
 from external_competitions.models import ExternalPlatform, ExternalCompetition
 from leaderboards.models import Leaderboard, Column, SubmissionScore
@@ -256,3 +257,13 @@ class ExternalCompetitionFactory(DjangoModelFactory):
     platform = factory.SubFactory(ExternalPlatformFactory)
     name = factory.Sequence(lambda n: f'External Competition {n}')
     competition_url = factory.Sequence(lambda n: f'https://example.org/competitions/{n}/')
+
+
+class ConsultingListingFactory(DjangoModelFactory):
+    class Meta:
+        model = ConsultingListing
+
+    owner = factory.SubFactory(UserFactory)
+    title = factory.Sequence(lambda n: f'Consulting Listing {n}')
+    picture = factory.django.ImageField()
+    description = factory.Faker('paragraph')
