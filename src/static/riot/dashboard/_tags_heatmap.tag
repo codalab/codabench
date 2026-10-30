@@ -118,14 +118,17 @@
                     rowCounts[t1] = (rowCounts[t1] || 0) + 1;
                     if (!matrix[t1]) matrix[t1] = {};
                     tags2.forEach(function (t2) {
-                        colCounts[t2] = (colCounts[t2] || 0) + 1;
                         matrix[t1][t2] = (matrix[t1][t2] || 0) + 1;
                     });
                 });
+
+                tags2.forEach(function (t2) {
+                    colCounts[t2] = (colCounts[t2] || 0) + 1;
+                });
             });
 
-            var rowOrder = Object.keys(rowCounts).sort(function (a, b) { return rowCounts[b] - rowCounts[a]; }).slice(0, 18);
-            var colOrder = Object.keys(colCounts).sort(function (a, b) { return colCounts[b] - colCounts[a]; }).slice(0, 18);
+            var rowOrder = Object.keys(rowCounts).sort(function (a, b) { return rowCounts[b] - rowCounts[a]; }).slice(0, 20);
+            var colOrder = Object.keys(colCounts).sort(function (a, b) { return colCounts[b] - colCounts[a]; }).slice(0, 20);
 
             if (rowOrder.length === 0 || colOrder.length === 0) {
                 self.destroyChart();
@@ -143,7 +146,11 @@
             var rowSums = {};
             rowOrder.forEach(function (r) {
                 var s = 0;
-                colOrder.forEach(function (c) { s += (matrix[r] && matrix[r][c]) || 0; });
+                if (matrix[r]) {
+                    Object.keys(matrix[r]).forEach(function (c) {
+                        s += matrix[r][c];
+                    });
+                }
                 rowSums[r] = s;
             });
 
