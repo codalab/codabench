@@ -561,9 +561,7 @@
             // Overview flags
             self.showOrgsChart = self.filteredCompetitions.length > 0 && self.kpis.distinctOrganizers > 1;
 
-            var benchmarkComps = self.filteredCompetitions.filter((c) => c.competition_type === "benchmark");
-            var pool = benchmarkComps.length > 0 ? benchmarkComps : self.filteredCompetitions;
-            var sortedPool = pool.slice().sort((a, b) => {
+            var sortedPool = self.filteredCompetitions.slice().sort((a, b) => {
                 var pDiff = (b.participants_count || 0) - (a.participants_count || 0);
                 if (pDiff !== 0) return pDiff;
                 return (b.submissions_count || 0) - (a.submissions_count || 0);
