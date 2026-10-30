@@ -7,7 +7,7 @@ from .models import User
 class SignUpForm(UserCreationForm):
 
     email = forms.EmailField(
-        max_length=254, help_text="Required. Inform a valid email address."
+        max_length=200, help_text="Required. Inform a valid email address."
     )
 
     def clean_username(self):
@@ -26,9 +26,12 @@ class SignUpForm(UserCreationForm):
         return data
 
     def clean_email(self):
-        email = self.cleaned_data["email"]
+        email = self.cleaned_data["email"].lower()
         if "*" in email:
             raise forms.ValidationError("Email address cannot contain the '*' character.")
+        # Emails are stored in lowercase, so check for an existing account case-insensitively
+        if User.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError("An account with this email already exists.")
         return email
 
     class Meta:
