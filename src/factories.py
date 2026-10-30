@@ -7,7 +7,7 @@ from factory import post_generation
 from factory.django import DjangoModelFactory
 from pytz import UTC
 
-from competitions.models import Competition, Phase, Submission, CompetitionParticipant, PhaseTaskInstance
+from competitions.models import Competition, Phase, Submission, CompetitionParticipant, PhaseTaskInstance, Tag, TagCategory
 from datasets.models import Data
 from external_competitions.models import ExternalPlatform, ExternalCompetition
 from leaderboards.models import Leaderboard, Column, SubmissionScore
@@ -55,6 +55,23 @@ class UserFactory(DjangoModelFactory):
                 self.save()
 
 
+class TagCategoryFactory(DjangoModelFactory):
+    class Meta:
+        model = TagCategory
+        django_get_or_create = ('name',)
+
+    name = factory.Sequence(lambda n: f'Category {n}')
+
+
+class TagFactory(DjangoModelFactory):
+    class Meta:
+        model = Tag
+        django_get_or_create = ('name', 'category')
+
+    name = factory.Sequence(lambda n: f'Tag {n}')
+    category = factory.SubFactory(TagCategoryFactory)
+
+
 class CompetitionFactory(DjangoModelFactory):
     class Meta:
         model = Competition
@@ -77,6 +94,14 @@ class CompetitionFactory(DjangoModelFactory):
                 self.collaborators.add(user)
             # Competition.save() adds the collaborators as approved participants
             self.save()
+
+    @post_generation
+    def tags(self, created, extracted, **kwargs):
+        if not created:
+            return
+        if extracted:
+            for tag in extracted:
+                self.tags.add(tag)
 
 
 class DataFactory(DjangoModelFactory):
