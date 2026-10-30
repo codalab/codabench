@@ -627,9 +627,9 @@ class Submission(models.Model):
             self.phase.competition.submissions_count += 1
             self.phase.competition.save()
 
-    def start(self, tasks=None, group_ids=None):
+    def start(self, tasks=None, group_ids=None, create_only=False):
         from .tasks import run_submission
-        run_submission(self.pk, tasks=tasks, group_ids=group_ids)
+        run_submission(self.pk, tasks=tasks, group_ids=group_ids, create_only=create_only)
 
     def run(self):
         # get tasks from the phase

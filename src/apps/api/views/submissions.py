@@ -341,12 +341,18 @@ class SubmissionViewSet(ModelViewSet):
         if not self.has_admin_permission(request.user, submission):
             raise PermissionDenied('You do not have permission to run this submission')
 
-        # Allow only to run a submission with status `Submitting`
-        if submission.status != Submission.SUBMITTING:
+        if submission.is_soft_deleted:
+            raise PermissionDenied('Cannot run a deleted submission')
+
+        if submission.children.exists():
+            has_pending_children = submission.children.filter(status=Submission.SUBMITTING).exists()
+            if not has_pending_children:
+                raise PermissionDenied('Cannot run a submission which has no child in submitting status')
+        elif submission.status != Submission.SUBMITTING:
             raise PermissionDenied('Cannot run a submission which is not in submitting status')
 
-        new_sub = submission.run()
-        return Response({'id': new_sub.id})
+        submission.run()
+        return Response({'id': submission.id})
 
     @action(detail=True, methods=('POST',))
     def re_run_submission(self, request, pk):
