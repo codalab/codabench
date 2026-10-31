@@ -1,0 +1,42 @@
+/* --------------------------------------------------------------------------------------
+ Pagination component (templates/components/pagination.html)
+
+ Why the cb- prefix: a plain .pagination class would also style the Semantic UI
+ "ui pagination menu" elements used in riot tags.
+ */
+
+// 3 columns so the page number stays in the center
+.cb-pagination
+    display grid
+    grid-template-columns 1fr auto 1fr
+    align-items center
+    gap 12px
+    margin-top 24px
+
+.cb-pagination-left,
+.cb-pagination-right
+    display flex
+
+// Keeps the left arrow next to the page number
+.cb-pagination-left
+    justify-content flex-end
+
+.cb-pagination-label
+    color $cb-navy-700
+    font-size 14px
+    font-weight 500
+
+.cb-pagination-button
+    padding 4px 8px
+    border 1px solid $cb-blue-500
+    border-radius 6px
+    color $cb-blue-500
+    font-size 12px
+
+    &:hover
+        background-color $cb-blue-50
+        color $cb-blue-500
+
+    // Why: Semantic UI icons have a right margin that pushes the arrow off center
+    .icon
+        margin 0

@@ -1,0 +1,12 @@
+{# Latest news on the home page: title, button to the news page and cards. #}
+{# Expects `news_posts` (serialized latest posts) in the context. #}
+
+{% if news_posts %}
+<div class="news-section">
+    <div class="news-section-header">
+        <h2 class="news-section-title">Latest News</h2>
+        <a class="news-view-all" href="{% url 'pages:news' %}">View all <i class="arrow right icon"></i></a>
+    </div>
+    {% include "components/news.html" %}
+</div>
+{% endif %}

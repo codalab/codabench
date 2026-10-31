@@ -1,0 +1,10 @@
+{% load static %}
+{# Placeholder for a page with nothing to show: image, title, description and a button to the home page. #}
+{# Expects `title` and `description`. #}
+
+<div class="empty-state">
+    <img class="empty-state-image" src="{% static 'img/empty.png' %}" alt="">
+    <h2 class="empty-state-title">{{ title }}</h2>
+    <p class="empty-state-description">{{ description }}</p>
+    <a class="empty-state-button" href="{% url 'pages:home' %}">Return to Home</a>
+</div>
