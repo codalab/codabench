@@ -35,11 +35,11 @@ class HomePageNewsTests(TestCase):
     def test_view_all_news_link(self):
         """
         Creates a post and loads the home page.
-        Expects the "View all news" link to the news page.
+        Expects the "View all" link to the news page.
         """
         NewsPost.objects.create(title="Post", text="text")
 
-        assert 'class="news-view-all" href="/news/"' in self.get_home().content.decode()
+        assert 'class="news-view-all" href="/news/">View all <i' in self.get_home().content.decode()
 
     def test_open_link_only_for_posts_with_a_link(self):
         """
