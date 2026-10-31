@@ -1,43 +1,36 @@
-{# Latest news on the home page. Expects `news_posts` (serialized latest posts) in the context. #}
+{# News cards, used on the home page and the news page. Expects `news_posts` (serialized posts) in the context. #}
 
 {% if news_posts %}
-<div class="news-section">
-    <div class="news-section-header">
-        <h2 class="news-section-title">Latest News</h2>
-	<!-- Removed the "View all news" link since the /news page does not exist yet -->
-	<!-- <a class="news-view-all" href="/news/">View all news <i class="arrow right icon"></i></a> -->
-    </div>
-    <div class="news-cards">
-        {% for post in news_posts %}
-        <div class="news-card">
-            <div class="news-card-date">{{ post.created_when }}</div>
-            <h3 class="news-card-title">
-                {% if post.link %}
-                    <a href="{{ post.link }}" target="_blank">{{ post.title }}</a>
-                {% else %}
-                    {{ post.title }}
+<div class="news-cards">
+    {% for post in news_posts %}
+    <div class="news-card">
+        <div class="news-card-date">{{ post.created_when }}</div>
+        <h3 class="news-card-title">
+            {% if post.link %}
+                <a href="{{ post.link }}" target="_blank">{{ post.title }}</a>
+            {% else %}
+                {{ post.title }}
+            {% endif %}
+        </h3>
+        {% if post.text %}
+            {# Clamped to 3 lines in CSS #}
+            <p class="news-card-text">{{ post.text|striptags }}</p>
+        {% endif %}
+        {% if post.text or post.link %}
+            <div class="news-card-actions">
+                {% if post.text %}
+                    {# Shows the full text in the card, only visible when the text is cut off #}
+                    <button type="button" class="news-card-toggle" hidden>
+                        <span class="news-card-toggle-label">Read more</span> <i class="angle down icon"></i>
+                    </button>
                 {% endif %}
-            </h3>
-            {% if post.text %}
-                {# Clamped to 3 lines in CSS #}
-                <p class="news-card-text">{{ post.text|striptags }}</p>
-            {% endif %}
-            {% if post.text or post.link %}
-                <div class="news-card-actions">
-                    {% if post.text %}
-                        {# Shows the full text in the card, only visible when the text is cut off #}
-                        <button type="button" class="news-card-toggle" hidden>
-                            <span class="news-card-toggle-label">Read more</span> <i class="angle down icon"></i>
-                        </button>
-                    {% endif %}
-                    {% if post.link %}
-                        <a class="news-card-link" href="{{ post.link }}" target="_blank">Open link <i class="external alternate icon"></i></a>
-                    {% endif %}
-                </div>
-            {% endif %}
-        </div>
-        {% endfor %}
+                {% if post.link %}
+                    <a class="news-card-link" href="{{ post.link }}" target="_blank">Open link <i class="external alternate icon"></i></a>
+                {% endif %}
+            </div>
+        {% endif %}
     </div>
+    {% endfor %}
 </div>
 
 <script>

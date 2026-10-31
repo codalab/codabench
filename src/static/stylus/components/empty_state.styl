@@ -1,0 +1,39 @@
+/* --------------------------------------------------------------------------------------
+ Empty state component (templates/components/empty_state.html)
+ */
+.empty-state
+    width 100%
+    padding 3em 1em
+    text-align center
+
+// Half of the 256px image
+// Why: showing it smaller than its real size keeps it sharp on high resolution screens
+.empty-state-image
+    display block
+    width 128px
+    margin 0 auto 20px
+
+#page_content .empty-state-title
+    margin 0 0 8px
+    color $cb-navy-900
+    font-size 1.6em
+
+.empty-state-description
+    margin 0 auto 24px
+    max-width 480px
+    color $cb-navy-700
+    font-size 1.1em
+    line-height 1.5
+
+.empty-state-button
+    display inline-block
+    padding 10px 20px
+    border-radius 6px
+    background-color $cb-blue-500
+    color $cb-text-on-dark
+    font-size 14px
+    font-weight 500
+
+    &:hover
+        background-color $cb-navy-700
+        color $cb-text-on-dark
