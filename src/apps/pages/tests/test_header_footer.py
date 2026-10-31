@@ -129,3 +129,12 @@ class FooterTests(TestCase):
             content = self.client.get(reverse('pages:home')).content.decode()
 
         assert 'href="mailto:team@example.com"' in content.split('id="footer"')[1]
+
+    def test_footer_links_to_news_page_when_there_are_no_posts(self):
+        """
+        Loads the home page without any news posts.
+        Expects the footer link to the news page, which is shown even with no posts.
+        """
+        content = self.client.get(reverse('pages:home')).content.decode()
+
+        assert '<a href="/news/">News</a>' in content.split('id="footer"')[1]
