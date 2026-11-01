@@ -1,3 +1,4 @@
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.views.generic import TemplateView
 from django.db.models import Q
@@ -67,7 +68,7 @@ class SearchView(TemplateView):
     template_name = 'search/form.html'
 
 
-class ServerStatusView(TemplateView):
+class ServerStatusView(LoginRequiredMixin, TemplateView):
     template_name = 'pages/server_status.html'
 
     def get_context_data(self, *args, **kwargs):
@@ -140,5 +141,6 @@ class ServerStatusView(TemplateView):
         return context
 
 
-class MonitorQueuesView(TemplateView):
+class MonitorQueuesView(PermissionRequiredMixin, TemplateView):
+    permission_required = ('is_superuser',)
     template_name = 'pages/monitor_queues.html'

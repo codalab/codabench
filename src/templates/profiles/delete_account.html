@@ -1,0 +1,13 @@
+{% extends "profiles/settings_base.html" %}
+
+{% block title %}Delete Account - Codabench{% endblock %}
+
+{% block settings_title %}Delete Account{% endblock %}
+
+{% block settings_content %}
+    <delete-account></delete-account>
+    <script>
+        const user = JSON.parse("{{ serialized_user | escapejs }}")
+        const contact_email = "{{ CONTACT_EMAIL }}"
+    </script>
+{% endblock %}
