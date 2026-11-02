@@ -51,7 +51,7 @@ dependencies = [
     "flex==6.14.1",
     "pyrabbit2==1.0.7",
     "django-enforce-host==1.1.0",
-    "twisted==26.4.0",
+    "twisted==26.10.0",
     "ipdb==0.13.13",
     "jinja2==3.1.6",
     "requests==2.34.2",
