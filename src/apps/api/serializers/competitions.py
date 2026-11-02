@@ -9,7 +9,7 @@ from api.serializers.leaderboards import LeaderboardSerializer, ColumnSerializer
 from api.serializers.profiles import CollaboratorSerializer
 from api.serializers.submissions import SubmissionScoreSerializer
 from api.serializers.tasks import PhaseTaskInstanceSerializer
-from competitions.models import Tag, TagCategory, Competition, Phase, Page, CompetitionCreationTaskStatus, CompetitionParticipant, CompetitionWhiteListEmail
+from competitions.models import Tag, Competition, Phase, Page, CompetitionCreationTaskStatus, CompetitionParticipant, CompetitionWhiteListEmail
 from forums.models import Forum
 from leaderboards.models import Leaderboard
 from profiles.models import User
@@ -57,6 +57,8 @@ class PhaseSerializer(WritableNestedModelSerializer):
             'public_data',
             'starting_kit',
             'is_final_phase',
+            'is_parallel',
+            'is_locked_phase',
         )
 
     def get_is_final_phase(self, obj):
@@ -141,8 +143,9 @@ class PhaseDetailSerializer(serializers.ModelSerializer):
             'starting_kit',
             'is_final_phase',
             'used_submissions_per_day',
-            'used_submissions_per_person'
-
+            'used_submissions_per_person',
+            'is_parallel',
+            'is_locked_phase',
         )
 
     def get_status(self, obj):

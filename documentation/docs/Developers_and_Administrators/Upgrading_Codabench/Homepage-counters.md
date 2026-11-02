@@ -2,17 +2,17 @@
 
 1. Re-build containers
 
-```bash
-docker compose build && docker compose up -d
-```
+    ```bash
+    docker compose build && docker compose up -d
+    ```
 
 2. Update the homepage counters (to avoid waiting 1 day)
 
-```bash
-docker compose exec django ./manage.py shell_plus
-```
+    ```bash
+    docker compose exec django ./manage.py shell_plus
+    ```
 
-```python
-from analytics.tasks import update_home_page_counters
-eager_results = update_home_page_counters.apply_async()
-```
+    ```python
+    from analytics.tasks import update_home_page_counters
+    eager_results = update_home_page_counters.apply_async()
+    ```

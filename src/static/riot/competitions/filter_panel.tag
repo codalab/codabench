@@ -43,7 +43,7 @@
     </div>
 
     <!-- Order By (only if opts.show_ordering is true) -->
-    <div class="ui segment" if="{ opts.show_ordering }">
+    <div class="ui segment order-by-segment" if="{ opts.show_ordering }">
       <h5 class="ui header" style="margin-bottom: 8px;">Order by</h5>
       <div class="ui fluid selection dropdown" ref="order_by_dropdown">
         <input type="hidden" name="order" value="{ filter_state.ordering || 'recent' }">
@@ -525,9 +525,25 @@
         border-top 1px solid #f1f4f7 !important
         padding 12px 14px !important
         margin 0 !important
+        position relative
 
         &:first-child
           border-top none !important
+
+        &:focus-within,
+        &:has(.ui.dropdown.active),
+        &:has(.ui.dropdown.visible)
+          z-index 10 !important
+
+      > .order-by-segment
+        z-index 5
+
+      .ui.selection.dropdown
+        &.active,
+        &.visible
+          z-index 100 !important
+          .menu
+            z-index 101 !important
 
       .ui.header
         color #1b1b1b !important

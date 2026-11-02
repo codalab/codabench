@@ -65,4 +65,4 @@ Administrative utility container for Celery tasks and queues.
 
 ## Competition docker image
 
-The services of Codabench run inside Docker environments. This should not be confused with the Docker environment used to run the submissions, which may vary for each benchmark. The docker running submissions is discussed [here](Submission-Docker-Container-Layout.md)
+The services of Codabench run inside Docker environments. This should not be confused with the Docker environment used to run the submissions, which may vary for each benchmark. The docker running submissions is discussed [here](Submission-Docker-Container-Layout.md), and how organizers can choose or build the image for their benchmark is explained in [Competition Docker Image](../Organizers/Benchmark_Creation/Competition-docker-image.md).

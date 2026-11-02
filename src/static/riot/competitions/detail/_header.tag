@@ -189,16 +189,27 @@
                 <thead>
                 <tr>
                     <th colspan="100%">
-                        Please Choose a phase to migrate
+                        Choose a source phase and its destination phase
                     </th>
                 </tr>
                 </thead>
                 <tbody>
                 <tr each="{phase, index in competition.phases}">
-                    <td>{phase.name}</td>
+                    <td>
+                        {phase.name}
+                        <span if="{ phase.is_parallel }" class="ui tiny teal label">Parallel</span>
+                        <span if="{ phase.is_locked_phase }" class="ui tiny orange label"><i class="lock icon"></i>Locked</span>
+                    </td>
                     <td class="collapsing">
-                        <button if="{index !== competition.phases.length - 1}"
-                                class="ui button"
+                        <select class="ui dropdown migration-destination" id="migration_destination_{phase.id}">
+                            <option each="{dest in destinations_for(phase)}" value="{dest.id}">
+                                → {dest.name}
+                            </option>
+                        </select>
+                    </td>
+                    <td class="collapsing">
+                        <button class="ui button"
+                                disabled="{ destinations_for(phase).length === 0 }"
                                 onclick="{migrate_phase.bind(this, phase.id)}">
                             Migrate
                         </button>
@@ -208,6 +219,7 @@
             </table>
         </div>
     </div>
+
     <script>
         let self = this
 
@@ -309,14 +321,34 @@
             
         }
 
+        self.destinations_for = function (source_phase) {
+            var now = new Date()
+            return _.filter(self.competition.phases, function (p) {
+                if (p.id === source_phase.id) return false
+                if (p.end && new Date(p.end) < now) return false
+                return true
+            })
+        }
+
         self.migrate_phase = function (phase_id) {
-            CODALAB.api.manual_migration(phase_id)
+            var destination_id = parseInt($('#migration_destination_' + phase_id).val())
+            if (!destination_id) {
+                toastr.error('Please choose a destination phase.')
+                return
+            }
+            var destination = _.find(self.competition.phases, {id: destination_id})
+            var source = _.find(self.competition.phases, {id: phase_id})
+            if (!confirm(`Migrate submissions from "${source.name}" to "${destination.name}"?`)) {
+                return
+            }
+            CODALAB.api.manual_migration(phase_id, destination_id)
                 .done(data => {
-                    toastr.success("Migration of this phase to the next should begin soon.")
+                    toastr.success("The migration should begin soon.")
                     self.close_modal(self.refs.migration_modal)
                 })
                 .fail(error => {
-                    toastr.error('Something went wrong trying to migrate this phase.')
+                    var detail = _.get(error, 'responseJSON.detail')
+                    toastr.error(detail || 'Something went wrong trying to migrate this phase.')
                 })
         }
 

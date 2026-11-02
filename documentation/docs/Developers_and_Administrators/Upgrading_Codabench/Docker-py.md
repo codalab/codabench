@@ -17,4 +17,4 @@ CONTACT_EMAIL=info@codabench.org
 Make sure to add it to your `.env` file before launching the containers
 
 ## Compute Workers
-Major compute workers changes will require updating the Compute Worker images for both Docker and Podman. Podman workers will also need Podman 5.4 minimum to work on the host
+Major compute worker changes will require updating the Compute Worker images for both Docker and Podman. Podman workers will also need Podman 5.4 minimum to work on the host

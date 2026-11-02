@@ -1,5 +1,5 @@
 
-Here is an advanced tutorial. If you are new to CodaBench, please refer to [get started tutorial](Getting-started-with-Codabench.md) first.
+Here is an advanced tutorial. If you are new to Codabench, please refer to [get started tutorial](Getting-started-with-Codabench.md) first.
 In this article, you'll learn how to use more advanced features and how to create benchmarks using either the editor or bundles.
 Before proceeding to our tutorial, make sure you have registered for an account on the [Codabench](https://www.codabench.org/) website.
 
@@ -42,7 +42,7 @@ Click the Add Dataset button in the diagram to upload the resource files needed 
 
 ![image](../../_attachments/102432435-4d185880-404e-11eb-967f-1735f6a9f145_17528513094839308.png)
 
-Creating a phase will require a bundle of the following types (.zip format), I'll give you more details on how to write these bundle later.
+Creating a phase will require a bundle of the following types (.zip format), I'll give you more details on how to write these bundles later.
 
 Now you just need to have this concept in your mind
 
