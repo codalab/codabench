@@ -123,6 +123,16 @@ class Competition(models.Model):
         else:
             return user in self.all_organizers
 
+    def get_migration_tasks(self, destination_phase):
+        if not self.children.exists():
+            return None
+        finished_task_ids = self.children.filter(
+            status=Submission.FINISHED,
+            is_soft_deleted=False,
+            task__isnull=False,
+        ).values_list('task_id', flat=True)
+        return list(destination_phase.tasks.filter(pk__in=finished_task_ids).order_by('pk'))
+
     def apply_phase_migration(self, current_phase, next_phase, force_migration=False):
         """
         Does the actual migrating of submissions from current_phase to next_phase
@@ -167,6 +177,14 @@ class Competition(models.Model):
         )
 
         for submission in submissions:
+            tasks = submission.get_migration_tasks(next_phase)
+            if tasks is not None and not tasks:
+                logger.warning(
+                    f"Submission pk={submission.pk} not migrated: none of its Finished child "
+                    f"submissions ran on a task of phase pk={next_phase.pk}"
+                )
+                continue
+
             new_submission = Submission(
                 created_by_migration=current_phase,
                 participant=submission.participant,
@@ -177,7 +195,7 @@ class Competition(models.Model):
                 fact_sheet_answers=submission.fact_sheet_answers,
             )
             new_submission.save(ignore_submission_limit=True)
-            new_submission.start()
+            new_submission.start(tasks=tasks)
 
             submission.is_migrated = True
             submission.save()

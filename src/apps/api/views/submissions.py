@@ -440,6 +440,10 @@ class SubmissionViewSet(ModelViewSet):
         if destination_phase.end and destination_phase.end < now():
             raise ValidationError('The destination phase has ended and cannot receive submissions')
 
+        tasks = submission.get_migration_tasks(destination_phase)
+        if tasks is not None and not tasks:
+            raise ValidationError('No finished child submission to migrate on a task of the destination phase')
+
         new_submission = Submission(
             created_by_migration=submission.phase,
             participant=submission.participant,
@@ -451,7 +455,7 @@ class SubmissionViewSet(ModelViewSet):
         new_submission.save(ignore_submission_limit=True)
 
         if destination_phase.start <= now():
-            new_submission.start()
+            new_submission.start(tasks=tasks)
 
         return Response({'id': new_submission.id})
 
