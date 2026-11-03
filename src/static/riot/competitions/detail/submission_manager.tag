@@ -192,7 +192,7 @@
                             <i class="icon green play"></i>
                         </span>
                         <span if="{ _.includes(['Finished', 'Failed', 'Cancelled'], submission.status) }"
-                            data-tooltip="Rerun Submission" data-inverted=""
+                            data-tooltip="Rerun Submission (does not create a new one)" data-inverted=""
                             onclick="{ rerun_submission.bind(this, submission) }">
                             <i class="icon purple history"></i>
                         </span>
@@ -322,7 +322,7 @@
                                             <i class="icon green play"></i>
                                         </span>
                                         <span if="{ _.includes(['Finished', 'Failed', 'Cancelled'], child.status) }"
-                                            data-tooltip="Rerun Submission" data-inverted=""
+                                            data-tooltip="Rerun Submission (does not create a new one)" data-inverted=""
                                             onclick="{ rerun_submission.bind(this, child) }">
                                             <i class="icon purple history"></i>
                                         </span>
