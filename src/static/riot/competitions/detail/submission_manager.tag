@@ -185,14 +185,15 @@
                         <!-- run/rerun submission IDEMPOTENT -->
                         <!--  run: status = submitting auto_run = false  -->
                         <!--  rerun: else   -->
-                        <span if="{ child.status === 'Submitting' && !child.auto_run }"
-                            data-tooltip="Run Submission" data-inverted=""
-                            onclick="{ run_submission.bind(this, child) }">
+                        <span if="{ is_manual_run(submission) }"
+                            data-tooltip="{ submission.has_children ? 'Run all remaining children' : 'Run Submission' }"
+                            data-inverted=""
+                            onclick="{ run_submission.bind(this, submission) }">
                             <i class="icon green play"></i>
                         </span>
-                        <span if="{ _.includes(['Finished', 'Failed', 'Cancelled'], child.status) }"
+                        <span if="{ _.includes(['Finished', 'Failed', 'Cancelled'], submission.status) }"
                             data-tooltip="Rerun Submission" data-inverted=""
-                            onclick="{ rerun_submission.bind(this, child) }">
+                            onclick="{ rerun_submission.bind(this, submission) }">
                             <i class="icon purple history"></i>
                         </span>
                         <!-- resubmit on current tasks (re-run keeps the original task) -->
