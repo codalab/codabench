@@ -18,7 +18,7 @@ This getting started tutorial shows a **simple example** of how to create a comp
 ## Make changes
 -  Click on the **Edit** gray button at the top to enter the editor.
 - Make small changes
-    - Change the logo in the **Details** tab to another png of jpg file.
+    - Change the logo in the **Details** tab to another png or jpg file.
     - Change the end date in the **Phases** tab: if the competition is terminated, you will not be able to make submissions.
 - Save your changes and verify that they have become effective.
 
@@ -26,6 +26,7 @@ This getting started tutorial shows a **simple example** of how to create a comp
 - In your competition page, go to the tab **My submissions**
 - Submit the (zipped) sample submission bundle you downloaded.
 - When your submission finishes, go to the **Result tab** to check if it shows up on the leaderboard.
+
 !!! warning "In some competitions, submissions successfully processed do not automatically get pushed to the leaderboard"
 
 ## Publish your competition
@@ -36,4 +37,4 @@ This getting started tutorial shows a **simple example** of how to create a comp
 You are done with this simple tutorial.
 Next, check the more [advanced tutorial](Advanced-Tutorial.md).
 
-You can also check out this blog post: [How to create your first benchmark on Codabench](https://medium.com/@adrienpavao/how-to-create-your-first-benchmark-on-codabench-910e2aee130c).
+You can also follow this other tutorial: [How to create your first benchmark on Codabench](How-to-create-your-first-benchmark.md).

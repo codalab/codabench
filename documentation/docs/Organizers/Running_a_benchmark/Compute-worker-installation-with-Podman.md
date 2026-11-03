@@ -5,7 +5,7 @@ We need to install Podman on the VM. We use Debian based OS, like Ubuntu. Ubuntu
 
 `sudo apt install podman `
 
-After installing Podman, you will need to launch the service associated to it with 
+After installing Podman, you will need to launch the service associated with it with 
 ```bash
 systemctl --user enable --now podman
 ```
@@ -62,8 +62,8 @@ CONTAINER_ENGINE_EXECUTABLE=podman
 #######################################################################
 #COMPETITION_CONTAINER_NETWORK_DISABLED=False
 
-#COMPETITION_CONTAINER_HTTP_PROXY=https://example_proxy:123
-#COMPETITION_CONTAINER_HTTPS_PROXY=http://example_proxy:1233
+#COMPETITION_CONTAINER_HTTP_PROXY=http://example_proxy:123
+#COMPETITION_CONTAINER_HTTPS_PROXY=https://example_proxy:1233
 ```
 
 By default, the competition container created by the compute worker has access to internet. If you want to remove this access, you can uncomment `COMPETITION_CONTAINER_NETWORK_DISABLED` and set it to `True`

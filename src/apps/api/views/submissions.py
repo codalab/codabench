@@ -435,8 +435,11 @@ class SubmissionViewSet(ModelViewSet):
             competition=submission.phase.competition
         )
 
-        if destination_phase.index <= submission.phase.index:
-            raise ValidationError('Destination phase must be a future phase relative to the current one')
+        if destination_phase.pk == submission.phase_id:
+            raise ValidationError('Destination phase must be different from the current one')
+
+        if destination_phase.end and destination_phase.end < now():
+            raise ValidationError('The destination phase has ended and cannot receive submissions')
 
         new_submission = Submission(
             created_by_migration=submission.phase,
@@ -477,8 +480,10 @@ class SubmissionViewSet(ModelViewSet):
                 reason = 'child submission'
             elif submission.status != Submission.FINISHED:
                 reason = 'not finished'
-            elif destination_phase.index <= submission.phase.index:
-                reason = 'destination phase is not a future phase'
+            elif destination_phase.pk == submission.phase_id:
+                reason = 'destination phase is the same as the current one'
+            elif destination_phase.end and destination_phase.end < now():
+                reason = 'destination phase has ended'
 
             if reason:
                 skipped.append({'id': submission.id, 'reason': reason})
@@ -713,6 +718,14 @@ def upload_submission_scores(request, submission_pk):
 
     if "scores" not in request.data:
         raise ValidationError("'scores' required.")
+
+    # Reject the upload if this submission already has scores, so a repeated upload does not add duplicate score rows
+    if submission.scores.filter(column__leaderboard=submission.phase.leaderboard).exists():
+        logger.warning(f"Rejected score upload for submission {submission_pk}: scores already uploaded")
+        return Response(
+            {"detail": "Scores have already been uploaded for this submission."},
+            status=status.HTTP_409_CONFLICT,
+        )
 
     competition_columns = submission.phase.leaderboard.columns.values_list('key', flat=True)
 

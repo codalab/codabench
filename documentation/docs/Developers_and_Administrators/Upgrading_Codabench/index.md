@@ -10,7 +10,7 @@ docker compose exec django ./manage.py collectstatic --noinput
 
 ## Manual interventions
 
-You can find here various manual intervention needed depending on which version you are upgrading from:
+You can find here various manual interventions needed depending on which version you are upgrading from:
 
 - [Upgrade RabbitMQ](Upgrade-RabbitMQ.md) (version < 1.0.0)
 - [Create new logos for each competition](Create-new-logos-for-each-competition.md) (version < 1.4.1)
@@ -28,3 +28,4 @@ You can find here various manual intervention needed depending on which version 
 - [Minio image](Minio-image.md) (version < 1.21.1)
 - [Docker-py](Docker-py.md) (version < 1.22.0)
 - [Django 4.2](Django-4.md) (version < 1.23.0)
+- [Postgres 18](Postgres-18.md) (version < 1.24.0)
