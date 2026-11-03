@@ -19,11 +19,11 @@ jobs:
         with:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Build Image with Codabench Version as tag
+      - name: Build and push Image with Codabench Version as tag
         run: docker buildx build --platform linux/amd64,linux/arm64 --push -t codalab/codabench-compute-worker:${{ github.ref_name }} -f packaging/container/Containerfile.compute_worker .
-      - name: Build Image with Codabench latest as tag
+      - name: Build and push Image with latest as tag
         run: docker buildx build --platform linux/amd64,linux/arm64 --push -t codalab/codabench-compute-worker:latest -f packaging/container/Containerfile.compute_worker .
-      - name: Build image with prod release tag + date for CVEs versioning and push
+      - name: Build and push image with prod release tag + date for CVEs versioning
         run: |
           NOW=$(date "+%Y-%m-%dT%H-%M-%S")
           docker buildx build --platform linux/amd64,linux/arm64 --push -t codalab/codabench-compute-worker:${{ github.ref_name }}-${NOW} -f packaging/container/Containerfile.compute_worker .
