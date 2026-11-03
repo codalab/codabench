@@ -190,7 +190,7 @@ client = docker.APIClient(
 
 
 # -----------------------------------------------
-# Show Progress bar on downloading images
+# Show Progress bar when downloading images
 # -----------------------------------------------
 tasks = {}
 
