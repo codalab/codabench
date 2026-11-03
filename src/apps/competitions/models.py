@@ -123,16 +123,6 @@ class Competition(models.Model):
         else:
             return user in self.all_organizers
 
-    def get_migration_tasks(self, destination_phase):
-        if not self.children.exists():
-            return None
-        finished_task_ids = self.children.filter(
-            status=Submission.FINISHED,
-            is_soft_deleted=False,
-            task__isnull=False,
-        ).values_list('task_id', flat=True)
-        return list(destination_phase.tasks.filter(pk__in=finished_task_ids).order_by('pk'))
-
     def apply_phase_migration(self, current_phase, next_phase, force_migration=False):
         """
         Does the actual migrating of submissions from current_phase to next_phase
@@ -177,26 +167,10 @@ class Competition(models.Model):
         )
 
         for submission in submissions:
-            tasks = submission.get_migration_tasks(next_phase)
-            if tasks is not None and not tasks:
-                logger.warning(
-                    f"Submission pk={submission.pk} not migrated: none of its Finished child "
-                    f"submissions ran on a task of phase pk={next_phase.pk}"
-                )
+            new_submission = submission.migrate_to(next_phase)
+            if new_submission is None:
+                logger.warning(f"Submission pk={submission.pk} not migrated: no Finished child submission to migrate")
                 continue
-
-            new_submission = Submission(
-                created_by_migration=current_phase,
-                participant=submission.participant,
-                phase=next_phase,
-                owner=submission.owner,
-                data=submission.data,
-                organization=submission.organization,
-                fact_sheet_answers=submission.fact_sheet_answers,
-            )
-            new_submission.save(ignore_submission_limit=True)
-            new_submission.start(tasks=tasks)
-
             submission.is_migrated = True
             submission.save()
 
@@ -687,6 +661,53 @@ class Submission(models.Model):
         sub.save(ignore_submission_limit=True)
         sub.selected_groups.set(self.selected_groups.all())
         return sub.run()
+
+    def migrate_to(self, destination_phase, start=True):
+        pairs = []
+        if self.has_children:
+            finished = self.children.filter(status=Submission.FINISHED, is_soft_deleted=False).order_by('pk')
+            dest_tasks = list(destination_phase.tasks.order_by('pk'))
+            dest_pks = [t.pk for t in dest_tasks]
+            source_pks = list(self.phase.tasks.order_by('pk').values_list('pk', flat=True))
+            for child in finished:
+                if child.task_id in dest_pks:
+                    task = dest_tasks[dest_pks.index(child.task_id)]
+                elif child.task_id in source_pks and source_pks.index(child.task_id) < len(dest_tasks):
+                    task = dest_tasks[source_pks.index(child.task_id)]
+                else:
+                    continue
+                pairs.append((child, task))
+            if not pairs:
+                return None
+
+        with transaction.atomic():
+            new_submission = Submission(
+                created_by_migration=self.phase,
+                participant=self.participant,
+                phase=destination_phase,
+                owner=self.owner,
+                data=self.data,
+                organization=self.organization,
+                fact_sheet_answers=self.fact_sheet_answers,
+                has_children=bool(pairs),
+            )
+            new_submission.save(ignore_submission_limit=True)
+            for child, task in pairs:
+                Submission(
+                    owner=self.owner,
+                    phase=destination_phase,
+                    data=self.data,
+                    participant=self.participant,
+                    parent=new_submission,
+                    task=task,
+                    fact_sheet_answers=self.fact_sheet_answers,
+                    queue=child.queue,
+                    organization=self.organization,
+                ).save(ignore_submission_limit=True)
+
+        if start:
+            new_submission.start()
+        return new_submission
 
     def _reset_for_rerun(self, status=SUBMITTING):
         """Clears the results of a previous run so that this same row can be run again."""

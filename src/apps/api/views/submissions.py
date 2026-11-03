@@ -440,23 +440,9 @@ class SubmissionViewSet(ModelViewSet):
         if destination_phase.end and destination_phase.end < now():
             raise ValidationError('The destination phase has ended and cannot receive submissions')
 
-        tasks = submission.get_migration_tasks(destination_phase)
-        if tasks is not None and not tasks:
-            raise ValidationError('No finished child submission to migrate on a task of the destination phase')
-
-        new_submission = Submission(
-            created_by_migration=submission.phase,
-            participant=submission.participant,
-            phase=destination_phase,
-            owner=submission.owner,
-            data=submission.data,
-            organization=submission.organization,
-        )
-        new_submission.save(ignore_submission_limit=True)
-
-        if destination_phase.start <= now():
-            new_submission.start(tasks=tasks)
-
+        new_submission = submission.migrate_to(destination_phase, start=destination_phase.start <= now())
+        if new_submission is None:
+            raise ValidationError('No finished child submission to migrate')
         return Response({'id': new_submission.id})
 
     @action(detail=False, methods=('POST',))
@@ -474,7 +460,10 @@ class SubmissionViewSet(ModelViewSet):
 
         migrated, skipped = [], []
         for submission in submissions:
-            reason = None
+            tasks, group_ids = submission.get_migration_tasks(destination_phase)
+            if tasks is not None and not tasks:
+                reason = 'no finished child submission'
+
             if not self.has_admin_permission(request.user, submission):
                 reason = 'no permission'
             elif submission.phase.competition_id != destination_phase.competition_id:
@@ -487,6 +476,10 @@ class SubmissionViewSet(ModelViewSet):
                 reason = 'destination phase is the same as the current one'
             elif destination_phase.end and destination_phase.end < now():
                 reason = 'destination phase has ended'
+            else:
+                tasks = submission.get_migration_tasks(destination_phase)
+                if tasks is not None and not tasks:
+                    reason = 'no finished child submission'
 
             if reason:
                 skipped.append({'id': submission.id, 'reason': reason})
@@ -502,7 +495,7 @@ class SubmissionViewSet(ModelViewSet):
             )
             new_submission.save(ignore_submission_limit=True)
             if destination_phase.start <= now():
-                new_submission.start()
+                new_submission.start(tasks=tasks, group_ids=group_ids)
             migrated.append(new_submission.id)
 
         return Response({'migrated': migrated, 'skipped': skipped})
