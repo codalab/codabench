@@ -658,7 +658,6 @@ class Run:
             except Exception as e:
                 logger.exception(f"Failed best-effort log file creation: {e}")
 
-
     def get_detailed_results_file_path(self):
         default_detailed_results_path = os.path.join(
             self.output_dir, "detailed_results.html"
