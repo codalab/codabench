@@ -515,7 +515,16 @@ class Run:
         self.completed_program_counter = 0
         # Create the folder then save the path to root_dir
         self.submission_run_directory = Settings.BASE_DIR + f'{self.run_related_name}__'
-        os.mkdir(self.submission_run_directory + task_type, mode=0o700)
+        try:
+            os.mkdir(self.submission_run_directory + task_type, mode=0o700)
+        except Exception as e:
+            if e.contains("FileExistsError"):
+                logger.warning("Folder already exists. This might be a re-run. Deleting content so that we can continue...")
+                os.rmdir(self.submission_run_directory + task_type)
+                os.mkdir(self.submission_run_directory + task_type, mode=0o700)
+            else:
+                logger.error(e)
+
         self.root_dir = self.submission_run_directory + task_type
 
         self.bundle_dir = os.path.join(self.root_dir, "bundles")
