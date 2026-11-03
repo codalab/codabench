@@ -17,7 +17,6 @@ from django.core.files.base import ContentFile
 
 from profiles.models import Organization, Membership
 from api.pagination import DynamicChoicePagination
-from tasks.models import Task
 from api.serializers.submissions import SubmissionCreationSerializer, SubmissionSerializer, SubmissionFilesSerializer
 from competitions.models import Submission, SubmissionDetails, Phase, CompetitionParticipant
 from leaderboards.strategies import put_on_leaderboard_by_submission_rule
