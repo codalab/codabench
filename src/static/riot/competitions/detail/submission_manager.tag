@@ -316,11 +316,15 @@
                                 </td>
                                 <td class="center aligned" if="{ !child.is_soft_deleted }">
                                     <virtual if="{ opts.admin}">
-                                        <span
-                                            data-tooltip="{ child.status === 'Submitting' && !child.auto_run ? 'Run this task' : 'Rerun Submission' }"
-                                            data-inverted=""
-                                            onclick="{ child.status === 'Submitting' && !child.auto_run ? run_submission.bind(this, child) : rerun_submission.bind(this, child) }">
-                                            <i class="icon { child.status === 'Submitting' && !child.auto_run ? 'green play' : 'purple history' }"></i>
+                                        <span if="{ child.status === 'Submitting' && !child.auto_run }"
+                                            data-tooltip="Run this task" data-inverted=""
+                                            onclick="{ run_submission.bind(this, child) }">
+                                            <i class="icon green play"></i>
+                                        </span>
+                                        <span if="{ _.includes(['Finished', 'Failed', 'Cancelled'], child.status) }"
+                                            data-tooltip="Rerun Submission" data-inverted=""
+                                            onclick="{ rerun_submission.bind(this, child) }">
+                                            <i class="icon purple history"></i>
                                         </span>
                                         <span data-tooltip="Delete Submission" data-inverted=""
                                             onclick="{ delete_submission.bind(this, child) }">
@@ -559,7 +563,6 @@
             }
             return filters
         }
-        self.migrating = false
 
         self.close_migrate_menu = function () {
             if (self.migrate_menu_open !== null) {
@@ -613,7 +616,7 @@
         }
 
         self.get_children = function (submission) {
-            return _.filter(self.submissions, sub => sub.parent === submission.id)
+            return _.filter(self.submissions, sub => sub.parent === submission.id && (self.show_is_soft_deleted || !sub.is_soft_deleted))
         }
 
         self.has_multiple_tasks = function (submission) {
@@ -673,7 +676,7 @@
 
         self.toggleShowSoftDeleted = function () {
             self.show_is_soft_deleted = !self.show_is_soft_deleted
-            self.refresh_soon()
+            self.update_submissions()
             self.update()
         }
 
@@ -938,7 +941,7 @@
             if (self.total_pages && newPage > self.total_pages) newPage = self.total_pages
             if (newPage === self.page) return
             self.page = newPage
-            self.refresh_soon()
+            self.update_submissions()
         }
 
         self.change_page_size = function (e) {
@@ -954,7 +957,7 @@
             }
 
             self.page = 1  // reset to first page when page size changes
-            self.refresh_soon()
+            self.update_submissions()
         }
 
         self.handle_page_enter = function (ev) {
@@ -1004,7 +1007,7 @@
         self.filter = function () {
             delay(() => {
                 self.page = 1
-                self.refresh_soon()
+                self.update_submissions()
             }, 100)
         }
 
@@ -1438,7 +1441,7 @@
         CODALAB.events.on('phase_selected', function (selected_phase) {
             self.selected_phase = selected_phase
             self.selected_phase.hide_output = selected_phase.hide_output && !CODALAB.state.user.has_competition_admin_privileges(self.opts.competition)
-            self.refresh_soon()
+            self.update_submissions()
         })
 
                 CODALAB.events.on('new_submission_created', function (new_submission_data) {
