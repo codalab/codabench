@@ -517,13 +517,16 @@ class Run:
         self.submission_run_directory = Settings.BASE_DIR + f'{self.run_related_name}__'
         try:
             os.mkdir(self.submission_run_directory + task_type, mode=0o700)
-        except Exception as e:
-            if e.contains("FileExistsError"):
-                logger.warning("Folder already exists. This might be a re-run. Deleting content so that we can continue...")
-                os.rmdir(self.submission_run_directory + task_type)
-                os.mkdir(self.submission_run_directory + task_type, mode=0o700)
+        except FileExistsError:
+            folder_to_delete = self.submission_run_directory + task_type
+            if folder_to_delete == "/":
+                logger.error("Trying to delete /")
             else:
-                logger.error(e)
+                logger.warning("Folder already exists. This might be a re-run. Deleting content so that we can continue...")
+                shutil.rmtree(folder_to_delete)
+                os.mkdir(self.submission_run_directory + task_type, mode=0o700)
+        except Exception as e:
+            logger.error(e)
 
         self.root_dir = self.submission_run_directory + task_type
 
