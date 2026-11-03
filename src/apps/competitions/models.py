@@ -587,6 +587,13 @@ class Submission(models.Model):
         # Fetching competition from the phase of this submission
         competition = self.phase.competition
         super().delete(**kwargs)
+        parent = self.parent
+        if parent is not None:
+            parent.refresh_from_db()
+            parent.has_children = parent.children.exists()
+            parent.save(update_fields=['has_children'])
+            if parent.has_children:
+                parent.check_child_submission_statuses()
         # Ensure submissions_count stays non-negative
         if competition.submissions_count > 0:
             competition.submissions_count -= 1
