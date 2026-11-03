@@ -190,7 +190,7 @@ client = docker.APIClient(
 
 
 # -----------------------------------------------
-# Show Progress bar on downloading images
+# Show Progress bar when downloading images
 # -----------------------------------------------
 tasks = {}
 
@@ -657,7 +657,6 @@ class Run:
                                 f.write(str(data))
             except Exception as e:
                 logger.exception(f"Failed best-effort log file creation: {e}")
-
 
     def get_detailed_results_file_path(self):
         default_detailed_results_path = os.path.join(
