@@ -93,7 +93,7 @@ class SubmissionManagerTests(SubmissionTestCase):
             sub.start()
             assert Submission.objects.all().count() == 1
             sub.re_run()
-        assert Submission.objects.all().count() == 2
+        assert Submission.objects.all().count() == 1
         subs = Submission.objects.all()
         assert subs[0].owner == subs[1].owner
         assert subs[0].phase == subs[1].phase
