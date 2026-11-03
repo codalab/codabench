@@ -1150,11 +1150,11 @@ wheels = [
 
 [[package]]
 name = "jsonpointer"
-version = "3.7"
+version = "3.8"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/20/4a/d1590490a19f794b352e6da86fbc65d245f486facaacf91054bca35d465f/jsonpointer-3.7.tar.gz", hash = "sha256:58734c45431c9a268df029a39bce8d57e8aebe32f1d58d28a17c9aa246e10929", size = 15197, upload-time = "2026-11-01T21:08:42.912Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c2/cf/5d665216bd9dea19dd26ea93ca525ef02936a9cccd0cd856f8408eb77f0b/jsonpointer-3.8.tar.gz", hash = "sha256:a627a255641390bfb4d51d4cfbb90648078ae855b45804ef7e19ea13a4cca355", size = 19212, upload-time = "2026-11-02T21:52:18.838Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/17/91/ffedd6ed8952a65dd4497a0c95b4d87f42f5ce3334f01e344027099bc0be/jsonpointer-3.7-py3-none-any.whl", hash = "sha256:41005d228d8a6ec517b727d2821b7fa16e6bfc7c695ca3339f8331cccaba3887", size = 9363, upload-time = "2026-11-01T21:08:41.871Z" },
+    { url = "https://files.pythonhosted.org/packages/76/61/20f3a497beac4c8f869b8161b468b31c0f05d9d73600da0313eb759bad8a/jsonpointer-3.8-py3-none-any.whl", hash = "sha256:d69af85adaea202111bbc931067ead68dc16bca4592c74e1a1953152e2a330ab", size = 10233, upload-time = "2026-11-02T21:52:17.617Z" },
 ]
 
 [[package]]
@@ -1199,17 +1199,16 @@ wheels = [
 
 [[package]]
 name = "kombu"
-version = "5.6.2"
+version = "5.7.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "amqp" },
-    { name = "packaging" },
-    { name = "tzdata" },
+    { name = "tzdata", marker = "sys_platform == 'win32'" },
     { name = "vine" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b6/a5/607e533ed6c83ae1a696969b8e1c137dfebd5759a2e9682e26ff1b97740b/kombu-5.6.2.tar.gz", hash = "sha256:8060497058066c6f5aed7c26d7cd0d3b574990b09de842a8c5aaed0b92cc5a55", size = 472594, upload-time = "2025-12-29T20:30:07.779Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/57/31/3e632ebce43c684dcc6eead4660b33307e6153be87e33c14e1ed9875deff/kombu-5.7.0.tar.gz", hash = "sha256:31e62fdfd2381caa3422f8e02b84a491d9a2180ddda74507b57f4cb1e1c2c2c9", size = 627051, upload-time = "2026-11-03T05:58:33.446Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/fb/0f/834427d8c03ff1d7e867d3db3d176470c64871753252b21b4f4897d1fa45/kombu-5.6.2-py3-none-any.whl", hash = "sha256:efcfc559da324d41d61ca311b0c64965ea35b4c55cc04ee36e55386145dace93", size = 214219, upload-time = "2025-12-29T20:30:05.74Z" },
+    { url = "https://files.pythonhosted.org/packages/84/20/f73d8e0bff9708b0f2337220be1b5d7ebd738bc3a89b63cf44d257157014/kombu-5.7.0-py3-none-any.whl", hash = "sha256:dede73bff4c89175be382c4203d2f167cf7017c384396ec75c36a1b5678f1587", size = 266635, upload-time = "2026-11-03T05:58:31.475Z" },
 ]
 
 [[package]]
