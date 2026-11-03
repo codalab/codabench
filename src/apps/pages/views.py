@@ -38,6 +38,27 @@ class HomeView(TemplateView):
         return context
 
 
+class NewsView(TemplateView):
+    template_name = 'pages/news.html'
+    # Why: 12 fills 4 full rows of 3 cards
+    posts_per_page = 12
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+
+        # All posts, in the same order as the home page
+        news_posts = NewsPost.objects.all().order_by('-id')
+        paginator = Paginator(object_list=news_posts, per_page=self.posts_per_page)
+
+        # get_page shows the first page for an invalid number and the last page for a number that is too high
+        page = paginator.get_page(self.request.GET.get('page'))
+
+        context['news_posts'] = HomePageNewsPostSerializer(page.object_list, many=True).data
+        context['page'] = page
+
+        return context
+
+
 class OrganizeView(TemplateView):
     template_name = 'pages/organize.html'
 
