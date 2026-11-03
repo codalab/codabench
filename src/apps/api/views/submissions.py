@@ -357,7 +357,6 @@ class SubmissionViewSet(ModelViewSet):
     @action(detail=True, methods=('POST',))
     def re_run_submission(self, request, pk):
         submission = self.get_object()
-        task_key = request.query_params.get('task_key')
 
         if not self.has_admin_permission(request.user, submission):
             raise PermissionDenied('You do not have permission to re-run submissions')
@@ -365,28 +364,23 @@ class SubmissionViewSet(ModelViewSet):
         if submission.is_soft_deleted:
             raise PermissionDenied('Cannot re-run a deleted submission')
 
-        # Rerun submission on different task. Will flag submission with is_specific_task_re_run=True
-        if task_key:
-            rerun_kwargs = {
-                'task': get_object_or_404(Task, key=task_key),
-            }
-        else:
-            rerun_kwargs = {}
+        if submission.status not in Submission.RERUNNABLE_STATUSES:
+            raise PermissionDenied('Only Finished, Failed or Cancelled submissions can be re-run')
 
-        new_sub = submission.re_run(**rerun_kwargs)
-        if new_sub is None:
-            # return error
+        if submission.re_run() is None:
             return Response({
                 "error_msg": "You cannot rerun this submission because one or more tasks this submission was running are deleted, resubmit the submission or contact the competition organizer!"},
                 status=status.HTTP_404_NOT_FOUND
             )
-        else:
-            return Response({'id': new_sub.id})
+        return Response({'id': submission.id})
 
     @action(detail=False, methods=('POST',))
     def re_run_many_submissions(self, request):
-        qs = self.get_queryset().filter(is_soft_deleted=False)
+        qs = list(self.get_queryset().filter(is_soft_deleted=False))
+        selected = {s.pk for s in qs}
         for submission in qs:
+            if submission.parent_id in selected:
+                continue
             submission.re_run()
         return Response({})
 

@@ -5,7 +5,7 @@ import io
 import botocore.exceptions
 from django.conf import settings
 from django.core.files.base import ContentFile
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Q
 from django.urls import reverse
 from django.utils.timezone import now
@@ -466,6 +466,8 @@ class Submission(models.Model):
         (FAILED, "Failed"),
     )
 
+    RERUNNABLE_STATUSES = (FINISHED, FAILED, CANCELLED)
+
     description = models.CharField(max_length=240, default="", blank=True, null=True)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='submission', on_delete=models.DO_NOTHING)
     organization = models.ForeignKey(Organization, related_name='submissions', on_delete=models.DO_NOTHING, null=True)
@@ -661,56 +663,68 @@ class Submission(models.Model):
         sub.selected_groups.set(self.selected_groups.all())
         return sub.run()
 
+    def _reset_for_rerun(self, status=SUBMITTING):
+        """Clears the results of a previous run so that this same row can be run again."""
+        self.prediction_result.delete(save=False)
+        self.scoring_result.delete(save=False)
+        self.detailed_result.delete(save=False)
+        self.prediction_result_file_size = None
+        self.scoring_result_file_size = None
+        self.detailed_result_file_size = None
+
+        for detail in self.details.all():
+            detail.data_file.delete(save=False)
+            detail.delete()
+        self.scores.all().delete()
+
+        self.leaderboard = None
+        self.status = status
+        self.status_details = None
+        self.started_when = None
+        self.celery_task_id = None
+        self.ingestion_worker_hostname = None
+        self.scoring_worker_hostname = None
+        self.secret = uuid.uuid4()
+        self.save()
+
     def re_run(self, task=None):
+        """Re-runs this submission IN PLACE: same id, same row, same task(s).
+        - parent: all its children are reset and re-run
+        - child: only this child is re-run, the parent is reset to wait for it
+        - no children: the submission itself is re-run
+        The `task` argument is kept for compatibility and ignored."""
+        root = self.parent if self.parent_id else self
 
-        # task to use in the new submission
-        new_submission_task = task or self.task
+        if self.parent_id:
+            targets = [self]
+        else:
+            targets = list(self.children.all()) or [self]
 
-        # set is_specific_task_re_run
-        is_specific_task_re_run = bool(task)
-
-        flag_rerun_specific_task_or_has_no_children = False
-        # Check if this submission needs to rerun on specific children or has no children
-        if not self.has_children or is_specific_task_re_run:
-            flag_rerun_specific_task_or_has_no_children = True
-
-        # Check if task exists in case of specific task rerun or no children
-        if flag_rerun_specific_task_or_has_no_children and new_submission_task is None:
-            logger.error(f"Cannot rerun `{self}` because the task is None (deleted)")
+        if any(t.task_id is None for t in targets):
+            logger.error(f"Cannot rerun `{self}` because a task is None (deleted)")
             return None
-        else:
-            children_tasks = self.children.values_list('task', flat=True)
-            if None in children_tasks:
-                logger.error(f"Cannot rerun `{self}` because one or more children submission tasks are None (deleted)")
-                return None
 
-        # Create a new submission
-        submission_arg_dict = {
-            'owner': self.owner,
-            'task': new_submission_task,
-            'phase': self.phase,
-            'data': self.data,
-            'has_children': self.has_children,
-            'is_specific_task_re_run': is_specific_task_re_run,
-            'fact_sheet_answers': self.fact_sheet_answers,
-            'queue': self.phase.competition.queue,
-            'organization': self.organization,
-        }
-        sub = Submission(**submission_arg_dict)
-        sub.save(ignore_submission_limit=True)
+        with transaction.atomic():
+            # The whole family leaves the leaderboard: its scores are about to change
+            Submission.objects.filter(parent=root).update(leaderboard=None)
 
-        # set tasks for rerunning
-        if flag_rerun_specific_task_or_has_no_children:
-            # in case of a submission with no children or specific task rerun
-            # submission with no children is same as submission with one task
-            tasks = [sub.task]
-        else:
-            # in case submission has multiple children or multiple task rerun
-            # tasks are gathered from the children submissions
-            tasks = Task.objects.filter(pk__in=self.children.values_list('task', flat=True))
+            for target in targets:
+                target._reset_for_rerun()
 
-        sub.start(tasks=tasks)
-        return sub
+            # Child re-run: the parent waits for its children and loses its aggregated scores
+            if root is not self and self.parent_id:
+                root._reset_for_rerun(status=Submission.SUBMITTED)
+            # Parent re-run: children are reset above, the parent itself waits for them
+            elif targets != [self]:
+                self._reset_for_rerun(status=Submission.SUBMITTED)
+
+            if targets == [self]:
+                # no children: run the submission on its own task
+                transaction.on_commit(lambda: self.start(tasks=[self.task]))
+            else:
+                # parent -> sends its children, child -> sends only itself
+                transaction.on_commit(lambda: self.start())
+        return self
 
     def cancel(self, status=CANCELLED):
         if self.status not in [Submission.CANCELLED, Submission.FAILED, Submission.FINISHED]:

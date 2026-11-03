@@ -175,14 +175,18 @@
                 </td>
                 <td class="center aligned" if="{ !submission.is_soft_deleted }">
                     <virtual if="{ opts.admin}">
-                        <!-- run/rerun submission -->
+                        <!-- run/rerun submission IDEMPOTENT -->
                         <!--  run: status = submitting auto_run = false  -->
                         <!--  rerun: else   -->
-                        <span
-                            data-tooltip="{ is_manual_run(submission) ? (submission.has_children ? 'Run all remaining children' : 'Run Submission') : 'Rerun Submission' }"
-                            data-inverted=""
-                            onclick="{ is_manual_run(submission) ? run_submission.bind(this, submission) : rerun_submission.bind(this, submission) }">
-                            <i class="icon { is_manual_run(submission) ? 'green play' : 'purple history' }"></i>
+                        <span if="{ child.status === 'Submitting' && !child.auto_run }"
+                            data-tooltip="Run Submission" data-inverted=""
+                            onclick="{ run_submission.bind(this, child) }">
+                            <i class="icon green play"></i>
+                        </span>
+                        <span if="{ _.includes(['Finished', 'Failed', 'Cancelled'], child.status) }"
+                            data-tooltip="Rerun Submission" data-inverted=""
+                            onclick="{ rerun_submission.bind(this, child) }">
+                            <i class="icon purple history"></i>
                         </span>
                         <!-- resubmit on current tasks (re-run keeps the original task) -->
                         <span if="{ _.includes(['Finished', 'Failed', 'Cancelled'], submission.status) }"
@@ -454,14 +458,20 @@
             $(self.refs.submission_handling_operation).dropdown()
             $(document).on('click.migrate_menu', self.close_migrate_menu)
             $(document).on('keydown.migrate_menu', function (e) {
-            if (e.key === 'Escape') self.close_migrate_menu()
-        })
+                if (e.key === 'Escape') self.close_migrate_menu()
+            })
 
+            self.poll = setInterval(function () {
+                let busy = _.some(self.submissions, s => !_.includes(['Finished', 'Failed', 'Cancelled', 'None', 'Unknown'], s.status))
+                let filtered = (self.refs.search && self.refs.search.value) || (self.refs.status && self.refs.status.value && self.refs.status.value !== ' ')
+                if (busy && !filtered && !self.loading) self.update_submissions(undefined, true)
+            }, 5000)
         })
 
         self.on("unmount", function () {
             $(document).off('click.migrate_menu', self.close_migrate_menu)
             $(document).off('keydown.migrate_menu')
+            clearInterval(self.poll)
         })
 
         self.pretty_date = function (date_string) {
@@ -909,24 +919,17 @@
                 })
         }
 
-        self.rerun_submission = function (submission) {
+        self.rerun_submission = function (submission, event) {
+            if (event) event.stopPropagation()
             CODALAB.api.re_run_submission(submission.id)
-                .done(function (response) {
+                .done(function () {
                     toastr.success('Submission queued')
                     self.update_submissions()
+                    CODALAB.events.trigger('submission_changed_on_leaderboard')
                 })
                 .fail(function (response) {
-                    if (response.responseJSON.detail) {
-                        toastr.error(response.responseJSON.detail)
-                    }
-                    else if (response.responseJSON.error_msg) {
-                        toastr.error(response.responseJSON.error_msg)
-                    }
-                    else {
-                        toastr.error(response.responseText)
-                    }
+                    toastr.error(self.error_message(response, response.responseText))
                 })
-            event.stopPropagation()
         }
 
         // Ignore clicks while a resubmit request is in progress, each request creates new submissions
