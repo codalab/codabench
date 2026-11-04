@@ -2,7 +2,7 @@
     <div if="{ opts.admin }" class="admin-buttons" style="display: flex; align-items: center; gap: 20px;">
         <div style="display: flex; align-items: center; gap: 10px;">
             <div class="ui dropdown button" ref="rerun_button">
-            <i class="icon redo"></i>
+            <i class="icon history"></i>
             <div class="text">Rerun all submissions per phase</div>
             <div class="menu">
                 <div class="header">Select a phase</div>
@@ -16,13 +16,19 @@
             <i class="icon download"></i>Download as CSV
             </a>
 
-            <select class="ui dropdown" ref="submission_handling_operation">
-            <option value="download_submissions">Download selected submissions</option>
-            <option value="download_prediction_results">Download prediction results of selected submissions</option>
-            <option value="download_scoring_results">Download scoring results of selected submissions</option>
-            <option value="delete">Delete selected submissions</option>
-            <option value="rerun">Rerun selected submissions</option>
-            <option value="resubmit">Resubmit selected submissions on current tasks</option>
+            <select class="ui dropdown" ref="submission_handling_operation" onchange="{ on_operation_changed }">
+                <option value="download_submissions">Download selected submissions</option>
+                <option value="download_prediction_results">Download prediction results of selected submissions</option>
+                <option value="download_scoring_results">Download scoring results of selected submissions</option>
+                <option value="delete">Delete selected submissions</option>
+                <option value="rerun">Rerun selected submissions</option>
+                <option value="resubmit">Resubmit selected submissions on current tasks</option>
+                    <option value="migrate">Migrate selected submissions</option>
+                </select>
+
+                <select if="{ selected_operation === 'migrate' }" class="ui dropdown" ref="migrate_target_phase">
+                    <option value="">Destination phase…</option>
+                    <option each="{ phase in opts.competition.phases }" value="{ phase.id }">{ phase.name }</option>
             </select>
 
             <button type="button" class="ui button" disabled="{checked_submissions.length === 0}" onclick="{submission_handling.bind(this)}">
@@ -98,7 +104,6 @@
                 <th class="center aligned">Actions</th>
             </tr>
         </thead>
-
         <tbody>
             <tr if="{ _.isEmpty(submissions) && !loading }" class="center aligned">
                 <td colspan="100%"><em>No submissions found! Please make a submission</em></td>
@@ -174,17 +179,16 @@
                         <!--  run: status = submitting auto_run = false  -->
                         <!--  rerun: else   -->
                         <span
-                            data-tooltip="{ submission.status === 'Submitting' && !submission.auto_run ? 'Run Submission' : 'Rerun Submission' }"
+                            data-tooltip="{ is_manual_run(submission) ? (submission.has_children ? 'Run all remaining children' : 'Run Submission') : 'Rerun Submission' }"
                             data-inverted=""
-                            onclick="{ submission.status === 'Submitting' && !submission.auto_run ? run_submission.bind(this, submission) : rerun_submission.bind(this, submission) }">
-                            <i
-                                class="icon { submission.status === 'Submitting' && !submission.auto_run ? 'green play' : 'blue redo' }"></i>
+                            onclick="{ is_manual_run(submission) ? run_submission.bind(this, submission) : rerun_submission.bind(this, submission) }">
+                            <i class="icon { is_manual_run(submission) ? 'green play' : 'purple history' }"></i>
                         </span>
                         <!-- resubmit on current tasks (re-run keeps the original task) -->
                         <span if="{ _.includes(['Finished', 'Failed', 'Cancelled'], submission.status) }"
                             data-tooltip="Resubmit (new submission on current tasks)" data-inverted=""
                             onclick="{ resubmit_submission.bind(this, submission) }">
-                            <i class="icon purple clone outline { disabled: resubmitting }"></i>
+                            <i class="icon blue redo { disabled: resubmitting }"></i>
                         </span>
                         <!-- delete submission -->
                         <span data-tooltip="Delete Submission" data-inverted=""
@@ -231,6 +235,30 @@
                         onclick="{ soft_delete_submission.bind(this, submission) }">
                         <i class="icon red trash"></i>
                     </span>
+                    <!-- Atomic Migration -->
+                    <span if="{ can_migrate(submission) }" class="migrate-wrapper" onclick="{ do_nothing }">
+                        <span data-tooltip="Migrate to another phase" data-inverted=""
+                            style="cursor:pointer;"
+                            onclick="{ toggle_migrate_menu.bind(this, submission) }">
+                            <i class="icon blue copy outline"></i>
+                        </span>
+                        <div if="{ migrate_menu_open === submission.id }" class="migrate-menu">
+                            <div class="migrate-header">
+                                Migrate submission #{ submission.id } to…
+                            </div>
+                            <div each="{ phase in get_future_phases(submission) }"
+                                class="migrate-item { disabled: migrating }"
+                                onclick="{ migrate_submission.bind(this, submission, phase) }">
+                                <div class="migrate-item-title">
+                                    <span>{ phase.name }</span>
+                                    <i class="angle right icon"></i>
+                                </div>
+                                <small class="migrate-item-meta">
+                                    { phase.status || 'Upcoming' } · starts { pretty_date(phase.start) }
+                                </small>
+                            </div>
+                        </div>
+                    </span>
                 </td>
             </tr>
 
@@ -258,7 +286,12 @@
                                 <td if="{ has_multiple_tasks(submission) }">{ child.task ? child.task.name : '' }</td>
                                 <td>{ child.participant_group_name || '-' }</td>
                                 <td>{ pretty_date(child.created_when) }</td>
-                                <td>{ child.status }</td>
+                                <td class="right aligned collapsing">
+                                    { child.status }
+                                    <sup if="{ pending_info(child) }" data-tooltip="{ pending_info(child).message }" data-inverted="">
+                                        <i class="question circle icon" style="color: { pending_info(child).color };"></i>
+                                    </sup>
+                                </td>
                                 <td>{ get_score(child) }</td>
 
                                 <td if="{ child.is_soft_deleted }">
@@ -272,11 +305,10 @@
                                 <td class="center aligned" if="{ !child.is_soft_deleted }">
                                     <virtual if="{ opts.admin}">
                                         <span
-                                            data-tooltip="{ child.status === 'Submitting' && !child.auto_run ? 'Run Submission' : 'Rerun Submission' }"
+                                            data-tooltip="{ child.status === 'Submitting' && !child.auto_run ? 'Run this task' : 'Rerun Submission' }"
                                             data-inverted=""
                                             onclick="{ child.status === 'Submitting' && !child.auto_run ? run_submission.bind(this, child) : rerun_submission.bind(this, child) }">
-                                            <i
-                                                class="icon { child.status === 'Submitting' && !child.auto_run ? 'green play' : 'blue redo' }"></i>
+                                            <i class="icon { child.status === 'Submitting' && !child.auto_run ? 'green play' : 'purple history' }"></i>
                                         </span>
                                         <span data-tooltip="Delete Submission" data-inverted=""
                                             onclick="{ delete_submission.bind(this, child) }">
@@ -352,6 +384,7 @@
             <div style="margin-right: 10px; color: #8c8c8c;">
                 <small>{ total_count || 0 } total</small>
             </div>
+        </div>
     </div>
 
     <div class="ui large modal" ref="modal">
@@ -404,6 +437,14 @@
         self.previous = null
 
         self.expanded_submissions = {}
+        self.migrating = false
+
+        self.close_migrate_menu = function () {
+            if (self.migrate_menu_open !== null) {
+                self.migrate_menu_open = null
+                self.update()
+            }
+        }
 
         self.on("mount", function () {
             $(self.refs.search).dropdown()
@@ -411,6 +452,16 @@
             $(self.refs.phase).dropdown()
             $(self.refs.rerun_button).dropdown()
             $(self.refs.submission_handling_operation).dropdown()
+            $(document).on('click.migrate_menu', self.close_migrate_menu)
+            $(document).on('keydown.migrate_menu', function (e) {
+            if (e.key === 'Escape') self.close_migrate_menu()
+        })
+
+        })
+
+        self.on("unmount", function () {
+            $(document).off('click.migrate_menu', self.close_migrate_menu)
+            $(document).off('keydown.migrate_menu')
         })
 
         self.pretty_date = function (date_string) {
@@ -496,6 +547,123 @@
 
         self.is_hitl_failure = function (submission) {
             return !!(submission.status_details && submission.status_details.indexOf('Human in the Loop') !== -1)
+        }
+
+        self.migrate_menu_open = null
+
+        self.is_organizer = function () {
+            return !!opts.admin
+                || !!_.get(opts, 'competition.admin')
+                || !!_.get(opts, 'competition.is_admin')
+        }
+
+        self.can_migrate = function (submission) {
+            return self.is_organizer()
+                && !submission.parent
+                && !submission.is_soft_deleted
+                && submission.status === 'Finished'
+                && self.get_future_phases(submission).length > 0
+        }
+
+        self.toggle_migrate_menu = function (submission, event) {
+            if (event) event.stopPropagation()
+            self.migrate_menu_open = (self.migrate_menu_open === submission.id) ? null : submission.id
+            self.update()
+        }
+
+        self.error_message = function (response, fallback) {
+            let json = response && response.responseJSON
+            if (Array.isArray(json)) return json.join(' ')
+            if (json && json.detail) return json.detail
+            if (json && json.error_msg) return json.error_msg
+            if (json && json.error) return json.error
+            return fallback
+        }
+
+        self.migrate_submission = function (submission, phase, event) {
+            if (event) event.stopPropagation()
+            if (self.migrating) return
+            if (!confirm(`Migrate submission #${submission.id} to phase "${phase.name}"?`)) {
+                return
+            }
+            self.migrating = true
+            self.update()
+            CODALAB.api.migrate_submission(submission.id, phase.id)
+                .done(function () {
+                    toastr.success(`Submission #${submission.id} migrated to "${phase.name}"`)
+                    self.migrate_menu_open = null
+                    self.update_submissions()
+                })
+                .fail(function (response) {
+                    toastr.error(self.error_message(response, 'Error migrating submission'))
+                })
+                .always(function () {
+                    self.migrating = false
+                    self.update()
+                })
+        }
+
+
+        self.selected_operation = 'download_submissions'
+
+        self.on_operation_changed = function (event) {
+            self.selected_operation = event.target.value
+            self.update()
+        }
+
+        self.migrate_selected_submissions = function () {
+            let phase_id = self.refs.migrate_target_phase && self.refs.migrate_target_phase.value
+            if (!phase_id) {
+                toastr.error('Select a destination phase first')
+                return
+            }
+            let phase = _.find(opts.competition.phases, p => String(p.id) === String(phase_id))
+            let count = self.checked_submissions.length
+            if (!confirm(`Migrate ${count} selected submission(s) to phase "${phase.name}"?`)) return
+
+            CODALAB.api.migrate_many_submissions(self.checked_submissions, phase.id)
+                .done(function (response) {
+                    let skipped = response.skipped || []
+                    toastr.success(`${response.migrated.length} submission(s) migrated`)
+                    if (skipped.length > 0) {
+                        toastr.warning(skipped.map(s => `#${s.id}: ${s.reason}`).join('<br>'))
+                    }
+                    self.update_submissions()
+                })
+                .fail(function (response) {
+                    toastr.error(self.error_message(response, 'Error migrating submissions'))
+                })
+        }
+
+        self.get_future_phases = function (submission) {
+            if (!submission || !submission.phase) return []
+
+            const phase = _.isObject(submission.phase)
+                ? submission.phase
+                : _.find(opts.competition.phases, p => p.id === submission.phase)
+
+            if (!phase) return []
+
+            const now = new Date()
+            // Any other phase of the competition that has not ended can receive the submission
+            return _.filter(opts.competition.phases, p => {
+                if (p.id === phase.id) return false
+                if (p.end && new Date(p.end) < now) return false
+                return true
+            })
+        }
+
+        self.pending_children = function (submission) {
+            return _.filter(self.submissions, sub => sub.parent === submission.id && sub.status === 'Submitting')
+        }
+
+        self.has_pending_children = function (submission) {
+            return self.pending_children(submission).length > 0
+        }
+
+        self.is_manual_run = function (submission) {
+            if (submission.auto_run) return false
+            return submission.status === 'Submitting' || self.has_pending_children(submission)
         }
 
         self.update_submissions = function (filters) {
@@ -601,6 +769,15 @@
                         self.submissions = _.filter(results, sub => sub.owner === CODALAB.state.user.username)
                     }
 
+                    self.auto_expanded = self.auto_expanded || {}
+                    _.forEach(self.filter_children(self.submissions), parent => {
+                        if (!parent.auto_run && parent.has_children && !self.auto_expanded[parent.id]
+                            && self.has_pending_children(parent)) {
+                            self.expanded_submissions[parent.id] = true
+                            self.auto_expanded[parent.id] = true
+                        }
+                    })
+
                     if (!opts.admin) {
                         CODALAB.events.trigger('submissions_loaded', self.submissions)
                     }
@@ -638,7 +815,6 @@
             } else {
                 const val = parseInt(raw, 10)
                 if (isNaN(val) || val <= 0) return
-                // n'autorise que 50,100,500
                 if (![50, 100, 500].includes(val)) return
                 self.page_size = val
             }
@@ -649,7 +825,6 @@
 
         self.handle_page_enter = function (ev) {
             if (ev.key === 'Enter') {
-                // value du champ input
                 let v = ev.target.value
                 let requested = parseInt(v, 10)
                 if (isNaN(requested)) return
@@ -717,21 +892,21 @@
             }, 100)
         }
 
-        self.run_submission = function (submission) {
+        self.run_submission = function (submission, event) {
+            if (event) event.stopPropagation()
             CODALAB.api.run_submission(submission.id)
                 .done(function (response) {
                     toastr.success('Submission queued')
                     self.update_submissions()
+                    _.delay(self.update_submissions, 2000)
                 })
                 .fail(function (response) {
-                    if (response.responseJSON.detail) {
+                    if (response.responseJSON && response.responseJSON.detail) {
                         toastr.error(response.responseJSON.detail)
                     } else {
                         toastr.error(response.responseText)
                     }
                 })
-            event.stopPropagation()
-
         }
 
         self.rerun_submission = function (submission) {
@@ -1120,7 +1295,6 @@
         };
 
         self.submission_handling = function () {
-            // console.log(self.checked_submissions)
             if (self.checked_submissions.length === 0) {
                 console.log("no submission is selected");
             } else {
@@ -1144,6 +1318,9 @@
                     case "resubmit":
                         self.resubmit_selected_submissions()
                         break
+                    case "migrate":
+                        self.migrate_selected_submissions()
+                        break
                     default:
                         console.log("should never be in this state of default..")
                 }
@@ -1159,6 +1336,10 @@
         CODALAB.events.on('new_submission_created', function (new_submission_data) {
             self.submissions.unshift(new_submission_data)
             self.update()
+            if (!new_submission_data.auto_run) {
+                _.delay(self.update_submissions, 2000)
+                _.delay(self.update_submissions, 6000)
+            }
         })
 
         CODALAB.events.on('score_updated', () => {
@@ -1215,5 +1396,109 @@
             table tbody tr:hover
                 cursor pointer
                 background-color rgba(0,0,0,0.03)
+        .migrate-wrapper
+            position relative
+            display inline-block
+
+        .migrate-menu
+            position absolute
+            z-index 1000
+            right 0
+            top 26px
+            min-width 240px
+            background white
+            border 1px solid #ddd
+            border-radius 4px
+            box-shadow 0 4px 12px rgba(0, 0, 0, 0.15)
+            text-align left
+
+        .migrate-header
+            padding 8px 12px
+            font-weight bold
+            font-size 0.9em
+            color #555
+            background #f7f7f7
+            border-bottom 1px solid #eee
+            border-radius 4px 4px 0 0
+
+        .migrate-item
+            padding 8px 12px
+            cursor pointer
+            border-bottom 1px solid #f0f0f0
+            &:hover
+                background #eef6ff
+            &.disabled
+                opacity 0.5
+                pointer-events none
+
+        .migrate-item-title
+            display flex
+            justify-content space-between
+            align-items center
+            font-weight 600
+
+        .migrate-item-meta
+            color #8c8c8c
+
+        .migrate-footer
+            padding 6px 12px
+            font-size 0.8em
+            color #8c8c8c
+            background #fafafa
+            border-radius 0 0 4px 4px
+        .child-submissions-row
+            td
+                padding-top 0
+                padding-bottom 0
+        .migrate-wrapper
+            position relative
+            display inline-block
+
+        .migrate-menu
+            position absolute
+            z-index 1000
+            right 0
+            top 26px
+            min-width 240px
+            background white
+            border 1px solid #ddd
+            border-radius 4px
+            box-shadow 0 4px 12px rgba(0, 0, 0, 0.15)
+            text-align left
+
+        .migrate-header
+            padding 8px 12px
+            font-weight bold
+            font-size 0.9em
+            color #555
+            background #f7f7f7
+            border-bottom 1px solid #eee
+            border-radius 4px 4px 0 0
+
+        .migrate-item
+            padding 8px 12px
+            cursor pointer
+            border-bottom 1px solid #f0f0f0
+            &:hover
+                background #eef6ff
+            &.disabled
+                opacity 0.5
+                pointer-events none
+
+        .migrate-item-title
+            display flex
+            justify-content space-between
+            align-items center
+            font-weight 600
+
+        .migrate-item-meta
+            color #8c8c8c
+
+        .migrate-footer
+            padding 6px 12px
+            font-size 0.8em
+            color #8c8c8c
+            background #fafafa
+            border-radius 0 0 4px 4px
     </style>
 </submission-manager>

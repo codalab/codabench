@@ -1,33 +1,30 @@
-{% extends "base.html" %}
-{% load static %}
+{% extends "profiles/settings_base.html" %}
 
+{% block title %}Notification Settings - Codabench{% endblock %}
 
-{% block content %}
-    <div class="ui container">
-        <div class="ui raised compact segment">
-            <h1 class="header">Notifications:</h1>
-            <div class="ui form" id="notification_form">
-                <div class="inline field">
-                    <div class="ui toggle checkbox">
-                        <input name="organizer_direct_message_updates" type="checkbox" tabindex="0" class="hidden">
-                        <label>Allow Emails from Competition Organizers</label>
-                    </div>
-                </div>
-                <div class="inline field">
-                    <div class="ui toggle checkbox">
-                        <input name="allow_forum_notifications" type="checkbox" tabindex="0" class="hidden">
-                        <label>Allow Emails for Forum Notifications</label>
-                    </div>
-                </div>
-                <div class="inline field">
-                    <div class="ui toggle checkbox">
-                        <input name="allow_organization_invite_emails" type="checkbox" tabindex="0" class="hidden">
-                        <label>Allow Invite Emails for Organizations</label>
-                    </div>
-                </div>
-                <div class="ui button primary" onclick="{self.submit_notifications()}">Submit</div>
+{% block settings_title %}Notifications{% endblock %}
+
+{% block settings_content %}
+    <div class="ui form" id="notification_form">
+        <div class="inline field">
+            <div class="ui toggle checkbox">
+                <input name="organizer_direct_message_updates" type="checkbox" tabindex="0" class="hidden">
+                <label>Allow Emails from Competition Organizers</label>
             </div>
         </div>
+        <div class="inline field">
+            <div class="ui toggle checkbox">
+                <input name="allow_forum_notifications" type="checkbox" tabindex="0" class="hidden">
+                <label>Allow Emails for Forum Notifications</label>
+            </div>
+        </div>
+        <div class="inline field">
+            <div class="ui toggle checkbox">
+                <input name="allow_organization_invite_emails" type="checkbox" tabindex="0" class="hidden">
+                <label>Allow Invite Emails for Organizations</label>
+            </div>
+        </div>
+        <button type="button" class="settings-button" onclick="self.submit_notifications()">Save</button>
     </div>
 {% endblock %}
 
@@ -52,7 +49,6 @@
             CODALAB.api.update_user_details(self.user.id, values)
                 .done((resp) => {
                     toastr.success("Saved")
-                    setTimeout(function (){window.location.href = '/';}, 500)
                 })
                 .fail((errors) => {
                     toastr.error('An Error has occurred')

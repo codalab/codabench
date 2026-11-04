@@ -8,8 +8,9 @@ To make an entry in a benchmark click on the "My Submissions" tab, you will then
 
 ### Making a Submission
 Making a submission to a benchmark involves uploading a bundle (.zip archive) containing files with your answer, in the format that has been specified by the benchmark organizer. There are two types of submissions: 
+
 - **_Code_** submissions contain a metadata file specifying the command to execute
-- **_Results_** submission contain the solution to the problem (no code executed on the platform)
+- **_Results_** submissions contain the solution to the problem (no code executed on the platform)
 
 **To make a submission**
 

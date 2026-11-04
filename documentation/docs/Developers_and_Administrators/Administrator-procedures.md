@@ -74,7 +74,7 @@ docker compose exec django ./manage.py migrate
 ## Feature competitions in home page
 
 There are two ways of setting a competition as featured:
-1. Use Django admin (see below) -> click the competition -> scroll down to is featured filed -> Check/Uncheck it
+1. Use Django admin (see below) -> click the competition -> scroll down to is featured field -> Check/Uncheck it
 2. Use competition ID in the django bash to feature or unfeature a competition
 ```python
 docker compose exec django ./manage.py shell_plus
@@ -89,7 +89,7 @@ If you're running your own Codabench instance, there are different ways to inter
 
 ## Django Admin interface
 
-Once you log in an account with superuser privileges, you have access to the "Django Admin" interface:
+Once you log in to an account with superuser privileges, you have access to the "Django Admin" interface:
 
 ![interface access](_attachments/214587579-53b8f79c-dc51-4323-b48d-360dd7b5774f_1753436642870153.png)
 
@@ -99,7 +99,7 @@ From this interface, you can change a user's quota, change their staff and super
 
 In the Django admin interface, click on `Announcements`:
 
-![](_attachments/announcements.png)
+![](../_attachments/announcements.png)
 
 Every announcement marked **Is active** is shown on the front page, inside the "Announcement" box. Each announcement has:
 
@@ -113,13 +113,13 @@ Every announcement marked **Is active** is shown on the front page, inside the "
 - **Is active**: untick to hide an announcement without deleting it.
 - **Priority**: controls the order. Lower numbers are shown first; announcements with the same priority are shown newest first.
 
-You can create and edit announcements using the interface. Write the text using HTML to format it, add links, and more:
+You can create and edit announcements using the interface. Write the text using HTML to format it, add links, and more.
 
 #### Edit news
 
 In the Django admin interface, click on `News posts`:
 
-![](_attachments/news.png)
+![](../_attachments/news.png)
 
 All news objects are read by the front page as separate news.
 You can create and edit news using the interface. Write the news using HTML to format the text, add links, and more.
@@ -147,7 +147,7 @@ Search for user using the search bar, or use the filter on the right side. Click
 
 
 ## RabbitMQ Management
-The RabbitMQ management tool allows you to see the status of various queues, virtual hosts, and jobs. By default, you can access it at: `http://<your_codalab_instance>:15672/`. The username/password is your RabbitMQ `.env` settings for username and password. The port is hard-set in `docker-compose.yml` to 15672, but you can always change this if needed. For more information, see:
+The RabbitMQ management tool allows you to see the status of various queues, virtual hosts, and jobs. By default, you can access it at: `http://<your_codabench_instance>:15672/`. The username/password is your RabbitMQ `.env` settings for username and password. The port defaults to 15672 and can be changed with `RABBITMQ_MANAGEMENT_PORT` in `.env`. For more information, see:
 https://www.rabbitmq.com/management.html
 
 #### Change RabbitMQ username or password
@@ -230,7 +230,7 @@ docker compose logs --since 2m rabbit | grep -E "authenticated|refused"
     ```
 
 ## Flower Management
-Flower is a web based tool for monitoring and administrating Celery clusters. By default, you can access the Flower web portal at `http://<your_codalab_instance>:5555/`. The username/password is your Flower `.env` settings for username and password. 5555 is the default port, and cannot be changed without editing the `docker-compose.yml` file.
+Flower is a web based tool for monitoring and administrating Celery clusters. By default, you can access the Flower web portal at `http://<your_codabench_instance>:5555/`. The username/password is your Flower `.env` settings for username and password. 5555 is the default port, and can be changed with `FLOWER_PUBLIC_PORT` in `.env`.
 
 For more information on flower, please visit:
 [https://flower.readthedocs.io/en/latest/](https://flower.readthedocs.io/en/latest/)
@@ -253,15 +253,15 @@ The data displayed in those charts are only calculated from a background analyti
 
 #### The background task
 
-The analytics task is a celery tasked named `analytics.tasks.create_storage_analytics_snapshot`.
+The analytics task is a celery task named `analytics.tasks.create_storage_analytics_snapshot`.
 What it does:
 
 - It scans the database looking for file sizes that are not set or flagged in error
 - Actually measures their size and saves it in the database
-- Aggregate the storage space used by day and by Competition/User (for example every day for the last year for each competition) by looking at the database file size fields
+- Aggregates the storage space used by day and by Competition/User (for example every day for the last year for each competition) by looking at the database file size fields
 - For data related to the _Platform Administration_ it measures as well the database backup folder directly from the storage instance.
-- Everything is saved as multiple snapshot in time in each Category table (i.g.: `UserStorageDataPoint`)
-- This tasks also runs a database <-> storage inconsistency check and saves the results in a log file located in the `var/logs/` folder
+- Everything is saved as multiple snapshots in time in each Category table (e.g.: `UserStorageDataPoint`)
+- This task also runs a database <-> storage inconsistency check and saves the results in a log file located in the `var/logs/` folder
 
 To manually start the task, you can do the following:
 
@@ -276,7 +276,7 @@ from analytics.tasks import create_storage_analytics_snapshot
 eager_results = create_storage_analytics_snapshot.apply_async()
 ```
 - If you check the logs (`docker compose logs -f`) of the app you should see "Task create_storage_analytics_snapshot started" coming from the site_worker container
-- If you have to restart the task, don't worry, it will only compute the size of the files that hasn't been computed yet.
+- If you have to restart the task, don't worry, it will only compute the size of the files that haven't been computed yet.
 - Once the task is over you should be able to see the results on the web page
 
 
@@ -303,7 +303,7 @@ eager_results = update_home_page_counters.apply_async()
 ###### Using the Django Shell
 
 ```python
-docker-compose exec django ./manage.py shell_plus
+docker compose exec django ./manage.py shell_plus
 ```
 
 ```python
@@ -351,5 +351,5 @@ from competitions.statistics import create_codabench_statistics_published_comps
 create_codabench_statistics_published_comps()
 ```
 !!! note 
-    A csv file named `codabench_statistics_published_comps.csv` is generated in `statistics folder`
+    A csv file named `codabench_statistics_published_comps.csv` is generated in `statistics` folder
 

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{# Shared layout of the settings pages. Each page fills settings_title and settings_content. #}
+
+{% block title %}Settings - Codabench{% endblock %}
+
+{% block content %}
+    <div class="settings-page">
+        <h1 class="settings-title">Settings</h1>
+        <div class="side-layout">
+            {% include "components/settings_nav.html" %}
+            <div class="settings-card">
+                <h2 class="settings-section-title">{% block settings_title %}{% endblock %}</h2>
+                {% block settings_content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

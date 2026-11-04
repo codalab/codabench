@@ -1,13 +1,12 @@
-{% extends "base.html" %}
+{% extends "pages/resources_base.html" %}
 {% load static %}
 
 
 {% block extra_head %}
 {% endblock %}
 
-{% block content %}
-    {% if user.is_authenticated %}
-        <div class="ui container">
+{% block resources_content %}
+        <div>
             <h1>Recent Submissions</h1>
             <label>
                 <input type="checkbox" id="show_child_checkbox" {% if show_child_submissions %}checked{% endif %}> Show child submissions
@@ -82,14 +81,6 @@
             </div>
             {% endif %}
         </div>
-    {% else %}
-        <div class="ui container">
-            <div class="ui yellow message">
-                <a href="{% url 'accounts:login' %}">Log In</a> or
-                <a href="{% url 'accounts:signup' %}">Sign Up</a> to view this page
-            </div>
-        </div>
-    {% endif %}
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             const checkbox = document.getElementById("show_child_checkbox");

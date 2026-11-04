@@ -1,0 +1,168 @@
+/* --------------------------------------------------------------------------------------
+ Settings pages (templates/profiles/settings_base.html and components/settings_nav.html)
+ */
+.settings-page
+    width 100%
+    margin 1em 0 3em
+    text-align left
+
+#page_content .settings-title
+    margin 0 0 1em
+    color $cb-navy-900
+    font-size 1.6em
+
+/* Card with the page content */
+.settings-card
+    min-width 0
+    padding 24px
+    // Why: one long word or link must wrap. If it does not, the page gets wider than the phone screen.
+    overflow-wrap anywhere
+    background-color #fff
+    border 1px solid rgba($cb-navy-900, 0.1)
+    border-radius 10px
+    box-shadow 0 1px 2px rgba(0, 0, 0, 0.04)
+
+    // Riot tags are inline by default
+    delete-account
+        display block
+
+    // Toggles in the theme color, Semantic uses its own blue
+    .ui.toggle.checkbox input:checked ~ label:before,
+    .ui.toggle.checkbox input:focus:checked ~ label:before
+        background-color $cb-blue-500 !important
+
+#page_content .settings-section-title
+    margin 0 0 1em
+    color $cb-navy-900
+    font-size 1.15em
+
+// Space between an announcement box and what comes after it
+.settings-notice
+    margin-bottom 16px
+
+/* Buttons: same look as the home page buttons */
+.settings-button
+    display inline-block
+    padding 8px 16px
+    border 1px solid $cb-blue-500
+    border-radius 6px
+    background-color $cb-blue-500
+    color #fff
+    font-size 14px
+    font-weight 500
+    cursor pointer
+
+    &:hover
+        border-color darken($cb-blue-500, 12%)
+        background-color darken($cb-blue-500, 12%)
+        color #fff
+
+    &:disabled
+        opacity 0.5
+        cursor not-allowed
+
+.settings-button-secondary
+    border-color rgba($cb-navy-900, 0.2)
+    background-color #fff
+    color $cb-navy-700
+
+    &:hover
+        border-color $cb-blue-500
+        background-color $cb-blue-50
+        color $cb-blue-500
+
+.settings-button-danger
+    border-color $cb-danger
+    background-color #fff
+    color $cb-danger
+
+    &:hover
+        border-color $cb-danger
+        background-color $cb-danger
+        color #fff
+
+    // Keeps the outlined look while the button cannot be clicked
+    &:disabled:hover
+        background-color #fff
+        color $cb-danger
+
+.settings-danger-text
+    color $cb-danger
+
+/* Delete account modal (riot/profiles/delete_account.tag) */
+// Why html and body: either one can be the part of the page that scrolls
+html.delete-modal-open,
+html.delete-modal-open body
+    overflow hidden
+
+.delete-modal-backdrop
+    position fixed
+    inset 0
+    z-index 110
+    display flex
+    justify-content center
+    align-items center
+    padding 16px
+    background-color rgba($cb-navy-900, 0.5)
+
+.delete-modal
+    width 100%
+    max-width 680px
+    max-height 100%
+    padding 24px
+    overflow-y auto
+    background-color #fff
+    border-radius 10px
+    box-shadow 0 8px 20px rgba($cb-navy-900, 0.12)
+    text-align left
+
+.delete-modal-header
+    display flex
+    justify-content space-between
+    align-items flex-start
+    gap 12px
+    margin-bottom 16px
+
+#page_content .delete-modal-title
+    margin 0
+    color $cb-navy-900
+    font-size 1.15em
+
+.delete-modal-close
+    flex none
+    padding 2px 6px
+    border none
+    border-radius 4px
+    background none
+    color $cb-navy-700
+    font-size 14px
+    cursor pointer
+
+    &:hover
+        background-color $cb-blue-50
+        color $cb-blue-500
+
+.delete-modal-list
+    margin 0 0 16px
+    padding-left 18px
+    color $cb-navy-700
+    font-size 14px
+    line-height 1.55
+
+    li
+        margin-bottom 6px
+
+// The exact text the user must type
+.delete-modal-phrase
+    padding 1px 6px
+    border-radius 4px
+    background-color $cb-danger-bg
+    color $cb-danger
+    font-weight 700
+    letter-spacing 0.03em
+
+.delete-modal-buttons
+    display flex
+    justify-content flex-end
+    gap 8px
+    margin-top 16px

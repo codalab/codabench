@@ -55,8 +55,9 @@ CODALAB.api = {
     re_run_phase_submissions: function (phase_pk) {
         return CODALAB.api.request('GET', `${URLS.API}phases/${phase_pk}/rerun_submissions/`)
     },
-    manual_migration: function (phase_pk) {
-        return CODALAB.api.request('POST', `${URLS.API}phases/${phase_pk}/manually_migrate/`)
+    manual_migration: function (phase_pk, destination_phase_pk) {
+        var data = destination_phase_pk ? {destination_phase: destination_phase_pk} : {}
+        return CODALAB.api.request('POST', `${URLS.API}phases/${phase_pk}/manually_migrate/`, data)
     },
     submit_competition_registration: function (pk, secret_key) {
         // Create an object to hold the data to be sent in the POST request
@@ -143,6 +144,21 @@ CODALAB.api = {
     get_user_participant_groups: function (competition_id) {
         return CODALAB.api.request('GET', `/competitions/${competition_id}/user_groups/`)
     },
+    migrate_submission: function (submission_id, destination_phase_id) {
+        return $.ajax({
+            url: `/api/submissions/${submission_id}/migrate_to_phase/`,
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ destination_phase_id: destination_phase_id }),
+        })
+    },
+    migrate_many_submissions: function (pks, destination_phase_id) {
+        return CODALAB.api.request('POST', `${URLS.API}submissions/migrate_many_submissions/`, {
+            pks: pks,
+            destination_phase_id: destination_phase_id
+        })
+    },
+
     /*---------------------------------------------------------------------
          Leaderboards
     ---------------------------------------------------------------------*/

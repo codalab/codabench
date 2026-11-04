@@ -17,7 +17,8 @@ compute_submissions_participants_counts()
 ## 2. Feature some competitions in home page
 
 There are two ways to do it:
-1. Use Django admin -> click the competition -> scroll down to is featured filed -> Check/Uncheck it
+
+1. Use Django admin -> click the competition -> scroll down to is featured field -> Check/Uncheck it
 2. Use competition ID in the django bash to feature / unfeature a competition
 ```bash
 docker compose exec django ./manage.py shell_plus

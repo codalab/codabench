@@ -1,6 +1,9 @@
+from json import dumps
+
+from django.test import TestCase
 from django.urls import reverse
 from rest_framework.test import APITestCase
-from json import dumps
+
 from api.serializers.profiles import OrganizationSerializer
 from factories import UserFactory, OrganizationFactory
 from profiles.models import Membership
@@ -216,3 +219,133 @@ class OrganizationPermissionTests(APITestCase):
         data = {k: v for k, v in data.items() if v}
         resp = self.client.put(self.url_organizations, data=dumps(data), content_type='application/json')
         assert resp.status_code == 403
+
+
+class OrganizationsPageTests(TestCase):
+
+    def setUp(self):
+        self.user = UserFactory()
+        self.url = reverse('profiles:organization_list')
+
+    def add_to_organization(self, user, organization, group):
+        """Give this user a membership in the organization with this role."""
+        return Membership.objects.create(user=user, organization=organization, group=group)
+
+    def get_page_content(self):
+        """Log in and return the organizations page."""
+        self.client.force_login(self.user)
+        return self.client.get(self.url).content.decode()
+
+    def test_logged_out_visitor_is_sent_to_login(self):
+        """
+        Opens the page without logging in.
+        Expects a redirect to the login page.
+        """
+        response = self.client.get(self.url)
+
+        assert response.status_code == 302
+        assert reverse('accounts:login') in response.url
+
+    def test_user_without_organizations_sees_empty_message(self):
+        """
+        Opens the page as a user with no organizations.
+        Expects the empty message and no table.
+        """
+        content = self.get_page_content()
+
+        assert "You are not in any organization yet." in content
+        assert 'class="org-table"' not in content
+
+    def test_row_shows_organization_details_and_links_to_it(self):
+        """
+        Opens the page as a member of one organization.
+        Expects a row with the name, email, description and role, linking to the organization.
+        """
+        organization = OrganizationFactory(name="Vision Lab", email="vision@example.com", description="Image research")
+        self.add_to_organization(user=self.user, organization=organization, group=Membership.MANAGER)
+
+        content = self.get_page_content()
+
+        assert "Vision Lab" in content
+        assert "vision@example.com" in content
+        assert "Image research" in content
+        assert ">Manager</span>" in content
+        assert f'class="org-table-link" href="{organization.url}"' in content
+
+    def test_organizations_of_other_users_are_not_shown(self):
+        """
+        Opens the page while another user belongs to an organization.
+        Expects that organization not to be listed.
+        """
+        organization = OrganizationFactory(name="Secret Lab")
+        self.add_to_organization(user=UserFactory(), organization=organization, group=Membership.OWNER)
+
+        content = self.get_page_content()
+
+        assert "Secret Lab" not in content
+
+    def test_member_count_leaves_out_invited_people(self):
+        """
+        Opens the page for an organization with an owner, a member and an invited person.
+        Expects the Members column to show 2.
+        """
+        organization = OrganizationFactory()
+        self.add_to_organization(user=self.user, organization=organization, group=Membership.OWNER)
+        self.add_to_organization(user=UserFactory(), organization=organization, group=Membership.MEMBER)
+        self.add_to_organization(user=UserFactory(), organization=organization, group=Membership.INVITED)
+
+        content = self.get_page_content()
+
+        assert '<td class="org-table-optional">2</td>' in content
+
+    def test_owner_sees_created_date(self):
+        """
+        Opens the page as the owner of an organization.
+        Expects the Date column to say Created.
+        """
+        self.add_to_organization(user=self.user, organization=OrganizationFactory(), group=Membership.OWNER)
+
+        content = self.get_page_content()
+
+        assert "Created " in content
+        assert "Joined " not in content
+
+    def test_member_sees_joined_date(self):
+        """
+        Opens the page as a member of an organization.
+        Expects the Date column to say Joined.
+        """
+        self.add_to_organization(user=self.user, organization=OrganizationFactory(), group=Membership.MEMBER)
+
+        content = self.get_page_content()
+
+        assert "Joined " in content
+        assert "Created " not in content
+
+    def test_pending_invite_links_to_the_invite_page(self):
+        """
+        Opens the page as a user with a pending invite.
+        Expects a row with the Invited role and date, linking to the page that accepts or rejects it.
+        """
+        organization = OrganizationFactory(name="Invited Lab")
+        membership = self.add_to_organization(user=self.user, organization=organization, group=Membership.INVITED)
+
+        content = self.get_page_content()
+
+        accept_url = f"{reverse('profiles:organization_accept_invite')}?token={membership.token}"
+        assert "Invited Lab" in content
+        assert f'class="org-table-link" href="{accept_url}"' in content
+        assert ">Invited</span>" in content
+        assert "Invited " in content
+
+    def test_pending_invites_are_listed_first(self):
+        """
+        Opens the page as a member of one organization, invited later to another.
+        Expects the pending invite above the older membership.
+        """
+        self.add_to_organization(user=self.user, organization=OrganizationFactory(name="Older Lab"), group=Membership.MEMBER)
+        self.add_to_organization(user=self.user, organization=OrganizationFactory(name="Newer Lab"), group=Membership.INVITED)
+
+        content = self.get_page_content()
+
+        assert content.index("Newer Lab") < content.index("Older Lab")

@@ -7,5 +7,6 @@
     <profile-detail></profile-detail>
     <script>
         const selected_user = JSON.parse("{{ serialized_user | escapejs }}")
+        const can_edit = {{ can_edit|yesno:"true,false" }}
     </script>
 {% endblock %}

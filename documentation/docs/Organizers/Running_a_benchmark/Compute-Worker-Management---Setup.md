@@ -84,14 +84,14 @@ CONTAINER_ENGINE_EXECUTABLE=docker
 #######################################################################
 #COMPETITION_CONTAINER_NETWORK_DISABLED=False
 
-#COMPETITION_CONTAINER_HTTP_PROXY=https://example_proxy:123
-#COMPETITION_CONTAINER_HTTPS_PROXY=http://example_proxy:1233
+#COMPETITION_CONTAINER_HTTP_PROXY=http://example_proxy:123
+#COMPETITION_CONTAINER_HTTPS_PROXY=https://example_proxy:1233
 ```
 By default, the competition container created by the compute worker has access to internet. If you want to remove this access, you can uncomment `COMPETITION_CONTAINER_NETWORK_DISABLED` and set it to `True`
 
 If the VM hosting the compute worker is behind a proxy, and you want to allow the competition container to access internet, you will also need to set the proxy for the competition container to use, in which case you can use `COMPETITION_CONTAINER_HTTP_PROXY`
 
-To control the scoring output before sending it to the instance, you can use the human in the loop feature the check the scoring file (json or txt) before sending anything to the instance, see: [HITL documentation](https://docs.codabench.org/latest/Organizers/Running_a_benchmark/Competition-HITL/)
+To control the scoring output before sending it to the instance, you can use the human in the loop feature to check the scoring file (json or txt) before sending anything to the instance, see: [HITL documentation](Competition-HITL.md)
 
 !!! note
     - The broker URL is a unique identifier of the job queue that the worker should listen to. To create a queue or obtain the broker URL of an existing queue, you can refer to [Queue Management](Queue-Management.md) docs page.
@@ -119,7 +119,7 @@ services:
 
 ```
 !!! note 
-    `hostname: ${HOSTNAME}` allows you to set the hostname of the compute worker container, which will then be shown in the [server status](Server-status-page.md) page on Codabench. This can be set to anything you want, by setting the `HOSTNAME` environment variable on the machine hosting the Compute Worker, then uncommenting the line the `docker-compose.yml` before launching the compute worker.
+    `hostname: ${HOSTNAME}` allows you to set the hostname of the compute worker container, which will then be shown in the [server status](Server-status-page.md) page on Codabench. This can be set to anything you want, by setting the `HOSTNAME` environment variable on the machine hosting the Compute Worker, then uncommenting the line in the `docker-compose.yml` before launching the compute worker.
 
 
 You can then launch the worker by running this command in the terminal where the `docker-compose.yml` file is located:
@@ -157,7 +157,7 @@ services:
                 max-file: 3
 ```
 !!! note 
-    `hostname: ${HOSTNAME}` allows you to set the hostname of the compute worker container, which will then be shown in the [server status](Server-status-page.md) page on Codabench. This can be set to anything you want, by setting the `HOSTNAME` environment variable on the machine hosting the Compute Worker, then uncommenting the line the `docker-compose.yml` before launching the compute worker.
+    `hostname: ${HOSTNAME}` allows you to set the hostname of the compute worker container, which will then be shown in the [server status](Server-status-page.md) page on Codabench. This can be set to anything you want, by setting the `HOSTNAME` environment variable on the machine hosting the Compute Worker, then uncommenting the line in the `docker-compose.yml` before launching the compute worker.
 
 You can then launch the worker by running this command in the terminal where the `docker-compose.yml` file is located:
 ```bash
@@ -221,8 +221,8 @@ You can also add your reference data, used during the scoring phase, inside a fo
 
 !!! warning 
     Make sure to make the owner of the folder(s) and file(s) the same as the one launching the compute worker.  
-       - `root` for Docker rootfull  
-       - `codabench` for Podman and Docker rootless if you created a user name `codabench` to launch podman and docker rootless from
+       - `root` for Docker rootful  
+       - `codabench` for Podman and Docker rootless if you created a user named `codabench` to launch podman and docker rootless from
 
 
 !!! tip "If you simply wish to set up some compute workers to increase the computing power of your benchmark, you don't need to scroll this page any further."

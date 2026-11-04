@@ -47,12 +47,11 @@ reset_all_users_quota_to_gb()
 ```
 
 ```python
-# Convert all 16 GB quota into 15 GB
+# Convert all 15 GB+ quota into 15 GB
 from profiles.models import User
 users = User.objects.all()
 for user in users:
     # Reset quota to 15 if quota is between 15 and 20
-    # Do not reset quota for special users like adrien
     if user.quota > 15 and user.quota < 20:
         user.quota = 15
         user.save()

@@ -1,0 +1,139 @@
+/* --------------------------------------------------------------------------------------
+ Profile page (riot/profiles/profile_detail.tag and profile_edit.tag)
+ One big card. The Edit button switches the whole card to the form.
+ */
+
+// Riot tags are inline by default
+profile-detail
+    display block
+    width 100%
+
+profile-edit
+    display block
+
+.profile-card
+    max-width 900px
+    margin 1em auto 3em
+    padding 32px
+    background-color #fff
+    border 1px solid rgba($cb-navy-900, 0.1)
+    border-radius 10px
+    box-shadow 0 1px 2px rgba(0, 0, 0, 0.04)
+    text-align left
+    // Why: one long word or link must wrap. If it does not, the page gets wider than the phone screen.
+    overflow-wrap anywhere
+
+/* Top of the card: photo, name, links and the Edit button */
+.profile-header
+    display flex
+    flex-wrap wrap
+    align-items flex-start
+    gap 24px
+
+// Why bc-logo too: it must come after the home page logo size to replace it
+.bc-logo.profile-photo
+    width 120px
+    height 120px
+    font-size 44px
+
+// The width makes the Edit button wrap to its own line on small phones
+.profile-identity
+    flex 1 1 220px
+    min-width 0
+
+#page_content .profile-name
+    margin 0
+    color $cb-navy-900
+    font-size 1.6em
+
+.profile-display-name
+    color $cb-navy-700
+    font-weight normal
+
+.profile-email,
+.profile-username
+    margin 8px 0 0
+    color $cb-navy-700
+    font-size 15px
+
+.profile-username i,
+.profile-email i
+    margin-right 6px
+
+.profile-links
+    display flex
+    flex-wrap wrap
+    gap 14px
+    margin-top 12px
+    font-size 18px
+
+    a
+        color $cb-blue-500
+
+        &:hover
+            color $cb-blue-400
+
+/* Details under the top of the card */
+.profile-details
+    margin-top 24px
+    padding-top 18px
+    border-top 1px solid rgba($cb-navy-900, 0.1)
+
+.profile-row
+    display grid
+    grid-template-columns 120px minmax(0, 1fr)
+    gap 16px
+    padding 7px 0
+    color $cb-navy-900
+    font-size 14px
+    line-height 1.55
+
+.profile-row-label
+    color $cb-navy-700
+
+// Keeps the line breaks the user typed
+.profile-bio
+    white-space pre-line
+
+.profile-empty
+    margin 0
+    color $cb-navy-700
+    font-size 14px
+
+// Looks like a link, opens the edit form
+.profile-add-button
+    padding 0
+    border none
+    background none
+    color $cb-blue-500
+    font-family inherit
+    font-size 14px
+    font-weight 500
+    cursor pointer
+
+    &:hover
+        color $cb-blue-400
+
+/* Edit mode */
+// fit-content keeps the button centered under the photo
+.profile-edit-photo
+    display flex
+    flex-direction column
+    align-items center
+    gap 12px
+    width fit-content
+    margin-bottom 24px
+
+.profile-form-buttons
+    display flex
+    justify-content flex-end
+    gap 8px
+
+/* Phones: the label sits above its value */
+@media only screen and (max-width 625px)
+    .profile-card
+        padding 20px
+
+    .profile-row
+        grid-template-columns minmax(0, 1fr)
+        gap 2px

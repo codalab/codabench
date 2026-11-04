@@ -52,7 +52,7 @@ sudo rm -rf var/postgres
 ```
 
 ```sh
-# Launch the new containers (containing the updated databse image and Restore from backup)
+# Launch the new containers (containing the updated database image and Restore from backup)
 docker compose up -d db
 docker compose exec db bash -lc 'PGPASSWORD="$DB_PASSWORD" pg_restore --verbose --clean --no-acl --no-owner -h $DB_HOST -U "$DB_USERNAME" -d "$DB_NAME" /app/backups/upgrade-1.24.dump'
 ```

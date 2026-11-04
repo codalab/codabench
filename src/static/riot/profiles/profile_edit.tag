@@ -1,21 +1,13 @@
 <profile-edit>
-    <div class="ui raised segment">
-    <h1>User Edit:</h1>
     <form class="ui form" id="user-form">
-        <div class="field">
-            <label>Profile Photo</label>
-            <label show="{ photo }">
-                Uploaded Photo: <a href="{ photo }" target="_blank">{ photo_name }</a>
-            </label>
-            <div class="ui left action file input">
-                <button class="ui icon button" type="button" onclick="document.getElementById('profile_phtoto').click()">
-                    <i class="attach icon"></i>
-                </button>
-                <input id="profile_phtoto" type="file" ref="photo" accept="image/*">
-
-                <!-- Just showing the file after it is uploaded -->
-                <input value="{ logo_file_name }" readonly onclick="document.getElementById('profile_phtoto').click()">
+        <!-- Photo: shows the current photo, or the new one as soon as it is chosen -->
+        <div class="profile-edit-photo">
+            <div class="bc-logo profile-photo">
+                <img if="{ photo }" src="{ photo }" alt="">
+                <span if="{ !photo }">{ parent.photo_letter }</span>
             </div>
+            <button type="button" class="settings-button settings-button-secondary" onclick="{ choose_photo }">Change photo</button>
+            <input type="file" ref="photo" accept="image/*">
         </div>
         <div class="two fields">
             <div class="field" id="first_name">
@@ -49,8 +41,8 @@
                 <input type="text" name="personal_url" placeholder="Personal URL">
             </div>
             <div class="field" id="twitter_url">
-                <label>Twitter URL</label>
-                <input type="text" name="twitter_url" placeholder="Twitter URL">
+                <label>X URL</label>
+                <input type="text" name="twitter_url" placeholder="X URL">
             </div>
         </div>
         <div class="two fields">
@@ -68,13 +60,16 @@
             <textarea name="biography"></textarea>
         </div>
         <div class="ui error message"></div>
-        <button type="button" class="ui primary button" onclick="{save.bind(this)}" ref="submit_button">Submit</button>
+        <div class="profile-form-buttons">
+            <button type="button" class="settings-button settings-button-secondary" onclick="{cancel}">Cancel</button>
+            <button type="button" class="settings-button" onclick="{save.bind(this)}" ref="submit_button">Save</button>
+        </div>
     </form>
-    </div>
 
     <script>
         var self = this
-        self.selected_user = selected_user
+        // Why a copy: the profile details use selected_user too, and the steps below remove fields from it
+        self.selected_user = Object.assign({}, selected_user)
         self.photo = self.selected_user.photo
         delete self.selected_user.photo
         self.one("mount", function () {
@@ -123,7 +118,7 @@
                          rules: [
                              {
                                  type: 'url',
-                                 prompt: 'Please enter a valid {name}. Example: https://twitter.com/BobRoss'
+                                 prompt: 'Please enter a valid {name}. Example: https://x.com/BobRoss'
                              },
                              {
                                  type: "test_http",
@@ -190,21 +185,34 @@
                  }
              })
 
-            self.photo_name = typeof self.photo == 'undefined' || self.photo === null ? null : self.photo.replace(/\\/g, '/').replace(/.*\//, '')
-            // Draw in logo filename as it's changed
+            // Show the chosen photo right away. It is only uploaded when the user clicks Save.
             $(self.refs.photo).change(function () {
-                self.logo_file_name = self.refs.photo.value.replace(/\\/g, '/').replace(/.*\//, '')
-                self.update()
-                getBase64(this.files[0]).then(function (data) {
-                    self.selected_user['photo'] = JSON.stringify({file_name: self.logo_file_name, data: data})
+                const file = this.files[0]
+                if (!file) {
+                    return
+                }
+                getBase64(file).then(function (data) {
+                    self.selected_user['photo'] = JSON.stringify({file_name: file.name, data: data})
+                    self.photo = data
+                    self.update()
                 })
             })
             self.update()
         })
 
+        // Why: the file input is hidden, so the Change photo button opens it
+        self.choose_photo = () => {
+            self.refs.photo.click()
+        }
+
         self.camel_case_to_regular = (str) => {
             str = str.replaceAll('_', ' ')
             return str.replace(/(?:^|\s|["'([{])+\S/g, match => match.toUpperCase())
+        }
+
+        // Goes back to the profile details on the same page
+        self.cancel = () => {
+            self.parent.stop_editing()
         }
 
         self.save = () => {

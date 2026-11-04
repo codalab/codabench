@@ -27,7 +27,7 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.db import transaction
-from django.db.models import Q, Case, Count, F, OuterRef, Subquery, Value, When
+from django.db.models import Q, OuterRef, Exists
 from django.utils.text import slugify
 from django.utils.timezone import now
 from leaderboards.models import Leaderboard
@@ -346,9 +346,9 @@ def create_detailed_output_file(detail_name, submission):
     return make_url_sassy(new_details.data_file.name, permission="w")
 
 
-def run_submission(submission_pk, tasks=None, is_scoring=False, group_ids=None):
+def run_submission(submission_pk, tasks=None, is_scoring=False, group_ids=None, create_only=False):
     task_ids = [t.id for t in tasks] if tasks else None
-    return _run_submission.apply_async((submission_pk, task_ids, is_scoring, group_ids))
+    return _run_submission.apply_async((submission_pk, task_ids, is_scoring, group_ids, create_only))
 
 
 def send_submission_message(submission, data):
@@ -378,10 +378,34 @@ def send_child_id(submission, child_id):
     send_submission_message(submission, {"kind": "child_update", "child_id": child_id})
 
 
+def _send_pending_children(parent):
+    """Sends to the compute worker every child of `parent` that is still waiting (Submitting).
+
+    Each child is locked and its status re-checked before sending, so that two concurrent
+    runs (parent + child, or a double click) cannot send the same child twice.
+    """
+    child_pks = list(
+        parent.children.filter(status=Submission.SUBMITTING)
+        .order_by("pk")
+        .values_list("pk", flat=True)
+    )
+    for child_pk in child_pks:
+        with transaction.atomic():
+            child = Submission.objects.select_for_update().get(pk=child_pk)
+            if child.status != Submission.SUBMITTING:
+                continue
+            _send_to_compute_worker(child, is_scoring=False)
+
+
 @app.task(queue="site-worker", soft_time_limit=60)
-def _run_submission(submission_pk, task_pks=None, is_scoring=False, group_ids=None):
+def _run_submission(submission_pk, task_pks=None, is_scoring=False, group_ids=None, create_only=False):
     """Function wrapped so that when we run tests we can run this function without
-    via celery."""
+    via celery.
+
+    create_only=True: only creates the child submissions (status Submitting) without
+    sending anything to the compute worker. Used when auto_run_submissions is disabled,
+    so that the organizer can then run each child individually (atomic manual run).
+    """
     select_models = (
         "phase",
         "phase__competition",
@@ -396,6 +420,7 @@ def _run_submission(submission_pk, task_pks=None, is_scoring=False, group_ids=No
     qs = Submission.objects.select_related(*select_models).prefetch_related(
         *prefetch_models
     )
+
     submission = qs.get(pk=submission_pk)
 
     # ── HUMAN IN THE LOOP SECURE (private CW only)
@@ -413,7 +438,28 @@ def _run_submission(submission_pk, task_pks=None, is_scoring=False, group_ids=No
             )
             submission.save(update_fields=["status", "status_details"])
             return
-    # ── HITL SECURE (private CW only)
+
+    # ── ATOMIC MANUAL RUN: run a single, already created, child submission.
+    if submission.parent_id is not None and not is_scoring:
+        if not create_only:
+            with transaction.atomic():
+                child = Submission.objects.select_for_update().get(pk=submission.pk)
+                if child.status == Submission.SUBMITTING:
+                    _send_to_compute_worker(child, is_scoring=False)
+                else:
+                    logger.warning(
+                        f"Child submission {child.pk} not sent: "
+                        f"status is '{child.status}', expected 'Submitting'"
+                    )
+        return
+
+    # ── MANUAL RUN OF A PARENT WHOSE CHILDREN ALREADY EXIST (created with create_only=True)
+    # We check that children really exist (and not `has_children`): re_run() creates a new
+    # parent with has_children=True but without any child, they must be created below.
+    if not is_scoring and submission.children.exists():
+        if not create_only:
+            _send_pending_children(submission)
+        return
 
     if submission.is_specific_task_re_run:
         tasks = Task.objects.filter(pk__in=task_pks)
@@ -433,8 +479,13 @@ def _run_submission(submission_pk, task_pks=None, is_scoring=False, group_ids=No
 
     is_multi_task = len(tasks) > 1
     is_multi_queue = len(group_queues) > 1
+    needs_children = is_multi_task or is_multi_queue or (create_only and len(group_queues) >= 1)
 
-    if is_multi_task or is_multi_queue:
+    if needs_children:
+        if not tasks:
+            logger.error(f"Submission {submission_pk}: no task found, cannot create children")
+            return
+
         if is_multi_task and is_multi_queue:
             combos = [(task, queue) for task in tasks for queue in group_queues]
         elif is_multi_task:
@@ -443,28 +494,46 @@ def _run_submission(submission_pk, task_pks=None, is_scoring=False, group_ids=No
         else:
             combos = [(tasks[0], queue) for queue in group_queues]
 
-        submission.has_children = True
-        submission.save()
-        send_parent_status(submission)
+        logger.info(
+            f"[manual-run] sub={submission_pk} create_only={create_only} is_scoring={is_scoring} "
+            f"group_ids={group_ids} tasks={[t.pk for t in tasks]} "
+            f"group_queues={[getattr(q, 'pk', q) for q in group_queues]} "
+            f"children_exist={submission.children.exists()}"
+        )
 
-        for task, queue in combos:
-            child_sub = Submission(
-                owner=submission.owner,
-                phase=submission.phase,
-                data=submission.data,
-                participant=submission.participant,
-                parent=submission,
-                task=task,
-                fact_sheet_answers=submission.fact_sheet_answers,
-                queue=queue,
-                organization=submission.organization,
-            )
-            child_sub.save(ignore_submission_limit=True)
-            _send_to_compute_worker(child_sub, is_scoring=False)
+        created_children = []
+        with transaction.atomic():
+            submission.has_children = True
+            submission.save()
+            for task, queue in combos:
+                child_sub = Submission(
+                    owner=submission.owner,
+                    phase=submission.phase,
+                    data=submission.data,
+                    participant=submission.participant,
+                    parent=submission,
+                    task=task,
+                    fact_sheet_answers=submission.fact_sheet_answers,
+                    queue=queue,
+                    organization=submission.organization,
+                )
+                child_sub.save(ignore_submission_limit=True)
+                created_children.append(child_sub)
+
+        send_parent_status(submission)
+        for child_sub in created_children:
+            if not create_only:
+                _send_to_compute_worker(child_sub, is_scoring=False)
             send_child_id(submission, child_sub.id)
 
     else:
+        if create_only:
+            return
+
         if not submission.task:
+            if not tasks:
+                logger.error(f"Submission {submission_pk}: no task found, cannot run it")
+                return
             submission.task = tasks[0]
             submission.save()
 
@@ -865,39 +934,31 @@ def create_competition_dump(competition_pk, keys_instead_of_files=False):
 
 @app.task(queue="site-worker", soft_time_limit=60 * 5)
 def do_phase_migrations():
-    # Update phase statuses
-    previous_subquery = (
-        Phase.objects.filter(competition=OuterRef("competition"), end__lte=now())
-        .order_by("-index")
-        .values("index")[:1]
-    )
+    current_time = now()
 
-    current_subquery = Phase.objects.filter(
-        competition=OuterRef("competition"),
-        start__lte=now(),
-        end__gt=now(),
-    ).values("index")[:1]
+    Phase.objects.filter(end__lte=current_time).update(status=Phase.PREVIOUS)
 
-    next_subquery = (
-        Phase.objects.filter(competition=OuterRef("competition"), start__gt=now())
-        .order_by("index")
-        .values("index")[:1]
-    )
+    Phase.objects.filter(start__lte=current_time).filter(
+        Q(end__isnull=True) | Q(end__gt=current_time)
+    ).update(status=Phase.CURRENT)
 
-    Phase.objects.annotate(
-        previous_index=Subquery(previous_subquery),
-        current_index=Subquery(current_subquery),
-        next_index=Subquery(next_subquery),
-    ).update(
-        status=Case(
-            When(index=F("previous_index"), then=Value(Phase.PREVIOUS)),
-            When(index=F("current_index"), then=Value(Phase.CURRENT)),
-            When(index=F("next_index"), then=Value(Phase.NEXT)),
-            default=None,
-        )
-    )
+    Phase.objects.filter(start__gt=current_time).update(status=Phase.NEXT)
 
-    # Updating Competitions whose phases have finished migrating to `is_migrating=False`
+    pending_submissions = Submission.objects.filter(
+        parent__isnull=True,
+        status=Submission.SUBMITTING,
+        created_by_migration__isnull=False,
+        phase__competition__is_migrating=False,
+        phase__start__lte=now(),
+        has_children=False,
+    ).filter(Q(phase__end__isnull=True) | Q(phase__end__gt=now()))
+
+    for submission in pending_submissions:
+        try:
+            submission.start()
+        except Exception:
+            logger.exception(f"Could not start pending migrated submission {submission.pk}")
+
     completed_statuses = [
         Submission.FINISHED,
         Submission.FAILED,
@@ -905,16 +966,13 @@ def do_phase_migrations():
         Submission.NONE,
     ]
 
-    running_subs_query = (
-        Submission.objects.filter(created_by_migration=OuterRef("pk"))
-        .exclude(status__in=completed_statuses)
-        .values_list("pk")[:1]
-    )
+    running_migrated_subs = Submission.objects.filter(
+        phase__competition=OuterRef("pk"),
+        created_by_migration__isnull=False,
+    ).exclude(status__in=completed_statuses)
 
-    Competition.objects.filter(
-        pk__in=Phase.objects.annotate(running_subs=Count(Subquery(running_subs_query)))
-        .filter(running_subs=0, competition__is_migrating=True, status=Phase.PREVIOUS)
-        .values_list("competition__pk", flat=True)
+    Competition.objects.filter(is_migrating=True).filter(
+        ~Exists(running_migrated_subs)
     ).update(is_migrating=False)
 
     # Checking for new phases to start migrating
@@ -923,7 +981,7 @@ def do_phase_migrations():
         start__lte=now(),
         competition__is_migrating=False,
         has_been_migrated=False,
-    )
+    ).filter(Q(end__isnull=True) | Q(end__gt=now()))
 
     logger.info(f"Checking {len(new_phases)} phases for phase migrations.")
 
@@ -932,24 +990,23 @@ def do_phase_migrations():
 
 
 @app.task(queue="site-worker", soft_time_limit=60 * 5)
-def manual_migration(phase_id):
+def manual_migration(phase_id, destination_phase_id=None):
     try:
         source_phase = Phase.objects.get(id=phase_id)
     except Phase.DoesNotExist:
-        logger.error(
-            f"Could not manually migrate phase with id: {phase_id}. Phase could not be found."
-        )
+        logger.error(f"Could not manually migrate phase with id: {phase_id}. Phase could not be found.")
         return
 
+    competition_phases = source_phase.competition.phases
     try:
-        destination_phase = source_phase.competition.phases.get(
-            index=source_phase.index + 1
-        )
+        if destination_phase_id is not None:
+            destination_phase = competition_phases.get(id=destination_phase_id)
+        else:
+            destination_phase = competition_phases.get(index=source_phase.index + 1)
     except Phase.DoesNotExist:
-        logger.error(
-            f"Could not manually migrate phase with id: {phase_id}. The next phase could not be found."
-        )
+        logger.error(f"Could not manually migrate phase with id: {phase_id}. The destination phase could not be found.")
         return
+
     destination_phase.competition.apply_phase_migration(
         source_phase, destination_phase, force_migration=True
     )

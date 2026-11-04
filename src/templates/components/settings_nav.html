@@ -1,0 +1,15 @@
+{# Links between the settings pages, used by profiles/settings_base.html. #}
+
+{% with current=request.resolver_match.url_name %}
+<nav class="side-nav">
+    <a class="side-nav-link{% if current == 'notifications' %} side-nav-link-active{% endif %}" href="{% url 'settings:notifications' %}">
+        <i class="bi bi-bell"></i>Notifications
+    </a>
+    <a class="side-nav-link{% if current == 'change_password' %} side-nav-link-active{% endif %}" href="{% url 'settings:change_password' %}">
+        <i class="bi bi-lock"></i>Change Password
+    </a>
+    <a class="side-nav-link{% if current == 'delete_account' %} side-nav-link-active{% endif %}" href="{% url 'settings:delete_account' %}">
+        <i class="bi bi-trash"></i>Delete Account
+    </a>
+</nav>
+{% endwith %}
