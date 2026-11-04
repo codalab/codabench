@@ -2103,10 +2103,6 @@
       
         
       
-        
-      
-        
-      
     
     
     
@@ -2219,33 +2215,6 @@
   
   
     <li class="md-nav__item">
-      <a href="./Worker-Docker-Image-manual-update/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Worker docker image manual update (version < 1.3.1)
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="./Add-line-into-.env-for-default-queue-worker-duration/" class="md-nav__link">
         
   
@@ -2281,33 +2250,6 @@
     
   
   Uncomment a line in your .env file (version < 1.8.0)
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="./Rebuilding-all-docker-images/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Rebuilding all docker images (version < 1.9.2)
 
     
   </span>
@@ -2408,33 +2350,6 @@
   
   
     <li class="md-nav__item">
-      <a href="./User-removal/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  User Removal (version < 1.17.0)
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="./Database-size-fixes/" class="md-nav__link">
         
   
@@ -2443,60 +2358,6 @@
     
   
   Database size fix (version < 1.18.0)
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="./Hide-output/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Hide Output update (version < 1.19.0)
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="./Django-3/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Django 3 Upgrades (version < 1.20.0)
 
     
   </span>
@@ -2605,6 +2466,87 @@
     
   
   Postgres 18 upgrade (version < 1.24.0)
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./Add-DEFAULT_FROM_EMAIL-in-your-.env-file/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Add DEFAULT_FROM_EMAIL in your .env file (version < 1.26.0)
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./RabbitMQ-feature-flags/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  RabbitMQ feature flags (version < 1.28.0, recommended)
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./Users-queue-limit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Users queue limit (version < 1.31.0)
 
     
   </span>
@@ -2853,6 +2795,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#upgrade-compute-workers" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Upgrade compute workers
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#manual-interventions" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -2899,32 +2852,56 @@
   <h1>Index</h1>
 
 <h2 id="upgrade-codabench">Upgrade Codabench<a class="headerlink" href="#upgrade-codabench" title="Permanent link">&para;</a></h2>
+<p>Run these commands for every upgrade. They put the site in maintenance mode, pull the new version, rebuild and restart the containers, apply the Django migrations and collect the static files:</p>
 <div class="language-sh highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">cd</span><span class="w"> </span>codabench
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>git<span class="w"> </span>pull
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>docker<span class="w"> </span>compose<span class="w"> </span>build<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>django<span class="w"> </span>./manage.py<span class="w"> </span>migrate
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>django<span class="w"> </span>./manage.py<span class="w"> </span>collectstatic<span class="w"> </span>--noinput
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>touch<span class="w"> </span>maintenance_mode/maintenance.on
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>git<span class="w"> </span>pull
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>docker<span class="w"> </span>compose<span class="w"> </span>build<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>django<span class="w"> </span>./manage.py<span class="w"> </span>migrate
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>django<span class="w"> </span>./manage.py<span class="w"> </span>collectstatic<span class="w"> </span>--noinput
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>rm<span class="w"> </span>maintenance_mode/maintenance.on
 </span></code></pre></div>
+<p>Then check the manual interventions below for every version between yours and the new one, and apply them in order.</p>
+<h2 id="upgrade-compute-workers">Upgrade compute workers<a class="headerlink" href="#upgrade-compute-workers" title="Permanent link">&para;</a></h2>
+<p>Some versions also change the compute worker. In that case, upgrade every compute worker connected to your instance, for the default queue and for custom queues.</p>
+<p>Before upgrading a worker, check that no submission is running on it:</p>
+<div class="language-sh highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>docker<span class="w"> </span>ps
+</span></code></pre></div>
+<p><strong>Docker</strong> (worker started with <code>docker compose</code>, as described in <a href="../../Organizers/Running_a_benchmark/Compute-Worker-Management---Setup/">Compute Worker Management &amp; Setup</a>). In the folder containing the worker's <code>docker-compose.yml</code>:</p>
+<div class="language-sh highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>down
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>docker<span class="w"> </span>compose<span class="w"> </span>pull
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d
+</span></code></pre></div>
+<p>If your <code>docker-compose.yml</code> pins an image tag instead of <code>latest</code>, change it to the new version first.</p>
+<p><strong>Podman</strong> (worker started with <code>run_podman.sh</code>, as described in <a href="../../Organizers/Running_a_benchmark/Compute-worker-installation-with-Podman/">Compute Worker Management with Podman</a>):</p>
+<div class="language-sh highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>podman<span class="w"> </span>stop<span class="w"> </span>compute_worker<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>podman<span class="w"> </span>rm<span class="w"> </span>compute_worker
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>podman<span class="w"> </span>pull<span class="w"> </span>codalab/codabench-compute-worker:latest
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>./run_podman.sh
+</span></code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Old workers started with <code>docker run</code>, or using the old <code>codalab/competitions-v2-compute-worker</code> image, should be replaced by a worker set up as described in <a href="../../Organizers/Running_a_benchmark/Compute-Worker-Management---Setup/">Compute Worker Management &amp; Setup</a>.</p>
+</div>
 <h2 id="manual-interventions">Manual interventions<a class="headerlink" href="#manual-interventions" title="Permanent link">&para;</a></h2>
-<p>You can find here various manual interventions needed depending on which version you are upgrading from:</p>
+<p>Manual interventions needed depending on which version you are upgrading from:</p>
 <ul>
 <li><a href="Upgrade-RabbitMQ/">Upgrade RabbitMQ</a> (version &lt; 1.0.0)</li>
+<li><a href="#upgrade-compute-workers">Upgrade compute workers</a> (version &lt; 1.3.1)</li>
 <li><a href="Create-new-logos-for-each-competition/">Create new logos for each competition</a> (version &lt; 1.4.1)</li>
-<li><a href="Worker-Docker-Image-manual-update/">Worker Docker Image manual update</a> (version &lt; 1.3.1)</li>
 <li><a href="Add-line-into-.env-for-default-queue-worker-duration/">Add line into <code>.env</code> for default queue worker duration</a> (version &lt; 1.7.0)</li>
 <li><a href="Uncomment-a-line-in-your-.env-file/">Uncomment a line in your <code>.env</code> file</a> (version &lt; 1.8.0)</li>
-<li><a href="Rebuilding-all-docker-images/">Rebuilding all docker images</a> (version &lt; 1.9.2)</li>
 <li><a href="Move-the-last-storage_inconsistency-files-from--logs-folder-to--var-logs--folder/">Move the last storage_inconsistency files from logs folder to var logs folder</a> (version &lt; 1.12.0)</li>
 <li><a href="Submissions-and-Participants-Counts/">Submissions and Participants Counts</a> (version &lt; 1.14.0)</li>
 <li><a href="Homepage-counters/">Homepage counters</a> (version &lt; 1.15.0)</li>
-<li><a href="User-removal/">User removal</a> (version &lt; 1.17.0)</li>
 <li><a href="Database-size-fixes/">Database size Fix</a> (version &lt; 1.18.0)</li>
-<li><a href="Hide-output/">Hide output</a> (version &lt; 1.19.0)</li>
-<li><a href="Django-3/">Django 3.0</a> (version &lt; 1.20.0)</li>
-<li><a href="Minio-image/">Minio image</a> (version &lt; 1.21.1)</li>
-<li><a href="Docker-py/">Docker-py</a> (version &lt; 1.22.0)</li>
+<li><a href="#upgrade-compute-workers">Upgrade compute workers</a> for Django 3.0 (version &lt; 1.20.0)</li>
+<li><a href="Minio-image/">Minio image</a> and <a href="#upgrade-compute-workers">upgrade compute workers</a> (version &lt; 1.21.1)</li>
+<li><a href="Docker-py/">Docker-py</a> and <a href="#upgrade-compute-workers">upgrade compute workers</a> (version &lt; 1.22.0)</li>
 <li><a href="Django-4/">Django 4.2</a> (version &lt; 1.23.0)</li>
 <li><a href="Postgres-18/">Postgres 18</a> (version &lt; 1.24.0)</li>
+<li><a href="Add-DEFAULT_FROM_EMAIL-in-your-.env-file/">Add <code>DEFAULT_FROM_EMAIL</code> in your <code>.env</code> file</a> (version &lt; 1.26.0)</li>
+<li><a href="RabbitMQ-feature-flags/">RabbitMQ feature flags</a> (version &lt; 1.28.0, recommended)</li>
+<li><a href="Users-queue-limit/">Users queue limit</a> (version &lt; 1.31.0)</li>
 </ul>
 
 

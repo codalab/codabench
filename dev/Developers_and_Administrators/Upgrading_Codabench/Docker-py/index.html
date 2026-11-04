@@ -2103,10 +2103,6 @@
       
         
       
-        
-      
-        
-      
     
     
     
@@ -2219,33 +2215,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../Worker-Docker-Image-manual-update/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Worker docker image manual update (version < 1.3.1)
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../Add-line-into-.env-for-default-queue-worker-duration/" class="md-nav__link">
         
   
@@ -2281,33 +2250,6 @@
     
   
   Uncomment a line in your .env file (version < 1.8.0)
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../Rebuilding-all-docker-images/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Rebuilding all docker images (version < 1.9.2)
 
     
   </span>
@@ -2408,33 +2350,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../User-removal/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  User Removal (version < 1.17.0)
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../Database-size-fixes/" class="md-nav__link">
         
   
@@ -2443,60 +2358,6 @@
     
   
   Database size fix (version < 1.18.0)
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../Hide-output/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Hide Output update (version < 1.19.0)
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../Django-3/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Django 3 Upgrades (version < 1.20.0)
 
     
   </span>
@@ -2670,6 +2531,87 @@
     
   
   Postgres 18 upgrade (version < 1.24.0)
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Add-DEFAULT_FROM_EMAIL-in-your-.env-file/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Add DEFAULT_FROM_EMAIL in your .env file (version < 1.26.0)
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../RabbitMQ-feature-flags/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  RabbitMQ feature flags (version < 1.28.0, recommended)
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Users-queue-limit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Users queue limit (version < 1.31.0)
 
     
   </span>
@@ -2964,20 +2906,15 @@
   <h1>Docker-Py (version < 1.22.0)</h1>
 
 <div class="admonition note">
-<p class="admonition-title">After upgrading from Codabench &lt;1.22.0, you will need to rebuild containers, run Django migrations and upgrade compute workers.</p>
+<p class="admonition-title">After upgrading from Codabench &lt;1.22.0, you will need to add an environment variable and upgrade compute workers.</p>
 </div>
 <h2 id="main-instance">Main Instance<a class="headerlink" href="#main-instance" title="Permanent link">&para;</a></h2>
-<p>Some of the changes will require a migration and <code>collectstatic</code> commands to be run: 
-<div class="language-sh highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>build<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>django<span class="w"> </span>python<span class="w"> </span>manage.py<span class="w"> </span>migrate
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>django<span class="w"> </span>python<span class="w"> </span>manage.py<span class="w"> </span>collectstatic<span class="w"> </span>--no-input
-</span></code></pre></div></p>
 <p>There is a new environment variable for the contact email:
-<div class="language-text highlight"><span class="filename">Text Only</span><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>CONTACT_EMAIL=info@codabench.org
+<div class="language-text highlight"><span class="filename">Text Only</span><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>CONTACT_EMAIL=info@codabench.org
 </span></code></pre></div>
-Make sure to add it to your <code>.env</code> file before launching the containers</p>
+Make sure to add it to your <code>.env</code> file before launching the containers.</p>
 <h2 id="compute-workers">Compute Workers<a class="headerlink" href="#compute-workers" title="Permanent link">&para;</a></h2>
-<p>Major compute worker changes will require updating the Compute Worker images for both Docker and Podman. Podman workers will also need Podman 5.4 minimum to work on the host</p>
+<p>Major compute worker changes require updating the compute worker images for both Docker and Podman: see <a href="../#upgrade-compute-workers">Upgrade compute workers</a>. Podman workers also need Podman 5.4 minimum on the host.</p>
 
 
 
