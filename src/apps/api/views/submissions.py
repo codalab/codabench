@@ -458,44 +458,34 @@ class SubmissionViewSet(ModelViewSet):
         submissions = Submission.objects.filter(
             pk__in=pks).select_related('phase__competition')
 
+        start_now = destination_phase.start <= now()
         migrated, skipped = [], []
         for submission in submissions:
-            tasks, group_ids = submission.get_migration_tasks(destination_phase)
-            if tasks is not None and not tasks:
-                reason = 'no finished child submission'
-
+            reason = None
             if not self.has_admin_permission(request.user, submission):
                 reason = 'no permission'
             elif submission.phase.competition_id != destination_phase.competition_id:
                 reason = 'destination phase belongs to another competition'
             elif submission.parent_id is not None:
                 reason = 'child submission'
+            elif submission.is_soft_deleted:
+                reason = 'deleted submission'
             elif submission.status != Submission.FINISHED:
                 reason = 'not finished'
             elif destination_phase.pk == submission.phase_id:
                 reason = 'destination phase is the same as the current one'
             elif destination_phase.end and destination_phase.end < now():
                 reason = 'destination phase has ended'
-            else:
-                tasks = submission.get_migration_tasks(destination_phase)
-                if tasks is not None and not tasks:
-                    reason = 'no finished child submission'
 
             if reason:
                 skipped.append({'id': submission.id, 'reason': reason})
                 continue
 
-            new_submission = Submission(
-                created_by_migration=submission.phase,
-                participant=submission.participant,
-                phase=destination_phase,
-                owner=submission.owner,
-                data=submission.data,
-                organization=submission.organization,
-            )
-            new_submission.save(ignore_submission_limit=True)
-            if destination_phase.start <= now():
-                new_submission.start(tasks=tasks, group_ids=group_ids)
+            # Only the Finished, non deleted children are recreated (see Submission.migrate_to)
+            new_submission = submission.migrate_to(destination_phase, start=start_now)
+            if new_submission is None:
+                skipped.append({'id': submission.id, 'reason': 'no finished child submission'})
+                continue
             migrated.append(new_submission.id)
 
         return Response({'migrated': migrated, 'skipped': skipped})
