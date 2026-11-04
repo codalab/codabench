@@ -481,7 +481,6 @@ class SubmissionViewSet(ModelViewSet):
                 skipped.append({'id': submission.id, 'reason': reason})
                 continue
 
-            # Only the Finished, non deleted children are recreated (see Submission.migrate_to)
             new_submission = submission.migrate_to(destination_phase, start=start_now)
             if new_submission is None:
                 skipped.append({'id': submission.id, 'reason': 'no finished child submission'})

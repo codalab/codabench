@@ -6,6 +6,7 @@ from django.urls import reverse
 from django.utils.timezone import now
 from rest_framework.test import APITestCase
 
+from competitions.tasks import _run_submission
 from competitions.models import Submission, CompetitionParticipant
 from factories import UserFactory, CompetitionFactory, PhaseFactory, CompetitionParticipantFactory, SubmissionFactory, \
     TaskFactory, OrganizationFactory, DataFactory, LeaderboardFactory, ColumnFactory, SubmissionScoreFactory
@@ -683,13 +684,31 @@ class TaskSelectionTests(APITestCase):
     def test_can_select_tasks_when_making_submissions(self):
         self.client.login(username="creator", password="creator")
 
-        # Mock _send_to_compute_worker so submissions don't actually run
-        with mock.patch('competitions.tasks._send_to_compute_worker'):
-            resp = self.client.post(self.submission_url, self.submission_data)
-            # Check that the submission was created
-            assert resp.status_code == 201
-            # Make sure only the selected tasks are run
-            assert list(self.phase.submissions.get(id=resp.json().get('id')).children.all().order_by('task__pk').values_list('task', flat=True)) == self.sorted_tasks
+        with mock.patch(
+            "competitions.tasks.run_submission",
+            side_effect=lambda pk, tasks=None, **kwargs: _run_submission(
+                pk,
+                [t.pk for t in tasks] if tasks else None,
+                **kwargs,
+            ),
+        ):
+            with mock.patch("competitions.tasks._send_to_compute_worker"):
+                with self.captureOnCommitCallbacks(execute=True):
+                    resp = self.client.post(
+                        self.submission_url,
+                        self.submission_data,
+                    )
+
+        assert resp.status_code == 201
+        sub = Submission.objects.get(id=resp.json().get("id"))
+
+        assert set(sub.children.values_list("task_id", flat=True)) == set(
+            self.submission_data["tasks"]
+        )
+
+        with mock.patch("competitions.tasks._send_to_compute_worker"):
+            with self.captureOnCommitCallbacks(execute=True):
+                assert sub.re_run().pk == sub.pk
 
     def test_cannot_select_tasks_on_wrong_phase(self):
         self.client.login(username="creator", password="creator")
@@ -708,18 +727,30 @@ class TaskSelectionTests(APITestCase):
     def test_can_re_run_submissions_with_multiple_tasks(self):
         self.client.login(username="creator", password="creator")
 
-        # Mock _send_to_compute_worker so submissions don't actually run
-        with mock.patch('competitions.tasks._send_to_compute_worker'):
-            resp = self.client.post(self.submission_url, self.submission_data)
+        with mock.patch(
+            "competitions.tasks._run_submission.apply_async",
+            side_effect=lambda args, **kwargs: _run_submission(*args),
+        ):
+            with mock.patch("competitions.tasks._send_to_compute_worker"):
+                resp = self.client.post(self.submission_url, self.submission_data)
 
-            sub = Submission.objects.get(id=resp.json().get('id'))
-            sub.re_run()
+                assert resp.status_code == 201
+                sub = Submission.objects.get(id=resp.json().get("id"))
 
-            sub_copy = Submission.objects.filter(has_children=True).order_by('created_when').last()
-            # Check sub_copy is a new submission
-            assert sub.pk != sub_copy.pk
-            # Make sure the selected tasks were run in the duplicate submission's children
-            assert list(sub_copy.children.all().order_by('task__pk').values_list('task', flat=True)) == self.sorted_tasks
+                children_before = set(sub.children.values_list("pk", flat=True))
+                count_before = Submission.objects.count()
+
+                with self.captureOnCommitCallbacks(execute=True):
+                    result = sub.re_run()
+
+        assert result.pk == sub.pk
+        assert Submission.objects.count() == count_before
+
+        sub.refresh_from_db()
+        assert set(sub.children.values_list("pk", flat=True)) == children_before
+        assert list(
+            sub.children.order_by("task__pk").values_list("task", flat=True)
+        ) == self.sorted_tasks
 
     def test_cannot_re_run_submissions_with_specific_task_without_permission(self):
         other_user = UserFactory(username="otheruser", password="otheruser")
@@ -1292,8 +1323,6 @@ class SubmissionReRunTests(APITestCase):
     The mock also records its arguments, which lets the tests check which tasks a rerun is started on.
     """
 
-    RUN_SUBMISSION = 'competitions.tasks.run_submission'
-
     def setUp(self):
         self.superuser = UserFactory(is_superuser=True, is_staff=True)
         self.creator = UserFactory(username='creator')
@@ -1319,14 +1348,22 @@ class SubmissionReRunTests(APITestCase):
         Competition creator, collaborator and superuser rerun a submission in every status.
         Expect 200 and a new submission for each.
         """
+        statuses = {s.pk: s.status for s in self.submissions}
+        count = Submission.objects.count()
         for user in [self.creator, self.collaborator, self.superuser]:
             self.client.force_login(user)
             for submission in self.submissions:
-                with mock.patch(self.RUN_SUBMISSION):
-                    resp = self.re_run(submission=submission)
-                assert resp.status_code == 200, f'{user.username} could not rerun a "{submission.status}" submission'
-                assert resp.data['id'] != submission.pk
-                assert Submission.objects.filter(pk=resp.data['id']).exists()
+                original = statuses[submission.pk]
+                Submission.objects.filter(pk=submission.pk).update(status=original)
+                with mock.patch("competitions.tasks.run_submission"):
+                    with self.captureOnCommitCallbacks(execute=True):
+                        resp = self.re_run(submission=submission)
+                if original in Submission.RERUNNABLE_STATUSES:
+                    assert resp.status_code == 200, f'{user.username} could not rerun a "{original}" submission'
+                    assert resp.data['id'] == submission.pk
+                else:
+                    assert resp.status_code == 403, f'{user.username} reran a "{original}" submission'
+        assert Submission.objects.count() == count
 
     def test_re_run_submission_copies_submission_details(self):
         """
@@ -1344,34 +1381,31 @@ class SubmissionReRunTests(APITestCase):
         )
 
         self.client.force_login(self.creator)
-        with mock.patch(self.RUN_SUBMISSION) as run_submission_mock:
-            resp = self.re_run(submission=submission)
+        old_secret = submission.secret
+        with mock.patch("competitions.tasks.run_submission") as run_submission_mock:
+            with self.captureOnCommitCallbacks(execute=True):
+                resp = self.re_run(submission=submission)
         assert resp.status_code == 200
 
-        new_sub = Submission.objects.get(pk=resp.data['id'])
-        assert new_sub.pk != submission.pk
-        assert new_sub.owner == self.participant
-        assert new_sub.phase == submission.phase
-        assert new_sub.task == submission.task
-        assert new_sub.data == submission.data
-        assert new_sub.organization == organization
-        assert new_sub.fact_sheet_answers == {'team_name': 'Team A'}
-        assert new_sub.queue == self.comp.queue
-        assert new_sub.has_children is False
-        assert new_sub.is_specific_task_re_run is False
-        assert new_sub.is_soft_deleted is False
-        assert new_sub.parent is None
-        assert new_sub.status == Submission.SUBMITTING
+        assert resp.data['id'] == submission.pk
+        submission.refresh_from_db()
+        assert submission.owner == self.participant
+        assert submission.organization == organization
+        assert submission.fact_sheet_answers == {'team_name': 'Team A'}
+        assert submission.has_children is False
+        assert submission.parent is None
+        assert submission.is_soft_deleted is False
+        assert submission.status == Submission.SUBMITTING
+        assert submission.secret != old_secret
 
-        # The new submission is started on the task of the original submission
         run_submission_mock.assert_called_once()
-        assert run_submission_mock.call_args.args[0] == new_sub.pk
+        assert run_submission_mock.call_args.args[0] == submission.pk
         assert list(run_submission_mock.call_args.kwargs['tasks']) == [submission.task]
 
     def test_re_run_multi_task_submission(self):
         """
         Organizer reruns a parent submission whose children ran on two different tasks.
-        Expect a new parent submission with has_children set, started on the tasks of the original children.
+        Expect the SAME parent and children rows to be reset and started again, and no new submission.
         """
         tasks = [TaskFactory(), TaskFactory()]
         self.phase.tasks.add(*tasks)
@@ -1385,8 +1419,9 @@ class SubmissionReRunTests(APITestCase):
             task=None,
             organization=organization,
         )
+        children = []
         for task in tasks:
-            SubmissionFactory(
+            children.append(SubmissionFactory(
                 phase=self.phase,
                 owner=self.participant,
                 status=Submission.FINISHED,
@@ -1394,27 +1429,37 @@ class SubmissionReRunTests(APITestCase):
                 task=task,
                 data=parent.data,
                 organization=organization,
-            )
+            ))
+        count_before = Submission.objects.count()
+        old_secrets = {c.pk: c.secret for c in children}
 
         self.client.force_login(self.creator)
-        with mock.patch(self.RUN_SUBMISSION) as run_submission_mock:
-            resp = self.re_run(submission=parent)
+        with mock.patch("competitions.tasks.run_submission") as run_submission_mock:
+            with self.captureOnCommitCallbacks(execute=True):
+                resp = self.re_run(submission=parent)
         assert resp.status_code == 200
 
-        new_sub = Submission.objects.get(pk=resp.data['id'])
-        assert new_sub.pk != parent.pk
-        assert new_sub.has_children is True
-        assert new_sub.task is None
-        assert new_sub.data == parent.data
-        assert new_sub.owner == self.participant
-        assert new_sub.organization == organization
-        assert new_sub.is_specific_task_re_run is False
+        # Same row, no new submission
+        assert resp.data['id'] == parent.pk
+        assert Submission.objects.count() == count_before
 
-        # The new submission is started on the tasks of the original children
+        parent.refresh_from_db()
+        assert parent.has_children is True
+        assert parent.task is None
+        assert parent.owner == self.participant
+        assert parent.organization == organization
+        assert parent.status == Submission.SUBMITTED
+
+        # Children are the same rows, reset, with a new secret
+        assert set(parent.children.values_list('pk', flat=True)) == {c.pk for c in children}
+        for child in parent.children.all():
+            assert child.status == Submission.SUBMITTING
+            assert child.secret != old_secrets[child.pk]
+            assert child.task in tasks
+
+        # The parent is started once, its existing children are sent by the site worker
         run_submission_mock.assert_called_once()
-        assert run_submission_mock.call_args.args[0] == new_sub.pk
-        started_task_pks = sorted(task.pk for task in run_submission_mock.call_args.kwargs['tasks'])
-        assert started_task_pks == sorted(task.pk for task in tasks)
+        assert run_submission_mock.call_args.args[0] == parent.pk
 
     def test_cannot_re_run_soft_deleted_submission(self):
         """Organizer and superuser rerun a soft-deleted submission. Expect 403 and no new submission."""
@@ -1428,7 +1473,7 @@ class SubmissionReRunTests(APITestCase):
 
         for user in [self.creator, self.superuser]:
             self.client.force_login(user)
-            with mock.patch(self.RUN_SUBMISSION) as run_submission_mock:
+            with mock.patch("competitions.tasks.run_submission") as run_submission_mock:
                 resp = self.re_run(submission=submission)
             assert resp.status_code == 403
             assert resp.data['detail'] == 'Cannot re-run a deleted submission'
@@ -1468,8 +1513,6 @@ class SubmissionResubmitTests(APITestCase):
     run_submission is mocked so that resubmissions are not sent to Celery.
     """
 
-    RUN_SUBMISSION = 'competitions.tasks.run_submission'
-
     def setUp(self):
         self.creator = UserFactory(username='creator')
         self.collaborator = UserFactory(username='collab')
@@ -1489,7 +1532,7 @@ class SubmissionResubmitTests(APITestCase):
         self.client.force_login(self.creator)
         new_task = TaskFactory()
         self.phase.tasks.set([new_task])
-        with mock.patch(self.RUN_SUBMISSION) as run_submission_mock:
+        with mock.patch("competitions.tasks.run_submission") as run_submission_mock:
             resp = self.resubmit(self.submission)
         assert resp.status_code == 200, resp.data
         new_sub = Submission.objects.get(pk=resp.data['id'])
@@ -1501,7 +1544,7 @@ class SubmissionResubmitTests(APITestCase):
 
     def test_non_organizer_cannot_resubmit(self):
         self.client.force_login(self.participant)
-        with mock.patch(self.RUN_SUBMISSION) as run_submission_mock:
+        with mock.patch("competitions.tasks.run_submission") as run_submission_mock:
             assert self.resubmit(self.submission).status_code == 403
             assert self.resubmit_many([self.submission]).status_code == 403
         run_submission_mock.assert_not_called()
@@ -1510,7 +1553,7 @@ class SubmissionResubmitTests(APITestCase):
     def test_cannot_resubmit_unfinished_submission(self):
         submission = SubmissionFactory(phase=self.phase, owner=self.participant, status=Submission.RUNNING)
         self.client.force_login(self.creator)
-        with mock.patch(self.RUN_SUBMISSION) as run_submission_mock:
+        with mock.patch("competitions.tasks.run_submission") as run_submission_mock:
             resp = self.resubmit(submission)
         assert resp.status_code == 403
         run_submission_mock.assert_not_called()
@@ -1518,7 +1561,7 @@ class SubmissionResubmitTests(APITestCase):
     def test_cannot_resubmit_soft_deleted_submission(self):
         self.submission.soft_delete()
         self.client.force_login(self.creator)
-        with mock.patch(self.RUN_SUBMISSION) as run_submission_mock:
+        with mock.patch("competitions.tasks.run_submission") as run_submission_mock:
             assert self.resubmit(self.submission).status_code == 403
             assert self.resubmit_many([self.submission]).status_code == 403
         run_submission_mock.assert_not_called()
@@ -1526,7 +1569,7 @@ class SubmissionResubmitTests(APITestCase):
     def test_cannot_resubmit_on_phase_without_tasks(self):
         self.phase.tasks.clear()
         self.client.force_login(self.creator)
-        with mock.patch(self.RUN_SUBMISSION) as run_submission_mock:
+        with mock.patch("competitions.tasks.run_submission") as run_submission_mock:
             assert self.resubmit(self.submission).status_code == 400
         run_submission_mock.assert_not_called()
 
@@ -1534,7 +1577,7 @@ class SubmissionResubmitTests(APITestCase):
         other = SubmissionFactory(phase=self.phase, owner=self.participant, status=Submission.FAILED)
         for user in [self.creator, self.collaborator]:
             self.client.force_login(user)
-            with mock.patch(self.RUN_SUBMISSION) as run_submission_mock:
+            with mock.patch("competitions.tasks.run_submission") as run_submission_mock:
                 resp = self.resubmit_many([self.submission, other])
             assert resp.status_code == 200, f'{user.username} could not resubmit many'
             assert resp.data['count'] == 2
@@ -1544,11 +1587,11 @@ class SubmissionResubmitTests(APITestCase):
         parent = SubmissionFactory(phase=self.phase, owner=self.participant, status=Submission.FINISHED, has_children=True, task=None)
         child = SubmissionFactory(phase=self.phase, owner=self.participant, status=Submission.FINISHED, parent=parent, data=parent.data)
         self.client.force_login(self.creator)
-        with mock.patch(self.RUN_SUBMISSION):
+        with mock.patch("competitions.tasks.run_submission"):
             resp = self.resubmit(child)
         assert resp.status_code == 200, resp.data
         assert Submission.objects.get(pk=resp.data['id']).resubmitted_from == parent
-        with mock.patch(self.RUN_SUBMISSION) as run_submission_mock:
+        with mock.patch("competitions.tasks.run_submission") as run_submission_mock:
             resp = self.resubmit_many([parent, child])
         assert resp.data['count'] == 1
         run_submission_mock.assert_called_once()
@@ -1558,7 +1601,7 @@ class SubmissionResubmitTests(APITestCase):
         self.phase.max_submissions_per_person = 1
         self.phase.save()
         self.client.force_login(self.creator)
-        with mock.patch(self.RUN_SUBMISSION):
+        with mock.patch("competitions.tasks.run_submission"):
             assert self.resubmit(self.submission).status_code == 200
         can_submit, _ = self.phase.can_user_make_submissions(self.participant)
         assert not can_submit  # the original submission still counts

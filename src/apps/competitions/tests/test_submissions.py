@@ -10,7 +10,7 @@ from django.utils import timezone
 from api.serializers.submissions import SubmissionCreationSerializer
 from api.serializers.competitions import CompetitionSerializer
 from competitions.models import Submission
-from competitions.tasks import run_submission, submission_status_cleanup
+from competitions.tasks import _run_submission, run_submission, submission_status_cleanup
 
 from factories import SubmissionFactory, UserFactory, CompetitionFactory, PhaseFactory, TaskFactory, LeaderboardFactory
 from leaderboards.models import Leaderboard
@@ -87,17 +87,16 @@ class MaxSubmissionsTests(SubmissionTestCase):
 
 
 class SubmissionManagerTests(SubmissionTestCase):
-    def test_re_run_submission_creates_new_submission_with_same_data_owner_and_phase(self):
+    def test_re_run_submission_keeps_same_row(self):
         sub = self.make_submission()
         with mock.patch('competitions.tasks._send_to_compute_worker'):
             sub.start()
-            assert Submission.objects.all().count() == 1
-            sub.re_run()
-        assert Submission.objects.all().count() == 1
-        subs = Submission.objects.all()
-        assert subs[0].owner == subs[1].owner
-        assert subs[0].phase == subs[1].phase
-        assert subs[0].data == subs[1].data
+            sub.refresh_from_db()
+            with self.captureOnCommitCallbacks(execute=True):
+                result = sub.re_run()
+        assert Submission.objects.count() == 1
+        assert result.pk == sub.pk
+        assert result.owner == sub.owner and result.phase == sub.phase and result.data == sub.data
 
     def test_cancel_submission_sets_status(self):
         sub = self.make_submission()
@@ -237,18 +236,25 @@ class MultipleTasksPerPhaseTests(SubmissionTestCase):
         self.phase = PhaseFactory(competition=self.comp, tasks=self.tasks)
 
     def mock_run_submission(self, submission, task=None):
-        with mock.patch('competitions.tasks.app.send_task') as celery_app:
-            with mock.patch('competitions.tasks.make_url_sassy') as mock_sassy:
-                class Task:
-                    def __init__(self):
-                        self.id = uuid.uuid4()
+        with mock.patch("competitions.tasks.app.send_task") as celery_app:
+            with mock.patch("competitions.tasks.make_url_sassy") as mock_sassy:
+                with mock.patch(
+                    "competitions.tasks._run_submission.apply_async",
+                    side_effect=lambda args, **kwargs: _run_submission(*args),
+                ):
+                    class Task:
+                        def __init__(self):
+                            self.id = uuid.uuid4()
 
-                if task is None:
-                    task = Task()
-                celery_app.return_value = task
-                mock_sassy.return_value = ''
-                with self.captureOnCommitCallbacks(execute=True):
-                    run_submission(submission.pk)
+                    if task is None:
+                        task = Task()
+
+                    celery_app.return_value = task
+                    mock_sassy.return_value = ""
+
+                    with self.captureOnCommitCallbacks(execute=True):
+                        run_submission(submission.pk)
+
                 return celery_app
 
     def test_making_submission_creates_parent_sub_and_additional_sub_per_task(self):
@@ -480,17 +486,23 @@ class PhaseIsActiveTests(SubmissionTestCase):
 class ResubmitTests(SubmissionTestCase):
     def test_resubmit_runs_same_upload_on_current_phase_task(self):
         sub = self.make_submission()
-        with mock.patch('competitions.tasks._send_to_compute_worker'):
-            sub.start()
-            new_task = TaskFactory()
-            self.phase.tasks.set([new_task])
-            new_sub = sub.resubmit()
-        new_sub.refresh_from_db()
-        assert new_sub.pk != sub.pk
-        assert new_sub.owner == sub.owner
-        assert new_sub.data == sub.data
-        assert new_sub.task == new_task
-        assert not new_sub.is_specific_task_re_run
-        # re-run keeps the original task
-        with mock.patch('competitions.tasks._send_to_compute_worker'):
-            assert sub.re_run().task == sub.task
+
+        with mock.patch(
+            "competitions.tasks._run_submission.apply_async",
+            side_effect=lambda args, **kwargs: _run_submission(*args),
+        ):
+            with mock.patch("competitions.tasks._send_to_compute_worker"):
+                sub.start()
+
+                new_task = TaskFactory()
+                self.phase.tasks.set([new_task])
+                new_sub = sub.resubmit()
+
+                new_sub.refresh_from_db()
+                assert new_sub.pk != sub.pk
+                assert new_sub.owner == sub.owner
+                assert new_sub.data == sub.data
+                assert new_sub.task == new_task
+                assert not new_sub.is_specific_task_re_run
+
+                assert sub.re_run().task == sub.task
