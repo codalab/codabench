@@ -3,8 +3,8 @@ import django
 
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import authenticate, login
-from django.db.models import Q
+from django.contrib.auth import authenticate, login, logout
+from django.db.models import Count, Q
 from django.core.mail import EmailMultiAlternatives
 from django.http import Http404
 from django.shortcuts import render, redirect
@@ -16,9 +16,8 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.views.generic import DetailView, TemplateView
 
-from api.serializers.profiles import UserSerializer, OrganizationDetailSerializer, OrganizationEditSerializer, \
-    UserNotificationSerializer
-from api.serializers.competitions import CompetitionSerializerSimple
+from api.serializers.profiles import UserSerializer, PublicUserSerializer, OrganizationDetailSerializer, \
+    OrganizationEditSerializer, UserNotificationSerializer
 from .forms import SignUpForm, LoginForm, ActivationForm
 from .models import User, DeletedUser, Organization, Membership
 from oidc_configurations.models import Auth_Organization
@@ -40,25 +39,6 @@ class LogoutView(auth_views.LogoutView):
     pass
 
 
-class UserEditView(LoginRequiredMixin, DetailView):
-    queryset = User.objects.all()
-    template_name = 'profiles/user_edit.html'
-    slug_url_kwarg = 'username'
-    query_pk_and_slug = True
-
-    def get_object(self, *args, **kwargs):
-        user = super().get_object(*args, **kwargs)
-        authorized = self.request.user.is_superuser or self.request.user == user
-        if authorized:
-            return user
-        raise Http404()
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['serialized_user'] = json.dumps(UserSerializer(self.get_object()).data)
-        return context
-
-
 class UserDetailView(LoginRequiredMixin, DetailView):
     queryset = User.objects.all()
     template_name = 'profiles/user_profile.html'
@@ -68,22 +48,19 @@ class UserDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.get_object()
-        user_data = UserSerializer(user).data
-        # Fetch competitions organized by this user (as owner or collaborator)
-        organized_qs = (
-            Competition.objects
-            .filter(
-                Q(created_by=user) | Q(collaborators=user),
-                published=True,
-            )
-            .distinct()
-            .order_by("-created_when")
-        )
-        # Serialize into the same shape your public-list cards expect
-        user_data["competitions_organized"] = CompetitionSerializerSimple(
-            organized_qs, many=True, context={"request": self.request}
-        ).data
-        context["serialized_user"] = json.dumps(user_data).replace("</", "<\\/")
+
+        # Only the owner can edit, and only they get the private fields. Superusers use Django admin.
+        # Why: all data sent here can be read in the page source, even if the page hides it.
+        can_edit = self.request.user == user
+        context["can_edit"] = can_edit
+        if can_edit:
+            user_data = UserSerializer(user).data
+            # The profile page does not show organizations, so they are not sent
+            user_data.pop("organizations")
+        else:
+            user_data = PublicUserSerializer(user).data
+
+        context["serialized_user"] = json.dumps(user_data)
         return context
 
 
@@ -194,12 +171,15 @@ def delete(request, uidb64, token):
     except User.DoesNotExist:
         user = None
         messages.error(request, f"User not found.")
-        return redirect('accounts:user_account')
+        return redirect('settings:delete_account')
     if user is not None and account_deletion_token.check_token(user, token):
         # Soft delete the user
         user.delete()
+        # Why here and not a redirect to the logout page: that page only accepts POST, so a redirect gives a 405.
+        # The message comes after logout, because logout clears the session.
+        logout(request)
         messages.success(request, f'Your account has been removed!')
-        return redirect('accounts:logout')
+        return redirect('pages:home')
     else:
         messages.error(request, f"Confirmation link is invalid or expired.")
         return redirect('pages:home')
@@ -392,15 +372,31 @@ class CustomPasswordResetConfirmView(auth_views.PasswordResetConfirmView):
     success_url = django.urls.reverse_lazy("accounts:password_reset_complete")
 
 
-class UserNotificationEdit(LoginRequiredMixin, DetailView):
-    queryset = User.objects.all()
+class NotificationSettingsView(LoginRequiredMixin, TemplateView):
     template_name = 'profiles/user_notifications.html'
-    slug_url_kwarg = 'username'
-    query_pk_and_slug = True
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['notifications'] = json.dumps(UserNotificationSerializer(self.get_object()).data)
+        context['notifications'] = json.dumps(UserNotificationSerializer(self.request.user).data)
+        return context
+
+
+class OrganizationListView(LoginRequiredMixin, TemplateView):
+    template_name = 'profiles/organization_list.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Pending invites go first, so the user sees that they need an answer.
+        # Why they are shown: users who turned off invite emails have no other way to answer them.
+        context['memberships'] = self.request.user.membership_set.select_related('organization').annotate(
+            # Members of each organization. People who are only invited are not counted.
+            member_count=Count(
+                'organization__membership',
+                filter=Q(organization__membership__group__in=Membership.ALL_GROUP),
+                distinct=True,
+            ),
+            is_invited=Q(group=Membership.INVITED),
+        ).order_by('-is_invited', 'date_joined')
         return context
 
 
@@ -451,13 +447,14 @@ class OrganizationInviteView(LoginRequiredMixin, TemplateView):
     template_name = 'profiles/organization_invite.html'
 
 
-class UserAccountView(LoginRequiredMixin, DetailView):
-    queryset = User.objects.all()
-    template_name = 'profiles/user_account.html'
-    slug_url_kwarg = 'username'
-    query_pk_and_slug = True
+class ChangePasswordSettingsView(LoginRequiredMixin, TemplateView):
+    template_name = 'profiles/change_password.html'
+
+
+class DeleteAccountSettingsView(LoginRequiredMixin, TemplateView):
+    template_name = 'profiles/delete_account.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['serialized_user'] = json.dumps(UserSerializer(self.get_object()).data)
+        context['serialized_user'] = json.dumps(UserSerializer(self.request.user).data)
         return context

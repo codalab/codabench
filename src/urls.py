@@ -27,6 +27,7 @@ urlpatterns = [
     # Django built in
     # path('accounts/', include('django.contrib.auth.urls')),
     path('accounts/', include('profiles.urls_accounts')),
+    path('settings/', include('profiles.urls_settings')),
     path('admin/', admin.site.urls),
     path('social/', include('social_django.urls', namespace='social')),
     path('oidc/', include('oidc_configurations.urls')),

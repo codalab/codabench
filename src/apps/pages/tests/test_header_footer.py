@@ -65,7 +65,7 @@ class MobileMenuTests(TestCase):
     def get_mobile_menu(self):
         """Load the home page and return only the mobile menu part."""
         content = self.client.get(reverse('pages:home')).content.decode()
-        return content.split('id="mobile_menu"')[1].split('class="pusher"')[0]
+        return content.split('id="mobile_menu"')[1].split('id="header"')[0]
 
     def test_logged_out_shows_login(self):
         """
@@ -93,6 +93,23 @@ class MobileMenuTests(TestCase):
         assert "Logout" in menu
         assert reverse('accounts:login') not in menu
 
+    def test_header_links_on_top_and_user_menu_below(self):
+        """
+        Logs in and loads the home page.
+        Expects the header links and username in the top part, and Settings and Logout only in the bottom part.
+        """
+        user = UserFactory()
+        self.client.force_login(user)
+
+        top_part, bottom_part = self.get_mobile_menu().split('class="mobile-menu-items"')
+
+        assert reverse('competitions:public') in top_part
+        assert reverse('datasets:public') in top_part
+        assert user.username in top_part
+        assert "Logout" not in top_part
+        assert "Settings" in bottom_part
+        assert "Logout" in bottom_part
+
     def test_single_logout_form(self):
         """
         Logs in and loads the home page (the user menu is in the header and the mobile menu).
@@ -103,6 +120,45 @@ class MobileMenuTests(TestCase):
         content = self.client.get(reverse('pages:home')).content.decode()
 
         assert content.count('id="logout-form"') == 1
+
+
+class UserMenuTests(TestCase):
+
+    def get_header_dropdown_for(self, user):
+        """Log in as this user, load the home page and return only the header dropdown part."""
+        self.client.force_login(user)
+        content = self.client.get(reverse('pages:home')).content.decode()
+        return content.split('id="user_dropdown"')[1].split('id="hamburger_button"')[0]
+
+    def test_regular_user_does_not_see_admin_block(self):
+        """
+        Loads the home page as a regular user.
+        Expects no Admin block, and the main links to be there.
+        """
+        menu = self.get_header_dropdown_for(UserFactory())
+
+        assert 'class="menu-admin"' not in menu
+        assert reverse('pages:monitor_queues') not in menu
+        for label in ["Profile", "Settings", "Competitions", "Resources", "Queues", "Submission Status", "Logout"]:
+            assert label in menu
+
+    def test_staff_and_super_users_see_admin_block_first(self):
+        """
+        Loads the home page as a staff and super user.
+        Expects the Admin block with its links, placed above Profile.
+        """
+
+        users = [UserFactory(is_staff=True), UserFactory(super_user=True)]
+
+        for user in users:
+            menu = self.get_header_dropdown_for(user)
+
+            assert 'class="menu-admin"' in menu
+            assert reverse('pages:monitor_queues') in menu
+            assert reverse('analytics:analytics') in menu
+            assert reverse('admin:index') in menu
+            assert reverse('su_login') in menu
+            assert menu.index('class="menu-admin"') < menu.index("Profile")
 
 
 class FooterTests(TestCase):

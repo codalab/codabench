@@ -19,7 +19,7 @@
     <link href="https://fonts.googleapis.com/css?family=Overpass+Mono&display=swap" rel="stylesheet">
 
     <!-- Bootstrap -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 
     <!-- Ours -->
     <link rel="stylesheet" href="{% static "generated/output.css" %}">
@@ -62,19 +62,20 @@
     {% endfor %}
 {% endif %}
 
-<!-- Sidebar Menu -->
+<!-- Mobile Menu -->
 {% include "components/mobile_menu.html" %}
 
-<div class="pusher">
-    <!-- Platform announcements -->
-    {% platform_announcements_banner %}
-    <!-- Page Contents -->
-    {% include "components/header.html" %}
-    {% block below_header %}{% endblock %}
-</div>
-{% block sticky_button %}
+<!-- Platform announcements -->
+{% platform_announcements_banner %}
 
-{% endblock %}
+<!-- Header: logo, navigation links and user menu -->
+{% include "components/header.html" %}
+
+{# Empty by default. A page can fill it to show something full width under the header. #}
+{# Why it is outside page_content: page_content has a limited width. The home page uses it for the Supported by banner. #}
+{% block below_header %}{% endblock %}
+
+<!-- Page Contents -->
 <div id="page_content" class="ui container grid">
     <div class="row">
         {% block content %}
@@ -82,8 +83,6 @@
     </div>
 </div>
 {% include "components/footer.html" %}
-    {# Admin only user switching #}
-    <user_switch></user_switch>
 
     <!-- Vendor -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.min.js"

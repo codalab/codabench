@@ -4,12 +4,25 @@
 html
     background-color #f6f8fa
 
-#user_dropdown
-    color rgba(255,255,255,.7) !important
+// Scrollbars in the theme colors.
+// Why html and body: html is the scrollbar of the page, and body covers everything inside the page.
+html::-webkit-scrollbar,
+body ::-webkit-scrollbar
+    width 10px
+    height 10px
 
-    a
-        width 100%
-        border-radius 0 !important
+html::-webkit-scrollbar-track,
+body ::-webkit-scrollbar-track
+    background transparent
+
+html::-webkit-scrollbar-thumb,
+body ::-webkit-scrollbar-thumb
+    border-radius 5px
+    background rgba($cb-navy-700, 0.35)
+
+html::-webkit-scrollbar-thumb:hover,
+body ::-webkit-scrollbar-thumb:hover
+    background rgba($cb-navy-700, 0.6)
 
 #page_content
     min-height 82vh
@@ -19,19 +32,6 @@ html
     opacity 0.8
     margin-top 3em
     margin-right 0.5em
-
-/* --------------------------------------------------------------------------------------
- Force the footer to stretch all the way to the bottom of viewport
- */
-body.pushable>.pusher
-    background-color #f6f8fa !important
-    overflow initial
-
-.pushable
-    height 0
-
-.pusher > .footer
-    flex 1
 
 /* --------------------------------------------------------------------------------------
  Fix padding on menus
