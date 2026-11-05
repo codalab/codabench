@@ -71,6 +71,22 @@
         background-color $cb-blue-50
         color $cb-blue-500
 
+// Blue outline, filled on hover. Why: next to the left bar, whose active tab is filled blue, a filled button looks like another tab.
+.settings-button-outline
+    border-color $cb-blue-500
+    background-color #fff
+    color $cb-blue-500
+
+    &:hover
+        border-color $cb-blue-500
+        background-color $cb-blue-500
+        color #fff
+
+    // Keeps the outlined look while the button cannot be clicked
+    &:disabled:hover
+        background-color #fff
+        color $cb-blue-500
+
 .settings-button-danger
     border-color $cb-danger
     background-color #fff
