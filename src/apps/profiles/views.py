@@ -16,13 +16,14 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.views.generic import DetailView, TemplateView
 
-from api.serializers.profiles import UserSerializer, PublicUserSerializer, OrganizationDetailSerializer, \
-    OrganizationEditSerializer, UserNotificationSerializer
+from api.serializers.profiles import UserSerializer, PublicUserSerializer, PublicOrganizationSerializer, \
+    OrganizationDetailSerializer, OrganizationEditSerializer, UserNotificationSerializer
 from .forms import SignUpForm, LoginForm, ActivationForm
 from .models import User, DeletedUser, Organization, Membership
 from oidc_configurations.models import Auth_Organization
 from .tokens import account_activation_token, account_deletion_token
 from competitions.models import Competition
+from pages.serializers import HomePageBenchmarkSerializer
 from datasets.models import Data
 from tasks.models import Task
 from forums.models import Post
@@ -39,28 +40,70 @@ class LogoutView(auth_views.LogoutView):
     pass
 
 
-class UserDetailView(LoginRequiredMixin, DetailView):
-    queryset = User.objects.all()
-    template_name = 'profiles/user_profile.html'
+class PublicProfileView(LoginRequiredMixin, DetailView):
+    """The public profile of any user, at /user/<username>/. Read-only."""
+    # Deleted, inactive and banned users have no public profile, their page is a 404
+    queryset = User.objects.filter(is_deleted=False, is_active=True, is_banned=False)
+    template_name = 'profiles/public_profile.html'
+    # The url gives the username, for example /user/jane/. Django looks for pk or slug by default, so we tell it the name.
     slug_url_kwarg = 'username'
-    query_pk_and_slug = True
+    # The user whose profile is shown is called profile_user in the template.
+    # Why: Django would call it user by default. In templates, user already means the logged-in user,
+    # and the header and menu use it. With the default name, user would mean the profile owner instead.
+    context_object_name = 'profile_user'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        user = self.get_object()
+        profile_user = self.object
 
-        # Only the owner can edit, and only they get the private fields. Superusers use Django admin.
-        # Why: all data sent here can be read in the page source, even if the page hides it.
-        can_edit = self.request.user == user
-        context["can_edit"] = can_edit
-        if can_edit:
-            user_data = UserSerializer(user).data
-            # The profile page does not show organizations, so they are not sent
-            user_data.pop("organizations")
-        else:
-            user_data = PublicUserSerializer(user).data
+        # Everyone gets only the public fields, the owner too. The owner edits on the my profile page.
+        # Why the serializer: it lists the fields that are allowed, so a new private field is never shown by mistake.
+        public_user = PublicUserSerializer(profile_user).data
+        context["public_user"] = public_user
 
+        # Heading: the full name, otherwise the display name, otherwise the username
+        full_name = " ".join(name for name in [public_user["first_name"], public_user["last_name"]] if name)
+        context["profile_name"] = full_name or public_user["display_name"] or public_user["username"]
+        # The display name goes in brackets after the full name, for example: Jane Doe (jdoe)
+        # Why the check: without a full name the heading is already the display name.
+        display_name = public_user["display_name"]
+        context["display_name"] = display_name if full_name and display_name != full_name else ""
+        # The username goes below the heading, unless it is already the heading
+        context["show_username"] = context["profile_name"] != public_user["username"]
+
+        # Organizations the user is in, sorted by name. Why the groups: pending invites are left out.
+        organizations = (
+            Organization.objects
+            .filter(membership__user=profile_user, membership__group__in=Membership.ALL_GROUP)
+            .distinct()
+            .order_by("name")
+        )
+        context["organizations"] = PublicOrganizationSerializer(organizations, many=True).data
+
+        # Published competitions the user created or co-organizes, newest first
+        competitions = (
+            Competition.objects
+            .filter(Q(created_by=profile_user) | Q(collaborators=profile_user), published=True)
+            .distinct()
+            .select_related("created_by")
+            .order_by("-created_when")
+        )
+        # Why this serializer: the cards are the same as on the home page
+        context["competitions"] = HomePageBenchmarkSerializer(competitions, many=True).data
+        return context
+
+
+class MyProfileView(LoginRequiredMixin, TemplateView):
+    """The profile of the logged-in user, at /profile/. The user can edit it here."""
+    template_name = 'profiles/user_profile.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user_data = UserSerializer(self.request.user).data
+        # The profile page does not show organizations, so they are not sent
+        user_data.pop("organizations")
         context["serialized_user"] = json.dumps(user_data)
+        context["can_edit"] = True
         return context
 
 

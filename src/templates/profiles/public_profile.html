@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}{{ public_user.username }} - Codabench{% endblock %}
+
+{% block content %}
+{# The public profile of a user. Read-only, the same for every visitor and for the owner. #}
+{# sections: empty ones are hidden, so the page never shows empty boxes. #}
+{# Styles: stylus/components/public_profile.styl #}
+<div class="public-profile">
+
+    <!-- Section 1: who the user is, with the social links. Always shown. -->
+    <div class="public-profile-card">
+        <div class="public-profile-header">
+            <div class="bc-logo public-profile-photo">
+                {% if public_user.photo %}
+                    <img src="{{ public_user.photo }}" alt="">
+                {% else %}
+                    {# First letter of the heading when there is no photo #}
+                    <span>{{ profile_name|first|upper }}</span>
+                {% endif %}
+            </div>
+
+            <div class="public-profile-identity">
+                <h1 class="public-profile-name">
+                    {{ profile_name }}
+                    {% if display_name %}<span class="public-profile-display-name">({{ display_name }})</span>{% endif %}
+                </h1>
+                {% if show_username %}
+                    <p class="public-profile-username"><i class="bi bi-person-square"></i>{{ public_user.username }}</p>
+                {% endif %}
+                <p class="public-profile-member-since"><i class="bi bi-calendar3"></i>Member since {{ public_user.date_joined }}</p>
+
+                <!-- Social links, only when the user added some -->
+                {% if public_user.personal_url or public_user.github_url or public_user.linkedin_url or public_user.twitter_url %}
+                <div class="public-profile-links">
+                    {% if public_user.personal_url %}<a href="{{ public_user.personal_url }}" target="_blank" rel="noopener" title="Website" aria-label="Website"><i class="bi bi-globe"></i></a>{% endif %}
+                    {% if public_user.github_url %}<a href="{{ public_user.github_url }}" target="_blank" rel="noopener" title="GitHub" aria-label="GitHub"><i class="bi bi-github"></i></a>{% endif %}
+                    {% if public_user.linkedin_url %}<a href="{{ public_user.linkedin_url }}" target="_blank" rel="noopener" title="LinkedIn" aria-label="LinkedIn"><i class="bi bi-linkedin"></i></a>{% endif %}
+                    {% if public_user.twitter_url %}<a href="{{ public_user.twitter_url }}" target="_blank" rel="noopener" title="X" aria-label="X"><i class="bi bi-twitter-x"></i></a>{% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 2: about the user -->
+    {% if public_user.title or public_user.location or public_user.biography %}
+    <div class="public-profile-card">
+        <h2 class="public-profile-section-title">About</h2>
+        {% if public_user.title %}
+            <div class="public-profile-row">
+                <span class="public-profile-row-label">Job title</span>
+                <span>{{ public_user.title }}</span>
+            </div>
+        {% endif %}
+        {% if public_user.location %}
+            <div class="public-profile-row">
+                <span class="public-profile-row-label">Location</span>
+                <span>{{ public_user.location }}</span>
+            </div>
+        {% endif %}
+        {% if public_user.biography %}
+            <div class="public-profile-row">
+                <span class="public-profile-row-label">Bio</span>
+                <span class="public-profile-bio">{{ public_user.biography }}</span>
+            </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Section 3: organizations. The whole card opens the organization page. -->
+    {% if organizations %}
+    <div class="public-profile-section">
+        <h2 class="public-profile-section-title">Organizations</h2>
+        <div class="public-profile-org-grid">
+            {% for organization in organizations %}
+                <a class="public-profile-org-card" href="{{ organization.url }}">
+                    <span class="bc-logo public-profile-org-logo">
+                        {% if organization.photo %}
+                            <img src="{{ organization.photo }}" alt="">
+                        {% else %}
+                            <span>{{ organization.name|first|upper }}</span>
+                        {% endif %}
+                    </span>
+                    <span class="public-profile-org-name">{{ organization.name }}</span>
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Section 4: competitions, with the same cards as the home page -->
+    {% if competitions %}
+    <div class="public-profile-section">
+        <h2 class="public-profile-section-title">Competitions</h2>
+        <div class="hb-grid public-profile-competition-grid">
+            {% for benchmark in competitions %}
+                {% include "components/benchmark_card.html" with benchmark=benchmark %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
