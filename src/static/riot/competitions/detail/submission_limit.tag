@@ -25,7 +25,7 @@
             </div>
             <div class="col">
                 <div class="col-content">
-                    Total submissions used by your organization
+                    {isOrgScope() ? 'Total submissions used by your organization' : 'Total submissions used'}
                 </div>
                 <span if="{selected_phase.max_submissions_per_person > 0}" class="badge {badgeColor(selected_phase.used_submissions_per_person, selected_phase.max_submissions_per_person)}">
                     {selected_phase.used_submissions_per_person} out of {selected_phase.max_submissions_per_person}
