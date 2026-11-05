@@ -1102,12 +1102,9 @@ class Run:
                 container, demux=True, stream=True, logs=True
             )
 
-            # Preserve Docker/Podman handling; the Apptainer iterator also drains
-            # buffered output after a fast process exit and terminates at EOF.
-            if (
-                Settings.CONTAINER_ENGINE_EXECUTABLE == "apptainer"
-                or client.inspect_container(container)["State"]["Status"].lower() == "running"
-            ):
+            # If we enter the for loop after the container exited, the program will get stuck
+            # Do not send the real time logs if they are not wanted (Silent Compute Worker)
+            if client.inspect_container(container)["State"]["Status"].lower() == "running":
                 logger.debug(
                     "Show the logs and stream them to codabench " + container.get("Id")
                 )
