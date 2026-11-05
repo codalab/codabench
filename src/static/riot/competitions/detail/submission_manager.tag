@@ -61,6 +61,11 @@
         <option value="Submitted">Submitted</option>
         <option value="Submitting">Submitting</option>
     </select>
+
+    <button type="button" class="ui icon button" data-tooltip="Refresh" data-inverted="" onclick="{ refresh_now }">
+        <i class="sync icon"></i>
+    </button>
+
     <div class="ui input" if="{opts.admin}">
         <input 
         type="checkbox" 
@@ -145,14 +150,16 @@
                 <td if="{ opts.admin }">{ submission.phase.name }</td>
                 <td>{ pretty_date(submission.created_when) }</td>
                 <td class="right aligned collapsing">
-                    { submission.status }
+                    { display_status(submission) }
+                    <sup if="{ status_mismatch(submission) }" data-tooltip="{ mismatch_message(submission) }" data-inverted="">
+                        <i class="orange exclamation triangle icon"></i>
+                    </sup>
                     <sup data-tooltip="{submission.status_details}">
                         <i if="{submission.status === 'Failed' && !is_hitl_failure(submission)}" class="failed question circle icon"></i>
                         <i if="{submission.status === 'Failed' && is_hitl_failure(submission)}" class="orange lock icon"></i>
                     </sup>
-                    <sup data-tooltip="An organizer will run your submission soon">
-                        <i if="{submission.status === 'Submitting' && !submission.auto_run}"
-                            class="question circle icon"></i>
+                    <sup if="{ pending_info(submission) }" data-tooltip="{ pending_info(submission).message }" data-inverted="">
+                        <i class="question circle icon" style="color: { pending_info(submission).color };"></i>
                     </sup>
                 </td>
                 <td>{get_score(submission)}</td>
@@ -175,15 +182,19 @@
                 </td>
                 <td class="center aligned" if="{ !submission.is_soft_deleted }">
                     <virtual if="{ opts.admin}">
-                        <!-- run/rerun submission -->
+                        <!-- run/rerun submission IDEMPOTENT -->
                         <!--  run: status = submitting auto_run = false  -->
                         <!--  rerun: else   -->
-                        <span
-                            data-tooltip="{ submission.status === 'Submitting' && !submission.auto_run ? 'Run Submission' : 'Rerun Submission' }"
+                        <span if="{ is_manual_run(submission) }"
+                            data-tooltip="{ submission.has_children ? 'Run all remaining children' : 'Run Submission' }"
                             data-inverted=""
-                            onclick="{ submission.status === 'Submitting' && !submission.auto_run ? run_submission.bind(this, submission) : rerun_submission.bind(this, submission) }">
-                            <i
-                                class="icon { submission.status === 'Submitting' && !submission.auto_run ? 'green play' : 'purple history' }"></i>
+                            onclick="{ run_submission.bind(this, submission) }">
+                            <i class="icon green play"></i>
+                        </span>
+                        <span if="{ _.includes(['Finished', 'Failed', 'Cancelled'], submission.status) }"
+                            data-tooltip="Rerun Submission (does not create a new one)" data-inverted=""
+                            onclick="{ rerun_submission.bind(this, submission) }">
+                            <i class="icon purple history"></i>
                         </span>
                         <!-- resubmit on current tasks (re-run keeps the original task) -->
                         <span if="{ _.includes(['Finished', 'Failed', 'Cancelled'], submission.status) }"
@@ -287,7 +298,12 @@
                                 <td if="{ has_multiple_tasks(submission) }">{ child.task ? child.task.name : '' }</td>
                                 <td>{ child.participant_group_name || '-' }</td>
                                 <td>{ pretty_date(child.created_when) }</td>
-                                <td>{ child.status }</td>
+                                <td class="right aligned collapsing">
+                                    { child.status }
+                                    <sup if="{ pending_info(child) }" data-tooltip="{ pending_info(child).message }" data-inverted="">
+                                        <i class="question circle icon" style="color: { pending_info(child).color };"></i>
+                                    </sup>
+                                </td>
                                 <td>{ get_score(child) }</td>
 
                                 <td if="{ child.is_soft_deleted }">
@@ -300,12 +316,15 @@
                                 </td>
                                 <td class="center aligned" if="{ !child.is_soft_deleted }">
                                     <virtual if="{ opts.admin}">
-                                        <span
-                                            data-tooltip="{ child.status === 'Submitting' && !child.auto_run ? 'Run Submission' : 'Rerun Submission' }"
-                                            data-inverted=""
-                                            onclick="{ child.status === 'Submitting' && !child.auto_run ? run_submission.bind(this, child) : rerun_submission.bind(this, child) }">
-                                            <i
-                                                class="icon { child.status === 'Submitting' && !child.auto_run ? 'green play' : 'purple history' }"></i>
+                                        <span if="{ child.status === 'Submitting' && !child.auto_run }"
+                                            data-tooltip="Run this task" data-inverted=""
+                                            onclick="{ run_submission.bind(this, child) }">
+                                            <i class="icon green play"></i>
+                                        </span>
+                                        <span if="{ _.includes(['Finished', 'Failed', 'Cancelled'], child.status) }"
+                                            data-tooltip="Rerun Submission (does not create a new one)" data-inverted=""
+                                            onclick="{ rerun_submission.bind(this, child) }">
+                                            <i class="icon purple history"></i>
                                         </span>
                                         <span data-tooltip="Delete Submission" data-inverted=""
                                             onclick="{ delete_submission.bind(this, child) }">
@@ -434,7 +453,116 @@
         self.previous = null
 
         self.expanded_submissions = {}
-        self.migrating = false
+        self.request_id = 0
+        self.fetching = false
+        self.burst = 0
+        self.TERMINAL = ['Finished', 'Failed', 'Cancelled', 'None', 'Unknown']
+
+        // ---- Status helpers -------------------------------------------------
+        self.is_waiting_manual = s => s.status === 'Submitting' && !s.auto_run
+
+        self.display_status = function (submission) {
+            if (!submission.has_children) return submission.status
+            let kids = _.filter(self.get_children(submission), c => !c.is_soft_deleted)
+            if (kids.length === 0) return submission.status
+            // Children on another page: we cannot be sure, keep the stored status
+            let missing = _.difference(submission.children || [], _.map(kids, 'id'))
+            if (missing.length > 0 && self.total_pages > 1) return submission.status
+
+            let statuses = _.map(kids, 'status')
+            let done = ['Finished', 'Failed', 'Cancelled']
+            if (_.every(statuses, s => _.includes(done, s))) {
+                if (_.includes(statuses, 'Finished')) return 'Finished'
+                if (_.includes(statuses, 'Failed')) return 'Failed'
+                return 'Cancelled'
+            }
+            if (_.every(statuses, s => s === 'Submitting')) return 'Submitting'
+            let active = _.find(['Scoring', 'Running', 'Preparing', 'Submitted'], s => _.includes(statuses, s))
+            return active || 'Running'
+        }
+
+        self.status_mismatch = function (submission) {
+            return !!submission.has_children && self.display_status(submission) !== submission.status
+        }
+
+        self.mismatch_message = function (submission) {
+            return `Stored status is "${submission.status}" but its child submissions give "${self.display_status(submission)}". ` +
+                'The displayed status is recomputed from the children.'
+        }
+
+        self.get_submission_phase = function (submission) {
+            if (!submission || !submission.phase) return null
+            if (_.isObject(submission.phase)) return submission.phase
+            return _.find(opts.competition.phases, p => p.id === submission.phase) || null
+        }
+
+        self.is_waiting_for_phase = function (submission) {
+            if (!submission || submission.status !== 'Submitting') return false
+            let phase = self.get_submission_phase(submission)
+            if (!phase || !phase.start) return false
+            return Date.parse(phase.start) > Date.now()
+        }
+
+        self.waiting_message = function (submission) {
+            let phase = self.get_submission_phase(submission)
+            if (!phase) return ''
+            return 'Waiting for phase "' + phase.name + '" to start (' + self.pretty_date(phase.start) +
+                '). This submission will run automatically once the phase begins.'
+        }
+
+        self.pending_info = function (submission) {
+            if (!submission || submission.status !== 'Submitting') return null
+            if (self.is_waiting_for_phase(submission)) {
+                return { color: 'blue', message: self.waiting_message(submission) }
+            }
+            if (!submission.auto_run) {
+                return { color: 'black', message: 'An organizer will run your submission soon' }
+            }
+            return null
+        }
+
+        // ---- Refresh machinery ----------------------------------------------
+        self.needs_polling = function () {
+            return _.some(self.submissions, s =>
+                !_.includes(self.TERMINAL, s.status) && !self.is_waiting_manual(s))
+        }
+
+        // Immediate refresh + keep polling for a few ticks whatever the statuses are
+        // (covers async child creation and the Submitting -> Submitted transition)
+        self.refresh_soon = function (ticks) {
+            self.burst = Math.max(self.burst, ticks || 6)
+            self.update_submissions(undefined, true)
+        }
+        self.refresh_soon_debounced = _.debounce(function () { self.refresh_soon(3) }, 800)
+
+        self.refresh_now = function (event) {
+            if (event) event.stopPropagation()
+            self.refresh_soon()
+        }
+
+        self.on_visibility = function () {
+            if (!document.hidden) self.update_submissions(undefined, true)
+        }
+
+        self.build_filters = function () {
+            let filters = {}
+            let search = self.refs.search && self.refs.search.value
+            if (search) filters.search = search
+            let status = self.refs.status && self.refs.status.value
+            if (status && status !== ' ') filters.status = status
+            if (opts.admin) {
+                let phase = self.refs.phase && self.refs.phase.value
+                if (phase && phase !== ' ') {
+                    filters.phase = phase
+                } else {
+                    filters.phase__competition = opts.competition.id
+                }
+                filters.show_is_soft_deleted = self.show_is_soft_deleted
+            } else {
+                filters.phase = self.selected_phase ? self.selected_phase.id : undefined
+            }
+            return filters
+        }
 
         self.close_migrate_menu = function () {
             if (self.migrate_menu_open !== null) {
@@ -451,14 +579,24 @@
             $(self.refs.submission_handling_operation).dropdown()
             $(document).on('click.migrate_menu', self.close_migrate_menu)
             $(document).on('keydown.migrate_menu', function (e) {
-            if (e.key === 'Escape') self.close_migrate_menu()
-        })
+                if (e.key === 'Escape') self.close_migrate_menu()
+            })
 
+            self.poll = setInterval(function () {
+                if (document.hidden || self.fetching) return
+                if (self.burst > 0 || self.needs_polling()) {
+                    if (self.burst > 0) self.burst--
+                    self.update_submissions(undefined, true)
+                }
+            }, 4000)
+            document.addEventListener('visibilitychange', self.on_visibility)
         })
 
         self.on("unmount", function () {
             $(document).off('click.migrate_menu', self.close_migrate_menu)
             $(document).off('keydown.migrate_menu')
+            clearInterval(self.poll)
+            document.removeEventListener('visibilitychange', self.on_visibility)
         })
 
         self.pretty_date = function (date_string) {
@@ -478,7 +616,7 @@
         }
 
         self.get_children = function (submission) {
-            return _.filter(self.submissions, sub => sub.parent === submission.id)
+            return _.filter(self.submissions, sub => sub.parent === submission.id && (self.show_is_soft_deleted || !sub.is_soft_deleted))
         }
 
         self.has_multiple_tasks = function (submission) {
@@ -518,7 +656,7 @@
                 case 'owner': return (submission.owner || '').toLowerCase()
                 case 'phase': return _.get(submission, 'phase.name', '').toLowerCase()
                 case 'created_when': return submission.created_when || ''
-                case 'status': return (submission.status || '').toLowerCase()
+                case 'status': return (self.display_status(submission) || '').toLowerCase()
                 case 'score':
                     let s = self.get_score(submission)
                     return s === '' ? -Infinity : parseFloat(s)
@@ -589,7 +727,7 @@
                 .done(function () {
                     toastr.success(`Submission #${submission.id} migrated to "${phase.name}"`)
                     self.migrate_menu_open = null
-                    self.update_submissions()
+                    self.refresh_soon()
                 })
                 .fail(function (response) {
                     toastr.error(self.error_message(response, 'Error migrating submission'))
@@ -625,7 +763,7 @@
                     if (skipped.length > 0) {
                         toastr.warning(skipped.map(s => `#${s.id}: ${s.reason}`).join('<br>'))
                     }
-                    self.update_submissions()
+                    self.refresh_soon()
                 })
                 .fail(function (response) {
                     toastr.error(self.error_message(response, 'Error migrating submissions'))
@@ -650,29 +788,36 @@
             })
         }
 
-        self.update_submissions = function (filters) {
-            self.loading = true
-            self.update()
+        self.pending_children = function (submission) {
+            return _.filter(self.submissions, sub => sub.parent === submission.id && sub.status === 'Submitting')
+        }
 
-            if (!filters) {
-                if (opts.admin) {
-                    filters = { phase__competition: opts.competition.id }
-                    filters.show_is_soft_deleted = self.show_is_soft_deleted
-                } else {
-                    filters = { phase: self.selected_phase ? self.selected_phase.id : undefined }
-                }
+        self.has_pending_children = function (submission) {
+            return self.pending_children(submission).length > 0
+        }
+
+        self.is_manual_run = function (submission) {
+            if (submission.auto_run) return false
+            return submission.status === 'Submitting' || self.has_pending_children(submission)
+        }
+
+        self.update_submissions = function (filters, silent) {
+            filters = _.clone(filters || self.build_filters())
+            const request_id = ++self.request_id
+            self.fetching = true
+            if (!silent) {
+                self.loading = true
+                self.update()
             }
 
             filters.page = self.page
-            if (String(self.page_size).toLowerCase() === 'all') {
-                filters.page_size = 'all'
-            } else {
-                filters.page_size = self.page_size
-            }
+            filters.page_size = (String(self.page_size).toLowerCase() === 'all') ? 'all' : self.page_size
 
             CODALAB.api.get_submissions(filters)
                 .done(function (response) {
-                    let data = response
+                    // A newer request was sent meanwhile: this answer is stale
+                    if (request_id !== self.request_id) return
+
                     let results = response
                     if (response && typeof response === 'object' && response.hasOwnProperty('results')) {
                         results = response.results || []
@@ -712,11 +857,7 @@
                                     var itemsOnLastPage = Array.isArray(results) ? results.length : 0
                                     var pagesBefore = self.page - 1
                                     var calc = Math.floor((totalCount - itemsOnLastPage) / pagesBefore)
-                                    if (calc > 0) {
-                                        effectivePageSize = calc
-                                    } else {
-                                        effectivePageSize = 50
-                                    }
+                                    effectivePageSize = calc > 0 ? calc : 50
                                 } else if (Array.isArray(results) && results.length > 0) {
                                     effectivePageSize = results.length
                                 } else {
@@ -753,6 +894,16 @@
                         self.submissions = _.filter(results, sub => sub.owner === CODALAB.state.user.username)
                     }
 
+                    // Open the child table of parents that have children waiting for a manual run
+                    self.auto_expanded = self.auto_expanded || {}
+                    _.forEach(self.filter_children(self.submissions), parent => {
+                        if (!parent.auto_run && parent.has_children && !self.auto_expanded[parent.id]
+                            && self.has_pending_children(parent)) {
+                            self.expanded_submissions[parent.id] = true
+                            self.auto_expanded[parent.id] = true
+                        }
+                    })
+
                     if (!opts.admin) {
                         CODALAB.events.trigger('submissions_loaded', self.submissions)
                     }
@@ -760,15 +911,26 @@
                     self.csv_link = CODALAB.api.get_submission_csv_URL(filters)
 
                     self.update()
-                    self.submission_checked()
+                    // Silent refreshes must not re-read the checkboxes (selection could be lost)
+                    if (!silent) self.submission_checked()
 
-                    _.delay(() => {
+                    if (silent) {
                         self.loading = false
-                        self.update()
-                    }, 300)
+                    } else {
+                        _.delay(() => {
+                            self.loading = false
+                            self.update()
+                        }, 300)
+                    }
                 })
-                .fail(function (response) {
-                    toastr.error("Error retrieving submissions")
+                .fail(function () {
+                    // Never leave `loading` stuck: it would freeze the polling
+                    self.loading = false
+                    self.update()
+                    if (!silent) toastr.error("Error retrieving submissions")
+                })
+                .always(function () {
+                    if (request_id === self.request_id) self.fetching = false
                 })
         }
 
@@ -810,7 +972,7 @@
         self.add_to_leaderboard = function (submission) {
             CODALAB.api.add_submission_to_leaderboard(submission.id)
                 .done(function (data) {
-                    self.update_submissions()
+                    self.refresh_soon()
                     CODALAB.events.trigger('submission_changed_on_leaderboard')
                 })
                 .fail(function (response) {
@@ -821,7 +983,7 @@
         self.remove_from_leaderboard = function (submission) {
             CODALAB.api.remove_submission_from_leaderboard(submission.id)
                 .done(function (data) {
-                    self.update_submissions()
+                    self.refresh_soon()
                     CODALAB.events.trigger('submission_changed_on_leaderboard')
                 })
                 .fail(function (response) {
@@ -834,74 +996,48 @@
                 CODALAB.api.re_run_phase_submissions(phase.id)
                     .done(function (response) {
                         toastr.success(`Rerunning ${response.count} submissions`)
-                        self.update_submissions()
+                        self.refresh_soon()
                     })
                     .fail(function (response) {
                         toastr.error(response.responseJSON.detail)
                     })
             }
         }
+
         self.filter = function () {
             delay(() => {
-                var filters = {}
-                var search = self.refs.search.value
-                if (search) {
-                    filters['search'] = search
-                }
-                var status = self.refs.status.value
-                if (status !== ' ') {
-                    filters['status'] = status
-                }
-                if (!opts.admin) {
-                    filters['phase'] = self.selected_phase.id
-                } else {
-                    var phase = self.refs.phase.value
-                    if (phase && phase !== ' ') {
-                        filters['phase'] = phase
-                    } else {
-                        filters['phase__competition'] = opts.competition.id
-                    }
-                }
                 self.page = 1
-                self.update_submissions(filters)
+                self.update_submissions()
             }, 100)
         }
 
-        self.run_submission = function (submission) {
+        self.run_submission = function (submission, event) {
+            if (event) event.stopPropagation()
             CODALAB.api.run_submission(submission.id)
                 .done(function (response) {
                     toastr.success('Submission queued')
-                    self.update_submissions()
+                    self.refresh_soon()
                 })
                 .fail(function (response) {
-                    if (response.responseJSON.detail) {
+                    if (response.responseJSON && response.responseJSON.detail) {
                         toastr.error(response.responseJSON.detail)
                     } else {
                         toastr.error(response.responseText)
                     }
                 })
-            event.stopPropagation()
-
         }
 
-        self.rerun_submission = function (submission) {
+        self.rerun_submission = function (submission, event) {
+            if (event) event.stopPropagation()
             CODALAB.api.re_run_submission(submission.id)
-                .done(function (response) {
+                .done(function () {
                     toastr.success('Submission queued')
-                    self.update_submissions()
+                    self.refresh_soon()
+                    CODALAB.events.trigger('submission_changed_on_leaderboard')
                 })
                 .fail(function (response) {
-                    if (response.responseJSON.detail) {
-                        toastr.error(response.responseJSON.detail)
-                    }
-                    else if (response.responseJSON.error_msg) {
-                        toastr.error(response.responseJSON.error_msg)
-                    }
-                    else {
-                        toastr.error(response.responseText)
-                    }
+                    toastr.error(self.error_message(response, response.responseText))
                 })
-            event.stopPropagation()
         }
 
         // Ignore clicks while a resubmit request is in progress, each request creates new submissions
@@ -923,7 +1059,7 @@
             CODALAB.api.resubmit_submission(submission.id)
                 .done(function (response) {
                     toastr.success(`Created submission ${response.id} on current tasks. The leaderboard is not updated automatically.`)
-                    self.update_submissions()
+                    self.refresh_soon()
                 })
                 .fail(self.resubmit_error)
                 .always(self.resubmit_done)
@@ -937,7 +1073,7 @@
             CODALAB.api.resubmit_many_submissions(self.checked_submissions)
                 .done(function (response) {
                     toastr.success(`Created ${response.count} submissions on current tasks. The leaderboard is not updated automatically.`)
-                    self.update_submissions()
+                    self.refresh_soon()
                 })
                 .fail(self.resubmit_error)
                 .always(self.resubmit_done)
@@ -947,7 +1083,7 @@
             CODALAB.api.re_run_many_submissions(self.checked_submissions)
                 .done(function (response) {
                     toastr.success('Submissions queued')
-                    self.update_submissions()
+                    self.refresh_soon()
                 })
         }
 
@@ -956,7 +1092,7 @@
                 .done(function (response) {
                     if (response.canceled === true) {
                         toastr.success('Submission cancelled')
-                        self.update_submissions()
+                        self.refresh_soon()
                     } else {
                         toastr.error('Could not cancel submission')
                     }
@@ -969,7 +1105,7 @@
                 CODALAB.api.delete_submission(submission.id)
                     .done(function (response) {
                         toastr.success('Submission deleted')
-                        self.update_submissions()
+                        self.refresh_soon()
                     })
             }
             event.stopPropagation()
@@ -980,7 +1116,7 @@
                 CODALAB.api.soft_delete_submission(submission.id)
                     .done(function (response) {
                         toastr.success(response.message || 'Submission deleted successfully');
-                        self.update_submissions()
+                        self.refresh_soon()
                     })
                     .fail(function (response) {
                         let errorMsg = 'An error occurred while deleting the submission.';
@@ -998,7 +1134,7 @@
                 CODALAB.api.delete_many_submissions(self.checked_submissions)
                     .done(function (response) {
                         toastr.success('Submissions deleted')
-                        self.update_submissions()
+                        self.refresh_soon()
                     })
                     .fail(function (response) {
                         toastr.error('Something went wrong')
@@ -1039,7 +1175,7 @@
                 CODALAB.api.toggle_submission_is_public(submission.id)
                     .done(data => {
                         toastr.success('Submission updated')
-                        self.update_submissions()
+                        self.refresh_soon()
                     })
                     .fail(resp => {
                         toastr.error(resp.responseJSON.detail)
@@ -1308,22 +1444,25 @@
             self.update_submissions()
         })
 
-        CODALAB.events.on('new_submission_created', function (new_submission_data) {
+                CODALAB.events.on('new_submission_created', function (new_submission_data) {
+            self.submissions = self.submissions || []
             self.submissions.unshift(new_submission_data)
             self.update()
+            self.refresh_soon(8)
         })
 
         CODALAB.events.on('score_updated', () => {
             $(self.refs.modal).modal('hide')
-            self.update_submissions()
+            self.refresh_soon()
         })
 
         CODALAB.events.on('submission_status_update', data => {
             let sub = _.find(self.submissions, submission => submission.id === data.submission_id)
             if (sub) {
                 sub.status = data.status
+                self.update()
             }
-            self.update()
+            self.refresh_soon_debounced()
         })
     </script>
 

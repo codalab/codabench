@@ -14,7 +14,7 @@ from rest_framework import status
 from django.urls import reverse
 from django.db import IntegrityError
 
-from api.permissions import IsUserAdminOrIsSelf, IsOrganizationEditor
+from api.permissions import IsSelf, IsOrganizationEditor
 from api.serializers.profiles import MyProfileSerializer, UserSerializer, \
     OrganizationSerializer, MembershipSerializer, SimpleOrganizationSerializer, DeleteMembershipSerializer
 from profiles.helpers import send_mail
@@ -32,7 +32,7 @@ class UserViewSet(mixins.UpdateModelMixin,
 
     def get_permissions(self):
         if self.action in ['update', 'partial_update']:
-            self.permission_classes = [IsUserAdminOrIsSelf]
+            self.permission_classes = [IsSelf]
         return [permission() for permission in self.permission_classes]
 
     def update(self, request, *args, **kwargs):
@@ -108,9 +108,10 @@ def delete_account(request):
             "message": "A confirmation link has been sent to your email. Follow the instruction to finish the process"
         })
     else:
+        # Why two messages: the user is already logged in, so saying which field is wrong reveals nothing.
         return Response({
             "success": False,
-            "error": "Wrong username or password"
+            "error": "Wrong password" if is_username_valid else "Wrong username"
         })
 
 

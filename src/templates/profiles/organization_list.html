@@ -1,0 +1,68 @@
+{% extends "pages/resources_base.html" %}
+
+{% block title %}Organizations - Codabench{% endblock %}
+
+{% block resources_content %}
+    <div class="hb-section">
+        <div class="hb-header">
+            <h1 class="hb-title">Organizations</h1>
+            <a class="settings-button" href="{% url 'profiles:organization_create' %}">Create Organization</a>
+        </div>
+
+        {% if memberships %}
+            <div class="org-table-card">
+                <table class="org-table">
+                    <thead>
+                        <tr>
+                            <th>Organization</th>
+                            <th class="org-table-optional">Description</th>
+                            <th>Role</th>
+                            <th class="org-table-optional">Members</th>
+                            <th class="org-table-optional">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for membership in memberships %}
+                            {% with organization=membership.organization %}
+                                <tr>
+                                    <td>
+                                        <div class="org-table-name">
+                                            <div class="bc-logo org-table-logo">
+                                                {% if organization.photo %}
+                                                    <img src="{{ organization.photo.url }}" alt="">
+                                                {% else %}
+                                                    {# First letter of the name when there is no photo #}
+                                                    <span>{{ organization.name|first|upper }}</span>
+                                                {% endif %}
+                                            </div>
+                                            <div class="org-table-identity">
+                                                <!-- This link covers the whole row, see organizations.styl -->
+                                                {# A pending invite opens the page to accept or reject it #}
+                                                <a class="org-table-link" href="{% if membership.group == 'INVITED' %}{% url 'profiles:organization_accept_invite' %}?token={{ membership.token }}{% else %}{{ organization.url }}{% endif %}">{{ organization.name }}</a>
+                                                <div class="org-table-email">{{ organization.email }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="org-table-optional org-table-description">{{ organization.description|default:"" }}</td>
+                                    <td><span class="bc-type{% if membership.group == 'INVITED' %} org-table-invited{% endif %}">{{ membership.get_group_display }}</span></td>
+                                    <td class="org-table-optional">{{ membership.member_count }}</td>
+                                    <td class="org-table-optional org-table-date">
+                                        {% if membership.group == 'OWNER' %}
+                                            Created {{ organization.date_created|date:"M j, Y" }}
+                                        {% elif membership.group == 'INVITED' %}
+                                            Invited {{ membership.date_joined|date:"M j, Y" }}
+                                        {% else %}
+                                            Joined {{ membership.date_joined|date:"M j, Y" }}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endwith %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="hb-empty">You are not in any organization yet.</p>
+        {% endif %}
+    </div>
+{% endblock %}

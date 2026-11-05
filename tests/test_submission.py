@@ -54,6 +54,7 @@ def run_tests(page, competition, submission, expected_result="Finished") -> None
         except:
             page.locator("td:nth-child(7) > span > .icon").first.click(timeout=300)
         page.locator("div").filter(has_text=re.compile(r"^Results$")).click()
+        page.reload()
         expect(
             page.locator("#leaderboardTable").get_by_role(
                 "link", name=data["default_user"]["username"]
@@ -163,6 +164,7 @@ def test_v2_multiTask(page: Page) -> None:
     except Exception:
         page.locator("td:nth-child(7) > span > .icon").first.click(timeout=300)
     page.locator("div").filter(has_text=re.compile(r"^Results$")).click()
+    page.reload()
     expect(
         page.locator("#leaderboardTable").get_by_role(
             "link", name=data["default_user"]["username"]
@@ -222,6 +224,7 @@ def test_v2_multiTaskFactSheet(page: Page) -> None:
     except:
         page.locator("td:nth-child(7) > span > .icon").first.click(timeout=300)
     page.locator("div").filter(has_text=re.compile(r"^Results$")).click()
+    page.reload()
     expect(
         page.locator("#leaderboardTable").get_by_role(
             "link", name=data["default_user"]["username"]

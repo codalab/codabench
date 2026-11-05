@@ -83,6 +83,12 @@ pages:
 - **index:** Integer for noting the order of phases, Phases _must_ be sequential, without any overlap. If indexes are not supplied, ordering will be assumed by declaration order.
 - **max_submissions:** Total submissions allowed per participant for the entire phase
 - **max_submissions_per_day:** Submission limit for each participant for a given day
+- **max_submissions_scope**(default=participant): Who the `max_submissions` and `max_submissions_per_day` limits apply to. `participant` limits each participant individually. `organization` shares both limits between all members of a participant's organization (team):
+    - A team's usage counts every submission made in the phase by its members, whether or not the submission was made on behalf of the organization.
+    - Membership is evaluated at the time of each submission: all current members (owners, managers, participants and members, but not pending invites) count, including their submissions made before joining the team. A member who leaves the team takes their submissions with them.
+    - A participant belonging to several organizations is blocked as soon as any of these organizations reaches a limit.
+    - Participants who don't belong to any organization keep individual limits.
+    - As with individual limits, failed submissions and submissions re-submitted by organizers do not count.
 - **auto_migrate_to_this_phase:** Cannot be set on the first phase of the competition. This will re-submit all successful submissions from the previous phase to this phase at the time the phase starts.
 - **execution_time_limit:** Execution time limit for submissions, given in seconds. Default is 600.
 - **hide_output:** True/False. If True, stdout/stderr for all submissions to this phase will be hidden from users who are not competition administrators or collaborators.
@@ -109,6 +115,8 @@ phases:
     name: Final Phase
     description: Final testing of your models
     start: 2020-02-02 00:00:00 # Time in UTC+0 and 24-hour format
+    max_submissions: 5
+    max_submissions_scope: organization  # The 5 submissions are shared by each team
     auto_migrate_to_this_phase: True
     accepts_only_result_submissions: False
     tasks:

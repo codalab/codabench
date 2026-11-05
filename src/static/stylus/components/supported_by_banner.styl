@@ -29,6 +29,15 @@
     letter-spacing 0.06em
     text-transform uppercase
 
+// Put the label on its own line on phones.
+// Why: the label and all four logos do not fit on one line.
+@media only screen and (max-width 480px)
+    .supported-by
+        column-gap 12px
+
+    .supported-by-label
+        width 100%
+
 .organization-logo
     display block
     height 24px
