@@ -1,5 +1,5 @@
-"""The Docker API subset used by the pinned Codabench worker; no daemon."""
 import codecs
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -12,20 +12,63 @@ import uuid
 
 
 class APIClient:
+    """Map the Docker API methods used by the Codabench compute worker to Apptainer.
+
+    Only the methods and options required by the worker are implemented.
+    This is a partial compatibility layer, not a complete Docker API implementation.
+    """
+
     def __init__(self):
-        # Only pre-staged competition images are permitted on this shared queue.
+        # Explicit mappings take precedence over downloaded images.
         self.images = json.loads(os.environ.get("APPTAINER_IMAGE_MAP", "{}"))
+        self.image_cache = Path(os.environ.get(
+            "APPTAINER_CACHEDIR", str(Path.home() / ".apptainer" / "cache")
+        )) / "codabench"
         self.containers = {}
 
+    def _image_path(self, image):
+        """Resolve a mapped SIF or the cache path for an image reference."""
+        mapped = self.images.get(image.removeprefix("docker://"))
+        if mapped:
+            return Path(mapped)
+        reference = image if "://" in image else f"docker://{image}"
+        digest = hashlib.sha256(reference.encode()).hexdigest()
+        return self.image_cache / f"{digest}.sif"
+
     def inspect_image(self, image):
-        path = self.images.get(image.removeprefix("docker://"))
-        if not path or not Path(path).is_file():
-            raise FileNotFoundError(f"Image not staged for Juliet: {image}")
-        return {"Id": path}
+        """Return the local SIF path without downloading an image."""
+        path = self._image_path(image)
+        if not path.is_file():
+            raise FileNotFoundError(f"Local Apptainer image not found: {image}")
+        return {"Id": str(path)}
 
     def pull(self, image, **kwargs):
-        self.inspect_image(image)
-        yield {"status": "Status: Image is up to date (staged SIF)"}
+        """Use an explicit SIF mapping or pull an image into the local cache.
+
+        Bare image references use the Docker transport. Yield status dictionaries
+        compatible with the compute worker's streaming pull call.
+        """
+        if self.images.get(image.removeprefix("docker://")):
+            self.inspect_image(image)
+            yield {"status": "Status: Image is up to date (mapped SIF)"}
+            return
+        reference = image if "://" in image else f"docker://{image}"
+        path = self._image_path(image)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        yield {"id": image, "status": "Downloading"}
+        # Publish only a completed SIF; a failed pull leaves any cached image intact.
+        with tempfile.TemporaryDirectory(dir=path.parent, prefix="pull-") as directory:
+            temporary = Path(directory) / "image.sif"
+            result = subprocess.run(
+                ["/usr/bin/apptainer", "pull", str(temporary), reference],
+                capture_output=True, text=True,
+            )
+            if result.returncode:
+                raise RuntimeError(
+                    f"Apptainer pull failed for {image}: {result.stderr.strip()}"
+                )
+            temporary.replace(path)
+        yield {"id": image, "status": "Pull complete"}
 
     def create_host_config(self, **kwargs):
         return kwargs
@@ -34,11 +77,11 @@ class APIClient:
                          working_dir, environment, network_disabled=False, **kwargs):
         """Prepare an Apptainer command and return its Docker-compatible ID.
 
-        Register the command without starting it. The image must already be
-        mapped to a local SIF. Bind sources stay inside /codabench; evaluation
-        scratch directories and the execution environment are private.
+        Register the command without starting it. The image must be mapped to
+        a local SIF or downloaded by pull(). Bind sources stay inside /codabench;
+        temporary directories and the execution environment are isolated.
         """
-        # Resolve the pre-staged image and reject a duplicate active name.
+        # Resolve the local image and reject a duplicate container name.
         sif = self.inspect_image(image)["Id"]
         if name in self.containers:
             raise RuntimeError(f"Container already exists: {name}")
@@ -78,18 +121,11 @@ class APIClient:
             if any(c in source + destination for c in ",:\n"):
                 scratch.cleanup()
                 raise ValueError("Unsupported character in bind path")
-            # Docker's SELinux label option "z" has no effect here; only ro/rw
-            # applies. Always force the shared corpus mount to read-only.
+            # Translate read/write access; Docker's SELinux label option is omitted.
             mode = "ro" if "ro" in mount.get("mode", "").split(",") else "rw"
-            if destination == "/app/data":
-                mode = "ro"
             args += ["--bind", f"{source}:{destination}:{mode}"]
-        # --nv supplies NVIDIA devices/libraries; the Slurm step's CUDA mask
-        # and device cgroup restrict the GPU available to this evaluation.
+        # Enable NVIDIA support when the worker requests GPU access.
         if host_config.get("device_requests"):
-            if not os.environ.get("CUDA_VISIBLE_DEVICES"):
-                scratch.cleanup()
-                raise RuntimeError("Slurm did not set CUDA_VISIBLE_DEVICES")
             args += ["--nv"]
         # A separate network namespace with "none" removes external networking
         # when the upstream worker requests it; otherwise keep its network policy.
@@ -101,8 +137,7 @@ class APIClient:
             scratch.cleanup()
             raise ValueError("Empty command")
         args += [sif, *argv]
-        # Build a minimal environment for the nested Apptainer executable.
-        # Outer binds, broker credentials and Apptainer overrides are excluded.
+        # Pass only the required environment to the container process.
         env = {"PATH": "/usr/bin:/bin", "HOME": "/tmp",
                "APPTAINER_TMPDIR": str(root / "tmp")}
         # APPTAINERENV_ explicitly injects the selected values into the payload
@@ -110,8 +145,8 @@ class APIClient:
         values = dict(item.split("=", 1) for item in environment)
         # HOME is controlled by --home; Apptainer rejects APPTAINERENV_HOME.
         values.pop("HOME", None)
-        values.update(BENCHOPT_CACHE="/tmp/benchopt")
-        if host_config.get("device_requests"):
+        # Preserve a host GPU visibility mask when one is configured.
+        if host_config.get("device_requests") and "CUDA_VISIBLE_DEVICES" in os.environ:
             values["CUDA_VISIBLE_DEVICES"] = os.environ["CUDA_VISIBLE_DEVICES"]
         for key, value in values.items():
             env["APPTAINERENV_" + key] = value
@@ -142,7 +177,7 @@ class APIClient:
         """Yield demultiplexed UTF-8 stdout/stderr chunks until both pipes close.
 
         Each item is (stdout_bytes, None) or (None, stderr_bytes), as required
-        by the pinned worker's streaming attach call. Drain buffered output
+        by the compute worker's streaming attach call. Drain buffered output
         even if the process has already exited. Incremental decoding preserves
         characters split across reads and replaces invalid UTF-8 input.
         Docker keyword arguments are accepted for call compatibility.
@@ -204,15 +239,15 @@ class APIClient:
 
 
 def self_check():
-    """Check the adapter with local Python processes; do not invoke Apptainer."""
+    """Check container lifecycle and output handling with local Python processes."""
     import sys
-    # 1. Register a placeholder SIF to exercise image lookup and descriptor creation.
+    # 1. Register a local SIF mapping to check image lookup and command construction.
     client = APIClient()
     with tempfile.TemporaryDirectory() as directory:
         image = Path(directory) / "image.sif"
         image.touch()
         client.images = {"test:1": str(image)}
-        # 2. Prepare a descriptor and check that its environment excludes broker keys.
+        # 2. Check the command descriptor and explicitly selected environment.
         container = client.create_container(
             "test:1", name="test", host_config={"binds": {}},
             command=["python", "-c", "pass"], working_dir="/app/program",
@@ -226,7 +261,7 @@ def self_check():
         assert not any(":/dev/shm" in arg for arg in state["args"])
         scratch_root = Path(state["scratch"].name)
         assert not (scratch_root / "shm").exists()
-        # 3. Substitute a local Python command to test actual pipes and exit status.
+        # 3. Substitute a local Python command to check output and exit status.
         state["args"] = [sys.executable, "-c",
                          "import sys; print('out'); print('err', file=sys.stderr); sys.exit(23)"]
         state["env"] = os.environ.copy()
@@ -236,18 +271,44 @@ def self_check():
         chunks = list(client.attach(container))
         assert b"".join(c[0] or b"" for c in chunks) == b"out\n"
         assert b"".join(c[1] or b"" for c in chunks) == b"err\n"
-        # 4. Repeated removal must remain safe after process and scratch cleanup.
+        # 4. Check repeated removal after process and temporary directory cleanup.
         client.remove_container(container, force=True)
         client.remove_container(container, force=True)
         assert not scratch_root.exists()
-        # 5. Reject image references that are absent from the pre-staged map.
+        # 5. Inspection must not download an image that is unavailable locally.
         try:
             client.inspect_image("unapproved:1")
         except FileNotFoundError:
             pass
         else:
-            raise AssertionError("Unstaged image accepted")
-        # 6. Start a parent and child in the same group. If the child survives,
+            raise AssertionError("Missing local image accepted")
+        # 6. Check image pulls without invoking Apptainer or contacting a registry.
+        from unittest.mock import patch
+        client.image_cache = Path(directory) / "cache"
+
+        def fake_pull(args, **kwargs):
+            Path(args[2]).write_bytes(b"SIF")
+            return subprocess.CompletedProcess(args, 0, "", "")
+
+        with patch.object(subprocess, "run", side_effect=fake_pull) as run:
+            assert list(client.pull("test:1"))
+            run.assert_not_called()
+            assert list(client.pull("download:1"))[-1]["status"] == "Pull complete"
+            assert run.call_args.args[0][-1] == "docker://download:1"
+        cached = Path(client.inspect_image("docker://download:1")["Id"])
+        assert cached.read_bytes() == b"SIF"
+        with patch.object(subprocess, "run", return_value=subprocess.CompletedProcess(
+            [], 1, "", "pull failed"
+        )):
+            try:
+                list(client.pull("download:1"))
+            except RuntimeError as error:
+                assert "pull failed" in str(error)
+            else:
+                raise AssertionError("Failed image pull accepted")
+        assert cached.read_bytes() == b"SIF"
+        assert list(client.image_cache.iterdir()) == [cached]
+        # 7. Start a parent and child in the same group. If the child survives,
         # it creates this sentinel after forced removal of the group.
         sentinel = Path(directory) / "orphan"
         child_code = f"import time,pathlib; time.sleep(0.3); pathlib.Path({str(sentinel)!r}).touch(); time.sleep(60)"
