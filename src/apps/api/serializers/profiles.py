@@ -104,6 +104,22 @@ class SimpleOrganizationSerializer(ModelSerializer):
         )
 
 
+class PublicOrganizationSerializer(ModelSerializer):
+    """
+    What the public profile shows for each organization of the user: the logo, the name and the link.
+    Why a list of allowed fields: a new field on the organization stays private unless it is added here.
+    """
+
+    class Meta:
+        model = Organization
+        fields = (
+            'name',
+            'photo',
+            'url',
+        )
+        read_only_fields = fields
+
+
 class OrganizationSerializer(ModelSerializer):
     photo = NamedBase64ImageField(required=False, allow_null=True)
 
@@ -165,11 +181,14 @@ class PublicUserSerializer(ModelSerializer):
     What other users can see on a profile page.
     Why a list of allowed fields: a new field on the user stays private unless it is added here.
     """
+    # Shown as Member since, for example: March 2024
+    date_joined = DateTimeField(format="%B %Y", read_only=True)
 
     class Meta:
         model = User
         fields = (
             'username',
+            'date_joined',
             'photo',
             'display_name',
             'first_name',
