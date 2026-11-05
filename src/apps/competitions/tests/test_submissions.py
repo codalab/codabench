@@ -8,8 +8,8 @@ from django.urls import reverse
 from django.utils import timezone
 
 from api.serializers.submissions import SubmissionCreationSerializer
-from api.serializers.competitions import CompetitionSerializer
-from competitions.models import Submission
+from api.serializers.competitions import CompetitionSerializer, PhaseDetailSerializer
+from competitions.models import Phase, Submission
 from competitions.tasks import _run_submission, run_submission, submission_status_cleanup
 
 from factories import SubmissionFactory, UserFactory, CompetitionFactory, PhaseFactory, TaskFactory, LeaderboardFactory, OrganizationFactory
