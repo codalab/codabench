@@ -3563,6 +3563,14 @@
 <li><strong>index:</strong> Integer for noting the order of phases, Phases <em>must</em> be sequential, without any overlap. If indexes are not supplied, ordering will be assumed by declaration order.</li>
 <li><strong>max_submissions:</strong> Total submissions allowed per participant for the entire phase</li>
 <li><strong>max_submissions_per_day:</strong> Submission limit for each participant for a given day</li>
+<li><strong>max_submissions_scope</strong>(default=participant): Who the <code>max_submissions</code> and <code>max_submissions_per_day</code> limits apply to. <code>participant</code> limits each participant individually. <code>organization</code> shares both limits between all members of a participant's organization (team):<ul>
+<li>A team's usage counts every submission made in the phase by its members, whether or not the submission was made on behalf of the organization.</li>
+<li>Membership is evaluated at the time of each submission: all current members (owners, managers, participants and members, but not pending invites) count, including their submissions made before joining the team. A member who leaves the team takes their submissions with them.</li>
+<li>A participant belonging to several organizations is blocked as soon as any of these organizations reaches a limit.</li>
+<li>Participants who don't belong to any organization keep individual limits.</li>
+<li>As with individual limits, failed submissions and submissions re-submitted by organizers do not count.</li>
+</ul>
+</li>
 <li><strong>auto_migrate_to_this_phase:</strong> Cannot be set on the first phase of the competition. This will re-submit all successful submissions from the previous phase to this phase at the time the phase starts.</li>
 <li><strong>execution_time_limit:</strong> Execution time limit for submissions, given in seconds. Default is 600.</li>
 <li><strong>hide_output:</strong> True/False. If True, stdout/stderr for all submissions to this phase will be hidden from users who are not competition administrators or collaborators.</li>
@@ -3588,10 +3596,12 @@
 </span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Final Phase</span>
 </span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Final testing of your models</span>
 </span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="w">    </span><span class="nt">start</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2020-02-02 00:00:00</span><span class="w"> </span><span class="c1"># Time in UTC+0 and 24-hour format</span>
-</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="w">    </span><span class="nt">auto_migrate_to_this_phase</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
-</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="w">    </span><span class="nt">accepts_only_result_submissions</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
-</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="w">    </span><span class="nt">tasks</span><span class="p">:</span>
-</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="w">    </span><span class="nt">max_submissions</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
+</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="w">    </span><span class="nt">max_submissions_scope</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">organization</span><span class="w">  </span><span class="c1"># The 5 submissions are shared by each team</span>
+</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="w">    </span><span class="nt">auto_migrate_to_this_phase</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
+</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="w">    </span><span class="nt">accepts_only_result_submissions</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+</span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="w">    </span><span class="nt">tasks</span><span class="p">:</span>
+</span><span id="__span-2-22"><a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
 </span></code></pre></div>
 <h2 id="tasks">Tasks<a class="headerlink" href="#tasks" title="Permanent link">&para;</a></h2>
 <h3 id="required_3">Required<a class="headerlink" href="#required_3" title="Permanent link">&para;</a></h3>
