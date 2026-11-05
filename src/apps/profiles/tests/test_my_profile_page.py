@@ -7,6 +7,58 @@ from django.urls import reverse
 
 from factories import UserFactory
 
+# The only user fields the my profile page gets: what the page shows and what the Edit Profile form saves
+MY_PROFILE_FIELDS = {
+    'id',
+    'username',
+    'slug',
+    'photo',
+    'email',
+    'display_name',
+    'first_name',
+    'last_name',
+    'title',
+    'location',
+    'biography',
+    'personal_url',
+    'linkedin_url',
+    'twitter_url',
+    'github_url',
+}
+
+# Data that must never be on the my profile page
+NOT_INCLUDED_FIELDS = {
+    # The notification settings have their own page in Settings
+    'organizer_direct_message_updates',
+    'allow_forum_notifications',
+    'allow_organization_invite_emails',
+    'password',
+    'last_login',
+    'date_joined',
+    'is_active',
+    'is_staff',
+    'is_superuser',
+    'is_deleted',
+    'deleted_at',
+    'is_banned',
+    'quota',
+    'rabbitmq_queue_limit',
+    'rabbitmq_username',
+    'rabbitmq_password',
+    'is_created_using_oidc',
+    'oidc_organization',
+    'github_uid',
+    'github_info',
+    'avatar_url',
+    'url',
+    'html_url',
+    'name',
+    'company',
+    'bio',
+    'organizations',
+    'competitions_organized',
+}
+
 # A valid image of 1 by 1 pixels
 SMALL_PNG_BASE64 = (
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
@@ -16,10 +68,11 @@ SMALL_PNG_BASE64 = (
 class MyProfilePageTests(TestCase):
     """Tests for the my profile page at /profile/."""
 
-    def test_owner_receives_own_private_data(self):
+    def test_owner_receives_only_my_profile_fields(self):
         """
         Logs in and opens the my profile page.
-        Expects the email and notification settings in the page data, and edit rights.
+        Expects exactly the my profile fields in the page data, none of the not included data, and the user's own email.
+        Why the exact list: any other field, now or added later, makes this test fail.
         """
         user = UserFactory(email="the.owner@example.com")
         self.client.force_login(user)
@@ -27,23 +80,25 @@ class MyProfilePageTests(TestCase):
         response = self.client.get(reverse('users:my_profile'))
 
         page_data = json.loads(response.context['serialized_user'])
+        assert set(page_data) == MY_PROFILE_FIELDS
+        assert set(page_data).isdisjoint(NOT_INCLUDED_FIELDS)
         assert page_data['email'] == "the.owner@example.com"
-        assert 'organizer_direct_message_updates' in page_data
-        assert 'allow_forum_notifications' in page_data
-        assert 'allow_organization_invite_emails' in page_data
-        assert "const can_edit = true" in response.content.decode()
 
-    def test_organizations_and_competitions_are_not_sent(self):
+    def test_page_links_to_the_public_profile(self):
         """
-        Logs in and opens the my profile page.
-        Expects no organizations and no organized competitions in the page data.
+        Logs in as a user whose username has a capital letter and a dot, and opens the my profile page.
+        Expects the slug in the page data, and the public profile url made from it to open.
+        Why this username: its slug is different from the username, and the public page finds users by slug.
         """
-        self.client.force_login(UserFactory())
+        user = UserFactory(username="Jane.Doe")
+        self.client.force_login(user)
 
-        content = self.client.get(reverse('users:my_profile')).content.decode()
+        response = self.client.get(reverse('users:my_profile'))
 
-        assert "competitions_organized" not in content
-        assert "organizations" not in content.split('const selected_user')[1].split('const can_edit')[0]
+        page_data = json.loads(response.context['serialized_user'])
+        assert page_data['slug'] == user.slug
+        # The same url the View public profile button builds
+        assert self.client.get(f"/user/{page_data['slug']}/").status_code == 200
 
     def test_logged_out_visitor_is_sent_to_login(self):
         """
@@ -92,6 +147,45 @@ class MyProfileUpdateTests(TestCase):
         assert response.status_code == 200
         assert user.title == "Researcher"
         assert user.location == "Paris"
+
+    def test_user_cannot_change_own_slug(self):
+        """
+        Logs in and sends a new slug together with a new job title.
+        Expects the job title to be saved, and the slug to stay the same.
+        Why: the slug is in the page data, and the Edit Profile form sends that data back.
+        """
+        user = UserFactory()
+        original_slug = user.slug
+        self.client.force_login(user)
+
+        response = self.update_profile(user=user, data={'slug': "someone-else", 'title': "Researcher"})
+
+        user.refresh_from_db()
+        assert response.status_code == 200
+        assert user.title == "Researcher"
+        assert user.slug == original_slug
+
+    def test_saving_profile_keeps_notification_settings(self):
+        """
+        Turns all notification settings on, then saves the profile with only the profile fields.
+        Expects the job title to be saved, and all notification settings to stay on.
+        Why: the my profile page has no notification settings, so the Edit Profile form does not send them.
+        """
+        user = UserFactory(
+            organizer_direct_message_updates=True,
+            allow_forum_notifications=True,
+            allow_organization_invite_emails=True,
+        )
+        self.client.force_login(user)
+
+        response = self.update_profile(user=user, data={'title': "Researcher"})
+
+        user.refresh_from_db()
+        assert response.status_code == 200
+        assert user.title == "Researcher"
+        assert user.organizer_direct_message_updates is True
+        assert user.allow_forum_notifications is True
+        assert user.allow_organization_invite_emails is True
 
     def test_update_returns_my_profile_url(self):
         """

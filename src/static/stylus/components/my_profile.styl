@@ -23,12 +23,18 @@ profile-edit
     // Why: one long word or link must wrap. If it does not, the page gets wider than the phone screen.
     overflow-wrap anywhere
 
-/* Top of the card: photo, name, links and the Edit button */
+/* Top of the card: photo, name, links and the buttons */
 .profile-header
     display flex
     flex-wrap wrap
     align-items flex-start
     gap 24px
+
+// View public profile and Edit Profile, side by side
+.profile-actions
+    display flex
+    flex-wrap wrap
+    gap 8px
 
 // Why bc-logo too: it must come after the home page logo size to replace it
 .bc-logo.profile-photo
@@ -36,7 +42,7 @@ profile-edit
     height 120px
     font-size 44px
 
-// The width makes the Edit button wrap to its own line on small phones
+// The width makes the buttons wrap to their own line on small phones
 .profile-identity
     flex 1 1 220px
     min-width 0
@@ -94,11 +100,6 @@ profile-edit
 // Keeps the line breaks the user typed
 .profile-bio
     white-space pre-line
-
-.profile-empty
-    margin 0
-    color $cb-navy-700
-    font-size 14px
 
 // Looks like a link, opens the edit form
 .profile-add-button
