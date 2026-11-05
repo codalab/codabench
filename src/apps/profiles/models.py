@@ -122,7 +122,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     @property
     def slug_url(self):
-        return reverse('profiles:user_profile', args=[self.slug])
+        return reverse('users:profile', args=[self.slug])
 
     def get_used_storage_space(self, binary=False):
         """

@@ -1,0 +1,166 @@
+/* --------------------------------------------------------------------------------------
+ Public profile page (templates/profiles/public_profile.html)
+ */
+
+// The sections stacked, 900px wide at most
+.public-profile
+    display flex
+    flex-direction column
+    gap 20px
+    // Why width 100%: without it the page shrinks the sections to their content, and short content wraps under the photo
+    width 100%
+    max-width 900px
+    margin 1em auto 3em
+    text-align left
+
+.public-profile-card
+    padding 32px
+    background-color #fff
+    border 1px solid rgba($cb-navy-900, 0.1)
+    border-radius 10px
+    box-shadow 0 1px 2px rgba(0, 0, 0, 0.04)
+    // Why: one long word or link must wrap. If it does not, the page gets wider than the phone screen.
+    overflow-wrap anywhere
+
+/* Section 1: photo, name, username, Member since and links */
+.public-profile-header
+    display flex
+    flex-wrap wrap
+    align-items flex-start
+    gap 24px
+
+// Why bc-logo too: it must come after the home page logo size to replace it
+.bc-logo.public-profile-photo
+    width 120px
+    height 120px
+    font-size 44px
+
+// The width makes the text wrap under the photo on small phones
+.public-profile-identity
+    flex 1 1 220px
+    min-width 0
+
+#page_content .public-profile-name
+    margin 0
+    color $cb-navy-900
+    font-size 1.6em
+
+.public-profile-display-name
+    color $cb-navy-700
+    font-weight normal
+
+.public-profile-username,
+.public-profile-member-since
+    margin 8px 0 0
+    color $cb-navy-700
+
+    i
+        margin-right 6px
+
+.public-profile-username
+    font-size 15px
+
+.public-profile-member-since
+    font-size 14px
+
+.public-profile-links
+    display flex
+    flex-wrap wrap
+    gap 14px
+    margin-top 12px
+    font-size 18px
+
+    a
+        color $cb-blue-500
+
+        &:hover
+            color $cb-blue-400
+
+/* Section titles */
+#page_content .public-profile-section-title
+    margin 0 0 14px
+    color $cb-navy-900
+    font-size 1.15em
+
+/* Section 2: About, one row per detail */
+.public-profile-row
+    display grid
+    grid-template-columns 120px minmax(0, 1fr)
+    gap 16px
+    padding 7px 0
+    color $cb-navy-900
+    font-size 14px
+    line-height 1.55
+
+.public-profile-row-label
+    color $cb-navy-700
+
+// Keeps the line breaks the user typed
+.public-profile-bio
+    white-space pre-line
+
+/* Sections 3 and 4: Organizations and Competitions, a title above a grid of cards, like the home page */
+// Why the margin: these sections have no card around them, so they need more space to stand apart
+.public-profile-section
+    width 100%
+    margin-top 16px
+
+.public-profile-org-grid
+    display grid
+    grid-template-columns repeat(4, minmax(0, 1fr))
+    gap 16px
+
+// Small clickable card, the hover is the same as the home page cards
+.public-profile-org-card
+    display flex
+    align-items center
+    gap 12px
+    min-width 0
+    padding 14px
+    background-color #fff
+    border 1px solid #e3e7ec
+    border-radius 10px
+    box-shadow 0 1px 2px rgba(0, 0, 0, 0.04)
+    color $cb-navy-900
+    transition transform 150ms ease, box-shadow 150ms ease
+
+    &:hover
+        border-color $cb-blue-500
+        color $cb-navy-900
+        transform translateY(-3px)
+        box-shadow 0 8px 20px rgba(27, 47, 64, 0.12)
+
+// Why bc-logo too: it must come after the home page logo size to replace it
+.bc-logo.public-profile-org-logo
+    width 40px
+    height 40px
+    font-size 16px
+
+// A long name is cut with "..."
+.public-profile-org-name
+    overflow hidden
+    font-weight 600
+    white-space nowrap
+    text-overflow ellipsis
+
+// 2 competitions per row. Why: the profile is narrower than the home page, 3 cards would be too small.
+.hb-grid.public-profile-competition-grid
+    grid-template-columns repeat(2, minmax(0, 1fr))
+
+/* Tablets: 2 organizations per row */
+@media only screen and (max-width 991px)
+    .public-profile-org-grid
+        grid-template-columns repeat(2, minmax(0, 1fr))
+
+/* Phones: the label sits above its value, 1 organization and 1 competition per row */
+@media only screen and (max-width 625px)
+    .public-profile-card
+        padding 20px
+
+    .public-profile-row
+        grid-template-columns minmax(0, 1fr)
+        gap 2px
+
+    .public-profile-org-grid,
+    .hb-grid.public-profile-competition-grid
+        grid-template-columns minmax(0, 1fr)
