@@ -8,6 +8,15 @@
 {# Styles: stylus/components/public_profile.styl #}
 <div class="public-profile">
 
+    {% if is_owner %}
+    <!-- Only for the owner. Same box as the info announcements on the home page. -->
+    <div class="announcement announcement-info">
+        <div class="announcement-content">
+            <div class="announcement-body">This is how others see your profile. Only you can see this message.</div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Section 1: who the user is, with the social links. Always shown. -->
     <div class="public-profile-card">
         <div class="public-profile-header">

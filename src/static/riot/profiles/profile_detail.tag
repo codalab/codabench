@@ -12,9 +12,8 @@
 
                 <div class="profile-identity">
                     <h1 if="{profile_name}" class="profile-name">{profile_name} <span if="{bracket_name}" class="profile-display-name">({bracket_name})</span></h1>
-                    <p if="{can_edit && selected_user.email}" class="profile-email"><i class="bi bi-envelope"></i>{selected_user.email}</p>
-                    <!-- Why !profile_name: without it, visitors would see no way to tell whose page this is -->
-                    <p if="{can_edit || !profile_name}" class="profile-username"><i class="bi bi-person"></i>{selected_user.username}</p>
+                    <p if="{selected_user.email}" class="profile-email"><i class="bi bi-envelope"></i>{selected_user.email}</p>
+                    <p class="profile-username"><i class="bi bi-person"></i>{selected_user.username}</p>
 
                     <div if="{has_links}" class="profile-links">
                         <a if="{selected_user.personal_url}" href="{selected_user.personal_url}" target="_blank" title="Website" aria-label="Website"><i class="bi bi-globe"></i></a>
@@ -24,7 +23,11 @@
                     </div>
                 </div>
 
-                <button if="{can_edit}" type="button" class="settings-button" onclick="{start_editing}">Edit Profile</button>
+                <div class="profile-actions">
+                    <!-- Why the slug: the public page finds users by slug, which can differ from the username -->
+                    <a class="settings-button settings-button-secondary" href="/user/{selected_user.slug}/" target="_blank" rel="noopener">View public profile</a>
+                    <button type="button" class="settings-button" onclick="{start_editing}">Edit Profile</button>
+                </div>
             </div>
 
             <div if="{has_details}" class="profile-details">
@@ -44,8 +47,7 @@
 
             <!-- Shown when nothing is filled in -->
             <div if="{is_empty}" class="profile-details">
-                <button if="{can_edit}" type="button" class="profile-add-button" onclick="{start_editing}">Complete your profile</button>
-                <p if="{!can_edit}" class="profile-empty">This user has not added any details yet.</p>
+                <button type="button" class="profile-add-button" onclick="{start_editing}">Complete your profile</button>
             </div>
         </div>
 
@@ -59,7 +61,6 @@
     <script>
         var self = this
         self.selected_user = selected_user
-        self.can_edit = can_edit
 
         // Full name if set, otherwise the display name. Empty when the user has neither.
         const full_name = [selected_user.first_name, selected_user.last_name].filter(Boolean).join(' ')
@@ -92,7 +93,7 @@
     </script>
 
     <!-- Why these rules stay: Riot styles apply to every page, and other pages use these class names.
-         The new styles of this page are in stylus/components/profile.styl -->
+         The new styles of this page are in stylus/components/my_profile.styl -->
     <style type="text/stylus">
         .ui.horizontal.divider
             color #9e9e9e !important

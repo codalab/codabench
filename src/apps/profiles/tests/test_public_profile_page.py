@@ -109,6 +109,30 @@ class PublicProfilePageTests(TestCase):
 
         assert set(response.context['public_user']) == PUBLIC_FIELDS
 
+    def test_owner_sees_how_others_see_the_profile(self):
+        """
+        Logs in and opens the user's own public profile page.
+        Expects the note that this is how others see the profile.
+        """
+        user = UserFactory()
+        self.client.force_login(user)
+
+        content = self.get_public_profile_response_for(user).content.decode()
+
+        assert "This is how others see your profile. Only you can see this message." in content
+
+    def test_other_user_does_not_see_the_owner_note(self):
+        """
+        Logs in and opens the public profile page of another user.
+        Expects no note, because the note is only for the owner.
+        """
+        other_user = UserFactory()
+        self.client.force_login(UserFactory())
+
+        content = self.get_public_profile_response_for(other_user).content.decode()
+
+        assert "This is how others see your profile. Only you can see this message." not in content
+
     def test_superuser_does_not_receive_private_data_of_another_user(self):
         """
         Logs in as a superuser and opens the public profile page of another user.
