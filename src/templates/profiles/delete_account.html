@@ -7,7 +7,8 @@
 {% block settings_content %}
     <delete-account></delete-account>
     <script>
-        const user = JSON.parse("{{ serialized_user | escapejs }}")
+        {# Only the username: the form checks that the user typed it correctly #}
+        const username = "{{ request.user.username | escapejs }}"
         const contact_email = "{{ CONTACT_EMAIL }}"
     </script>
 {% endblock %}
