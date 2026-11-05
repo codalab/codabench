@@ -190,7 +190,7 @@ client = docker.APIClient(
 
 
 # -----------------------------------------------
-# Show Progress bar on downloading images
+# Show Progress bar when downloading images
 # -----------------------------------------------
 tasks = {}
 
@@ -515,7 +515,19 @@ class Run:
         self.completed_program_counter = 0
         # Create the folder then save the path to root_dir
         self.submission_run_directory = Settings.BASE_DIR + f'{self.run_related_name}__'
-        os.mkdir(self.submission_run_directory + task_type, mode=0o700)
+        try:
+            os.mkdir(self.submission_run_directory + task_type, mode=0o700)
+        except FileExistsError:
+            folder_to_delete = self.submission_run_directory + task_type
+            if folder_to_delete == "/":
+                logger.error("Trying to delete /")
+            else:
+                logger.warning("Folder already exists. This might be a re-run. Deleting content so that we can continue...")
+                shutil.rmtree(folder_to_delete)
+                os.mkdir(self.submission_run_directory + task_type, mode=0o700)
+        except Exception as e:
+            logger.error(e)
+
         self.root_dir = self.submission_run_directory + task_type
 
         self.bundle_dir = os.path.join(self.root_dir, "bundles")
@@ -657,7 +669,6 @@ class Run:
                                 f.write(str(data))
             except Exception as e:
                 logger.exception(f"Failed best-effort log file creation: {e}")
-
 
     def get_detailed_results_file_path(self):
         default_detailed_results_path = os.path.join(

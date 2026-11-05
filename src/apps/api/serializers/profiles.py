@@ -160,6 +160,31 @@ class UserSerializer(ModelSerializer):
         return OrganizationSerializer(participant_orgs, many=True).data
 
 
+class PublicUserSerializer(ModelSerializer):
+    """
+    What other users can see on a profile page.
+    Why a list of allowed fields: a new field on the user stays private unless it is added here.
+    """
+
+    class Meta:
+        model = User
+        fields = (
+            'username',
+            'photo',
+            'display_name',
+            'first_name',
+            'last_name',
+            'title',
+            'location',
+            'biography',
+            'personal_url',
+            'linkedin_url',
+            'twitter_url',
+            'github_url',
+        )
+        read_only_fields = fields
+
+
 class MembershipSerializer(ModelSerializer):
     user = SimpleUserSerializer(many=False, read_only=True)
     organization_name = CharField(source='organization.name')

@@ -9,6 +9,7 @@ from django.urls import reverse
 from rest_framework.test import APITestCase
 
 from api.serializers.competitions import CompetitionSerializer, CompetitionDetailSerializer
+from apps.competitions.tasks import _run_submission, manual_migration
 from competitions.models import CompetitionParticipant, Submission, Competition
 from factories import UserFactory, CompetitionFactory, CompetitionParticipantFactory, PhaseFactory, LeaderboardFactory, \
     ColumnFactory, SubmissionFactory, SubmissionScoreFactory, TaskFactory, QueueFactory
@@ -379,50 +380,114 @@ class PhaseMigrationTests(APITestCase):
         resp = self.client.post(url)
         assert resp.status_code == 200
 
+    from competitions.tasks import manual_migration
+
     def test_manual_migration_makes_submissions_from_one_phase_in_another(self):
         self.client.login(username='creator', password='creator')
-        # make 5 submissions in phase 1
+
         for _ in range(5):
-            SubmissionFactory(owner=self.creator, phase=self.phase_1, status=Submission.FINISHED, leaderboard=self.leaderboard)
+            SubmissionFactory(
+                owner=self.creator,
+                phase=self.phase_1,
+                status=Submission.FINISHED,
+                leaderboard=self.leaderboard,
+            )
+
         assert self.phase_1.submissions.count() == 5
         assert self.phase_2.submissions.count() == 0
 
-        # call "migrate" from phase 1 -> 2
-        with mock.patch("competitions.tasks.run_submission") as run_submission_mock:
-            url = reverse('phases-manually_migrate', kwargs={"pk": self.phase_1.pk})
+        # Execute the Celery task synchronously instead of enqueueing it.
+        with (
+            mock.patch("competitions.tasks.run_submission") as run_submission_mock,
+            mock.patch(
+                "competitions.tasks.manual_migration.apply_async",
+                side_effect=lambda args: manual_migration(*args),
+            ),
+        ):
+            url = reverse(
+                'phases-manually_migrate',
+                kwargs={"pk": self.phase_1.pk},
+            )
             resp = self.client.post(url)
+
             assert resp.status_code == 200
             assert run_submission_mock.call_count == 5
 
         self.phase_2.refresh_from_db()
-        # check phase 2 has the 5 submissions
         assert self.phase_1.submissions.count() == 5
         assert self.phase_2.submissions.count() == 5
 
-    def test_manual_migration_makes_submissions_out_of_only_parents_not_children(self):
-        self.client.login(username='creator', password='creator')
+    def test_manual_migration_ignores_cancelled_and_deleted_children(self):
+        self.client.login(username="creator", password="creator")
 
-        # make 1 submission with 4 children
-        parent = SubmissionFactory(owner=self.creator, phase=self.phase_1, has_children=True, status=Submission.FINISHED, leaderboard=self.leaderboard)
-        for _ in range(4):
-            # Make a submission _and_ new Task for phase 2
-            self.phase_2.tasks.add(TaskFactory())
-            SubmissionFactory(owner=self.creator, phase=self.phase_1, parent=parent, status=Submission.FINISHED)
+        source_tasks = [TaskFactory() for _ in range(3)]
+        dest_tasks = [TaskFactory() for _ in range(3)]
 
-        assert self.phase_1.submissions.count() == 5
-        assert self.phase_2.submissions.count() == 0
+        self.phase_1.tasks.add(*source_tasks)
+        self.phase_2.tasks.add(*dest_tasks)
 
-        # call "migrate" from phase 1 -> 2
-        with mock.patch("competitions.tasks.run_submission") as run_submission_mock:
-            url = reverse('phases-manually_migrate', kwargs={"pk": self.phase_1.pk})
-            resp = self.client.post(url)
-            assert resp.status_code == 200
-            # Only 1 run here because parent has to create children
-            assert run_submission_mock.call_count == 1
+        parent = SubmissionFactory(
+            owner=self.creator,
+            phase=self.phase_1,
+            has_children=True,
+            status=Submission.FINISHED,
+            task=None,
+            leaderboard=self.leaderboard,
+        )
 
-        # check phase 2 has the 1 parent submission
-        assert self.phase_1.submissions.count() == 5
-        assert self.phase_2.submissions.count() == 1
+        # Only the first child should be migrated:
+        # - first: FINISHED and not deleted -> migrated
+        # - second: CANCELLED -> ignored
+        # - third: FINISHED but soft-deleted -> ignored
+        for task, status, deleted in zip(
+            source_tasks,
+            [
+                Submission.FINISHED,
+                Submission.CANCELLED,
+                Submission.FINISHED,
+            ],
+            [
+                False,
+                False,
+                True,
+            ],
+        ):
+            SubmissionFactory(
+                owner=self.creator,
+                phase=self.phase_1,
+                parent=parent,
+                status=status,
+                task=task,
+                is_soft_deleted=deleted,
+            )
+
+        # Execute the asynchronous migration task synchronously.
+        with mock.patch(
+            "competitions.tasks.manual_migration.apply_async",
+            side_effect=lambda args, **kwargs: manual_migration(*args),
+        ):
+            # Execute the submission task synchronously as well.
+            with mock.patch(
+                "competitions.tasks._run_submission.apply_async",
+                side_effect=lambda args, **kwargs: _run_submission(*args),
+            ):
+                with mock.patch("competitions.tasks._send_to_compute_worker"):
+                    resp = self.client.post(
+                        reverse(
+                            "phases-manually_migrate",
+                            kwargs={"pk": self.phase_1.pk},
+                        )
+                    )
+
+        assert resp.status_code == 200
+
+        children = self.phase_2.submissions.filter(
+            parent__isnull=False,
+            is_soft_deleted=False,
+        )
+
+        assert children.count() == 1
+        assert children.first().task == dest_tasks[0]
 
 
 class CompetitionResultDatatypesTests(APITestCase):

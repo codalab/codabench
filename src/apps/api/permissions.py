@@ -24,9 +24,11 @@ class LeaderboardNotHidden(permissions.BasePermission):
             return not obj.hidden
 
 
-class IsUserAdminOrIsSelf(permissions.BasePermission):
+class IsSelf(permissions.BasePermission):
+    """Only the user can change their own data. Superusers use Django admin."""
+
     def has_object_permission(self, request, view, obj):
-        return request.user.is_superuser or request.user == obj
+        return request.user == obj
 
 
 class IsOrganizationEditor(permissions.IsAuthenticated):

@@ -41,6 +41,7 @@ class PhaseSerializer(WritableNestedModelSerializer):
             'has_max_submissions',
             'max_submissions_per_day',
             'max_submissions_per_person',
+            'max_submissions_scope',
             'auto_migrate_to_this_phase',
             'hide_output',
             'hide_prediction_output',
@@ -126,6 +127,7 @@ class PhaseDetailSerializer(serializers.ModelSerializer):
             'has_max_submissions',
             'max_submissions_per_day',
             'max_submissions_per_person',
+            'max_submissions_scope',
             'auto_migrate_to_this_phase',
             'hide_output',
             'hide_prediction_output',
@@ -183,6 +185,9 @@ class PhaseDetailSerializer(serializers.ModelSerializer):
             # Get user from the request
             user = self.context['request'].user
             if user.is_authenticated:
+                if obj.max_submissions_scope == Phase.ORGANIZATION_SCOPE:
+                    # Show the usage of the user's team closest to its limit
+                    return max(qs.filter(created_when__date=now().date()).count() for _, qs in obj.get_quota_submission_querysets(user))
                 # Get all submissions which are not failed and belongs to this user for this phase
                 qs = obj.submissions.filter(owner=user, parent__isnull=True).exclude(status='Failed')
                 # Count submissions made today
@@ -197,6 +202,9 @@ class PhaseDetailSerializer(serializers.ModelSerializer):
             # Get user from the request
             user = self.context['request'].user
             if user.is_authenticated:
+                if obj.max_submissions_scope == Phase.ORGANIZATION_SCOPE:
+                    # Show the usage of the user's team closest to its limit
+                    return max(qs.count() for _, qs in obj.get_quota_submission_querysets(user))
                 # Get all submissions which are not failed and belongs to this user for this phase
                 qs = obj.submissions.filter(owner=user, parent__isnull=True).exclude(status='Failed')
                 # Count all submissions

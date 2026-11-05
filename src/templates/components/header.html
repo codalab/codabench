@@ -1,6 +1,6 @@
 {% load static %}
 
-<div id="header" class="ui inverted vertical segment">
+<div id="header">
     <div class="header-inner">
         <!-- Logo + tagline -->
         <div class="header-brand">
@@ -16,42 +16,39 @@
         </div>
 
         <!-- Menu -->
-        <div id="topleft_menu" class="ui secondary inverted menu">
-            <div class="right menu item">
-                <a class="item" href="{% url "competitions:public" %}">
-                    <i class="ui small trophy icon"></i>
-                    Benchmarks/Competitions
-                </a>
-                <a class="item" href="{% url "datasets:public" %}">
-                    <i class="ui small database icon"></i>
-                    Datasets
-                </a>
-                {% if user.is_authenticated %}
-                    <div selenium="user_dropdown" id="user_dropdown" class="ui dropdown item">
-                        <div class="text">
-                            <i class="icon user outline"></i>
-                            {{ request.user.username }}
-                        </div>
+        <nav class="header-nav">
+            <a class="header-link" href="{% url "competitions:public" %}">
+                <i class="small trophy icon"></i>
+                Benchmarks/Competitions
+            </a>
+            <a class="header-link" href="{% url "datasets:public" %}">
+                <i class="small database icon"></i>
+                Datasets
+            </a>
+            {% if user.is_authenticated %}
+                <!-- User menu, opened and closed in static/js/ours/init.js -->
+                <div selenium="user_dropdown" id="user_dropdown" class="user-menu">
+                    <button type="button" class="header-link user-menu-button" aria-haspopup="true" aria-expanded="false" aria-controls="user_menu_panel">
+                        <i class="small user icon"></i>
+                        {{ request.user.username }}
                         <i class="dropdown icon"></i>
-                        <div class="menu">
-                            {% include "components/user_menu_items.html" %}
-                        </div>
+                    </button>
+                    <div id="user_menu_panel" class="user-menu-panel">
+                        {% include "components/user_menu_items.html" %}
                     </div>
-                {% else %}
-                    <a href="{% url 'accounts:login' %}" class="ui button style_button item">Login</a>
-                    {% if ENABLE_SIGN_UP %}
-                        <a href="{% url 'accounts:signup' %}" class="ui button style_button item">Sign-up</a>
-                    {% endif %}
+                </div>
+            {% else %}
+                <a href="{% url 'accounts:login' %}" class="header-link header-button">Login</a>
+                {% if ENABLE_SIGN_UP %}
+                    <a href="{% url 'accounts:signup' %}" class="header-link header-button">Sign-up</a>
                 {% endif %}
-            </div>
-        </div>
+            {% endif %}
+        </nav>
 
         <!-- Mobile menu button (opens components/mobile_menu.html) -->
-        <div id="hamburger_button">
-            <div class="ui icon button">
-                <i class="bars icon"></i>
-            </div>
-        </div>
+        <button type="button" id="hamburger_button" aria-label="Open menu" aria-expanded="false" aria-controls="mobile_menu">
+            <i class="bars icon"></i>
+        </button>
     </div>
 
     {% if user.is_authenticated %}

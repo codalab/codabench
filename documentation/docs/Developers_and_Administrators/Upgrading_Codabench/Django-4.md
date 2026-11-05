@@ -2,17 +2,9 @@
 
 
 ## Django
-The Django version upgrade will require all the containers to be rebuilt:
-```sh
-docker compose build --no-cache
-docker compose up -d
-```
+The Django version upgrade requires all the containers to be rebuilt without cache. In the standard upgrade commands, use `docker compose build --no-cache` instead of `docker compose build`.
 
-Afterward, you will need to run some migrations: 
-```sh
-docker compose exec django python manage.py migrate
-```
-If it asks you to do a makemigration instead, you will have to run the following command:
+If `migrate` asks you to do a makemigration instead, you will have to run the following command:
 ```sh
 docker compose exec django python manage.py makemigrations --merge
 ```

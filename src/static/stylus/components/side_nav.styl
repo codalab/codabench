@@ -1,0 +1,71 @@
+/* --------------------------------------------------------------------------------------
+ Left bar layout, shared by the Settings pages and the Resources pages
+ (components/settings_nav.html and components/resources_nav.html)
+ */
+
+// minmax(0, 1fr) keeps long content from stretching the right column
+.side-layout
+    display grid
+    grid-template-columns 220px minmax(0, 1fr)
+    gap 20px
+    align-items start
+
+.side-nav
+    display flex
+    flex-direction column
+    gap 4px
+    text-align left
+
+.side-nav-link
+    display flex
+    align-items center
+    gap 8px
+    padding 8px 12px
+    border-radius 6px
+    color $cb-navy-700
+    font-size 14px
+    font-weight 500
+
+    &:hover
+        background-color $cb-blue-50
+        color $cb-blue-500
+
+.side-nav-link-active,
+.side-nav-link-active:hover
+    background-color $cb-blue-500
+    color #fff
+    font-weight 600
+
+.side-nav-divider
+    height 1px
+    margin 6px 0
+    background-color rgba($cb-navy-900, 0.1)
+
+.side-content
+    min-width 0
+
+/* Resources pages (templates/pages/resources_base.html) */
+.resources-page
+    width 100%
+    margin 1em 0 3em
+
+// Why: Riot tags are inline by default. Scripts must stay hidden.
+.side-content > :not(script)
+    display block
+
+// The home page sections have a big top margin. Here the section must line up with the left bar.
+.side-content .hb-section
+    margin-top 0
+
+/* Tablets and phones: the links become a row above the content */
+@media only screen and (max-width 767px)
+    .side-layout
+        grid-template-columns minmax(0, 1fr)
+
+    .side-nav
+        flex-direction row
+        flex-wrap wrap
+
+    // Why: in a row, the line would break the links apart
+    .side-nav-divider
+        display none
