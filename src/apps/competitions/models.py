@@ -709,8 +709,10 @@ class Submission(models.Model):
             new_submission.start()
         return new_submission
 
-    def _reset_for_rerun(self, status=SUBMITTING):
-        """Clears the results of a previous run so that this same row can be run again."""
+    def _reset_for_rerun(self, status=SUBMITTING, shared_with_children=False):
+        """
+        Clears the results of a previous run so that this same row can be run again.
+        """
         self.prediction_result.delete(save=False)
         self.scoring_result.delete(save=False)
         self.detailed_result.delete(save=False)
@@ -721,7 +723,19 @@ class Submission(models.Model):
         for detail in self.details.all():
             detail.data_file.delete(save=False)
             detail.delete()
-        self.scores.all().delete()
+
+        if shared_with_children:
+            # Keep every score that a child still owns
+            child_score_ids = SubmissionScore.objects.filter(submissions__parent=self).values('pk')
+            self.scores.exclude(pk__in=child_score_ids).delete()
+        else:
+            own_scores = list(self.scores.all())
+            if own_scores:
+                if self.parent_id:
+                    # Child: scores are shared with the parent, detach them before deleting
+                    self.parent.scores.remove(*own_scores)
+                for score in own_scores:
+                    score.delete()
 
         self.leaderboard = None
         self.status = status
@@ -757,11 +771,11 @@ class Submission(models.Model):
             for target in targets:
                 target._reset_for_rerun()
 
-            # Child re-run: the parent waits for its children and loses its aggregated scores
-            if root is not self and self.parent_id:
-                root._reset_for_rerun(status=Submission.SUBMITTED)
-            # Parent re-run: children are reset above, the parent itself waits for them
+            if self.parent_id:
+                # Child re-run: the parent waits for it, the siblings keep their scores
+                root._reset_for_rerun(status=Submission.SUBMITTED, shared_with_children=True)
             elif targets != [self]:
+                # Parent re-run: all children are reset above, the parent waits for them
                 self._reset_for_rerun(status=Submission.SUBMITTED)
 
             if targets == [self]:
