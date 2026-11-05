@@ -7,6 +7,7 @@ from django.test import RequestFactory, TestCase
 from django.urls import get_resolver
 
 from factories import UserFactory
+from profiles.models import User
 from utils import error_handlers
 
 
@@ -24,7 +25,7 @@ class ErrorPagesCloseDatabaseConnectionsTests(TestCase):
         assert resolver.resolve_error_handler(403) is error_handlers.permission_denied
 
     def test_404_page_closes_database_connections(self):
-        with mock.patch('utils.error_handlers.close_old_connections') as close_old_connections:
+        with mock.patch('utils.error_handlers._close_old_connections') as close_old_connections:
             response = self.client.get('/this-page-does-not-exist/')
 
         assert response.status_code == 404
@@ -35,7 +36,7 @@ class ErrorPagesCloseDatabaseConnectionsTests(TestCase):
         user = UserFactory()
         self.client.force_login(user)
 
-        with mock.patch('utils.error_handlers.close_old_connections') as close_old_connections:
+        with mock.patch('utils.error_handlers._close_old_connections') as close_old_connections:
             response = self.client.get('/this-page-does-not-exist/')
 
         assert response.status_code == 404
@@ -46,7 +47,7 @@ class ErrorPagesCloseDatabaseConnectionsTests(TestCase):
         request = RequestFactory().get('/forbidden/')
         request.user = AnonymousUser()
 
-        with mock.patch('utils.error_handlers.close_old_connections') as close_old_connections:
+        with mock.patch('utils.error_handlers._close_old_connections') as close_old_connections:
             response = error_handlers.permission_denied(request, PermissionDenied())
 
         assert response.status_code == 403
@@ -58,8 +59,17 @@ class ErrorPagesCloseDatabaseConnectionsTests(TestCase):
 
         request = RequestFactory().get('/missing/')
 
-        with mock.patch('utils.error_handlers.close_old_connections') as close_old_connections:
+        with mock.patch('utils.error_handlers._close_old_connections') as close_old_connections:
             with self.assertRaises(Http404):
                 error_handlers._close_db_connections_after(failing_view)(request, Http404())
 
         close_old_connections.assert_called_once()
+
+    def test_database_is_still_usable_after_an_error_page_in_a_transaction(self):
+        user = UserFactory()
+        self.client.force_login(user)
+
+        response = self.client.get('/this-page-does-not-exist/')
+
+        assert response.status_code == 404
+        assert User.objects.filter(pk=user.pk).exists()

@@ -19,8 +19,15 @@ error page opens a fresh one.
 """
 import functools
 
-from django.db import close_old_connections
+from django.db import connections
 from django.views import defaults
+
+
+def _close_old_connections():
+    # Do not close a connection in the middle of a transaction (tests, ATOMIC_REQUESTS...)
+    for conn in connections.all(initialized_only=True):
+        if not conn.in_atomic_block:
+            conn.close_if_unusable_or_obsolete()
 
 
 def _close_db_connections_after(view):
@@ -29,7 +36,7 @@ def _close_db_connections_after(view):
         try:
             return view(request, *args, **kwargs)
         finally:
-            close_old_connections()
+            _close_old_connections()
 
     return wrapper
 
