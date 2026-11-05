@@ -99,6 +99,12 @@ class LeaderboardEntriesSerializer(serializers.ModelSerializer):
 
     def get_submissions(self, instance):
         primary_col = instance.columns.get(index=instance.primary_index)
+        # Hidden columns are private to the competition admins
+        request = self.context.get('request')
+        phase = instance.phases.select_related('competition__created_by').first()
+        scores_qs = SubmissionScore.objects.select_related('column', 'column__leaderboard')
+        if not (request and phase and phase.competition.user_has_admin_permission(request.user)):
+            scores_qs = scores_qs.filter(column__hidden=False)
         submissions_qs = (
             Submission.objects.filter(
                 leaderboard=instance,
@@ -114,13 +120,7 @@ class LeaderboardEntriesSerializer(serializers.ModelSerializer):
                 'phase__competition__queue',
             )
             .prefetch_related(
-                Prefetch(
-                    'scores',
-                    queryset=SubmissionScore.objects.filter(column__hidden=False).select_related(
-                        'column',
-                        'column__leaderboard',
-                    ),
-                )
+                Prefetch('scores', queryset=scores_qs)
             )
         )
 
@@ -160,7 +160,10 @@ class LeaderboardPhaseSerializer(serializers.ModelSerializer):
     primary_index = serializers.SerializerMethodField()
 
     def get_columns(self, instance):
-        columns = Column.objects.filter(leaderboard=instance.leaderboard, hidden=False)
+        # `show_hidden`: the caller is a competition admin
+        columns = Column.objects.filter(leaderboard=instance.leaderboard)
+        if not self.context.get('show_hidden'):
+            columns = columns.filter(hidden=False)
         if len(columns) == 0:
             raise serializers.ValidationError("No columns exist on the leaderboard")
         else:
@@ -186,13 +189,18 @@ class LeaderboardPhaseSerializer(serializers.ModelSerializer):
         # desc == -colname
         # asc == colname
         primary_col = instance.leaderboard.columns.get(index=instance.leaderboard.primary_index)
+        # `all_submissions`: every finished submission, on the leaderboard or not
+        if self.context.get('all_submissions'):
+            selection = {'status': Submission.FINISHED}
+        else:
+            selection = {'leaderboard': instance.leaderboard}
         submissions_qs = (
             Submission.objects.filter(
                 phase=instance,
                 is_soft_deleted=False,
                 has_children=False,
                 is_specific_task_re_run=False,
-                leaderboard=instance.leaderboard,
+                **selection,
             )
             .select_related('owner')
             .prefetch_related('scores', 'scores__column')
