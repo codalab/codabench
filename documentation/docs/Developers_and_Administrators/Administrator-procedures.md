@@ -357,50 +357,27 @@ create_codabench_statistics_published_comps()
 
 Codabench includes Django admin interfaces and management commands to manage competition categories and tags.
 
-### Creating Tags via Django Admin
+### Managing Tags via Django Admin
 
-Superusers can create and edit categories and tags directly in the **Django Admin** interface:
-
-1. Log in with a superuser account and open the Django Admin (`/admin/`).
-2. Under **Competitions**:
-    - **Tag categories:** Click `Add Tag category`, enter the category name, and click **Save**.
-    - **Tags:** Click `Add Tag`, enter the tag name, select its parent category from the dropdown, and click **Save**.
-
-### Initializing Default Tags
-
-To populate the database with default tag categories (*Machine Learning Domain*, *Fields of Application*, *Conferences*) and their associated tags:
-
-```bash
-docker compose exec django ./manage.py init_tags
-```
-
-!!! note
-    For the complete list of default categories and tags populated by this command, see the [YAML Structure documentation](../Organizers/Benchmark_Creation/Yaml-Structure.md#tags).
-
-#### Resetting Tags
-To delete all existing tags and categories and recreate the default taxonomy:
-
-```bash
-docker compose exec django ./manage.py init_tags --reset
-```
-
-!!! warning
-    Running `--reset` deletes all existing tags and categories, which also removes all assigned tags from existing competitions.
-
-
-
-## Tag Management
-
-Codabench includes Django admin interfaces and management commands to manage competition categories and tags.
-
-### Creating Tags via Django Admin
-
-Superusers can create and edit categories and tags directly in the **Django Admin** interface:
+Superusers can create, edit, and organize categories and tags directly in the **Django Admin** interface (`/admin/`):
 
 1. Log in with a superuser account and open the Django Admin (`/admin/`).
 2. Under **Competitions**:
-    - **Tag categories:** Click `Add Tag category`, enter the category name, and click **Save**.
-    - **Tags:** Click `Add Tag`, enter the tag name, select its parent category from the dropdown, and click **Save**.
+    - **Tag categories:** Click `Tag categories` to add, rename, or delete categories (e.g. *Conferences*, *Fields of Application*, *Machine Learning Domain*, or any custom taxonomy for your instance).
+    - **Tags:** Click `Tags` to add individual tags, update names, or assign them to a category.
+
+!!! tip "Automatic UI Integration"
+    Categories and tags configured in Django Admin automatically appear in the filter panels of both the public competitions list and the [Competitions Dashboard](../../Participants/Competitions-Dashboard.md) (including its charts and Data Explorer).
+
+### Admin Dashboard Visibility Filter
+
+On the [Competitions Dashboard](../../Participants/Competitions-Dashboard.md) (`/dashboard/`), platform administrators have access to an exclusive **Visibility** filter in the left panel:
+
+- **Public**: Displays only published benchmarks.
+- **Private**: Restricts results to unlisted or unpublished benchmarks.
+- **All**: Displays both public and private benchmarks.
+
+*(Standard participants only see public benchmarks and will not see this filter).*
 
 ### Initializing Default Tags
 

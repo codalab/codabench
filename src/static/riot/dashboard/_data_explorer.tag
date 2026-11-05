@@ -470,9 +470,13 @@
                     return { key: k, val: val };
                 });
 
-                entries.sort(function (a, b) { return b.val - a.val; });
+                if (dim1 === "created_year") {
+                    entries.sort(function (a, b) { return a.key < b.key ? -1 : 1; });
+                } else {
+                    entries.sort(function (a, b) { return b.val - a.val; });
+                }
                 if (limit !== Infinity) {
-                    entries = entries.slice(0, limit);
+                    entries = (dim1 === "created_year") ? entries.slice(-limit) : entries.slice(0, limit);
                 }
 
                 // Populate 1D Tabular Data
@@ -605,11 +609,11 @@
                     });
                 });
 
-                var sortedPrimaries = Object.keys(primaryTotals).sort(function (a, b) {
-                    return primaryTotals[b] - primaryTotals[a];
-                });
+                var sortedPrimaries = (dim1 === "created_year")
+                    ? Object.keys(primaryTotals).sort()
+                    : Object.keys(primaryTotals).sort(function (a, b) { return primaryTotals[b] - primaryTotals[a]; });
                 if (limit !== Infinity) {
-                    sortedPrimaries = sortedPrimaries.slice(0, limit);
+                    sortedPrimaries = (dim1 === "created_year") ? sortedPrimaries.slice(-limit) : sortedPrimaries.slice(0, limit);
                 }
 
                 var allSecondaries = Object.keys(secTotals).sort(function (a, b) {

@@ -783,6 +783,13 @@ class TagViewSet(ReadOnlyModelViewSet):
     pagination_class = None
 
 
+class TagViewSet(ReadOnlyModelViewSet):
+    queryset = Tag.objects.all().select_related('category')
+    serializer_class = TagSerializer
+    permission_classes = (AllowAny,)
+    pagination_class = None
+
+
 class PhaseViewSet(ModelViewSet):
     serializer_class = PhaseSerializer
 
