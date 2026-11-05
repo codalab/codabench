@@ -16,7 +16,7 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.views.generic import DetailView, TemplateView
 
-from api.serializers.profiles import UserSerializer, MyProfileSerializer, PublicUserSerializer, PublicOrganizationSerializer, \
+from api.serializers.profiles import MyProfileSerializer, PublicUserSerializer, PublicOrganizationSerializer, \
     OrganizationDetailSerializer, OrganizationEditSerializer, UserNotificationSerializer
 from .forms import SignUpForm, LoginForm, ActivationForm
 from .models import User, DeletedUser, Organization, Membership
@@ -494,9 +494,5 @@ class ChangePasswordSettingsView(LoginRequiredMixin, TemplateView):
 
 
 class DeleteAccountSettingsView(LoginRequiredMixin, TemplateView):
+    # The page only needs the username, and the template reads it from the logged-in user
     template_name = 'profiles/delete_account.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['serialized_user'] = json.dumps(UserSerializer(self.request.user).data)
-        return context
