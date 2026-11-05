@@ -19,7 +19,7 @@ permissions:
   contents: read
 
 env:
-  TEST_IMAGE: codabench-compute-worker:ci
+  TEST_IMAGE: localhost/codabench-compute-worker:ci
   PYTHONDONTWRITEBYTECODE: "1"
 
 jobs:
@@ -86,7 +86,7 @@ jobs:
           python -m pip install 'docker>=7.1.0,<8'
       - name: Load image and start rootless API socket
         run: |
-          podman load --input worker.tar
+          podman image inspect "$TEST_IMAGE"
           systemctl --user start podman.socket
       - name: Run shared tests
         run: |
