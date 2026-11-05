@@ -561,6 +561,23 @@ class Submission(models.Model):
     def __str__(self):
         return f"{self.phase.competition.title} submission PK={self.pk} by {self.owner.username}"
 
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=['phase', 'is_soft_deleted', '-id'],
+                name='sub_phase_del_id_idx',
+            ),
+            models.Index(
+                fields=['phase', 'owner', 'created_when'],
+                name='sub_phase_owner_created_idx',
+            ),
+            models.Index(
+                fields=['phase'],
+                condition=models.Q(leaderboard__isnull=False, is_soft_deleted=False),
+                name='sub_phase_on_lb_idx',
+            ),
+        ]
+
     def soft_delete(self):
         """
         Soft delete the submission: remove files but keep record in DB.
@@ -928,6 +945,9 @@ class CompetitionParticipant(models.Model):
 
     class Meta:
         unique_together = ('user', 'competition')
+        indexes = [
+            models.Index(fields=['competition', 'status'], name='participant_comp_status_idx'),
+        ]
 
     def __str__(self):
         return f"({self.id}) - User: {self.user.username} in Competition: {self.competition.title}"
