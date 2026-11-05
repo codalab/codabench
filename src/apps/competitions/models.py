@@ -765,7 +765,7 @@ class Submission(models.Model):
             return None
 
         with transaction.atomic():
-            # The whole family leaves the leaderboard: its scores are about to change
+            # The family leaves the leaderboard: its scores are about to change
             Submission.objects.filter(parent=root).update(leaderboard=None)
 
             for target in targets:
