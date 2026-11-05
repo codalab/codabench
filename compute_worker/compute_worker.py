@@ -169,7 +169,7 @@ configure_logging(
 )
 
 # -----------------------------------------------
-# Initialize Docker or Podman depending on .env
+# Initialize the configured Docker, Podman or Apptainer backend
 # -----------------------------------------------
 logger.info(
     f"Using {Settings.CONTAINER_ENGINE_EXECUTABLE} "
@@ -181,12 +181,15 @@ if Settings.COMPUTE_WORKER_DISABLE_PREDICTION_UPLOAD:
     Settings.COMPUTE_WORKER_NO_CLEANUP = True
 
 
-# Intializing client
-# NOTE: CONTAINER_SOCKET is set in Settings based on CONTAINER_ENGINE_EXECUTABLE which must has either podman or docker
-client = docker.APIClient(
-    base_url=Settings.CONTAINER_SOCKET,
-    version="auto",
-)
+# Docker/Podman use their configured socket; Apptainer executes local processes.
+if Settings.CONTAINER_ENGINE_EXECUTABLE == "apptainer":
+    from apptainer_backend import APIClient
+    client = APIClient()
+else:
+    client = docker.APIClient(
+        base_url=Settings.CONTAINER_SOCKET,
+        version="auto",
+    )
 
 
 # -----------------------------------------------
