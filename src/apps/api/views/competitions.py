@@ -419,14 +419,16 @@ class CompetitionViewSet(ModelViewSet):
         batch_send_email.apply_async((comp.pk, content))
         return Response({}, status=status.HTTP_200_OK)
 
-    def collect_leaderboard_data(self, competition, phase_pk=None):
+    def collect_leaderboard_data(self, competition, phase_pk=None, all_submissions=False):
+        # Only competition admins get here, so hidden columns are included
+        context = {**self.get_serializer_context(), 'show_hidden': True, 'all_submissions': all_submissions}
         if phase_pk:
             phase = get_object_or_404(competition.phases.all(), id=phase_pk)
-            submission_query = [self.get_serializer(phase).data]
+            submission_query = [self.get_serializer(phase, context=context).data]
             phase_id = phase.id
         else:
             phases = competition.phases.all()
-            submission_query = self.get_serializer(phases, many=True).data
+            submission_query = self.get_serializer(phases, many=True, context=context).data
             if not len(phases):
                 raise ValidationError(f"No Phases found on competition id:{competition.id}")
             phase_id = phases[0].id
@@ -455,6 +457,12 @@ class CompetitionViewSet(ModelViewSet):
                 if submission_key not in leaderboard_data[leaderboard_titles[phase['id']]]:
                     leaderboard_data[leaderboard_titles[phase['id']]][submission_key] = OrderedDict()
 
+                    if all_submissions:
+                        leaderboard_data[leaderboard_titles[phase['id']]][submission_key].update({
+                            'created_when': submission['created_when'],
+                            'on_leaderboard': submission['leaderboard_id'] is not None,
+                        })
+
                     if submission.get('fact_sheet_answers'):
                         leaderboard_data[leaderboard_titles[phase['id']]][submission_key].update({
                             'fact_sheet_answers': submission['fact_sheet_answers']
@@ -477,7 +485,9 @@ class CompetitionViewSet(ModelViewSet):
         if not competition.user_has_admin_permission(request.user):
             raise PermissionDenied("You are not a competition admin or superuser")
         selected_phase = request.GET.get('phase')
-        data = self.collect_leaderboard_data(competition, selected_phase)
+        # Every finished submission instead of the leaderboard entries only
+        all_submissions = request.GET.get('all_submissions', 'false').lower() == 'true'
+        data = self.collect_leaderboard_data(competition, selected_phase, all_submissions)
         if format == 'zip':
             with SpooledTemporaryFile() as tmp:
                 with zipfile.ZipFile(tmp, 'w', zipfile.ZIP_DEFLATED) as archive:
@@ -837,7 +847,9 @@ class PhaseViewSet(ModelViewSet):
         else:
             fact_sheet_keys = None
 
-        query = LeaderboardPhaseSerializer(phase).data
+        # Hidden columns are private to the competition admins
+        show_hidden = phase.competition.user_has_admin_permission(request.user)
+        query = LeaderboardPhaseSerializer(phase, context={'show_hidden': show_hidden}).data
         response = {
             'title': query['leaderboard']['title'],
             'id': phase.id,
@@ -935,12 +947,10 @@ class PhaseViewSet(ModelViewSet):
             for score in submission['scores']:
                 column_found = False
                 precision = 2
-                hidden = False
 
                 for col in columns:
                     if col["index"] == score["index"]:
                         precision = col["precision"]
-                        hidden = col["hidden"]
                         column_found = True
                         break
 
@@ -948,7 +958,7 @@ class PhaseViewSet(ModelViewSet):
                 tempScore['task_id'] = submission['task']
                 tempScore['score'] = str(round(float(tempScore["score"]), precision))
 
-                if column_found and not hidden:
+                if column_found:
                     response['submissions'][submissions_keys[submission_key]]['scores'].append(tempScore)
 
         # put detailed results in its submission
