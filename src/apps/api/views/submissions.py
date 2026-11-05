@@ -17,7 +17,6 @@ from django.core.files.base import ContentFile
 
 from profiles.models import Organization, Membership
 from api.pagination import DynamicChoicePagination
-from tasks.models import Task
 from api.serializers.submissions import SubmissionCreationSerializer, SubmissionSerializer, SubmissionFilesSerializer
 from competitions.models import Submission, SubmissionDetails, Phase, CompetitionParticipant
 from leaderboards.strategies import put_on_leaderboard_by_submission_rule
@@ -357,7 +356,6 @@ class SubmissionViewSet(ModelViewSet):
     @action(detail=True, methods=('POST',))
     def re_run_submission(self, request, pk):
         submission = self.get_object()
-        task_key = request.query_params.get('task_key')
 
         if not self.has_admin_permission(request.user, submission):
             raise PermissionDenied('You do not have permission to re-run submissions')
@@ -365,28 +363,23 @@ class SubmissionViewSet(ModelViewSet):
         if submission.is_soft_deleted:
             raise PermissionDenied('Cannot re-run a deleted submission')
 
-        # Rerun submission on different task. Will flag submission with is_specific_task_re_run=True
-        if task_key:
-            rerun_kwargs = {
-                'task': get_object_or_404(Task, key=task_key),
-            }
-        else:
-            rerun_kwargs = {}
+        if submission.status not in Submission.RERUNNABLE_STATUSES:
+            raise PermissionDenied('Only Finished, Failed or Cancelled submissions can be re-run')
 
-        new_sub = submission.re_run(**rerun_kwargs)
-        if new_sub is None:
-            # return error
+        if submission.re_run() is None:
             return Response({
                 "error_msg": "You cannot rerun this submission because one or more tasks this submission was running are deleted, resubmit the submission or contact the competition organizer!"},
                 status=status.HTTP_404_NOT_FOUND
             )
-        else:
-            return Response({'id': new_sub.id})
+        return Response({'id': submission.id})
 
     @action(detail=False, methods=('POST',))
     def re_run_many_submissions(self, request):
-        qs = self.get_queryset().filter(is_soft_deleted=False)
+        qs = list(self.get_queryset().filter(is_soft_deleted=False))
+        selected = {s.pk for s in qs}
         for submission in qs:
+            if submission.parent_id in selected:
+                continue
             submission.re_run()
         return Response({})
 
@@ -447,19 +440,9 @@ class SubmissionViewSet(ModelViewSet):
         if destination_phase.end and destination_phase.end < now():
             raise ValidationError('The destination phase has ended and cannot receive submissions')
 
-        new_submission = Submission(
-            created_by_migration=submission.phase,
-            participant=submission.participant,
-            phase=destination_phase,
-            owner=submission.owner,
-            data=submission.data,
-            organization=submission.organization,
-        )
-        new_submission.save(ignore_submission_limit=True)
-
-        if destination_phase.start <= now():
-            new_submission.start()
-
+        new_submission = submission.migrate_to(destination_phase, start=destination_phase.start <= now())
+        if new_submission is None:
+            raise ValidationError('No finished child submission to migrate')
         return Response({'id': new_submission.id})
 
     @action(detail=False, methods=('POST',))
@@ -475,6 +458,7 @@ class SubmissionViewSet(ModelViewSet):
         submissions = Submission.objects.filter(
             pk__in=pks).select_related('phase__competition')
 
+        start_now = destination_phase.start <= now()
         migrated, skipped = [], []
         for submission in submissions:
             reason = None
@@ -484,6 +468,8 @@ class SubmissionViewSet(ModelViewSet):
                 reason = 'destination phase belongs to another competition'
             elif submission.parent_id is not None:
                 reason = 'child submission'
+            elif submission.is_soft_deleted:
+                reason = 'deleted submission'
             elif submission.status != Submission.FINISHED:
                 reason = 'not finished'
             elif destination_phase.pk == submission.phase_id:
@@ -495,17 +481,10 @@ class SubmissionViewSet(ModelViewSet):
                 skipped.append({'id': submission.id, 'reason': reason})
                 continue
 
-            new_submission = Submission(
-                created_by_migration=submission.phase,
-                participant=submission.participant,
-                phase=destination_phase,
-                owner=submission.owner,
-                data=submission.data,
-                organization=submission.organization,
-            )
-            new_submission.save(ignore_submission_limit=True)
-            if destination_phase.start <= now():
-                new_submission.start()
+            new_submission = submission.migrate_to(destination_phase, start=start_now)
+            if new_submission is None:
+                skipped.append({'id': submission.id, 'reason': 'no finished child submission'})
+                continue
             migrated.append(new_submission.id)
 
         return Response({'migrated': migrated, 'skipped': skipped})

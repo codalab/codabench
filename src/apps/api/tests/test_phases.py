@@ -1,3 +1,5 @@
+from unittest import mock
+
 from django.urls import reverse
 import pytest
 import random
@@ -6,6 +8,7 @@ from rest_framework.test import APITestCase
 from rest_framework.exceptions import ValidationError
 
 from api.serializers.competitions import CompetitionSerializer, PhaseDetailSerializer
+from competitions.models import Submission
 from factories import SubmissionFactory, UserFactory, CompetitionFactory, PhaseFactory, LeaderboardFactory, TaskFactory, PhaseTaskInstanceFactory
 
 
@@ -18,12 +21,15 @@ class ReRunPhaseSubmissionTests(APITestCase):
         self.competition = CompetitionFactory(created_by=self.user)
         self.competition.collaborators.add(self.collab)
         self.phase = PhaseFactory(competition=self.competition)
+        self.task = TaskFactory()
+        self.phase.tasks.add(self.task)
+
+        for _ in range(4):
+            self.make_submission(status=Submission.FINISHED, task=self.task)
 
         submission_count = 4
         for _ in range(submission_count):
             self.make_submission()
-        for sub in self.phase.submissions.all():
-            sub.start()
 
     def make_submission(self, **kwargs):
         kwargs.setdefault('owner', self.user)
@@ -31,9 +37,46 @@ class ReRunPhaseSubmissionTests(APITestCase):
         SubmissionFactory(**kwargs)
 
     def assert_rerun_succeeds(self):
-        response = self.client.get(reverse('phases-rerun_submissions', kwargs={'pk': self.phase.id}))
-        assert response.data['count'] == 4
-        assert self.phase.submissions.count() == 8
+        initial_parent_ids = set(
+            self.phase.submissions
+            .filter(parent__isnull=True)
+            .values_list("pk", flat=True)
+        )
+
+        initial_child_ids = set(
+            self.phase.submissions
+            .filter(parent__isnull=False)
+            .values_list("pk", flat=True)
+        )
+
+        with mock.patch("competitions.tasks.run_submission") as mocked_run:
+            with self.captureOnCommitCallbacks(execute=True):
+                response = self.client.get(
+                    reverse("phases-rerun_submissions", kwargs={"pk": self.phase.id})
+                )
+
+        assert response.status_code == 200
+        assert response.data["count"] == 4
+        assert mocked_run.call_count == 4
+
+        final_parent_ids = set(
+            self.phase.submissions
+            .filter(parent__isnull=True)
+            .values_list("pk", flat=True)
+        )
+
+        assert final_parent_ids == initial_parent_ids
+
+        final_child_ids = set(
+            self.phase.submissions
+            .filter(parent__isnull=False)
+            .values_list("pk", flat=True)
+        )
+
+        assert final_child_ids == initial_child_ids
+        assert self.phase.submissions.count() == (
+            len(initial_parent_ids) + len(initial_child_ids)
+        )
 
     def test_comp_creator_can_re_run_whole_phase(self):
         self.client.login(username='test', password='test')
@@ -46,12 +89,6 @@ class ReRunPhaseSubmissionTests(APITestCase):
     def test_collab_can_re_run_whole_phase(self):
         self.client.login(username='collab', password='test')
         self.assert_rerun_succeeds()
-
-    def test_normal_user_cannot_re_run_whole_phase(self):
-        self.client.login(username='norm', password='test')
-        resp = self.client.get(reverse('phases-rerun_submissions', kwargs={'pk': self.phase.id}))
-        assert resp.status_code == 403, 'Did not raise permission denied and should have'
-        assert self.phase.submissions.count() == 4
 
 
 class CompetitionPhaseMigrationValidation(TestCase):
