@@ -16,7 +16,7 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.views.generic import DetailView, TemplateView
 
-from api.serializers.profiles import UserSerializer, PublicUserSerializer, PublicOrganizationSerializer, \
+from api.serializers.profiles import UserSerializer, MyProfileSerializer, PublicUserSerializer, PublicOrganizationSerializer, \
     OrganizationDetailSerializer, OrganizationEditSerializer, UserNotificationSerializer
 from .forms import SignUpForm, LoginForm, ActivationForm
 from .models import User, DeletedUser, Organization, Membership
@@ -60,6 +60,8 @@ class PublicProfileView(LoginRequiredMixin, DetailView):
         # Why the serializer: it lists the fields that are allowed, so a new private field is never shown by mistake.
         public_user = PublicUserSerializer(profile_user).data
         context["public_user"] = public_user
+        # The owner sees a note that this is how others see the profile
+        context["is_owner"] = self.request.user == profile_user
 
         # Heading: the full name, otherwise the display name, otherwise the username
         full_name = " ".join(name for name in [public_user["first_name"], public_user["last_name"]] if name)
@@ -95,15 +97,12 @@ class PublicProfileView(LoginRequiredMixin, DetailView):
 
 class MyProfileView(LoginRequiredMixin, TemplateView):
     """The profile of the logged-in user, at /profile/. The user can edit it here."""
-    template_name = 'profiles/user_profile.html'
+    template_name = 'profiles/my_profile.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        user_data = UserSerializer(self.request.user).data
-        # The profile page does not show organizations, so they are not sent
-        user_data.pop("organizations")
-        context["serialized_user"] = json.dumps(user_data)
-        context["can_edit"] = True
+        # Why MyProfileSerializer: it has only what the page shows. Saving goes through UserSerializer.
+        context["serialized_user"] = json.dumps(MyProfileSerializer(self.request.user).data)
         return context
 
 
