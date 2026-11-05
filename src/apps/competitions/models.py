@@ -477,6 +477,23 @@ class SubmissionDetails(models.Model):
     submission = models.ForeignKey('Submission', on_delete=models.CASCADE, related_name='details')
     is_scoring = models.BooleanField(default=False)
 
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=['phase', 'is_soft_deleted', '-id'],
+                name='sub_phase_del_id_idx',
+            ),
+            models.Index(
+                fields=['phase', 'owner', 'created_when'],
+                name='sub_phase_owner_created_idx',
+            ),
+            models.Index(
+                fields=['phase'],
+                condition=models.Q(leaderboard__isnull=False, is_soft_deleted=False),
+                name='sub_phase_on_lb_idx',
+            ),
+        ]
+
     def save(self, *args, **kwargs):
         if self.data_file and (not self.file_size or self.file_size == -1):
             try:
@@ -951,6 +968,9 @@ class CompetitionParticipant(models.Model):
 
     class Meta:
         unique_together = ('user', 'competition')
+        indexes = [
+            models.Index(fields=['competition', 'status'], name='participant_comp_status_idx'),
+        ]
 
     def __str__(self):
         return f"({self.id}) - User: {self.user.username} in Competition: {self.competition.title}"
