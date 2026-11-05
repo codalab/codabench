@@ -10,7 +10,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
 ]
 dependencies = [
-    "django==5.2.18",
+    "django==5.2.19",
     "django-oauth-toolkit==3.4.1",
     "social-auth-core==5.1.0",
     "social-auth-app-django==6.0.1",
@@ -51,7 +51,7 @@ dependencies = [
     "flex==6.14.1",
     "pyrabbit2==1.0.7",
     "django-enforce-host==1.1.0",
-    "twisted==26.4.0",
+    "twisted==26.10.0",
     "ipdb==0.13.13",
     "jinja2==3.1.6",
     "requests==2.34.2",
