@@ -35,12 +35,17 @@ class ContainerEngineTests(unittest.TestCase):
             cls.client.close()
 
     def create_container(self, code):
+        command = ["/.venv/bin/python", "-c", code]
+        entrypoint = []
+        if self.engine == "podman":
+            # Explicitly replace the image entrypoint for the Podman API.
+            entrypoint = [command.pop(0)]
         container = self.client.create_container(
             self.image,
             name=f"worker-test-{uuid.uuid4().hex}",
             host_config=self.client.create_host_config(binds={}, auto_remove=False),
-            command=["/.venv/bin/python", "-c", code],
-            entrypoint=[],
+            command=command,
+            entrypoint=entrypoint,
             working_dir="/tmp",
             environment=["WORKER_TEST_VALUE=configured", "PYTHONUNBUFFERED=1"],
         )
