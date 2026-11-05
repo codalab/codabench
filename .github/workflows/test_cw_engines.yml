@@ -25,15 +25,19 @@ env:
 jobs:
   build:
     name: Build worker image
+    outputs:
+      image_id: ${{ steps.image.outputs.image_id }}
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
       - name: Build and export image
+        id: image
         run: |
           docker build --tag "$TEST_IMAGE" \
             --file packaging/container/Containerfile.compute_worker .
           docker save --output worker.tar "$TEST_IMAGE"
+          docker image inspect --format 'image_id={{.Id}}' "$TEST_IMAGE" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v4
         with:
           name: compute-worker-image
@@ -87,6 +91,7 @@ jobs:
       - name: Load image and start rootless API socket
         run: |
           podman load --input worker.tar
+          podman tag "${{ needs.build.outputs.image_id }}" "$TEST_IMAGE"
           podman image inspect "$TEST_IMAGE"
           systemctl --user start podman.socket
       - name: Run shared tests
