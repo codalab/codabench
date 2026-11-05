@@ -87,6 +87,7 @@ class V15Unpacker(BaseUnpacker):
                 'description': phase.get('description'),
                 'max_submissions_per_day': phase.get('max_submissions_per_day', 5),
                 'max_submissions_per_person': phase.get('max_submissions', 100),
+                'max_submissions_scope': phase.get('max_submissions_scope', 'participant'),
                 'auto_migrate_to_this_phase': phase.get('auto_migration', False),
                 'hide_output': phase.get('hide_output', False),
                 'hide_prediction_output': phase.get('hide_prediction_output', False),
