@@ -14,7 +14,7 @@
 {% endif %}
 
 <!-- The user and the things they work with -->
-<a class="menu-item" href="{% url 'profiles:user_profile' username=request.user.username %}"><i class="bi bi-person"></i>Profile</a>
+<a class="menu-item" href="{% url 'users:my_profile' %}"><i class="bi bi-person"></i>Profile</a>
 <a class="menu-item" href="{% url 'competitions:management' %}"><i class="bi bi-trophy"></i>Competitions</a>
 <a selenium="resources" class="menu-item" href="{% url 'tasks:task_management' %}"><i class="bi bi-folder"></i>Resources</a>
 <a class="menu-item" href="{% url 'queues:management' %}"><i class="bi bi-hourglass"></i>Queues</a>

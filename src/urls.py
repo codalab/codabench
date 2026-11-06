@@ -14,6 +14,7 @@ urlpatterns = [
     path('analytics/', include('analytics.urls', namespace='analytics')),
     path('datasets/', include('datasets.urls', namespace='datasets')),
     path('profiles/', include('profiles.urls', namespace='profiles')),
+    path('', include('profiles.urls_users')),
     path('tasks/', include('tasks.urls', namespace='tasks')),
     path('queues/', include('queues.urls', namespace="queues")),
     path('forums/', include('forums.urls', namespace="forums")),

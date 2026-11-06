@@ -1,5 +1,6 @@
 from django.test import TestCase
 from django.urls import reverse
+from django.utils.html import escapejs
 
 from factories import UserFactory
 
@@ -46,17 +47,23 @@ class SettingsPagesAccessTests(TestCase):
         assert response.status_code == 302
         assert response.url == reverse('settings:notifications')
 
-    def test_delete_account_page_uses_the_logged_in_user(self):
+    def test_delete_account_page_gets_only_the_username(self):
         """
-        Logs in and opens the delete account page.
-        Expects the data of the logged-in user in the page.
+        Logs in as a user with profile details and opens the delete account page.
+        Expects the username of the logged-in user in the page, and none of the other user data.
+        Why: the form only checks that the typed username is correct.
         """
-        user = UserFactory()
+        user = UserFactory(title="Unique Job Title", github_url="https://github.com/unique-user-link")
         self.client.force_login(user)
 
         response = self.client.get(reverse('settings:delete_account'))
 
-        assert f'"username": "{user.username}"' in response.context['serialized_user']
+        content = response.content.decode()
+        # Why escapejs: the page writes the username the same way, for example a dash becomes -
+        assert f'const username = "{escapejs(user.username)}"' in content
+        assert 'serialized_user' not in response.context
+        assert "Unique Job Title" not in content
+        assert "https://github.com/unique-user-link" not in content
 
 
 class SettingsNavigationTests(TestCase):
