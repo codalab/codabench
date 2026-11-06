@@ -219,6 +219,10 @@ You can also add your reference data, used during the scoring phase, inside a fo
 !!! warning "Do not put reference data in `$HOST_DIRECTORY/data`"
     `/app/data` is also mounted during ingestion, where participant code runs, so anything in it can be read by submissions. Use `$HOST_DIRECTORY/reference` for anything participants must not see.
 
+### Model Cache
+If you are working with models, you can store them on the compute worker directly. This model has to be put in `$HOST_DIRECTORY/model_cache` and is only available during ingestion.
+
+
 !!! warning 
     Make sure to make the owner of the folder(s) and file(s) the same as the one launching the compute worker.  
        - `root` for Docker rootful  
