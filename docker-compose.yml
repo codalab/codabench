@@ -46,6 +46,10 @@ services:
       - minio
     stdin_open: true
     tty: true
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     logging:
       options:
         max-size: "20m"
@@ -131,6 +135,10 @@ services:
       - ./backups:/app/backups
       - ./my-postgres.conf:/etc/postgresql/postgresql.conf
     restart: unless-stopped
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     logging:
       options:
         max-size: "20m"
@@ -160,6 +168,10 @@ services:
     volumes:
       - ./var/rabbit:/var/lib/rabbitmq
     restart: unless-stopped
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     logging:
       options:
         max-size: "20m"
@@ -216,6 +228,10 @@ services:
       options:
         max-size: "20m"
         max-file: "5"
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     deploy:
       resources:
         limits:
@@ -244,6 +260,10 @@ services:
       # Make the worker leave behind the submission so we can examine it
       - COMPUTE_WORKER_NO_CLEANUP=True
     tty: true
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     logging:
       options:
         max-size: "20m"
