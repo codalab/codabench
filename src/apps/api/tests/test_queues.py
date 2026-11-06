@@ -6,6 +6,7 @@ from django.urls import reverse
 
 from factories import UserFactory, QueueFactory
 from queues.models import Queue
+from queues.tests.utils import requires_rabbitmq
 
 
 class QueuesAPITestCase(TestCase):
@@ -61,6 +62,7 @@ class QueuesAPITestCase(TestCase):
 
     # --------- Permission tests ---------
 
+    @requires_rabbitmq
     def test_organizer_can_perform_all_operations(self):
         self.client.login(username='user', password='test')
         assert Queue.objects.get(pk=self.created_queue.id).name == 'TestUserQueue'

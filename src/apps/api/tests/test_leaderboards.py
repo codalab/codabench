@@ -2,6 +2,7 @@ from django.urls import reverse
 from rest_framework.test import APITestCase
 
 import factories
+from queues.tests.utils import requires_rabbitmq
 
 
 class CompetitionLeaderboardStressTests(APITestCase):
@@ -342,6 +343,7 @@ class PhaseLeaderboardRowIdTests(APITestCase):
         assert len(rows) == 1
         assert rows[0]['id'] == submission.id
 
+    @requires_rabbitmq
     def test_group_queue_rows_show_parent_id(self):
         """Children of a submission sent to several group queues are shown as one row per group;
         expects every row ID to be the parent ID, with the group telling the rows apart."""
