@@ -114,7 +114,7 @@ class NewsPageTests(TestCase):
         assert 'class="empty-state-image" src="/static/img/empty.png"' in content
         assert '<h2 class="empty-state-title">There\'s no news to share right now.</h2>' in content
         assert '<p class="empty-state-description">Check back soon for updates on Codabench.</p>' in content
-        assert 'class="empty-state-button" href="/">Return to Home</a>' in content
+        assert 'class="cb-button cb-button-primary cb-button-large" href="/">Return to Home</a>' in content
         assert 'class="news-cards"' not in content
 
     def test_cards_have_read_more_and_open_link(self):
