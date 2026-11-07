@@ -3,5 +3,161 @@
 {% block title %}Public Benchmarks and Competitions - Codabench{% endblock %}
 
 {% block content %}
-    <public-list></public-list>
+    <div class="hb-section">
+        <div class="hb-header">
+            <h1 class="hb-title">Public Benchmarks and Competitions</h1>
+            {% if user.is_authenticated %}
+                <div class="public-competitions-actions">
+                    <a class="cb-button cb-button-primary" href="{% url 'competitions:create' %}"><i class="bi bi-plus-lg"></i>Create</a>
+                    <a class="cb-button cb-button-outline" href="{% url 'competitions:upload' %}"><i class="bi bi-cloud-arrow-up"></i>Upload</a>
+                </div>
+            {% endif %}
+        </div>
+
+        {% if EXTERNAL_COMPETITIONS_ENABLED %}
+            <div class="public-competitions-external">
+                <span>Browse external competitions from other platforms like CodaLab and other Codabench instances</span>
+                <a class="cb-button cb-button-outline" href="{% url 'external_competitions:public' %}">External Competitions</a>
+            </div>
+        {% endif %}
+
+        {# Why hidden without results and filters: there are no public competitions at all, so there is nothing to search #}
+        {% if competitions or filter_pills %}
+            <!-- Search, filters and sort. Each change reloads the page with them in the URL -->
+            <form class="public-competitions-filters" id="public-competitions-filters" method="get">
+                <div class="public-competitions-toolbar">
+                    <div class="public-competitions-search">
+                        <i class="bi bi-search"></i>
+                        <input type="search" name="search" value="{{ filters.search }}" placeholder="Search by title" aria-label="Search by title">
+                    </div>
+
+                    <button type="button" class="cb-button cb-button-secondary public-competitions-tool-button" id="public-competitions-filters-button" aria-expanded="false" aria-controls="public-competitions-filters-panel">
+                        <i class="bi bi-funnel"></i>Filters
+                        {% if active_filter_count %}<span class="public-competitions-badge">{{ active_filter_count }}</span>{% endif %}
+                        <i class="bi bi-chevron-down public-competitions-chevron"></i>
+                    </button>
+
+                    <div class="public-competitions-sort">
+                        <button type="button" class="cb-button cb-button-secondary public-competitions-tool-button" id="public-competitions-sort-button" aria-haspopup="true" aria-expanded="false" aria-controls="public-competitions-sort-menu">
+                            <i class="bi bi-sort-down"></i>
+                            <span class="public-competitions-tool-label">Sort:</span>
+                            <span class="public-competitions-tool-value">{{ selected_sort_label }}</span>
+                            <i class="bi bi-chevron-down public-competitions-chevron"></i>
+                        </button>
+                        <div class="public-competitions-sort-menu" id="public-competitions-sort-menu" hidden>
+                            {% for option in sort_options %}
+                                <a class="public-competitions-sort-option{% if option.is_selected %} public-competitions-sort-option-selected{% endif %}" href="?{{ option.query }}"{% if option.is_selected %} aria-current="true"{% endif %}>
+                                    {{ option.label }}<i class="bi bi-check-lg public-competitions-check"></i>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                {# Why: a search or a filter change keeps the chosen sort #}
+                {% if filters.ordering != default_ordering %}
+                    <input type="hidden" name="ordering" value="{{ filters.ordering }}">
+                {% endif %}
+
+                <!-- Closed by default. Each group is one column, so a new filter only adds a group -->
+                <div class="public-competitions-panel" id="public-competitions-filters-panel" hidden>
+                    {% if user.is_authenticated %}
+                        <div class="public-competitions-group">
+                            <p class="public-competitions-group-title">Your competitions</p>
+                            <label><input type="checkbox" name="participating_in" value="true"{% if filters.participating_in %} checked{% endif %}> Participating in</label>
+                            <label><input type="checkbox" name="organizing" value="true"{% if filters.organizing %} checked{% endif %}> Organizing</label>
+                        </div>
+                    {% endif %}
+                    <div class="public-competitions-group">
+                        <p class="public-competitions-group-title">Other</p>
+                        <label><input type="checkbox" name="has_reward" value="true"{% if filters.has_reward %} checked{% endif %}> Has reward</label>
+                    </div>
+                </div>
+            </form>
+
+            {% if filter_pills %}
+                <!-- Active search and filters. Each pill links to the list without it -->
+                <div class="public-competitions-pills">
+                    {% for pill in filter_pills %}
+                        <span class="public-competitions-pill">{{ pill.label }}<a href="?{{ pill.query }}" aria-label="Remove {{ pill.label }}"><i class="bi bi-x-lg"></i></a></span>
+                    {% endfor %}
+                    <a class="public-competitions-clear" href="{{ clear_filters_url }}">Clear all</a>
+                </div>
+            {% endif %}
+        {% endif %}
+
+        {% if competitions %}
+            <div class="hb-grid">
+                {% for competition in competitions %}
+                    {% include "components/benchmark_card.html" with benchmark=competition %}
+                {% endfor %}
+            </div>
+
+            {% include "components/pagination.html" %}
+        {% elif filter_pills %}
+            {% include "components/empty_state.html" with title="No competitions match your search." description="Try changing your search or filters." button_text="Clear filters" button_url=clear_filters_url %}
+        {% else %}
+            {% include "components/empty_state.html" with title="There are no public competitions yet." description="Check back soon, or create your own competition." %}
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        (function () {
+            var form = document.getElementById('public-competitions-filters')
+            if (!form) {
+                return
+            }
+
+            // Filters button opens and closes the panel.
+            // Why sessionStorage: a filter change reloads the page, and the panel should stay open.
+            var filters_button = document.getElementById('public-competitions-filters-button')
+            var filters_panel = document.getElementById('public-competitions-filters-panel')
+            var panel_storage_key = 'public-competitions-filters-open'
+
+            function set_panel_open(is_open) {
+                filters_panel.hidden = !is_open
+                filters_button.classList.toggle('public-competitions-tool-button-open', is_open)
+                filters_button.setAttribute('aria-expanded', is_open)
+                sessionStorage.setItem(panel_storage_key, is_open ? 'true' : 'false')
+            }
+
+            set_panel_open(sessionStorage.getItem(panel_storage_key) === 'true')
+            filters_button.addEventListener('click', function () {
+                set_panel_open(filters_panel.hidden)
+            })
+
+            // A checkbox applies right away. The search applies on Enter, like any form.
+            form.querySelectorAll('input[type="checkbox"]').forEach(function (checkbox) {
+                checkbox.addEventListener('change', function () {
+                    form.submit()
+                })
+            })
+
+            // Sort menu: opens on click, closes on an outside click or Escape. Its options are links.
+            var sort_button = document.getElementById('public-competitions-sort-button')
+            var sort_menu = document.getElementById('public-competitions-sort-menu')
+
+            function set_sort_open(is_open) {
+                sort_menu.hidden = !is_open
+                sort_button.classList.toggle('public-competitions-tool-button-open', is_open)
+                sort_button.setAttribute('aria-expanded', is_open)
+            }
+
+            sort_button.addEventListener('click', function () {
+                set_sort_open(sort_menu.hidden)
+            })
+            document.addEventListener('click', function (event) {
+                if (!event.target.closest('.public-competitions-sort')) {
+                    set_sort_open(false)
+                }
+            })
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape') {
+                    set_sort_open(false)
+                }
+            })
+        })()
+    </script>
 {% endblock %}

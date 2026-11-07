@@ -34,9 +34,6 @@ CODALAB.api = {
     get_competitions: function (query) {
         return CODALAB.api.request('GET', URLS.API + "competitions/", query)
     },
-    get_public_competitions: function (query) {
-        return CODALAB.api.request('GET', URLS.API + "competitions/public/", query)
-    },
     get_tags: function () {
         return CODALAB.api.request('GET', URLS.API + "tags/")
     },
