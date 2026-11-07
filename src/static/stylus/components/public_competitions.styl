@@ -1,0 +1,250 @@
+/* --------------------------------------------------------------------------------------
+ Public competitions page (templates/competitions/public.html)
+ The page title, cards, pagination and empty state come from the shared components.
+ */
+
+// Create and Upload, next to the page title
+.public-competitions-actions
+    display flex
+    gap 8px
+
+/* External competitions banner */
+.public-competitions-external
+    display flex
+    justify-content space-between
+    align-items center
+    gap 12px
+    margin-bottom 16px
+    padding 12px 16px
+    background-color $cb-blue-50
+    border 1px solid rgba($cb-blue-500, 0.25)
+    border-radius 10px
+    color $cb-navy-700
+    font-size 14px
+
+/* Toolbar: search on the left, Filters and Sort on the right */
+.public-competitions-toolbar
+    display flex
+    flex-wrap wrap
+    align-items center
+    gap 10px
+    margin-bottom 12px
+
+.public-competitions-search
+    position relative
+    flex 1 1 280px
+
+    .bi
+        position absolute
+        top 50%
+        left 12px
+        transform translateY(-50%)
+        color #6b7785
+        font-size 14px
+
+    input
+        width 100%
+        height 40px
+        padding 0 12px 0 36px
+        border 1px solid #e3e7ec
+        border-radius 8px
+        background-color #fff
+        box-shadow 0 1px 2px rgba(0, 0, 0, 0.04)
+        color $cb-navy-900
+        font-family inherit
+        font-size 14px
+
+        &:focus
+            outline none
+            border-color $cb-blue-500
+            box-shadow 0 0 0 3px rgba($cb-blue-500, 0.15)
+
+// Filters and Sort buttons. The look comes from cb-button-secondary, this sets the height.
+.public-competitions-tool-button
+    height 40px
+    padding 0 14px
+    box-shadow 0 1px 2px rgba(0, 0, 0, 0.04)
+
+// While the panel or the menu is open
+.public-competitions-tool-button-open
+    border-color $cb-blue-500
+    background-color $cb-blue-50
+    color $cb-blue-500
+
+.public-competitions-chevron
+    font-size 11px
+    transition transform 150ms ease
+
+.public-competitions-tool-button-open .public-competitions-chevron
+    transform rotate(180deg)
+
+.public-competitions-tool-label
+    color #6b7785
+    font-weight 400
+
+.public-competitions-tool-value
+    color $cb-navy-900
+    font-weight 600
+
+// Number of active filters on the Filters button
+.public-competitions-badge
+    min-width 20px
+    height 20px
+    padding 0 6px
+    border-radius 999px
+    background-color $cb-blue-500
+    color #fff
+    font-size 11px
+    font-weight 700
+    line-height 20px
+    text-align center
+
+/* Sort menu */
+.public-competitions-sort
+    position relative
+
+.public-competitions-sort-menu
+    position absolute
+    top calc(100% + 6px)
+    right 0
+    z-index 20
+    min-width 220px
+    padding 6px
+    background-color #fff
+    border 1px solid #e3e7ec
+    border-radius 10px
+    box-shadow 0 8px 20px rgba($cb-navy-900, 0.12)
+
+    // Why: a display rule on the class would show the menu even with the hidden attribute
+    &[hidden]
+        display none
+
+.public-competitions-sort-option
+    display flex
+    align-items center
+    gap 10px
+    padding 9px 10px
+    border-radius 6px
+    color $cb-navy-700
+    font-size 14px
+
+    &:hover
+        background-color $cb-blue-50
+        color $cb-blue-500
+
+// Check mark next to the sort in use
+.public-competitions-check
+    margin-left auto
+    color $cb-blue-500
+    visibility hidden
+
+.public-competitions-sort-option-selected
+    color $cb-blue-500
+    font-weight 600
+
+    .public-competitions-check
+        visibility visible
+
+/* Filters panel, opens under the toolbar */
+.public-competitions-panel
+    display grid
+    grid-template-columns repeat(auto-fill, minmax(200px, 1fr))
+    gap 16px 24px
+    margin-bottom 12px
+    padding 16px 18px
+    background-color #fff
+    border 1px solid #e3e7ec
+    border-radius 10px
+    box-shadow 0 1px 2px rgba(0, 0, 0, 0.04)
+
+    // Why: the display grid above would show the panel even with the hidden attribute
+    &[hidden]
+        display none
+
+.public-competitions-group-title
+    margin 0 0 8px
+    color #6b7785
+    font-size 12px
+    font-weight 700
+    letter-spacing 0.05em
+    text-transform uppercase
+
+.public-competitions-group label
+    display flex
+    align-items center
+    gap 8px
+    padding 4px 0
+    color $cb-navy-700
+    font-size 14px
+    cursor pointer
+
+    input
+        width 15px
+        height 15px
+        margin 0
+        accent-color $cb-blue-500
+
+/* Active search and filters, shown as pills under the toolbar */
+.public-competitions-pills
+    display flex
+    flex-wrap wrap
+    align-items center
+    gap 8px
+    margin-bottom 16px
+
+.public-competitions-pill
+    display inline-flex
+    align-items center
+    gap 6px
+    padding 4px 6px 4px 10px
+    border 1px solid rgba($cb-blue-500, 0.25)
+    border-radius 999px
+    background-color $cb-blue-50
+    color $cb-blue-500
+    font-size 13px
+    font-weight 500
+
+    a
+        display inline-flex
+        padding 2px
+        border-radius 999px
+        color $cb-blue-500
+
+        &:hover
+            background-color rgba($cb-blue-500, 0.15)
+
+    .bi
+        font-size 11px
+
+.public-competitions-clear
+    color $cb-blue-500
+    font-size 13px
+    font-weight 500
+
+    &:hover
+        color $cb-blue-400
+        text-decoration underline
+
+/* Space between the toolbar or pills and the cards */
+.public-competitions-filters + .hb-grid,
+.public-competitions-pills + .hb-grid
+    margin-top 8px
+
+/* Phones: search on its own line, Filters and Sort share the next line */
+@media only screen and (max-width 625px)
+    .public-competitions-search
+        flex-basis 100%
+
+    .public-competitions-toolbar > .public-competitions-tool-button,
+    .public-competitions-sort
+        flex 1
+
+    .public-competitions-tool-button
+        justify-content center
+
+    .public-competitions-sort .public-competitions-tool-button
+        width 100%
+
+    .public-competitions-external
+        flex-direction column
+        align-items flex-start
