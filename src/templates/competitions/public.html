@@ -8,8 +8,8 @@
             <h1 class="hb-title">Public Benchmarks and Competitions</h1>
             {% if user.is_authenticated %}
                 <div class="public-competitions-actions">
-                    <a class="cb-button cb-button-primary" href="{% url 'competitions:create' %}"><i class="bi bi-plus-lg"></i>Create</a>
-                    <a class="cb-button cb-button-outline" href="{% url 'competitions:upload' %}"><i class="bi bi-cloud-arrow-up"></i>Upload</a>
+                    <a class="cb-button cb-button-primary" href="{% url 'competitions:create' %}"><i class="bi bi-plus-lg" aria-hidden="true"></i>Create</a>
+                    <a class="cb-button cb-button-outline" href="{% url 'competitions:upload' %}"><i class="bi bi-cloud-arrow-up" aria-hidden="true"></i>Upload</a>
                 </div>
             {% endif %}
         </div>
