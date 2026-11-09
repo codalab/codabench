@@ -1,31 +1,69 @@
 /* --------------------------------------------------------------------------------------
  Mobile menu component (templates/components/mobile_menu.html)
+ The bottom part uses the shared items from user_menu.styl.
  */
-#mobile_menu
-    z-index 3
-    width 280px !important
+
+// Hidden off the right side of the screen until opened
+.mobile-menu
+    position fixed
+    top 0
+    right 0
+    bottom 0
+    z-index 101
+    width 280px
     max-width 85vw
-    background-color $cb-navy-900 !important
+    overflow-y auto
+    background-color #fff
+    box-shadow 0 8px 20px rgba($cb-navy-900, 0.12)
+    visibility hidden
+    transform translateX(100%)
+    transition transform 200ms ease, visibility 200ms
 
-    .item
-        color $cb-text-on-dark !important
+// Dims the page behind the menu. Clicking it closes the menu
+.mobile-menu-backdrop
+    position fixed
+    inset 0
+    z-index 100
+    background-color rgba($cb-navy-900, 0.5)
+    opacity 0
+    visibility hidden
+    transition opacity 200ms ease, visibility 200ms
 
-    a.item:hover
-        background-color rgba(255, 255, 255, .08) !important
+// Added to the body in static/js/ours/init.js
+body.mobile-menu-open
+    overflow hidden
 
-    // Section titles from components/user_menu_items.html
-    .header
-        padding 1em 1.14285714em 0.5em
-        color $cb-text-muted-on-dark
-        font-size 12px
-        letter-spacing 0.06em
-        text-transform uppercase
+    .mobile-menu
+        visibility visible
+        transform none
 
-    .ui.divider
-        margin 0.5em 0
-        border-top-color rgba(255, 255, 255, .1) !important
-        border-bottom none !important
+    .mobile-menu-backdrop
+        opacity 1
+        visibility visible
 
-    .mobile-menu-user
-        font-weight bold
-        border-top 1px solid rgba(255, 255, 255, .1)
+/* Top part: same dark look as the header, because these are the header links */
+.mobile-menu-top
+    background-color $cb-navy-900
+
+.mobile-menu-link
+    display flex
+    align-items center
+    gap 8px
+    padding 12px 16px
+    color $cb-text-on-dark
+    font-size 14px
+
+    .icon
+        margin 0
+
+a.mobile-menu-link:hover
+    background-color rgba(255, 255, 255, .08)
+    color $cb-text-on-dark
+
+.mobile-menu-user
+    border-top 1px solid rgba(255, 255, 255, .1)
+    font-weight bold
+
+/* Bottom part */
+.mobile-menu-items
+    padding 6px

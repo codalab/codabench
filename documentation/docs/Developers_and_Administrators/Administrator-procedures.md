@@ -363,8 +363,8 @@ Superusers can create, edit, and organize categories and tags directly in the **
 
 1. Log in with a superuser account and open the Django Admin (`/admin/`).
 2. Under **Competitions**:
-    - **Tag categories:** Click `Tag categories` to add, rename, or delete categories (e.g. *Conferences*, *Fields of Application*, *Machine Learning Domain*, or any custom taxonomy for your instance).
-    - **Tags:** Click `Tags` to add individual tags, update names, or assign them to a category.
+    - **Tag categories:** Click `Add Tag category`, enter the category name, and click **Save**.
+    - **Tags:** Click `Add Tag`, enter the tag name, select its parent category from the dropdown, and click **Save**.
 
 !!! tip "Automatic UI Integration"
     Categories and tags configured in Django Admin automatically appear in the filter panels of both the public competitions list and the [Competitions Dashboard](../../Participants/Competitions-Dashboard.md) (including its charts and Data Explorer).
@@ -414,4 +414,3 @@ To force re-evaluation and retag all competitions (including already tagged ones
 ```bash
 docker compose exec django ./manage.py run_auto_tags --all
 ```
-

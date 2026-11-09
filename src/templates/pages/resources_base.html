@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{# Shared layout of the Competitions, Resources, Queues, Organizations and Quota pages. #}
+{# Each page fills resources_content. #}
+
+{% block content %}
+    <div class="resources-page">
+        <div class="side-layout">
+            {% include "components/resources_nav.html" %}
+            <div class="side-content">
+                {% block resources_content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

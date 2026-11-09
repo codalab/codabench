@@ -1,0 +1,20 @@
+{# Pagination, shown only when there is more than one page. Expects `page` (a Django Paginator page). #}
+{# The left and right groups always render so the page number stays in the center. #}
+
+{% if page.has_other_pages %}
+<div class="cb-pagination">
+    <div class="cb-pagination-left">
+        {% if page.has_previous %}
+            <a class="cb-pagination-button" href="?page={{ page.previous_page_number }}" aria-label="Previous page"><i class="arrow left icon"></i></a>
+        {% endif %}
+    </div>
+
+    <span class="cb-pagination-label">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+
+    <div class="cb-pagination-right">
+        {% if page.has_next %}
+            <a class="cb-pagination-button" href="?page={{ page.next_page_number }}" aria-label="Next page"><i class="arrow right icon"></i></a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}

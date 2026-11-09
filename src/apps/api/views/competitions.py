@@ -790,6 +790,13 @@ class TagViewSet(ReadOnlyModelViewSet):
     pagination_class = None
 
 
+class TagViewSet(ReadOnlyModelViewSet):
+    queryset = Tag.objects.all().select_related('category')
+    serializer_class = TagSerializer
+    permission_classes = (AllowAny,)
+    pagination_class = None
+
+
 class PhaseViewSet(ModelViewSet):
     serializer_class = PhaseSerializer
 
@@ -853,7 +860,7 @@ class PhaseViewSet(ModelViewSet):
         comp = phase.competition
 
         # Get submissions with no parent
-        submissions = phase.submissions.filter(parent__isnull=True)
+        submissions = phase.submissions.filter(parent__isnull=True, is_soft_deleted=False, data__isnull=False)
 
         can_re_run_submissions = False
         error_message = ""
@@ -891,11 +898,10 @@ class PhaseViewSet(ModelViewSet):
 
         # error when user is not super user or admin of the competition
         if can_re_run_submissions:
-            # rerun all submissions
-            for submission in submissions:
+            rerunnable = [s for s in submissions if s.status in Submission.RERUNNABLE_STATUSES]
+            for submission in rerunnable:
                 submission.re_run()
-            rerun_count = len(submissions)
-            return Response({"count": rerun_count})
+            return Response({"count": len(rerunnable)})
         else:
             raise PermissionDenied(error_message)
 

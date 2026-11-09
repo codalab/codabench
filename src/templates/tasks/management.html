@@ -1,10 +1,7 @@
-{% extends "base.html" %}
+{% extends "pages/resources_base.html" %}
 
 {% block title %}Resources - Codabench{% endblock %}
 
-{% block content %}
-    <div class="sixteen wide column">
-        <management></management>
-        <quota-management></quota-management>
-    </div>
+{% block resources_content %}
+    <management></management>
 {% endblock %}

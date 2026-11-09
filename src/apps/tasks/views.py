@@ -8,6 +8,10 @@ class TaskManagement(LoginRequiredMixin, TemplateView):
     template_name = 'tasks/management.html'
 
 
+class QuotaView(LoginRequiredMixin, TemplateView):
+    template_name = 'tasks/quota.html'
+
+
 class TaskDetailView(LoginRequiredMixin, DetailView):
     queryset = Task.objects.all()
     template_name = 'tasks/task_detail.html'

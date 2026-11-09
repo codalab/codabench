@@ -56,7 +56,7 @@ def task_creation(page):
     )
     page.get_by_role("textbox", name="Description").click()
     page.get_by_role("textbox", name="Description").fill("Test Descirption Task")
-    page.get_by_text("Datasets and programs").nth(3).click()
+    page.get_by_text("Datasets and programs").nth(2).click()
     page.locator("#scoring_program").click()
     page.locator("#scoring_program").fill("test")
     page.locator("a").filter(

@@ -3,18 +3,11 @@
  */
 #header
     margin-bottom 20px
-    padding 0
     color $cb-text-on-dark
     background-color $cb-navy-900
     // Dot pattern on top of a navy gradient
     background-image radial-gradient(rgba(255, 255, 255, 0.10) 1px, transparent 1px), linear-gradient(135deg, $cb-navy-900 0%, $cb-navy-800 55%, $cb-navy-700 100%)
     background-size 20px 20px, cover
-
-    .ui.menu .ui.dropdown .menu>.item
-        color rgba(0, 0, 0, 0.6) !important
-
-    .icon.user.outline
-        margin-right 0
 
 .header-inner
     display flex
@@ -59,47 +52,79 @@
     font-weight normal
 
 /* Menu */
-#topleft_menu
-    margin 0
+.header-nav
+    display flex
+    align-items center
+    flex-wrap wrap
+    gap 4px
 
-    .right.menu.item
-        display flex
-        align-items center
-        padding 0
-        flex-wrap wrap
-        gap 4px
+.header-link
+    display flex
+    align-items center
+    gap 6px
+    padding 8px 12px
+    border-radius 6px
+    color $cb-text-on-dark
+    font-size 14px
+    line-height 1.2
 
-    // Links and buttons share the same box so they sit on one line
-    > .right.menu > .item
-        display flex
-        align-items center
-        margin 0 !important
-        padding 8px 12px !important
-        line-height 1.2
-        color $cb-text-on-dark !important
+    &:hover
+        background-color rgba(255, 255, 255, .12)
+        color $cb-text-on-dark
 
-    // Login / Sign-up buttons
-    .item.style_button
-        color $cb-text-on-dark !important
-        background-color rgba(255, 255, 255, .12) !important
-        font-weight 100
+    .icon
+        margin 0
 
-    .item.style_button:hover
-        color #fff !important
-        background-color rgba(255, 255, 255, .25) !important
+// Login / Sign-up buttons
+.header-button
+    background-color rgba(255, 255, 255, .12)
+
+    &:hover
+        background-color rgba(255, 255, 255, .25)
+        color #fff
+
+/* User menu: the panel opens below the username */
+.user-menu
+    position relative
+
+.user-menu-button
+    border none
+    background none
+    font-family inherit
+    cursor pointer
+
+.user-menu-panel
+    display none
+    position absolute
+    top calc(100% + 6px)
+    right 0
+    z-index 100
+    min-width 210px
+    max-height 80vh
+    padding 6px
+    overflow-y auto
+    border 1px solid rgba($cb-navy-900, 0.1)
+    border-radius 6px
+    background-color #fff
+    box-shadow 0 8px 20px rgba($cb-navy-900, 0.12)
+
+// Added in static/js/ours/init.js
+.user-menu-open .user-menu-panel
+    display block
 
 /* Mobile menu button (shown on small screens only) */
 #hamburger_button
     display none
+    padding 10px 12px
+    border none
+    border-radius 6px
+    background-color rgba(255, 255, 255, .12)
+    color $cb-text-on-dark
+    cursor pointer
 
-    .button
-        margin 0
-        color $cb-text-on-dark !important
-        background-color rgba(255, 255, 255, .12) !important
-
-    .button:hover
-        color #fff !important
-        background-color rgba(255, 255, 255, .25) !important
+    &:hover
+        background-color rgba(255, 255, 255, .25)
+        color #fff
 
     .icon
         margin 0
@@ -110,8 +135,8 @@
         flex-wrap nowrap
         padding 16px
 
-    #topleft_menu
-        display none !important
+    .header-nav
+        display none
 
     #hamburger_button
         display block
