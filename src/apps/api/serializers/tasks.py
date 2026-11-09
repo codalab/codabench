@@ -231,28 +231,26 @@ class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):
         return SolutionSerializer(qs, many=True).data
 
     def get_public_datasets(self, instance):
-
-        input_data = instance.task.input_data
-        reference_data = instance.task.reference_data
-        ingestion_program = instance.task.ingestion_program
-        scoring_program = instance.task.scoring_program
-
-        # Some tasks may not have input data, reference data and ingestion program
-        # Checking all the datasets and programs and adding them to dataset_list_ids
-        dataset_list_ids = []
-        if input_data:
-            dataset_list_ids.append(input_data.id)
-        if reference_data:
-            dataset_list_ids.append(reference_data.id)
-        if ingestion_program:
-            dataset_list_ids.append(ingestion_program.id)
-        if scoring_program:
-            dataset_list_ids.append(scoring_program.id)
-
-        # Serializing the datasets
-        try:
-            qs = Data.objects.filter(id__in=dataset_list_ids)
-            return DataDetailSerializer(qs, many=True).data
-        except Exception:
-            # No datasets or programs to return
+        task = instance.task
+        datasets = {
+            d.pk: d for d in (
+                task.input_data, task.reference_data, task.ingestion_program, task.scoring_program
+            ) if d
+        }
+        if not datasets:
             return []
+        try:
+            return DataDetailSerializer(sorted(datasets.values(), key=lambda d: d.pk), many=True).data
+        except Exception:
+            return []
+
+
+class PhaseTaskInstanceSmallSerializer(PhaseTaskInstanceSerializer):
+    solutions = None
+    public_datasets = None
+
+    class Meta(PhaseTaskInstanceSerializer.Meta):
+        fields = (
+            'task', 'order_index', 'phase', 'id',
+            'value', 'key', 'created_when', 'name',
+        )

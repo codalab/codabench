@@ -6,7 +6,7 @@ from io import StringIO
 from django.http import HttpResponse
 from tempfile import SpooledTemporaryFile
 from django.db import IntegrityError
-from django.db.models import Subquery, OuterRef, Q
+from django.db.models import Subquery, OuterRef, Q, Prefetch
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
@@ -27,7 +27,7 @@ from api.serializers.competitions import TagSerializer, CompetitionSerializerSim
 from api.serializers.leaderboards import LeaderboardPhaseSerializer, LeaderboardSerializer
 from competitions.emails import send_participation_requested_emails, send_participation_accepted_emails, \
     send_participation_denied_emails, send_direct_participant_email
-from competitions.models import Tag, Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant, Submission
+from competitions.models import Tag, Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant, Submission, PhaseTaskInstance
 from datasets.models import Data
 from competitions.tasks import batch_send_email, manual_migration, create_competition_dump
 from leaderboards.models import Leaderboard, Column
@@ -175,32 +175,27 @@ class CompetitionViewSet(ModelViewSet):
 
         # On GETs lets optimize the query to reduce DB calls
         if self.request.method == 'GET':
-
             qs = qs.select_related('created_by')
-            if self.action != 'list':
-                qs = qs.select_related('created_by')
-                qs = qs.prefetch_related(
-                    'phases',
-                    'phases__submissions',
-                    'phases__tasks',
-                    'phases__tasks__solutions',
-                    'phases__tasks__solutions__data',
-                    'pages',
-                    'phases__leaderboard',
-                    'phases__leaderboard__columns',
-                    'collaborators',
+            if self.action == 'retrieve':
+                task_instances = PhaseTaskInstance.objects.select_related(
+                    'task',
+                    'task__input_data',
+                    'task__reference_data',
+                    'task__ingestion_program',
+                    'task__scoring_program',
+                ).prefetch_related(
+                    'task__solutions__data',
+                    'task__solutions__tasks',
                 )
-                # qs = qs.annotate(participant_count=Count(F('participants'), distinct=True))
-                # qs = qs.annotate(submission_count=Count(
-                #     # Filtering out children submissions so we only count distinct submissions
-                #     Case(
-                #         When(phases__submissions__parent__isnull=True, then='phases__submissions__pk')
-                #     ), distinct=True)
-                # )
-
-        # search_query is true when called from searchbar
-        if search_query:
-            qs = qs.filter(Q(title__icontains=search_query) | Q(description__icontains=search_query))
+                qs = qs.select_related('queue').prefetch_related(
+                    Prefetch('phases', queryset=Phase.objects.select_related('public_data', 'starting_kit')),
+                    Prefetch('phases__task_instances', queryset=task_instances),
+                    'pages',
+                    'collaborators',
+                    'whitelist_emails',
+                )
+            elif self.action != 'list':
+                qs = qs.prefetch_related('phases')
 
         qs = qs.order_by('-created_when')
         return qs
@@ -759,8 +754,6 @@ class CompetitionViewSet(ModelViewSet):
 
     def perform_update(self, serializer):
         instance = self.get_object()
-        instance.make_programs_available
-        instance.make_input_data_available
         initial_tasks = {phase.id: set(phase.tasks.all()) for phase in instance.phases.all().prefetch_related('tasks')}
         instance = serializer.save()
         self._ensure_organizer_participants_accepted(instance)
@@ -783,7 +776,11 @@ class PhaseViewSet(ModelViewSet):
     serializer_class = PhaseSerializer
 
     def get_queryset(self):
-        qs = Phase.objects.all()
+        qs = Phase.objects.select_related('competition', 'leaderboard')
+        if self.action == 'get_leaderboard':
+            qs = qs.prefetch_related(
+                Prefetch('task_instances', queryset=PhaseTaskInstance.objects.select_related('task'))
+            )
         return qs
 
     def list(self, request, *args, **kwargs):
