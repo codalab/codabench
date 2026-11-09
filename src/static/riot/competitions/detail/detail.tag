@@ -16,22 +16,27 @@
             self.update_competition_data()
         })
 
-        self.update_competition_data = function () {
+        self.update_competition_data = function (options) {
+            const select_phase = !options || options.select_phase !== false
             CODALAB.api.get_competition(self.opts.competition_pk, self.opts.secret_key)
                 .done(function (data) {
                     self.competition = data
                     CODALAB.events.trigger('competition_loaded', self.competition)
-                    let selected_phase_index = _.get(_.find(self.competition.phases, {'status': 'Current'}), 'id')
-                    if (selected_phase_index == null) {
-                        selected_phase_index = _.get(_.find(self.competition.phases, {is_final_phase: true}), 'id')
+                    if (select_phase) {
+                        let selected_phase_index = _.get(_.find(self.competition.phases, {'status': 'Current'}), 'id')
+                        if (selected_phase_index == null) {
+                            selected_phase_index = _.get(_.find(self.competition.phases, {is_final_phase: true}), 'id')
+                        }
+                        CODALAB.events.trigger('phase.selected', _.find(self.competition.phases, {id: selected_phase_index}))
                     }
-                    CODALAB.events.trigger('phase.selected',(_.find(self.competition.phases, {id: selected_phase_index})))
                     self.update()
                 })
-                .fail(function (response) {
-                    toastr.error("Could not find benchmark")
-                })
+                .fail(function () { toastr.error("Could not find benchmark") })
         }
+
+        CODALAB.events.on('new_submission_created', function () {
+            self.update_competition_data({select_phase: false})
+        })
 
         // This is triggered when a new submission is uploaded
         // This gets the updated submissions to refresh the used submissions count
