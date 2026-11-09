@@ -8,7 +8,7 @@ from competitions.models import Submission, Phase
 from leaderboards.models import Leaderboard, Column, SubmissionScore
 
 from .fields import CharacterSeparatedField
-from .tasks import PhaseTaskInstanceSerializer, PhaseTaskInstanceSmallSerializer
+from .tasks import PhaseTaskInstanceSmallSerializer
 
 
 class ColumnSerializer(WritableNestedModelSerializer):
