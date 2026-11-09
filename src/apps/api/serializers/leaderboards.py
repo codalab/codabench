@@ -176,7 +176,9 @@ class LeaderboardPhaseSerializer(serializers.ModelSerializer):
         """Une seule requête pour les colonnes (déjà triées par index), mise en cache par leaderboard."""
         cache = self.__dict__.setdefault('_columns_cache', {})
         if instance.leaderboard_id not in cache:
-            cache[instance.leaderboard_id] = list(instance.leaderboard.columns.all())
+            cache[instance.leaderboard_id] = list(
+                instance.leaderboard.columns.order_by('index')
+            )
         return cache[instance.leaderboard_id]
 
     def get_columns(self, instance):
