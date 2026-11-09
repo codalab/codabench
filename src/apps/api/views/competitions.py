@@ -116,10 +116,19 @@ class CompetitionViewSet(ModelViewSet):
                 # or
                 # competitions in which this user is participant and status is approved
                 qs = qs.filter(
-                    (Q(created_by=self.request.user)) |
-                    (Q(collaborators__in=[self.request.user])) |
-                    (Q(published=True) & ~Q(created_by=self.request.user)) |
-                    (Q(participants__user=self.request.user) & Q(participants__status="approved"))
+                    (
+                        Q(title__icontains=search_query)
+                        | Q(description__icontains=search_query)
+                    )
+                    & (
+                        Q(created_by=self.request.user)
+                        | Q(collaborators=self.request.user)
+                        | Q(published=True)
+                        | Q(
+                            participants__user=self.request.user,
+                            participants__status="approved",
+                        )
+                    )
                 ).distinct()
 
             # if `secret_key` is true, this is called for a secret competition
@@ -188,7 +197,8 @@ class CompetitionViewSet(ModelViewSet):
                     'task__solutions__tasks',
                 )
                 qs = qs.select_related('queue').prefetch_related(
-                    Prefetch('phases', queryset=Phase.objects.select_related('public_data', 'starting_kit')),
+                    Prefetch('phases', queryset=Phase.objects.select_related('public_data', 'starting_kit', 'leaderboard').prefetch_related('leaderboard__columns')
+                             ),
                     Prefetch('phases__task_instances', queryset=task_instances),
                     'pages',
                     'collaborators',
