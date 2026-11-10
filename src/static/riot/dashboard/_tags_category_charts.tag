@@ -3,7 +3,15 @@
         <!-- Tag Category Card with Type Switcher -->
         <div class="dashboard-chart-card tag-category-card { 'full-width': (idx === opts.p.chartCards.length - 1 && opts.p.chartCards.length % 2 === 1) }" each="{ chart, idx in opts.p.chartCards }">
             <div class="chart-header chart-header-with-controls">
-                <h4 class="chart-title">Competitions by { chart.catName }</h4>
+                <h4 class="chart-title">
+                    Competitions by { chart.catName }
+                    <span class="tag-info-popover-trigger" title="Tag calculation info">
+                        <i class="blue info circle icon" style="cursor: pointer; margin-left: 6px; font-size: 0.95em;"></i>
+                        <span class="tag-info-popover">
+                            A competition can have multiple tags in this category (or none). Counts and pie chart totals represent total tag assignments across filtered competitions, rather than unique competitions.
+                        </span>
+                    </span>
+                </h4>
                 <div class="ui mini basic icon buttons chart-type-buttons">
                     <button type="button" class="ui button { active: getCategoryChartType(chart.catName) === 'horizontalBar' }"
                             onclick="{ onChangeCategoryType.bind(this, chart.catName, 'horizontalBar') }" title="Horizontal Bar">
@@ -19,7 +27,7 @@
                     </button>
                 </div>
             </div>
-            <div class="canvas-wrap canvas-wrap-expanded">
+            <div class="canvas-wrap canvas-wrap-expanded { 'canvas-wrap-doughnut': getCategoryChartType(chart.catName) === 'doughnut' }" style="{ getCategoryChartType(chart.catName) === 'doughnut' ? 'height: 320px !important;' : '' }">
                 <canvas id="{ chart.id }"></canvas>
             </div>
         </div>
@@ -43,8 +51,8 @@
         self.onChangeCategoryType = function (cat, type, e) {
             if (e) e.preventDefault();
             self.categoryChartTypes[cat] = type;
-            self.renderCharts();
             self.update();
+            self.renderCharts();
         };
 
         self.destroyAllCharts = function () {
@@ -83,14 +91,16 @@
                 var counts = (opts.p && opts.p.categoryTagsCounts && opts.p.categoryTagsCounts[cat]) || {};
                 var pairs = Object.keys(counts).map(function (k) { return [k, counts[k]]; });
                 pairs.sort(function (a, b) { return b[1] - a[1]; });
-                pairs = pairs.slice(0, 15);
+
+                var chartType = self.getCategoryChartType(cat);
+                var maxItems = (chartType === "doughnut") ? 36 : 25;
+                pairs = pairs.slice(0, maxItems);
 
                 var canvasId = chart.id;
                 var el = document.getElementById(canvasId);
                 var color = DISTINCT_COLORS[chart.typeIdx % DISTINCT_COLORS.length];
                 if (!el) return;
 
-                var chartType = self.getCategoryChartType(cat);
                 var labels = pairs.map(function (p) { return p[0]; });
                 var dataVals = pairs.map(function (p) { return p[1]; });
 
@@ -98,6 +108,7 @@
                     self.charts[canvasId].data.labels = labels;
                     self.charts[canvasId].data.datasets[0].data = dataVals;
                     if (chartType === "doughnut") {
+                        self.charts[canvasId].data.datasets[0].label = "Tag assignments";
                         self.charts[canvasId].data.datasets[0].backgroundColor = getDistinctColors(labels.length);
                     }
                     self.charts[canvasId].update();
@@ -117,9 +128,17 @@
                                 responsive: true,
                                 maintainAspectRatio: false,
                                 legend: { display: false },
+                                tooltips: {
+                                    callbacks: {
+                                        label: function (tooltipItem) {
+                                            var val = tooltipItem.yLabel !== undefined ? tooltipItem.yLabel : tooltipItem.value;
+                                            return " " + val + " competitions with this tag";
+                                        }
+                                    }
+                                },
                                 scales: {
                                     yAxes: [{ ticks: { beginAtZero: true, precision: 0 } }],
-                                    xAxes: [{ gridLines: { display: false }, ticks: { autoSkip: false, maxRotation: 45, minRotation: 20, fontSize: 11, fontColor: "#334155" } }]
+                                    xAxes: [{ gridLines: { display: false }, ticks: { autoSkip: true, autoSkipPadding: 8, maxTicksLimit: 36, maxRotation: 45, minRotation: 0, fontSize: 11, fontColor: "#334155" } }]
                                 }
                             }
                         });
@@ -129,7 +148,7 @@
                             data: {
                                 labels: labels,
                                 datasets: [{
-                                    label: "Competitions",
+                                    label: "Tag assignments",
                                     data: dataVals,
                                     backgroundColor: getDistinctColors(labels.length)
                                 }]
@@ -137,8 +156,50 @@
                             options: {
                                 responsive: true,
                                 maintainAspectRatio: false,
-                                cutoutPercentage: 55,
-                                legend: { position: "right", labels: { boxWidth: 12, fontSize: 11 } }
+                                cutoutPercentage: 50,
+                                legend: {
+                                    display: true,
+                                    position: "right",
+                                    labels: {
+                                        boxWidth: 10,
+                                        fontSize: 10,
+                                        padding: 4,
+                                        generateLabels: function (chart) {
+                                            var data = chart.data;
+                                            if (data.labels.length && data.datasets.length) {
+                                                var ds = data.datasets[0];
+                                                return data.labels.map(function (label, i) {
+                                                    var meta = chart.getDatasetMeta(0);
+                                                    var arc = (meta && meta.data && meta.data[i]) || {};
+                                                    var custom = arc.custom || {};
+                                                    var fill = custom.backgroundColor || (ds.backgroundColor && ds.backgroundColor[i]) || "#999";
+                                                    var shortLabel = label.length > 20 ? label.substring(0, 18) + "..." : label;
+                                                    return {
+                                                        text: shortLabel + " (" + (ds.data[i] || 0) + ")",
+                                                        fillStyle: fill,
+                                                        strokeStyle: fill,
+                                                        lineWidth: 0,
+                                                        hidden: isNaN(ds.data[i]) || (arc && arc.hidden),
+                                                        index: i
+                                                    };
+                                                }).slice(0, 36);
+                                            }
+                                            return [];
+                                        }
+                                    }
+                                },
+                                tooltips: {
+                                    callbacks: {
+                                        label: function (tooltipItem, data) {
+                                            var dataset = data.datasets[tooltipItem.datasetIndex];
+                                            var val = dataset.data[tooltipItem.index];
+                                            var total = dataset.data.reduce(function (a, b) { return a + b; }, 0);
+                                            var pct = total > 0 ? ((val / total) * 100).toFixed(1) + "%" : "0%";
+                                            var label = data.labels[tooltipItem.index] || "";
+                                            return label + ": " + val + " tag assignments (" + pct + ")";
+                                        }
+                                    }
+                                }
                             }
                         });
                     } else {
@@ -152,6 +213,14 @@
                                 responsive: true,
                                 maintainAspectRatio: false,
                                 legend: { display: false },
+                                tooltips: {
+                                    callbacks: {
+                                        label: function (tooltipItem) {
+                                            var val = tooltipItem.xLabel !== undefined ? tooltipItem.xLabel : tooltipItem.value;
+                                            return " " + val + " competitions with this tag";
+                                        }
+                                    }
+                                },
                                 scales: {
                                     xAxes: [{ ticks: { beginAtZero: true, precision: 0 } }],
                                     yAxes: [{ gridLines: { display: false }, ticks: { fontSize: 11, fontColor: "#334155" } }]
@@ -161,6 +230,14 @@
                     }
                 }
             });
+
+            setTimeout(function () {
+                $(self.root).find('.tag-info-tooltip').popup({
+                    position: 'top left',
+                    variation: 'inverted',
+                    hoverable: true
+                });
+            }, 0);
         };
 
         self.lastFilteredRows = null;

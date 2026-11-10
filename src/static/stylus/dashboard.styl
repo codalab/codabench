@@ -302,6 +302,9 @@ dashboard-tags-heatmap
 .canvas-wrap-expanded
     height 260px !important
 
+.canvas-wrap-doughnut
+    height 320px !important
+
 .canvas-wrap-heatmap
     height 380px !important
 
@@ -404,6 +407,63 @@ dashboard-tags-heatmap
         align-self flex-start
         margin 0 !important
 
+// Info tooltip popover for tag statistics
+.tag-info-popover-trigger
+    position relative
+    display inline-flex
+    align-items center
+    vertical-align middle
+    cursor pointer
+    margin-left 6px
+    color #94a3b8
+    font-size 0.9em
+
+    &:hover
+        color #2185d0
+
+        .tag-info-popover
+            visibility visible
+            opacity 1
+            transform translateY(0)
+
+    .tag-info-popover
+        visibility hidden
+        opacity 0
+        transform translateY(4px)
+        transition opacity 0.15s ease, transform 0.15s ease
+        position absolute
+        bottom calc(100% + 8px)
+        left -8px
+        width 270px
+        background #1e293b
+        color #f8fafc
+        padding 8px 12px
+        border-radius 6px
+        font-size 11px
+        font-weight normal
+        line-height 1.45
+        text-align left
+        white-space normal
+        box-shadow 0 4px 14px rgba(0, 0, 0, 0.22)
+        z-index 9999
+        pointer-events none
+
+        &:after
+            content ''
+            position absolute
+            top 100%
+            left 14px
+            border-width 5px
+            border-style solid
+            border-color #1e293b transparent transparent transparent
+
+        &.popover-right
+            left auto
+            right -8px
+            &:after
+                left auto
+                right 14px
+
 /* Competitions table card & scroll container */
 .table-card
     background #fff !important
@@ -446,7 +506,7 @@ dashboard-tags-heatmap
 
 .explorer-controls-grid
     display grid
-    grid-template-columns repeat(4, minmax(0, 1fr))
+    grid-template-columns repeat(3, minmax(0, 1fr))
     gap 14px
     align-items flex-end
 
@@ -655,6 +715,9 @@ dashboard-tags-heatmap
 
     .canvas-wrap-expanded
         height 230px !important
+
+    .canvas-wrap-doughnut
+        height 320px !important
 
     .canvas-wrap-custom
         height 280px !important
