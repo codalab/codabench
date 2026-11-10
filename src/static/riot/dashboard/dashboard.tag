@@ -26,15 +26,7 @@
                     <!-- Navigation Tabs (Full width of the main content, excluding filter sidebar) -->
                     <div class="ui tiny fluid three secondary pointing tabular menu details-menu dashboard-tabs-menu">
                         <div class="item { active: activeTab === 'overview' }" onclick="{ setActiveTab.bind(this, 'overview') }">Overview</div>
-                        <div class="item { active: activeTab === 'tags' }" onclick="{ setActiveTab.bind(this, 'tags') }">
-                            Tags Statistics
-                            <span class="tag-info-popover-trigger" style="margin-left: 6px;" onclick="{ stopPropagation }">
-                                <i class="blue info circle icon" style="font-size: 0.9em; margin: 0;"></i>
-                                <span class="tag-info-popover popover-right" style="font-weight: normal;">
-                                    Tag statistics reflect total tag assignments across filtered competitions. Competitions may have multiple tags per category or none.
-                                </span>
-                            </span>
-                        </div>
+                        <div class="item { active: activeTab === 'tags' }" onclick="{ setActiveTab.bind(this, 'tags') }">Tags Statistics</div>
                         <div class="item { active: activeTab === 'explorer' }" onclick="{ setActiveTab.bind(this, 'explorer') }">Data Exploration</div>
                     </div>
 
@@ -51,11 +43,14 @@
 
                     <!-- Tab 2: Tags Statistics -->
                     <div class="dashboard-tab-pane" show="{ activeTab === 'tags' }">
-                        <!-- Calculation Note Banner -->
-                        <div class="ui mini info message tag-statistics-notice" style="margin-bottom: 16px; padding: 10px 14px; display: flex; align-items: center; gap: 10px; border-radius: 8px;">
-                            <i class="blue info circle icon" style="font-size: 1.25em; margin: 0;"></i>
-                            <div class="content" style="font-size: 12px; color: #1e3a8a; line-height: 1.4;">
-                                <strong>How tag statistics are calculated:</strong> Competitions may have multiple tags in the same category (or none). Chart counts and pie chart totals represent total tag assignments across filtered competitions, rather than unique competitions.
+                        <!-- Calculation Note Banner (aligned with homepage announcement style) -->
+                        <div class="announcement announcement-info tag-statistics-notice">
+                            <i class="announcement-icon info circle icon"></i>
+                            <div class="announcement-content">
+                                <div class="announcement-title">How tag statistics are calculated</div>
+                                <div class="announcement-body">
+                                    Competitions may have multiple tags in the same category (or none). Chart counts and pie chart totals represent total tag assignments across filtered competitions, rather than unique competitions.
+                                </div>
                             </div>
                         </div>
                         <div class="dashboard-charts-grid">
@@ -197,19 +192,6 @@
 
         // Tabs & Navigation State
         self.activeTab = 'overview';
-        self.initTagPopups = () => {
-            setTimeout(function () {
-                $(self.root).find('.tag-calc-info').popup({
-                    position: 'bottom right',
-                    variation: 'inverted',
-                    hoverable: true
-                });
-            }, 0);
-        };
-
-        self.stopPropagation = (e) => {
-            if (e) e.stopPropagation();
-        };
 
         self.setActiveTab = (tab) => {
             if (self.activeTab === tab) return;
@@ -218,9 +200,6 @@
                 window.location.hash = '#/' + tab;
             }
             self.update();
-            if (tab === 'tags') {
-                self.initTagPopups();
-            }
         };
 
         self.syncTabFromHash = () => {
@@ -229,9 +208,6 @@
                 if (self.activeTab !== rawHash) {
                     self.activeTab = rawHash;
                     self.update();
-                    if (self.activeTab === 'tags') {
-                        self.initTagPopups();
-                    }
                 }
             }
         };
@@ -257,7 +233,6 @@
             window.addEventListener('hashchange', self.syncTabFromHash);
             self.fetchData();
             self.fetchUserCompetitionIds();
-            self.initTagPopups();
         });
 
         self.on('unmount', () => {
