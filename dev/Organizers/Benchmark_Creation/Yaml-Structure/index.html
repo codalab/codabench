@@ -223,6 +223,8 @@
       
         
       
+        
+      
     
     
     
@@ -544,6 +546,8 @@
       
         
       
+        
+      
     
     
     
@@ -630,6 +634,33 @@
     
   
   List of Current Benchmarks and Competitions
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://www.codabench.org/dashboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Competitions Dashboard
 
     
   </span>
@@ -3516,6 +3547,15 @@
 <li><strong>auto_run_submissions:</strong> a boolean (default: <code>True</code>) if set to <code>False</code>, organizers have to manually run the submissions of each participant</li>
 <li><strong>can_participants_make_submissions_public:</strong> a boolean (default: <code>True</code>) if set to <code>False</code>, participants cannot make their submissions public from submissions panel.</li>
 <li><strong>forum_enabled:</strong> a boolean (default: <code>True</code>) if set to <code>False</code>, organizers and participants cannot see or interact with competition forum.</li>
+<li><a id="tags"></a><strong>tags:</strong> Taxonomy tags associated with the competition grouped by category (dictionary mapping category names to lists of tag names). Category names and tag names must match existing entries in the platform taxonomy.<ul>
+<li>Default categories and tags:<ul>
+<li><strong>Machine Learning Domain:</strong> <em>Algorithms</em>, <em>Audio</em>, <em>AutoML</em>, <em>Computer Vision</em>, <em>Generative AI</em>, <em>Graphs</em>, <em>LLM</em>, <em>Multimodal</em>, <em>NLP</em>, <em>Other</em>, <em>Reinforcement Learning</em>, <em>Tabular</em>, <em>Time Series</em></li>
+<li><strong>Fields of Application:</strong> <em>Agriculture</em>, <em>Astronomy</em>, <em>Biology</em>, <em>Climate</em>, <em>Cybersecurity</em>, <em>Earth Observation</em>, <em>Education</em>, <em>Energy</em>, <em>Finance</em>, <em>E-commerce</em>, <em>Healthcare</em>, <em>Legal</em>, <em>Other</em>, <em>Robotics</em>, <em>Social Media</em>, <em>Sports</em>, <em>Transportation</em></li>
+<li><strong>Conference:</strong> <em>ACL</em>, <em>CVPR</em>, <em>ECCV</em>, <em>ECML PKDD</em>, <em>ICCV</em>, <em>ICLR</em>, <em>ICML</em>, <em>MICCAI</em>, <em>NAACL</em>, <em>NeurIPS</em>, <em>SemEval</em>, <em>WSDM</em></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 <div class="language-yaml highlight"><span class="filename">YAML</span><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Required</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
@@ -3537,6 +3577,12 @@
 </span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="nt">auto_run_submissions</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
 </span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="nt">can_participants_make_submissions_public</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
 </span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="nt">forum_enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="nt">tags</span><span class="p">:</span>
+</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="w">  </span><span class="nt">Machine Learning Domain</span><span class="p">:</span>
+</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Reinforcement Learning</span>
+</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Computer Vision</span>
+</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="w">  </span><span class="nt">Fields of Application</span><span class="p">:</span>
+</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Robotics</span>
 </span></code></pre></div>
 <h2 id="pages">Pages<a class="headerlink" href="#pages" title="Permanent link">&para;</a></h2>
 <h3 id="required_1">Required<a class="headerlink" href="#required_1" title="Permanent link">&para;</a></h3>

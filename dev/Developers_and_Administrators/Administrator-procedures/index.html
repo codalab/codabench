@@ -223,6 +223,8 @@
       
         
       
+        
+      
     
     
     
@@ -542,6 +544,8 @@
       
         
       
+        
+      
     
     
     
@@ -628,6 +632,33 @@
     
   
   List of Current Benchmarks and Competitions
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://www.codabench.org/dashboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Competitions Dashboard
 
     
   </span>
@@ -2422,6 +2453,62 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#tag-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Tag Management
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tag Management">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#creating-tags-via-django-admin" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Creating Tags via Django Admin
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#initializing-default-tags" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Initializing Default Tags
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Initializing Default Tags">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#resetting-tags" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Resetting Tags
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3648,6 +3735,62 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#tag-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Tag Management
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tag Management">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#creating-tags-via-django-admin" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Creating Tags via Django Admin
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#initializing-default-tags" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Initializing Default Tags
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Initializing Default Tags">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#resetting-tags" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Resetting Tags
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3939,6 +4082,34 @@ What it does:</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>A csv file named <code>codabench_statistics_published_comps.csv</code> is generated in <code>statistics</code> folder</p>
+</div>
+<h2 id="tag-management">Tag Management<a class="headerlink" href="#tag-management" title="Permanent link">&para;</a></h2>
+<p>Codabench includes Django admin interfaces and management commands to manage competition categories and tags.</p>
+<h3 id="creating-tags-via-django-admin">Creating Tags via Django Admin<a class="headerlink" href="#creating-tags-via-django-admin" title="Permanent link">&para;</a></h3>
+<p>Superusers can create and edit categories and tags directly in the <strong>Django Admin</strong> interface:</p>
+<ol>
+<li>Log in with a superuser account and open the Django Admin (<code>/admin/</code>).</li>
+<li>Under <strong>Competitions</strong>:<ul>
+<li><strong>Tag categories:</strong> Click <code>Add Tag category</code>, enter the category name, and click <strong>Save</strong>.</li>
+<li><strong>Tags:</strong> Click <code>Add Tag</code>, enter the tag name, select its parent category from the dropdown, and click <strong>Save</strong>.</li>
+</ul>
+</li>
+</ol>
+<h3 id="initializing-default-tags">Initializing Default Tags<a class="headerlink" href="#initializing-default-tags" title="Permanent link">&para;</a></h3>
+<p>To populate the database with default tag categories (<em>Machine Learning Domain</em>, <em>Fields of Application</em>, <em>Conference</em>) and their associated tags:</p>
+<div class="language-bash highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-26-1"><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>django<span class="w"> </span>./manage.py<span class="w"> </span>init_tags
+</span></code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For the complete list of default categories and tags populated by this command, see the <a href="../../Organizers/Benchmark_Creation/Yaml-Structure/#tags">YAML Structure documentation</a>.</p>
+</div>
+<h4 id="resetting-tags">Resetting Tags<a class="headerlink" href="#resetting-tags" title="Permanent link">&para;</a></h4>
+<p>To delete all existing tags and categories and recreate the default taxonomy:</p>
+<div class="language-bash highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-27-1"><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>django<span class="w"> </span>./manage.py<span class="w"> </span>init_tags<span class="w"> </span>--reset
+</span></code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Running <code>--reset</code> deletes all existing tags and categories, which also removes all assigned tags from existing competitions.</p>
 </div>
 
 
