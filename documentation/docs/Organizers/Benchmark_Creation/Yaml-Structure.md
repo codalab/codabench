@@ -35,7 +35,7 @@ For all v2 style competition bundles, be sure to add `version: 2` to the top of 
     - Default categories and tags:
         - **Machine Learning Domain:** *Algorithms*, *Audio*, *AutoML*, *Computer Vision*, *Generative AI*, *Graphs*, *LLM*, *Multimodal*, *NLP*, *Other*, *Reinforcement Learning*, *Tabular*, *Time Series*
         - **Fields of Application:** *Agriculture*, *Astronomy*, *Biology*, *Climate*, *Cybersecurity*, *Earth Observation*, *Education*, *Energy*, *Finance*, *E-commerce*, *Healthcare*, *Legal*, *Other*, *Robotics*, *Social Media*, *Sports*, *Transportation*
-        - **Conferences:** *ACL*, *CVPR*, *ECCV*, *ECML PKDD*, *ICCV*, *ICLR*, *ICML*, *MICCAI*, *NAACL*, *NeurIPS*, *SemEval*, *WSDM*
+        - **Conference:** *ACL*, *CVPR*, *ECCV*, *ECML PKDD*, *ICCV*, *ICLR*, *ICML*, *MICCAI*, *NAACL*, *NeurIPS*, *SemEval*, *WSDM*
 
 ```yaml
 # Required

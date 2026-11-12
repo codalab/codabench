@@ -368,7 +368,7 @@ Superusers can create and edit categories and tags directly in the **Django Admi
 
 ### Initializing Default Tags
 
-To populate the database with default tag categories (*Machine Learning Domain*, *Fields of Application*, *Conferences*) and their associated tags:
+To populate the database with default tag categories (*Machine Learning Domain*, *Fields of Application*, *Conference*) and their associated tags:
 
 ```bash
 docker compose exec django ./manage.py init_tags
