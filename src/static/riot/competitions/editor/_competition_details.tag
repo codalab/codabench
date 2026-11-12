@@ -63,7 +63,8 @@
                     </div>
                 </div>
                 <div if="{ tags_by_category.length === 0 }">
-                    <div class="ui active centered inline loader"></div>
+                    <div if="{ !tags_loaded }" class="ui active centered inline loader"></div>
+                    <span if="{ tags_loaded }" style="color: #888; font-style: italic; font-size: 13px;">No available tags</span>
                 </div>
             </div>
         </div>
@@ -318,6 +319,7 @@
                             tags: temp_categories[cat_name]
                         });
                     });
+                    self.tags_loaded = true;
                     self.update_selected_tags_cache();
                     self.update();
                 });
@@ -361,6 +363,7 @@
         })
 
         self.tags_by_category = []
+        self.tags_loaded = false
         self.all_tags = {}
         self.selected_tag_ids = []
         self.selected_tags_cache = []

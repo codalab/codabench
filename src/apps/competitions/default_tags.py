@@ -34,7 +34,7 @@ DEFAULT_TAXONOMY = {
         "Legal",
         "Other",
     ],
-    "Conferences": [
+    "Conference": [
         "NeurIPS",
         "CVPR",
         "ICML",

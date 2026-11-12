@@ -19,7 +19,7 @@
                     </button>
                 </div>
             </div>
-            <div class="canvas-wrap canvas-wrap-expanded">
+            <div class="canvas-wrap canvas-wrap-expanded { 'canvas-wrap-doughnut': getCategoryChartType(chart.catName) === 'doughnut' }" style="{ getCategoryChartType(chart.catName) === 'doughnut' ? 'height: 320px !important;' : '' }">
                 <canvas id="{ chart.id }"></canvas>
             </div>
         </div>
@@ -43,8 +43,8 @@
         self.onChangeCategoryType = function (cat, type, e) {
             if (e) e.preventDefault();
             self.categoryChartTypes[cat] = type;
-            self.renderCharts();
             self.update();
+            self.renderCharts();
         };
 
         self.destroyAllCharts = function () {
@@ -83,14 +83,16 @@
                 var counts = (opts.p && opts.p.categoryTagsCounts && opts.p.categoryTagsCounts[cat]) || {};
                 var pairs = Object.keys(counts).map(function (k) { return [k, counts[k]]; });
                 pairs.sort(function (a, b) { return b[1] - a[1]; });
-                pairs = pairs.slice(0, 15);
+
+                var chartType = self.getCategoryChartType(cat);
+                var maxItems = (chartType === "doughnut") ? 36 : 25;
+                pairs = pairs.slice(0, maxItems);
 
                 var canvasId = chart.id;
                 var el = document.getElementById(canvasId);
                 var color = DISTINCT_COLORS[chart.typeIdx % DISTINCT_COLORS.length];
                 if (!el) return;
 
-                var chartType = self.getCategoryChartType(cat);
                 var labels = pairs.map(function (p) { return p[0]; });
                 var dataVals = pairs.map(function (p) { return p[1]; });
 
@@ -98,6 +100,7 @@
                     self.charts[canvasId].data.labels = labels;
                     self.charts[canvasId].data.datasets[0].data = dataVals;
                     if (chartType === "doughnut") {
+                        self.charts[canvasId].data.datasets[0].label = "Tag assignments";
                         self.charts[canvasId].data.datasets[0].backgroundColor = getDistinctColors(labels.length);
                     }
                     self.charts[canvasId].update();
@@ -117,9 +120,21 @@
                                 responsive: true,
                                 maintainAspectRatio: false,
                                 legend: { display: false },
+                                tooltips: {
+                                    callbacks: {
+                                        label: function (tooltipItem, data) {
+                                            var dataset = data.datasets[tooltipItem.datasetIndex];
+                                            var val = dataset.data[tooltipItem.index];
+                                            var total = dataset.data.reduce(function (a, b) { return a + Number(b || 0); }, 0);
+                                            var pct = total > 0 ? ((val / total) * 100).toFixed(1) + "%" : "0%";
+                                            var compLabel = val === 1 ? " Competition" : " Competitions";
+                                            return " " + val + compLabel + " (" + pct + ")";
+                                        }
+                                    }
+                                },
                                 scales: {
                                     yAxes: [{ ticks: { beginAtZero: true, precision: 0 } }],
-                                    xAxes: [{ gridLines: { display: false }, ticks: { autoSkip: false, maxRotation: 45, minRotation: 20, fontSize: 11, fontColor: "#334155" } }]
+                                    xAxes: [{ gridLines: { display: false }, ticks: { autoSkip: true, autoSkipPadding: 8, maxTicksLimit: 36, maxRotation: 45, minRotation: 0, fontSize: 11, fontColor: "#334155" } }]
                                 }
                             }
                         });
@@ -137,8 +152,51 @@
                             options: {
                                 responsive: true,
                                 maintainAspectRatio: false,
-                                cutoutPercentage: 55,
-                                legend: { position: "right", labels: { boxWidth: 12, fontSize: 11 } }
+                                cutoutPercentage: 50,
+                                legend: {
+                                    display: true,
+                                    position: "right",
+                                    labels: {
+                                        boxWidth: 10,
+                                        fontSize: 10,
+                                        padding: 4,
+                                        generateLabels: function (chart) {
+                                            var data = chart.data;
+                                            if (data.labels.length && data.datasets.length) {
+                                                var ds = data.datasets[0];
+                                                return data.labels.map(function (label, i) {
+                                                    var meta = chart.getDatasetMeta(0);
+                                                    var arc = (meta && meta.data && meta.data[i]) || {};
+                                                    var custom = arc.custom || {};
+                                                    var fill = custom.backgroundColor || (ds.backgroundColor && ds.backgroundColor[i]) || "#999";
+                                                    var shortLabel = label.length > 20 ? label.substring(0, 18) + "..." : label;
+                                                    return {
+                                                        text: shortLabel + " (" + (ds.data[i] || 0) + ")",
+                                                        fillStyle: fill,
+                                                        strokeStyle: fill,
+                                                        lineWidth: 0,
+                                                        hidden: isNaN(ds.data[i]) || (arc && arc.hidden),
+                                                        index: i
+                                                    };
+                                                }).slice(0, 36);
+                                            }
+                                            return [];
+                                        }
+                                    }
+                                },
+                                tooltips: {
+                                    callbacks: {
+                                        label: function (tooltipItem, data) {
+                                            var dataset = data.datasets[tooltipItem.datasetIndex];
+                                            var val = dataset.data[tooltipItem.index];
+                                            var total = dataset.data.reduce(function (a, b) { return a + b; }, 0);
+                                            var pct = total > 0 ? ((val / total) * 100).toFixed(1) + "%" : "0%";
+                                            var label = data.labels[tooltipItem.index] || "";
+                                            var compLabel = val === 1 ? " Competition" : " Competitions";
+                                            return label + ": " + val + compLabel + " (" + pct + ")";
+                                        }
+                                    }
+                                }
                             }
                         });
                     } else {
@@ -152,6 +210,18 @@
                                 responsive: true,
                                 maintainAspectRatio: false,
                                 legend: { display: false },
+                                tooltips: {
+                                    callbacks: {
+                                        label: function (tooltipItem, data) {
+                                            var dataset = data.datasets[tooltipItem.datasetIndex];
+                                            var val = dataset.data[tooltipItem.index];
+                                            var total = dataset.data.reduce(function (a, b) { return a + Number(b || 0); }, 0);
+                                            var pct = total > 0 ? ((val / total) * 100).toFixed(1) + "%" : "0%";
+                                            var compLabel = val === 1 ? " Competition" : " Competitions";
+                                            return " " + val + compLabel + " (" + pct + ")";
+                                        }
+                                    }
+                                },
                                 scales: {
                                     xAxes: [{ ticks: { beginAtZero: true, precision: 0 } }],
                                     yAxes: [{ gridLines: { display: false }, ticks: { fontSize: 11, fontColor: "#334155" } }]
@@ -161,6 +231,14 @@
                     }
                 }
             });
+
+            setTimeout(function () {
+                $(self.root).find('.tag-info-tooltip').popup({
+                    position: 'top left',
+                    variation: 'inverted',
+                    hoverable: true
+                });
+            }, 0);
         };
 
         self.lastFilteredRows = null;

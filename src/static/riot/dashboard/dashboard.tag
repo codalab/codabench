@@ -43,6 +43,16 @@
 
                     <!-- Tab 2: Tags Statistics -->
                     <div class="dashboard-tab-pane" show="{ activeTab === 'tags' }">
+                        <!-- Calculation Note Banner (aligned with homepage announcement style) -->
+                        <div class="announcement announcement-info tag-statistics-notice">
+                            <i class="announcement-icon info circle icon"></i>
+                            <div class="announcement-content">
+                                <div class="announcement-title">How tag statistics are calculated</div>
+                                <div class="announcement-body">
+                                    Competitions may have multiple tags in the same category (or none). Chart counts and pie chart totals represent total tag assignments across filtered competitions, rather than unique competitions.
+                                </div>
+                            </div>
+                        </div>
                         <div class="dashboard-charts-grid">
                             <dashboard-tags-category-charts p="{ this }"></dashboard-tags-category-charts>
                             <dashboard-tags-cumulative p="{ this }"></dashboard-tags-cumulative>

@@ -10,17 +10,21 @@
         </div>
 
         <div class="explorer-controls-grid">
+            <!-- Row 1: Group by | Metric | Chart Type -->
             <div class="control-item">
                 <label>Group by:</label>
                 <div class="ui selection dropdown custom-dropdown" ref="customDim1Dropdown">
                     <input type="hidden" name="custom_dim1" value="{ customDim1 }">
-                    <div class="text">{ getDimLabel(customDim1) }</div>
                     <i class="dropdown icon"></i>
+                    <div class="text">{ getDimLabel(customDim1) }</div>
                     <div class="menu">
                         <div class="item" data-value="competition">Competition</div>
                         <div class="item" data-value="organizer">Organizer</div>
                         <div class="item" data-value="has_reward">Has Reward</div>
                         <div class="item" data-value="created_year">Creation Year</div>
+                        <div class="item" data-value="created_month">Creation Month</div>
+                        <div class="item" data-value="created_week">Creation Week</div>
+                        <div class="item" data-value="created_day">Creation Day</div>
                         <div class="ui divider" if="{ (opts.p.categoriesWithTags || opts.p.availableCategories || []).length > 0 }" style="margin: 4px 0;"></div>
                         <div class="item" each="{ cat in (opts.p.categoriesWithTags || opts.p.availableCategories || []) }" data-value="cat_{ cat }">Tag: { cat }</div>
                     </div>
@@ -28,19 +32,17 @@
             </div>
 
             <div class="control-item">
-                <label>Metric / Split by:</label>
-                <div class="ui selection dropdown custom-dropdown" ref="customDim2Dropdown">
-                    <input type="hidden" name="custom_dim2" value="{ customDim2 }">
-                    <div class="text">{ getDimLabel(customDim2) }</div>
+                <label>Metric:</label>
+                <div class="ui selection dropdown custom-dropdown" ref="customMetricDropdown">
+                    <input type="hidden" name="custom_metric" value="{ customMetric }">
                     <i class="dropdown icon"></i>
+                    <div class="text">{ getMetricLabel(customMetric) }</div>
                     <div class="menu">
                         <div class="item" data-value="count">Count of Competitions</div>
                         <div class="item" data-value="participants_sum">Total Participants</div>
                         <div class="item" data-value="participants_avg">Average Participants</div>
                         <div class="item" data-value="submissions_sum">Total Submissions</div>
                         <div class="item" data-value="submissions_avg">Average Submissions</div>
-                        <div class="ui divider" if="{ getAvailableBreakdowns().length > 0 }" style="margin: 4px 0;"></div>
-                        <div class="item" each="{ b in getAvailableBreakdowns() }" data-value="{ b.value }">{ b.label }</div>
                     </div>
                 </div>
             </div>
@@ -49,12 +51,37 @@
                 <label>Chart Type:</label>
                 <div class="ui selection dropdown custom-dropdown" ref="customTypeDropdown">
                     <input type="hidden" name="custom_type" value="{ customChartType }">
-                    <div class="text">{ getTypeLabel(customChartType) }</div>
                     <i class="dropdown icon"></i>
+                    <div class="text">{ getTypeLabel(customChartType) }</div>
                     <div class="menu">
                         <div class="item" each="{ t in getAvailableChartTypes() }" data-value="{ t.value }">
                             <i class="{ t.icon } icon"></i> { t.label }
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 2: Split by | Order by | Limit -->
+            <div class="control-item">
+                <label>Split by:</label>
+                <div class="ui selection dropdown custom-dropdown" ref="customSplitByDropdown">
+                    <input type="hidden" name="custom_split_by" value="{ customSplitBy }">
+                    <i class="dropdown icon"></i>
+                    <div class="text">{ getSplitByLabel(customSplitBy) }</div>
+                    <div class="menu">
+                        <div class="item" each="{ s in getAvailableSplitCategories() }" data-value="{ s.value }">{ s.label }</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-item">
+                <label>Order by:</label>
+                <div class="ui selection dropdown custom-dropdown" ref="customOrderByDropdown">
+                    <input type="hidden" name="custom_order_by" value="{ customOrderBy }">
+                    <i class="dropdown icon"></i>
+                    <div class="text">{ getOrderByLabel(customOrderBy) }</div>
+                    <div class="menu">
+                        <div class="item" each="{ o in getAvailableOrderOptions() }" data-value="{ o.value }">{ o.label }</div>
                     </div>
                 </div>
             </div>
@@ -88,7 +115,7 @@
                             <i class="{ tabular1DSortKey === 'label' ? (tabular1DSortDir === 1 ? 'caret up' : 'caret down') : 'sort' } icon"></i>
                         </th>
                         <th onclick="{ sortTabular1D.bind(this, 'val') }" style="cursor: pointer; user-select: none; text-align: right; width: 220px;">
-                            { getDimLabel(customDim2) }
+                            { getMetricLabel(customMetric) }
                             <i class="{ tabular1DSortKey === 'val' ? (tabular1DSortDir === 1 ? 'caret up' : 'caret down') : 'sort' } icon"></i>
                         </th>
                     </tr>
@@ -152,8 +179,10 @@
 
         // Explorer State
         self.customDim1 = 'organizer';
-        self.customDim2 = 'count';
+        self.customMetric = 'count';
+        self.customSplitBy = 'none';
         self.customChartType = 'horizontalBar';
+        self.customOrderBy = 'val_desc';
         self.customLimitValue = 10;
         self.isBreakdownActive = false;
 
@@ -250,7 +279,7 @@
             if (!self.isBreakdownActive) {
                 if (!self.tabularData1D || self.tabularData1D.length === 0) return;
                 var h1 = self.getDimLabel(self.customDim1);
-                var h2 = self.getDimLabel(self.customDim2);
+                var h2 = self.getMetricLabel(self.customMetric);
                 lines.push([esc(h1), esc(h2)].join(","));
                 self.tabularData1D.forEach(function (row) {
                     lines.push([esc(row.label), esc(row.val)].join(","));
@@ -262,7 +291,7 @@
                 (self.tabularCols2D || []).forEach(function (col) {
                     headers.push(esc(col));
                 });
-                headers.push(esc("Total"));
+                headers.push(esc("Total (" + self.getMetricLabel(self.customMetric) + ")"));
                 lines.push(headers.join(","));
 
                 self.tabularRows2D.forEach(function (row) {
@@ -276,8 +305,9 @@
             }
 
             var dim1Name = String(self.customDim1 || "dim1").replace(/[^a-zA-Z0-9_]/g, "_");
-            var dim2Name = String(self.customDim2 || "dim2").replace(/[^a-zA-Z0-9_]/g, "_");
-            var filename = "codabench_explorer_" + dim1Name + "_" + dim2Name + ".csv";
+            var metricName = String(self.customMetric || "metric").replace(/[^a-zA-Z0-9_]/g, "_");
+            var splitName = self.isBreakdownActive ? ("_" + String(self.customSplitBy || "split").replace(/[^a-zA-Z0-9_]/g, "_")) : "";
+            var filename = "codabench_explorer_" + dim1Name + "_" + metricName + splitName + ".csv";
 
             if (opts.p && opts.p.downloadCsv) {
                 opts.p.downloadCsv(filename, lines);
@@ -285,37 +315,125 @@
         };
 
         self.getAvailableChartTypes = function () {
-            var isBreakdown = (self.customDim2 || "").indexOf("breakdown_") === 0;
+            var dim1 = self.customDim1 || "organizer";
+            var metricKey = self.customMetric || "count";
+            var isBreakdown = Boolean(self.customSplitBy && self.customSplitBy !== 'none');
+            var isDate = isDateDim(dim1);
+            var isAvg = metricKey.indexOf('_avg') !== -1;
+
             if (isBreakdown) {
+                if (isDate) {
+                    return [
+                        { value: "line", label: "Line", icon: "chart line" },
+                        { value: "bar", label: "Vertical Bar", icon: "chart bar" },
+                        { value: "horizontalBar", label: "Horizontal Bar", icon: "bars" },
+                        { value: "tabular", label: "Tabular", icon: "table" }
+                    ];
+                }
                 return [
-                    { value: "bar", label: "Vertical Bar", icon: "chart bar" },
                     { value: "horizontalBar", label: "Horizontal Bar", icon: "bars" },
+                    { value: "bar", label: "Vertical Bar", icon: "chart bar" },
                     { value: "line", label: "Line", icon: "chart line" },
                     { value: "tabular", label: "Tabular", icon: "table" }
                 ];
             }
-            return [
+
+            // In 1D mode:
+            // 1. If Date dimension: Line and Bar charts are appropriate; Pie charts are mathematically & visually irrelevant.
+            if (isDate) {
+                return [
+                    { value: "line", label: "Line", icon: "chart line" },
+                    { value: "bar", label: "Vertical Bar", icon: "chart bar" },
+                    { value: "horizontalBar", label: "Horizontal Bar", icon: "bars" },
+                    { value: "tabular", label: "Tabular", icon: "table" }
+                ];
+            }
+
+            // 2. If Nominal dimension:
+            // Pie/Doughnut represents parts of a whole (composition).
+            // It is only relevant when:
+            // - Metric is an additive sum/count, NOT an average (!isAvg)
+            // - Dimension is not individual competition items (dim1 !== 'competition')
+            var canShowPie = (dim1 !== 'competition') && !isAvg;
+
+            var types = [
                 { value: "horizontalBar", label: "Horizontal Bar", icon: "bars" },
-                { value: "bar", label: "Vertical Bar", icon: "chart bar" },
-                { value: "line", label: "Line", icon: "chart line" },
-                { value: "doughnut", label: "Doughnut / Pie", icon: "chart pie" },
-                { value: "tabular", label: "Tabular", icon: "table" }
+                { value: "bar", label: "Vertical Bar", icon: "chart bar" }
             ];
+
+            if (canShowPie) {
+                types.push({ value: "doughnut", label: "Doughnut / Pie", icon: "chart pie" });
+            }
+
+            if (dim1 !== "has_reward") {
+                types.push({ value: "line", label: "Line", icon: "chart line" });
+            }
+
+            types.push({ value: "tabular", label: "Tabular", icon: "table" });
+            return types;
         };
 
-        self.getAvailableBreakdowns = function () {
+        self.getAvailableSplitCategories = function () {
             var dim1 = self.customDim1 || "organizer";
-            var items = [];
+            var items = [{ value: "none", label: "None" }];
             if (dim1 !== "has_reward") {
-                items.push({ value: "breakdown_has_reward", label: "Split by Reward" });
+                items.push({ value: "has_reward", label: "Reward" });
             }
             var cats = (opts.p && (opts.p.categoriesWithTags || opts.p.availableCategories)) || [];
             cats.forEach(function (cat) {
                 if (dim1 !== "cat_" + cat) {
-                    items.push({ value: "breakdown_cat_" + cat, label: "Split by " + cat });
+                    items.push({ value: "cat_" + cat, label: "Tag: " + cat });
                 }
             });
             return items;
+        };
+
+        self.getAvailableOrderOptions = function () {
+            var dim = self.customDim1 || 'organizer';
+            if (isDateDim(dim)) {
+                return [
+                    { value: 'date_asc', label: 'Date (Ascending)' },
+                    { value: 'date_desc', label: 'Date (Descending)' },
+                    { value: 'val_desc', label: 'Metric Value (Descending)' },
+                    { value: 'val_asc', label: 'Metric Value (Ascending)' }
+                ];
+            }
+            if (dim === 'has_reward') {
+                return [
+                    { value: 'val_desc', label: 'Metric Value (Descending)' },
+                    { value: 'val_asc', label: 'Metric Value (Ascending)' }
+                ];
+            }
+            return [
+                { value: 'val_desc', label: 'Metric Value (Descending)' },
+                { value: 'val_asc', label: 'Metric Value (Ascending)' },
+                { value: 'name_asc', label: 'Alphabetical (Ascending)' },
+                { value: 'name_desc', label: 'Alphabetical (Descending)' }
+            ];
+        };
+
+        self.getOrderByLabel = function (val) {
+            var orderOpts = self.getAvailableOrderOptions();
+            for (var i = 0; i < orderOpts.length; i++) {
+                if (orderOpts[i].value === val) return orderOpts[i].label;
+            }
+            return (orderOpts[0] && orderOpts[0].label) || '';
+        };
+
+        self.getMetricLabel = function (val) {
+            if (val === 'count') return 'Count of Competitions';
+            if (val === 'participants_sum') return 'Total Participants';
+            if (val === 'participants_avg') return 'Average Participants';
+            if (val === 'submissions_sum') return 'Total Submissions';
+            if (val === 'submissions_avg') return 'Average Submissions';
+            return val || '';
+        };
+
+        self.getSplitByLabel = function (val) {
+            if (!val || val === 'none') return 'None';
+            if (val === 'has_reward') return 'Reward';
+            if (val.indexOf('cat_') === 0) return 'Tag: ' + val.substring(4);
+            return val;
         };
 
         // Split By Secondary Categories Selection Methods
@@ -347,6 +465,9 @@
             if (val === 'organizer') return 'Organizer';
             if (val === 'has_reward') return 'Has Reward';
             if (val === 'created_year') return 'Creation Year';
+            if (val === 'created_month') return 'Creation Month';
+            if (val === 'created_week') return 'Creation Week';
+            if (val === 'created_day') return 'Creation Day';
             if (val.indexOf('cat_') === 0) return 'Tag: ' + val.substring(4);
             if (val === 'count') return 'Count of Competitions';
             if (val === 'participants_sum') return 'Total Participants';
@@ -383,14 +504,41 @@
             }
         };
 
+        function isDateDim(dim) {
+            return dim && dim.indexOf("created_") === 0;
+        }
+
+        function getISOWeekString(d) {
+            var target = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+            var dayNum = target.getUTCDay() || 7;
+            target.setUTCDate(target.getUTCDate() + 4 - dayNum);
+            var yearStart = new Date(Date.UTC(target.getUTCFullYear(), 0, 1));
+            var weekNo = Math.ceil((((target - yearStart) / 86400000) + 1) / 7);
+            var wStr = weekNo < 10 ? "0" + weekNo : String(weekNo);
+            return target.getUTCFullYear() + "-W" + wStr;
+        }
+
         function extractValues(comp, dim) {
             if (dim === "competition") return [comp.title || ("Competition #" + comp.id) || "Unknown"];
             if (dim === "organizer") return [comp.organizer || "Unknown"];
             if (dim === "has_reward") return [comp.has_reward ? "Reward" : "No Reward"];
-            if (dim === "created_year") {
+            if (isDateDim(dim)) {
                 if (!comp.created_when) return ["Unknown"];
                 var d = new Date(comp.created_when);
-                return isNaN(d.getTime()) ? ["Unknown"] : [d.getUTCFullYear().toString()];
+                if (isNaN(d.getTime())) return ["Unknown"];
+                if (dim === "created_year") return [d.getUTCFullYear().toString()];
+                if (dim === "created_month") {
+                    var m = ("0" + (d.getUTCMonth() + 1)).slice(-2);
+                    return [d.getUTCFullYear() + "-" + m];
+                }
+                if (dim === "created_week") {
+                    return [getISOWeekString(d)];
+                }
+                if (dim === "created_day") {
+                    var m2 = ("0" + (d.getUTCMonth() + 1)).slice(-2);
+                    var day = ("0" + d.getUTCDate()).slice(-2);
+                    return [d.getUTCFullYear() + "-" + m2 + "-" + day];
+                }
             }
             if (dim.indexOf("cat_") === 0) {
                 var catName = dim.substring(4);
@@ -398,6 +546,16 @@
                 return tags.length > 0 ? tags : ["(No Tag)"];
             }
             return ["All"];
+        }
+
+        function computeMetricValue(stats, metricKey) {
+            if (!stats || !stats.count) return 0;
+            if (metricKey === "count") return stats.count;
+            if (metricKey === "participants_sum") return stats.participants;
+            if (metricKey === "participants_avg") return Math.round(stats.participants / stats.count);
+            if (metricKey === "submissions_sum") return stats.submissions;
+            if (metricKey === "submissions_avg") return Math.round(stats.submissions / stats.count);
+            return stats.count;
         }
 
         self.renderCustomChart = function () {
@@ -410,11 +568,13 @@
             }
             var rows = (opts.p && opts.p.filteredCompetitions) || [];
             var dim1 = self.customDim1 || "organizer";
-            var dim2 = self.customDim2 || "count";
+            var metricKey = self.customMetric || "count";
+            var splitBy = self.customSplitBy || "none";
             var chartType = self.customChartType || "horizontalBar";
             var limit = self.getEffectiveLimit();
-            var isBreakdown = dim2.indexOf("breakdown_") === 0;
+            var isBreakdown = Boolean(splitBy && splitBy !== "none");
             self.isBreakdownActive = isBreakdown;
+
             if (!isBreakdown) {
                 self.availableSecCategories = [];
                 self.availableSecCounts = {};
@@ -431,19 +591,13 @@
                 return;
             }
 
-            if (isBreakdown) {
-                var validBreakdownTypes = ["bar", "horizontalBar", "line", "tabular"];
-                if (!validBreakdownTypes.includes(chartType)) {
-                    chartType = "bar";
-                    self.customChartType = chartType;
-                }
-            } else {
-                var valid1DTypes = ["horizontalBar", "bar", "line", "doughnut", "tabular"];
-                if (!valid1DTypes.includes(chartType)) {
-                    chartType = "horizontalBar";
-                    self.customChartType = chartType;
-                }
+            var avTypes = self.getAvailableChartTypes().map(function (t) { return t.value; });
+            if (!avTypes.includes(chartType)) {
+                chartType = avTypes[0] || "horizontalBar";
+                self.customChartType = chartType;
             }
+
+            var metricLabel = self.getMetricLabel(metricKey);
 
             if (!isBreakdown) {
                 var groups = {};
@@ -457,26 +611,47 @@
                     });
                 });
 
-                var metricKey = dim2;
-                var metricLabel = self.getDimLabel(dim2);
                 var entries = Object.keys(groups).map(function (k) {
                     var g = groups[k];
-                    var val = 0;
-                    if (metricKey === "count") val = g.count;
-                    else if (metricKey === "participants_sum") val = g.participants;
-                    else if (metricKey === "participants_avg") val = g.count > 0 ? Math.round(g.participants / g.count) : 0;
-                    else if (metricKey === "submissions_sum") val = g.submissions;
-                    else if (metricKey === "submissions_avg") val = g.count > 0 ? Math.round(g.submissions / g.count) : 0;
+                    var val = computeMetricValue(g, metricKey);
                     return { key: k, val: val };
                 });
 
-                if (dim1 === "created_year") {
-                    entries.sort(function (a, b) { return a.key < b.key ? -1 : 1; });
-                } else {
-                    entries.sort(function (a, b) { return b.val - a.val; });
+                var avOrders1D = self.getAvailableOrderOptions().map(function (o) { return o.value; });
+                var order = self.customOrderBy;
+                if (!avOrders1D.includes(order)) {
+                    order = avOrders1D[0] || (isDateDim(dim1) ? 'date_asc' : 'val_desc');
+                    self.customOrderBy = order;
                 }
+
+                entries.sort(function (a, b) {
+                    if (order === 'date_asc') {
+                        if (a.key < b.key) return -1;
+                        if (a.key > b.key) return 1;
+                        return 0;
+                    }
+                    if (order === 'date_desc') {
+                        if (a.key < b.key) return 1;
+                        if (a.key > b.key) return -1;
+                        return 0;
+                    }
+                    if (order === 'name_asc') {
+                        return a.key.localeCompare(b.key, undefined, { sensitivity: 'base', numeric: true });
+                    }
+                    if (order === 'name_desc') {
+                        return b.key.localeCompare(a.key, undefined, { sensitivity: 'base', numeric: true });
+                    }
+                    if (order === 'val_asc') {
+                        if (a.val !== b.val) return a.val - b.val;
+                        return a.key.localeCompare(b.key);
+                    }
+                    // default 'val_desc'
+                    if (a.val !== b.val) return b.val - a.val;
+                    return a.key.localeCompare(b.key);
+                });
+
                 if (limit !== Infinity) {
-                    entries = (dim1 === "created_year") ? entries.slice(-limit) : entries.slice(0, limit);
+                    entries = entries.slice(0, limit);
                 }
 
                 // Populate 1D Tabular Data
@@ -527,10 +702,21 @@
                             tooltips: tooltipOpt,
                             scales: chartType === "horizontalBar" ? {
                                 xAxes: [{ ticks: { beginAtZero: true, precision: 0 } }],
-                                yAxes: [{ gridLines: { display: false }, ticks: { fontSize: 11, fontColor: "#334155" } }]
+                                yAxes: [{
+                                    gridLines: { display: false },
+                                    ticks: {
+                                        fontSize: 11,
+                                        fontColor: "#334155",
+                                        callback: function (val, idx, vals) {
+                                            if (!vals || vals.length <= 36) return val;
+                                            var step = Math.ceil(vals.length / 36);
+                                            return (idx % step === 0 || idx === vals.length - 1) ? val : "";
+                                        }
+                                    }
+                                }]
                             } : {
                                 yAxes: [{ ticks: { beginAtZero: true, precision: 0 } }],
-                                xAxes: [{ gridLines: { display: false }, ticks: { autoSkip: false, maxRotation: 45, minRotation: 20, fontSize: 11, fontColor: "#334155" } }]
+                                xAxes: [{ gridLines: { display: false }, ticks: { autoSkip: true, autoSkipPadding: 8, maxTicksLimit: 36, maxRotation: 45, minRotation: 0, fontSize: 11, fontColor: "#334155" } }]
                             }
                         }
                     };
@@ -557,7 +743,7 @@
                             elements: { line: { tension: 0 } },
                             scales: {
                                 yAxes: [{ ticks: { beginAtZero: true, precision: 0 } }],
-                                xAxes: [{ gridLines: { display: false }, ticks: { autoSkip: false, maxRotation: 45, minRotation: 20, fontSize: 11, fontColor: "#334155" } }]
+                                xAxes: [{ gridLines: { display: false }, ticks: { autoSkip: true, autoSkipPadding: 8, maxTicksLimit: 36, maxRotation: 45, minRotation: 0, fontSize: 11, fontColor: "#334155" } }]
                             }
                         }
                     };
@@ -574,7 +760,40 @@
                         options: {
                             responsive: true,
                             maintainAspectRatio: false,
-                            legend: { position: "right", labels: { boxWidth: 12, fontSize: 11 } },
+                            legend: {
+                                display: true,
+                                position: "right",
+                                labels: {
+                                    boxWidth: 10,
+                                    fontSize: 10,
+                                    padding: 4,
+                                    generateLabels: function (chart) {
+                                        var data = chart.data;
+                                        if (data.labels && data.labels.length && data.datasets && data.datasets.length) {
+                                            var ds = data.datasets[0];
+                                            var items = data.labels.map(function (label, i) {
+                                                var meta = chart.getDatasetMeta(0);
+                                                var arc = (meta && meta.data && meta.data[i]) || {};
+                                                var custom = arc.custom || {};
+                                                var fill = custom.backgroundColor || (ds.backgroundColor && (Array.isArray(ds.backgroundColor) ? ds.backgroundColor[i] : ds.backgroundColor)) || "#999";
+                                                var stroke = custom.borderColor || (ds.borderColor && (Array.isArray(ds.borderColor) ? ds.borderColor[i] : ds.borderColor)) || "#fff";
+                                                var bw = custom.borderWidth !== undefined ? custom.borderWidth : (ds.borderWidth !== undefined ? ds.borderWidth : 0);
+                                                var shortLabel = label.length > 20 ? label.substring(0, 18) + "..." : label;
+                                                return {
+                                                    text: shortLabel + " (" + (ds.data[i] || 0) + ")",
+                                                    fillStyle: fill,
+                                                    strokeStyle: stroke,
+                                                    lineWidth: bw,
+                                                    hidden: isNaN(ds.data[i]) || (arc && arc.hidden),
+                                                    index: i
+                                                };
+                                            });
+                                            return items.slice(0, 36);
+                                        }
+                                        return [];
+                                    }
+                                }
+                            },
                             tooltips: tooltipOpt
                         }
                     };
@@ -590,38 +809,87 @@
                     self.chart = new Chart(el, config);
                 }
             } else {
-                var secDimKey = dim2.replace("breakdown_", "");
+                var secDimKey = splitBy;
                 var matrix = {};
-                var primaryTotals = {};
-                var secTotals = {};
+                var primaryStats = {};
+                var secStats = {};
 
                 rows.forEach(function (c) {
                     var pVals = extractValues(c, dim1);
                     var sVals = extractValues(c, secDimKey);
+                    var pCount = c.participants_count || 0;
+                    var sCount = c.submissions_count || 0;
 
                     pVals.forEach(function (p) {
                         if (!matrix[p]) matrix[p] = {};
-                        primaryTotals[p] = (primaryTotals[p] || 0) + 1;
+                        if (!primaryStats[p]) primaryStats[p] = { count: 0, participants: 0, submissions: 0 };
+                        primaryStats[p].count += 1;
+                        primaryStats[p].participants += pCount;
+                        primaryStats[p].submissions += sCount;
+
                         sVals.forEach(function (s) {
-                            matrix[p][s] = (matrix[p][s] || 0) + 1;
-                            secTotals[s] = (secTotals[s] || 0) + 1;
+                            if (!matrix[p][s]) matrix[p][s] = { count: 0, participants: 0, submissions: 0 };
+                            matrix[p][s].count += 1;
+                            matrix[p][s].participants += pCount;
+                            matrix[p][s].submissions += sCount;
+
+                            if (!secStats[s]) secStats[s] = { count: 0, participants: 0, submissions: 0 };
+                            secStats[s].count += 1;
+                            secStats[s].participants += pCount;
+                            secStats[s].submissions += sCount;
                         });
                     });
                 });
 
-                var sortedPrimaries = (dim1 === "created_year")
-                    ? Object.keys(primaryTotals).sort()
-                    : Object.keys(primaryTotals).sort(function (a, b) { return primaryTotals[b] - primaryTotals[a]; });
-                if (limit !== Infinity) {
-                    sortedPrimaries = (dim1 === "created_year") ? sortedPrimaries.slice(-limit) : sortedPrimaries.slice(0, limit);
+                var avOrders2D = self.getAvailableOrderOptions().map(function (o) { return o.value; });
+                var order = self.customOrderBy;
+                if (!avOrders2D.includes(order)) {
+                    order = avOrders2D[0] || (isDateDim(dim1) ? 'date_asc' : 'val_desc');
+                    self.customOrderBy = order;
                 }
 
-                var allSecondaries = Object.keys(secTotals).sort(function (a, b) {
-                    return secTotals[b] - secTotals[a];
+                var sortedPrimaries = Object.keys(primaryStats);
+                sortedPrimaries.sort(function (a, b) {
+                    if (order === 'date_asc') {
+                        if (a < b) return -1;
+                        if (a > b) return 1;
+                        return 0;
+                    }
+                    if (order === 'date_desc') {
+                        if (a < b) return 1;
+                        if (a > b) return -1;
+                        return 0;
+                    }
+                    if (order === 'name_asc') {
+                        return a.localeCompare(b, undefined, { sensitivity: 'base', numeric: true });
+                    }
+                    if (order === 'name_desc') {
+                        return b.localeCompare(a, undefined, { sensitivity: 'base', numeric: true });
+                    }
+                    var va = computeMetricValue(primaryStats[a], metricKey);
+                    var vb = computeMetricValue(primaryStats[b], metricKey);
+                    if (order === 'val_asc') {
+                        if (va !== vb) return va - vb;
+                        return a.localeCompare(b);
+                    }
+                    // default 'val_desc'
+                    if (va !== vb) return vb - va;
+                    return a.localeCompare(b);
+                });
+
+                if (limit !== Infinity) {
+                    sortedPrimaries = sortedPrimaries.slice(0, limit);
+                }
+
+                var allSecondaries = Object.keys(secStats).sort(function (a, b) {
+                    var sa = computeMetricValue(secStats[a], metricKey);
+                    var sb = computeMetricValue(secStats[b], metricKey);
+                    if (sb !== sa) return sb - sa;
+                    return a.localeCompare(b);
                 });
 
                 self.availableSecCategories = allSecondaries;
-                self.availableSecCounts = secTotals;
+                self.availableSecCounts = secStats;
 
                 if (!self.selectedSplitCategoriesMap || self.activeBreakdownKey !== secDimKey) {
                     self.activeBreakdownKey = secDimKey;
@@ -642,15 +910,21 @@
                 }
 
                 // Populate 2D Tabular Data
+                var isAvgMetric = metricKey.indexOf('_avg') !== -1;
                 self.tabularCols2D = sortedSecondaries;
                 self.tabularRows2D = sortedPrimaries.map(function (p) {
                     var rowVals = {};
                     var total = 0;
                     sortedSecondaries.forEach(function (s) {
-                        var v = (matrix[p] && matrix[p][s]) || 0;
+                        var v = computeMetricValue(matrix[p] && matrix[p][s], metricKey);
                         rowVals[s] = v;
-                        total += v;
+                        if (!isAvgMetric) {
+                            total += v;
+                        }
                     });
+                    if (isAvgMetric) {
+                        total = computeMetricValue(primaryStats[p], metricKey);
+                    }
                     return { label: p, values: rowVals, total: total };
                 });
                 self.applyTabular2DSort();
@@ -672,7 +946,7 @@
 
                 var datasets = sortedSecondaries.map(function (sVal, sIdx) {
                     var dataArr = sortedPrimaries.map(function (p) {
-                        return (matrix[p] && matrix[p][sVal]) || 0;
+                        return computeMetricValue(matrix[p] && matrix[p][sVal], metricKey);
                     });
                     return {
                         label: sVal,
@@ -705,10 +979,21 @@
                         },
                         scales: effType === "horizontalBar" ? {
                             xAxes: [{ ticks: { beginAtZero: true, precision: 0 } }],
-                            yAxes: [{ gridLines: { display: false }, ticks: { fontSize: 11, fontColor: "#334155" } }]
+                            yAxes: [{
+                                gridLines: { display: false },
+                                ticks: {
+                                    fontSize: 11,
+                                    fontColor: "#334155",
+                                    callback: function (val, idx, vals) {
+                                        if (!vals || vals.length <= 36) return val;
+                                        var step = Math.ceil(vals.length / 36);
+                                        return (idx % step === 0 || idx === vals.length - 1) ? val : "";
+                                    }
+                                }
+                            }]
                         } : {
                             yAxes: [{ ticks: { beginAtZero: true, precision: 0 } }],
-                            xAxes: [{ gridLines: { display: false }, ticks: { autoSkip: false, maxRotation: 45, minRotation: 20, fontSize: 11, fontColor: "#334155" } }]
+                            xAxes: [{ gridLines: { display: false }, ticks: { autoSkip: true, autoSkipPadding: 8, maxTicksLimit: 36, maxRotation: 45, minRotation: 0, fontSize: 11, fontColor: "#334155" } }]
                         }
                     }
                 };
@@ -734,14 +1019,52 @@
                         self.customDim1 = v;
                         self.selectedSplitCategoriesMap = null;
                         self.activeBreakdownKey = null;
-                        var avBreakdowns = self.getAvailableBreakdowns().map(function (b) { return b.value; });
-                        if (self.customDim2.indexOf("breakdown_") === 0 && !avBreakdowns.includes(self.customDim2)) {
-                            self.customDim2 = "count";
+
+                        if (isDateDim(v)) {
+                            self.customOrderBy = 'date_asc';
+                        } else {
+                            self.customOrderBy = 'val_desc';
                         }
-                        if (v === 'competition' && self.customDim2 === 'count') {
-                            self.customDim2 = 'participants_sum';
-                            if (self.refs.customDim2Dropdown) {
-                                $(self.refs.customDim2Dropdown).dropdown('set selected', 'participants_sum');
+                        if (self.refs.customOrderByDropdown) {
+                            $(self.refs.customOrderByDropdown).dropdown('set selected', self.customOrderBy);
+                        }
+
+                        if (v === 'competition' && self.customMetric === 'count') {
+                            self.customMetric = 'participants_sum';
+                            if (self.refs.customMetricDropdown) {
+                                $(self.refs.customMetricDropdown).dropdown('set selected', 'participants_sum');
+                            }
+                        }
+
+                        if (self.customSplitBy === v) {
+                            self.customSplitBy = 'none';
+                            if (self.refs.customSplitByDropdown) {
+                                $(self.refs.customSplitByDropdown).dropdown('set selected', 'none');
+                            }
+                        }
+
+                        var avTypes = self.getAvailableChartTypes().map(function (t) { return t.value; });
+                        if (!avTypes.includes(self.customChartType)) {
+                            self.customChartType = avTypes[0] || "horizontalBar";
+                            if (self.refs.customTypeDropdown) {
+                                $(self.refs.customTypeDropdown).dropdown('set selected', self.customChartType);
+                            }
+                        }
+
+                        self.renderCustomChart();
+                        self.update();
+                    }
+                },
+                {
+                    ref: 'customMetricDropdown',
+                    getVal: function () { return self.customMetric; },
+                    setVal: function (v) {
+                        self.customMetric = v;
+                        var avTypes = self.getAvailableChartTypes().map(function (t) { return t.value; });
+                        if (!avTypes.includes(self.customChartType)) {
+                            self.customChartType = avTypes[0] || "horizontalBar";
+                            if (self.refs.customTypeDropdown) {
+                                $(self.refs.customTypeDropdown).dropdown('set selected', self.customChartType);
                             }
                         }
                         self.renderCustomChart();
@@ -749,16 +1072,30 @@
                     }
                 },
                 {
-                    ref: 'customDim2Dropdown',
-                    getVal: function () { return self.customDim2; },
+                    ref: 'customSplitByDropdown',
+                    getVal: function () { return self.customSplitBy; },
                     setVal: function (v) {
-                        self.customDim2 = v;
+                        self.customSplitBy = v;
                         self.selectedSplitCategoriesMap = null;
                         self.activeBreakdownKey = null;
+
                         var avTypes = self.getAvailableChartTypes().map(function (t) { return t.value; });
                         if (!avTypes.includes(self.customChartType)) {
                             self.customChartType = avTypes[0] || "horizontalBar";
+                            if (self.refs.customTypeDropdown) {
+                                $(self.refs.customTypeDropdown).dropdown('set selected', self.customChartType);
+                            }
                         }
+
+                        self.renderCustomChart();
+                        self.update();
+                    }
+                },
+                {
+                    ref: 'customOrderByDropdown',
+                    getVal: function () { return self.customOrderBy; },
+                    setVal: function (v) {
+                        self.customOrderBy = v;
                         self.renderCustomChart();
                         self.update();
                     }
