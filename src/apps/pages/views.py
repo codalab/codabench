@@ -60,10 +60,6 @@ class NewsView(TemplateView):
         return context
 
 
-class OrganizeView(TemplateView):
-    template_name = 'pages/organize.html'
-
-
 class SearchView(TemplateView):
     template_name = 'search/form.html'
 
