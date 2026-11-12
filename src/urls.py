@@ -12,6 +12,7 @@ urlpatterns = [
     path('', include('pages.urls', namespace='pages')),
     path('competitions/', include('competitions.urls', namespace='competitions')),
     path('analytics/', include('analytics.urls', namespace='analytics')),
+    path('dashboard/', include('dashboard.urls', namespace='dashboard')),
     path('datasets/', include('datasets.urls', namespace='datasets')),
     path('profiles/', include('profiles.urls', namespace='profiles')),
     path('tasks/', include('tasks.urls', namespace='tasks')),

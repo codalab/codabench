@@ -47,6 +47,7 @@ class HomePageBenchmarkSerializer(serializers.ModelSerializer):
     logo_url = serializers.SerializerMethodField()
     owner_display_name = serializers.SerializerMethodField()
     first_phase_start = serializers.SerializerMethodField()
+    tags = serializers.SerializerMethodField()
 
     class Meta:
         model = Competition
@@ -61,7 +62,26 @@ class HomePageBenchmarkSerializer(serializers.ModelSerializer):
             'participants_count',
             'submissions_count',
             'reward',
+            'tags',
         )
+
+    def get_tags(self, obj):
+        tags_data = []
+        category_counts = {}
+        for tag in obj.tags.all():
+            cat_id = tag.category_id
+            category_counts[cat_id] = category_counts.get(cat_id, 0) + 1
+            if category_counts[cat_id] > 5:
+                continue
+
+            tags_data.append({
+                'id': tag.id,
+                'name': tag.name,
+                'category': tag.category.name,
+                'category_id': cat_id,
+                'color': int(((cat_id + 45) * 137.5) % 360),
+            })
+        return tags_data
 
     def get_logo_url(self, obj):
         # Prefer the small logo icon, fall back to the full logo

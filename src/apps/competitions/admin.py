@@ -188,6 +188,7 @@ class CompetitionExpansion(admin.ModelAdmin):
     list_display_links = ["id", "title"]
     actions = [CompetitionExport_as_json, CompetitionExport_as_csv]
     raw_id_fields = ["created_by", "collaborators", "queue"]
+    filter_horizontal = ["tags"]
     ordering = ('-id',)
     list_filter = [
         "published",
@@ -208,6 +209,7 @@ class CompetitionExpansion(admin.ModelAdmin):
                     "fact_sheet",
                     "contact_email",
                     "reward",
+                    "tags",
                     "report",
                     "submissions_count",
                     "participants_count",
@@ -412,6 +414,8 @@ class PhaseExpansion(admin.ModelAdmin):
 
 
 admin.site.register(models.Competition, CompetitionExpansion)
+admin.site.register(models.TagCategory)
+admin.site.register(models.Tag)
 admin.site.register(
     models.CompetitionCreationTaskStatus, CompetitionCreationTaskStatusExpansion
 )
