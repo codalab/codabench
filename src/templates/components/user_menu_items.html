@@ -10,6 +10,7 @@
         <a class="menu-item" href="{% url "su_login" %}"><i class="bi bi-person-gear"></i>Change User</a>
         <a class="menu-item" href="{% url "pages:monitor_queues" %}"><i class="bi bi-speedometer2"></i>Monitor Queues</a>
         <a class="menu-item" href="{% url "analytics:analytics" %}"><i class="bi bi-bar-chart"></i>Analytics</a>
+        <a class="menu-item" href="{% url "dashboard:dashboard" %}"><i class="bi bi-graph-up"></i>Dashboard</a>
     </div>
 {% endif %}
 
@@ -23,7 +24,6 @@
 
 <!-- Activity -->
 <a class="menu-item" href="{% url "pages:server_status" %}"><i class="bi bi-activity"></i>Submission Status</a>
-<a class="menu-item" href="{% url "dashboard:dashboard" %}"><i class="bi bi-graph-up"></i>Dashboard</a>
 <div class="menu-divider"></div>
 
 <!-- Settings -->
