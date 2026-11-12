@@ -178,26 +178,42 @@ class SubmissionViewSet(ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         """
-        - If user is neither owner nor admin, user cannot delete the submission
-        - If a user is not admin and is owner of a submission and submission is on the leaderboard, user cannot delete the submission
-        - In rest of the cases i.e. user is admin/super user or user is owner of the submisison and submission is not on the leaderboard, user can delete the submisison
+        - Superuser / organizer (or collaborator): hard delete.
+        - Participant: soft delete only (quota not reset).
+        - Everyone else: dismissed.
         """
         submission = self.get_object()
 
-        is_owner = request.user == submission.owner
-        is_super_user_or_competition_admin = self.has_admin_permission(request.user, submission)
+        if self.has_admin_permission(request.user, submission):
+            self.perform_destroy(submission)
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
-        # If user is neither owner nor super user/admin return permission denied
-        if not is_owner and not is_super_user_or_competition_admin:
-            raise PermissionDenied("You do not have permission to delete this submission!")
+        if request.user.is_authenticated and request.user == submission.owner:
+            return self._soft_delete_as_owner(request, submission)
 
-        # If user is not admin, is owner and submission is on the leaderboard return permission denied
-        if not is_super_user_or_competition_admin and is_owner and submission.leaderboard:
-            raise PermissionDenied("You cannot delete a leaderboard submission!")
+        raise PermissionDenied("You do not have permission to delete this submission!")
 
-        # Otherwise, delete the submission
-        self.perform_destroy(submission)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+    def _soft_delete_as_owner(self, request, submission):
+        """Shared by destroy and soft_delete."""
+        if submission.owner != request.user:
+            return Response({'error': 'You are not allowed to delete this submission'}, status=status.HTTP_403_FORBIDDEN)
+
+        if submission.is_soft_deleted:
+            return Response({'error': 'Submission already deleted'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if submission.status == Submission.FINISHED and submission.on_leaderboard:
+            return Response({'error': 'You are not allowed to delete a leaderboard submission'}, status=status.HTTP_403_FORBIDDEN)
+
+        if submission.status not in [Submission.FAILED, Submission.FINISHED, Submission.CANCELLED]:
+            return Response({'error': 'You are not allowed to delete a running submission'}, status=status.HTTP_403_FORBIDDEN)
+
+        submission.soft_delete()
+        return Response({'message': 'Submission deleted successfully'}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=('DELETE',))
+    def soft_delete(self, request, pk):
+        submission = self.get_object()
+        return self._soft_delete_as_owner(request, submission)
 
     def check_submission_permissions(self, request, submissions):
         # Check permissions
@@ -219,34 +235,6 @@ class SubmissionViewSet(ModelViewSet):
             raise PermissionDenied(
                 "You do not have permission to download one or more of the requested submissions"
             )
-
-    @action(detail=True, methods=('DELETE',))
-    def soft_delete(self, request, pk):
-        submission = self.get_object()
-
-        # Check if submission exists
-        if not submission:
-            return Response({'error': 'Submission not found'}, status=status.HTTP_404_NOT_FOUND)
-
-        # Check if owner is requesting soft delete
-        if submission.owner != request.user:
-            return Response({'error': 'You are not allowed to delete this submission'}, status=status.HTTP_403_FORBIDDEN)
-
-        # Check if submission is finished and on the leaderboard
-        if submission.status == Submission.FINISHED and submission.on_leaderboard:
-            return Response({'error': 'You are not allowed to delete a leaderboard submission'}, status=status.HTTP_403_FORBIDDEN)
-
-        # Check if submission is in running state
-        if submission.status not in [Submission.FAILED, Submission.FINISHED, Submission.CANCELLED]:
-            return Response({'error': 'You are not allowed to delete a running submission'}, status=status.HTTP_403_FORBIDDEN)
-
-        # Check if submission is not already soft deleted
-        if submission.is_soft_deleted:
-            return Response({'error': 'Submission already deleted'}, status=status.HTTP_400_BAD_REQUEST)
-
-        # soft delete submission and return success response
-        submission.soft_delete()
-        return Response({'message': 'Submission deleted successfully'}, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=('DELETE',))
     def delete_many(self, request, *args, **kwargs):
