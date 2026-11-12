@@ -1,6 +1,6 @@
-'''
+"""
 Benchmarks shown on the home page (Featured, Popular and Recent sections)
-'''
+"""
 import random
 
 from competitions.models import Competition
