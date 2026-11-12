@@ -57,7 +57,7 @@
                     <virtual if="{get_row_number(index) > 5}">{get_row_number(index)}</virtual>
                 </td>
                 <td if="{submission.organization === null}"><a href="{submission.slug_url}">{ submission.owner }</a></td>
-                <td if="{submission.organization !== null}"><a href="{submission.organization.url}">{ submission.organization.name }</a></td>
+                <td if="{submission.organization !== null}"><a href="{submission.organization.url}">{ submission.organization.name }</a> ({ submission.owner })</td>
                 <td data-sort="{ sort_date_value(submission.created_when) }"
                     data-sort-value="{ sort_date_value(submission.created_when) }">
                     { pretty_date(submission.created_when) }
