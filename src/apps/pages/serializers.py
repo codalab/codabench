@@ -1,6 +1,6 @@
-'''
+"""
 Serializers for the data shown on the home page
-'''
+"""
 from django.utils import dateformat
 from django.utils.timezone import localtime
 from rest_framework import serializers

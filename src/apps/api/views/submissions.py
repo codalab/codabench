@@ -669,9 +669,9 @@ class SubmissionViewSet(ModelViewSet):
         return Response({})
 
     def paginate_queryset(self, queryset):
-        '''
-            This Méthode is added to override pagination when trying to download the Sub CSV
-        '''
+        """
+        This method is added to override pagination when trying to download the Sub CSV
+        """
         if getattr(getattr(self.request, "accepted_renderer", None), "format", None) == "csv":
             return None
         return super().paginate_queryset(queryset)
