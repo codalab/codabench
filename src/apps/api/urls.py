@@ -27,6 +27,7 @@ from .views import (
 router = SimpleRouter()
 router.register('competitions', competitions.CompetitionViewSet)
 router.register('phases', competitions.PhaseViewSet, 'phases')
+router.register('tags', competitions.TagViewSet, 'tags')
 router.register('submissions', submissions.SubmissionViewSet)
 router.register('datasets', datasets.DataViewSet)
 router.register('leaderboards', leaderboards.LeaderboardViewSet)
