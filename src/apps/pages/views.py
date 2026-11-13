@@ -60,10 +60,6 @@ class NewsView(TemplateView):
         return context
 
 
-class SearchView(TemplateView):
-    template_name = 'search/form.html'
-
-
 class ServerStatusView(LoginRequiredMixin, TemplateView):
     template_name = 'pages/server_status.html'
 
