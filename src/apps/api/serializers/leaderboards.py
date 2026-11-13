@@ -8,7 +8,7 @@ from competitions.models import Submission, Phase
 from leaderboards.models import Leaderboard, Column, SubmissionScore
 
 from .fields import CharacterSeparatedField
-from .tasks import PhaseTaskInstanceSerializer
+from .tasks import PhaseTaskInstanceSmallSerializer
 
 
 class ColumnSerializer(WritableNestedModelSerializer):
@@ -156,18 +156,8 @@ class LeaderboardEntriesSerializer(serializers.ModelSerializer):
 class LeaderboardPhaseSerializer(serializers.ModelSerializer):
     submissions = serializers.SerializerMethodField(read_only=True)
     columns = serializers.SerializerMethodField()
-    tasks = PhaseTaskInstanceSerializer(source='task_instances', many=True)
+    tasks = PhaseTaskInstanceSmallSerializer(source='task_instances', many=True)
     primary_index = serializers.SerializerMethodField()
-
-    def get_columns(self, instance):
-        columns = Column.objects.filter(leaderboard=instance.leaderboard, hidden=False)
-        if len(columns) == 0:
-            raise serializers.ValidationError("No columns exist on the leaderboard")
-        else:
-            return ColumnSerializer(columns, many=len(columns) >= 1).data
-
-    def get_primary_index(self, instance):
-        return instance.leaderboard.primary_index
 
     class Meta:
         model = Phase
@@ -182,22 +172,48 @@ class LeaderboardPhaseSerializer(serializers.ModelSerializer):
         )
         depth = 1
 
-    def get_submissions(self, instance):
-        # desc == -colname
-        # asc == colname
-        primary_col = instance.leaderboard.columns.get(index=instance.leaderboard.primary_index)
-        submissions_qs = (
-            Submission.objects.filter(
-                phase=instance,
-                is_soft_deleted=False,
-                has_children=False,
-                is_specific_task_re_run=False,
-                leaderboard=instance.leaderboard,
+    def _leaderboard_columns(self, instance):
+        """Une seule requête pour les colonnes (déjà triées par index), mise en cache par leaderboard."""
+        cache = self.__dict__.setdefault('_columns_cache', {})
+        if instance.leaderboard_id not in cache:
+            cache[instance.leaderboard_id] = list(
+                instance.leaderboard.columns.order_by('index')
             )
-            .select_related('owner')
-            .prefetch_related('scores', 'scores__column')
+        return cache[instance.leaderboard_id]
+
+    def get_columns(self, instance):
+        columns = [c for c in self._leaderboard_columns(instance) if not c.hidden]
+        if not columns:
+            raise serializers.ValidationError("No columns exist on the leaderboard")
+        return ColumnSerializer(columns, many=True).data
+
+    def get_primary_index(self, instance):
+        return instance.leaderboard.primary_index
+
+    def get_submissions(self, instance):
+        all_columns = self._leaderboard_columns(instance)
+        primary_col = next((c for c in all_columns if c.index == instance.leaderboard.primary_index), None)
+        if primary_col is None:
+            raise Column.DoesNotExist("Primary column not found on the leaderboard")
+
+        submissions_qs = Submission.objects.filter(
+            phase=instance,
+            is_soft_deleted=False,
+            is_specific_task_re_run=False,
+        ).select_related(
+            'owner',
+            'organization',
+            'queue',
+            'parent',
+            'phase',
+            'phase__competition',
+            'phase__competition__queue',
+        ).prefetch_related(
+            Prefetch(
+                'scores',
+                queryset=SubmissionScore.objects.select_related('column'),
+            )
         )
-        # AVERAGE_RANK columns have no stored scores; skip DB-level sort and re-sort in the view.
         if primary_col.computation == Column.AVERAGE_RANK:
             ordering = ['created_when']
             submissions = submissions_qs
@@ -208,13 +224,9 @@ class LeaderboardPhaseSerializer(serializers.ModelSerializer):
                 else F('primary_col').asc(nulls_last=True)
             ]
             submissions = submissions_qs.annotate(primary_col=Sum('scores__score', filter=Q(scores__column=primary_col)))
-        for column in (
-            instance.leaderboard.columns
-            .filter(hidden=False)
-            .exclude(id=primary_col.id)
-            .order_by('index')
-        ):
-            if column.computation == Column.AVERAGE_RANK:
+
+        for column in all_columns:
+            if column.hidden or column.id == primary_col.id or column.computation == Column.AVERAGE_RANK:
                 continue
             col_name = f'col{column.index}'
             ordering.append(
@@ -222,10 +234,9 @@ class LeaderboardPhaseSerializer(serializers.ModelSerializer):
                 if column.sorting == 'desc'
                 else F(col_name).asc(nulls_last=True)
             )
-            kwargs = {
+            submissions = submissions.annotate(**{
                 col_name: Sum('scores__score', filter=Q(scores__column__index=column.index))
-            }
-            submissions = submissions.annotate(**kwargs)
+            })
 
         submissions = submissions.order_by(*ordering, 'created_when')
         return SubmissionLeaderBoardSerializer(submissions, many=True).data
