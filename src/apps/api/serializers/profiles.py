@@ -39,17 +39,33 @@ class GithubUserInfoSerializer(ModelSerializer):
 
 
 class MyProfileSerializer(ModelSerializer):
-
-    github_info = GithubUserInfoSerializer(read_only=True, required=False, many=False)
+    """
+    The logged-in user's profile, for the my profile page and for /api/my_profile/.
+    Why a list of allowed fields: only what the page shows, a new field on the user stays out unless it is added here.
+    Saving goes through UserSerializer, this one only reads.
+    """
 
     class Meta:
         model = User
         fields = (
+            'id',
             'username',
-            'name',
+            # For the link to the public profile, which finds users by slug
+            'slug',
+            'photo',
             'email',
-            'github_info'
+            'display_name',
+            'first_name',
+            'last_name',
+            'title',
+            'location',
+            'biography',
+            'personal_url',
+            'linkedin_url',
+            'twitter_url',
+            'github_url',
         )
+        read_only_fields = fields
 
 
 class CollaboratorSerializer(ModelSerializer):
@@ -104,6 +120,22 @@ class SimpleOrganizationSerializer(ModelSerializer):
         )
 
 
+class PublicOrganizationSerializer(ModelSerializer):
+    """
+    What the public profile shows for each organization of the user: the logo, the name and the link.
+    Why a list of allowed fields: a new field on the organization stays private unless it is added here.
+    """
+
+    class Meta:
+        model = Organization
+        fields = (
+            'name',
+            'photo',
+            'url',
+        )
+        read_only_fields = fields
+
+
 class OrganizationSerializer(ModelSerializer):
     photo = NamedBase64ImageField(required=False, allow_null=True)
 
@@ -126,7 +158,6 @@ class OrganizationSerializer(ModelSerializer):
 
 class UserSerializer(ModelSerializer):
     photo = NamedBase64ImageField(required=False, allow_null=True)
-    organizations = SerializerMethodField(read_only=True)
 
     class Meta:
         model = User
@@ -146,7 +177,6 @@ class UserSerializer(ModelSerializer):
             'linkedin_url',
             'twitter_url',
             'github_url',
-            'organizations',
             'organizer_direct_message_updates',
             'allow_forum_notifications',
             'allow_organization_invite_emails',
@@ -154,24 +184,20 @@ class UserSerializer(ModelSerializer):
 
         read_only_fields = ('email', 'username')
 
-    def get_organizations(self, instance):
-        participant_orgs = []
-        for org in instance.organizations.all():
-            if instance in org.user_record.all():
-                participant_orgs.append(org)
-        return OrganizationSerializer(participant_orgs, many=True).data
-
 
 class PublicUserSerializer(ModelSerializer):
     """
     What other users can see on a profile page.
     Why a list of allowed fields: a new field on the user stays private unless it is added here.
     """
+    # Shown as Member since, for example: March 2024
+    date_joined = DateTimeField(format="%B %Y", read_only=True)
 
     class Meta:
         model = User
         fields = (
             'username',
+            'date_joined',
             'photo',
             'display_name',
             'first_name',

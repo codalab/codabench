@@ -91,7 +91,7 @@
                 <tbody>
                     <tr>
                         <td>{selected_row.key}</td>
-                        <td><a href="/profiles/user/{selected_row.created_by}/" target=_blank>{selected_row.owner_display_name}</a></td>
+                        <td><a href="/user/{selected_row.created_by}/" target=_blank>{selected_row.owner_display_name}</a></td>
                         <td>{pretty_date(selected_row.created_when)}</td>
                     </tr>
                 </tbody>
