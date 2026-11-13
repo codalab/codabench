@@ -366,6 +366,19 @@ Superusers can create and edit categories and tags directly in the **Django Admi
     - **Tag categories:** Click `Add Tag category`, enter the category name, and click **Save**.
     - **Tags:** Click `Add Tag`, enter the tag name, select its parent category from the dropdown, and click **Save**.
 
+!!! tip "Automatic UI Integration"
+    Categories and tags configured in Django Admin automatically appear in the filter panels of both the public competitions list and the [Competitions Dashboard](../../Participants/Competitions-Dashboard.md) (including its charts and Data Explorer).
+
+### Admin Dashboard Visibility Filter
+
+On the [Competitions Dashboard](../../Participants/Competitions-Dashboard.md) (`/dashboard/`), platform administrators have access to an exclusive **Visibility** filter in the left panel:
+
+- **Public**: Displays only published benchmarks.
+- **Private**: Restricts results to unpublished benchmarks.
+- **All**: Displays both public and private benchmarks.
+
+*(Standard participants only see public benchmarks and will not see this filter).*
+
 ### Initializing Default Tags
 
 To populate the database with default tag categories (*Machine Learning Domain*, *Fields of Application*, *Conference*) and their associated tags:
@@ -384,8 +397,32 @@ To delete all existing tags and categories and recreate the default taxonomy:
 docker compose exec django ./manage.py init_tags --reset
 ```
 
-!!! warning
-    Running `--reset` deletes all existing tags and categories, which also removes all assigned tags from existing competitions.
+!!! warning "Warning"
+    Running `--reset` (or `-r`) deletes all `Tag` and `TagCategory` records in the database: **this permanently clears all assigned tags from ALL competitions** on the platform.
 
+    The command prompts for confirmation before proceeding:
+    ```
+    WARNING: Resetting will delete ALL existing tags and categories.
+    Because tags are linked to competitions, this will also clear all assigned tags from ALL competitions in the database.
+    Are you sure you want to proceed? [y/N]:
+    ```
 
+    To skip the interactive prompt in non-interactive environments, pass `--no-input`:
+    ```bash
+    docker compose exec django ./manage.py init_tags --reset --no-input
+    ```
 
+### Automatic Tagging
+
+To automatically classify and tag untagged competitions:
+
+```bash
+docker compose exec django ./manage.py run_auto_tags
+```
+
+#### Retagging All Competitions
+To force re-evaluation and retag all competitions (including already tagged ones):
+
+```bash
+docker compose exec django ./manage.py run_auto_tags --all
+```

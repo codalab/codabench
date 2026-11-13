@@ -12,13 +12,31 @@ class Command(BaseCommand):
             '-r',
             '--reset',
             action='store_true',
-            help='Delete all tags and recreate default tag categories and tags'
+            help='Delete all tags and recreate default taxonomy. WARNING: Clears all tags from all competitions!'
+        )
+        parser.add_argument(
+            '--no-input',
+            '--noinput',
+            action='store_true',
+            dest='no_input',
+            help='Do not prompt for confirmation when resetting tags and categories',
         )
 
     def handle(self, *args, **kwargs):
         reset = kwargs.get('reset')
+        no_input = kwargs.get('no_input')
 
         if reset:
+            print(
+                "WARNING: Resetting will delete ALL existing tags and categories\n"
+                "Because tags are linked to competitions, this will also clear all assigned tags from ALL competitions in the database."
+            )
+            if not no_input:
+                confirm = input("Are you sure you want to proceed? [y/N]: ").strip().lower()
+                if confirm not in ("y", "yes"):
+                    print("Reset aborted by user.")
+                    return
+
             print("Resetting tags and categories.")
             Tag.objects.all().delete()
             TagCategory.objects.all().delete()

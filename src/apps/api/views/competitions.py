@@ -56,7 +56,6 @@ class CompetitionViewSet(ModelViewSet):
             # If the visibility is not 'public' and the user is not a staff or superuser, raise a permission denied error
             if visibility != 'public' and not (self.request.user.is_authenticated and (self.request.user.is_staff or self.request.user.is_superuser)):
                 raise PermissionDenied("You cannot view private competitions if you are not a superuser.")
-
             if visibility == 'public':
                 qs = qs.filter(published=True)
             elif visibility == 'private':
