@@ -214,8 +214,9 @@ def sign_up(request):
         form = SignUpForm(request.POST)
         if form.is_valid():
             # Check if the email is in the DeletedUser table
+            # DeletedUser keeps the email as it was at deletion time, so compare case-insensitively
             email = form.cleaned_data.get('email').lower()
-            if DeletedUser.objects.filter(email=email).exists():
+            if DeletedUser.objects.filter(email__iexact=email).exists():
                 messages.error(request, "This email has been previously deleted and cannot be used.")
                 context['form'] = form
             else:
