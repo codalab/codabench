@@ -115,13 +115,26 @@ class SubmissionAPITests(APITestCase):
         assert resp.status_code == 403
         assert resp.data["detail"] == "You do not have permission to delete this submission!"
 
-    def test_can_delete_submission_you_created(self):
+    def test_can_soft_delete_submission_you_created(self):
+        # Participants can only soft delete their own (non-running, non-leaderboard) submissions
+        self.existing_submission.status = Submission.FINISHED
+        self.existing_submission.save()
         url = reverse('submission-detail', args=(self.existing_submission.pk,))
         # As user who made submission
         self.client.force_login(self.participant)
         resp = self.client.delete(url)
-        assert resp.status_code == 204
-        assert not Submission.objects.filter(pk=self.existing_submission.pk).exists()
+        assert resp.status_code == 200
+        submission = Submission.objects.get(pk=self.existing_submission.pk)
+        assert submission.is_soft_deleted
+
+    def test_cannot_delete_running_submission_you_created(self):
+        url = reverse('submission-detail', args=(self.existing_submission.pk,))
+        # existing_submission is in SUBMITTED (running) state
+        self.client.force_login(self.participant)
+        resp = self.client.delete(url)
+        assert resp.status_code == 403
+        assert resp.data["error"] == "You are not allowed to delete a running submission"
+        assert not Submission.objects.get(pk=self.existing_submission.pk).is_soft_deleted
 
     def test_super_user_can_delete_submission_you_created(self):
         url = reverse('submission-detail', args=(self.existing_submission.pk,))
@@ -146,7 +159,8 @@ class SubmissionAPITests(APITestCase):
         resp = self.client.delete(url)
 
         assert resp.status_code == 403
-        assert resp.data["detail"] == "You cannot delete a leaderboard submission!"
+        assert resp.data["error"] == "You are not allowed to delete a leaderboard submission"
+        assert not Submission.objects.get(pk=self.leaderboard_submission.pk).is_soft_deleted
 
     def test_anonymous_cannot_list_or_retrieve_submissions(self):
         """
