@@ -170,6 +170,17 @@ class SignUpViewTests(TestCase):
         assert not User.objects.filter(username='newuser').exists()
         assert len(mail.outbox) == 0
 
+    def test_sign_up_with_deleted_email_in_different_case_is_rejected(self):
+        """The deleted email check ignores case, since DeletedUser keeps the email as it was at deletion time."""
+        DeletedUser.objects.create(username='olduser', email='NewUser@Example.com')
+
+        resp = self.sign_up(email='newuser@example.com')
+
+        assert resp.status_code == 200
+        assert 'This email has been previously deleted and cannot be used.' in self.get_message_texts(response=resp)
+        assert not User.objects.filter(username='newuser').exists()
+        assert len(mail.outbox) == 0
+
     def test_sign_up_with_invalid_form_shows_errors(self):
         """Submitting an invalid form (mismatched passwords) shows the form again with errors, creates no user and sends no email."""
         resp = self.sign_up(password2='Different12345!long')
