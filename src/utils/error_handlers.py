@@ -18,9 +18,12 @@ fixes that: a connection that is obsolete or unusable is dropped and the next
 error page opens a fresh one.
 """
 import functools
+import logging
 
 from django.db import connections
 from django.views import defaults
+
+logger = logging.getLogger(__name__)
 
 
 def _close_old_connections():
@@ -36,7 +39,11 @@ def _close_db_connections_after(view):
         try:
             return view(request, *args, **kwargs)
         finally:
-            _close_old_connections()
+            # Never let the cleanup replace the error page, or the exception raised while rendering it
+            try:
+                _close_old_connections()
+            except Exception:
+                logger.exception("Could not close the database connections after rendering an error page")
 
     return wrapper
 

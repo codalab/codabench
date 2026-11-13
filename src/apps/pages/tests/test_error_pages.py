@@ -65,6 +65,27 @@ class ErrorPagesCloseDatabaseConnectionsTests(TestCase):
 
         close_old_connections.assert_called_once()
 
+    def test_error_page_is_returned_even_if_closing_connections_fails(self):
+        request = RequestFactory().get('/forbidden/')
+        request.user = AnonymousUser()
+
+        with mock.patch('utils.error_handlers._close_old_connections', side_effect=Exception("close failed")):
+            with self.assertLogs('utils.error_handlers', level='ERROR'):
+                response = error_handlers.permission_denied(request, PermissionDenied())
+
+        assert response.status_code == 403
+
+    def test_rendering_exception_is_kept_even_if_closing_connections_fails(self):
+        def failing_view(request, exception):
+            raise Http404()
+
+        request = RequestFactory().get('/missing/')
+
+        with mock.patch('utils.error_handlers._close_old_connections', side_effect=Exception("close failed")):
+            with self.assertLogs('utils.error_handlers', level='ERROR'):
+                with self.assertRaises(Http404):
+                    error_handlers._close_db_connections_after(failing_view)(request, Http404())
+
     def test_database_is_still_usable_after_an_error_page_in_a_transaction(self):
         user = UserFactory()
         self.client.force_login(user)
