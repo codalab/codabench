@@ -62,6 +62,7 @@ urlpatterns = [
 
     # User account
     path('delete_account/', profiles.delete_account, name="delete_account"),
+    path('delete_token/', profiles.delete_token, name="delete_token"),
 
     # Analytics
     path('analytics/storage_usage_history/', analytics.storage_usage_history, name='storage_usage_history'),

@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.http import HttpResponse
+from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action, api_view
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from rest_framework.generics import GenericAPIView, RetrieveAPIView
@@ -113,6 +114,17 @@ def delete_account(request):
             "success": False,
             "error": "Wrong password" if is_username_valid else "Wrong username"
         })
+
+
+@api_view(['DELETE'])
+def delete_token(request):
+    # Only the requesting user's token is deleted; the next call to api-token-auth/ creates a new one
+    Token.objects.filter(user=request.user).delete()
+
+    return Response({
+        "success": True,
+        "message": "API token deleted successfully"
+    })
 
 
 class OrganizationViewSet(mixins.CreateModelMixin,
