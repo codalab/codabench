@@ -77,8 +77,19 @@ class SubmissionSerializer(serializers.ModelSerializer):
         return "Deleted File"
 
     def get_scores(self, instance):
-        scores = [score for score in instance.scores.all() if not score.column.hidden]
+        # Hidden columns are private to the competition admins
+        scores = instance.scores.all()
+        if not self.shows_hidden_scores(instance.phase.competition):
+            scores = [score for score in scores if not score.column.hidden]
         return SubmissionScoreSerializer(scores, many=True, context=self.context).data
+
+    def shows_hidden_scores(self, competition):
+        # Cached per competition: a list view serializes many submissions of the same one
+        cache = self.__dict__.setdefault('_shows_hidden_scores', {})
+        if competition.id not in cache:
+            request = self.context.get('request')
+            cache[competition.id] = request is not None and competition.user_has_admin_permission(request.user)
+        return cache[competition.id]
 
     def get_auto_run(self, instance):
         # returns this submission's competition auto_run_submissions Flag
