@@ -72,7 +72,11 @@ if __name__ == "__main__":
         "errorlog": "-",
         "worker_class": "uvicorn_worker.UvicornWorker",
         "logger_class": StubbedGunicornLogger,
-        "capture_output": 'true'
+        "capture_output": 'true',
+        "max_requests": 5000,
+        "max_requests_jitter": 500,
+        "timeout": 120,
+        "graceful_timeout": 30,
     }
 
     StandaloneApplication(app, options).run()
