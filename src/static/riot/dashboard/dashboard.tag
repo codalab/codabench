@@ -16,7 +16,7 @@
             </aside>
 
             <main class="dashboard-main">
-                <!-- Loading indicator matching competitions/public and datasets/public -->
+                <!-- Loading indicator -->
                 <div id="loading" class="loading-indicator" show="{ loading }">
                     <div class="loading-text">Fetching data...</div>
                     <div class="spinner"></div>
@@ -285,7 +285,10 @@
             self.loading = true;
             self.update();
 
-            var endpoint = (typeof URLS !== "undefined" && URLS.API) ? (URLS.API + "competitions/public/?page_size=5000") : "/api/competitions/public/?page_size=5000";
+            var baseUrl = (typeof URLS !== "undefined" && URLS.API) ? URLS.API : "/api/";
+            var endpoint = self.isAdmin
+                ? baseUrl + "competitions/?visibility=all&type=any&page_size=5000"
+                : baseUrl + "competitions/?visibility=public&type=any&page_size=5000";
             var allRawCompetitions = [];
 
             const fetchPage = (url) => {
