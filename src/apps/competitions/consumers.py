@@ -1,5 +1,4 @@
 import json
-import time
 
 from asgiref.sync import sync_to_async
 from django.contrib.auth import get_user_model
@@ -138,7 +137,6 @@ class SubmissionOutputConsumer(AsyncWebsocketConsumer):
     async def submission_message(self, event):
         logger.debug(f"FRONTEND_MARKER: Processing message for submission {event['submission_id']}")
 
-        time.sleep(0.3)  # Simulate some processing delay
         data = {
             "type": "catchup" if event.get('full_text') else "message",
             "submission_id": event['submission_id'],
