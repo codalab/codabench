@@ -196,25 +196,22 @@ class LeaderboardPhaseSerializer(serializers.ModelSerializer):
         if primary_col is None:
             raise Column.DoesNotExist("Primary column not found on the leaderboard")
 
-        submissions_qs = (
-            Submission.objects.filter(
-                phase=instance,
-                is_soft_deleted=False,
-                has_children=False,
-                is_specific_task_re_run=False,
-                leaderboard=instance.leaderboard,
-            )
-            .select_related(
-                'owner',
-                'organization',
-                'queue',
-                'parent',
-                'phase',
-                'phase__competition',
-                'phase__competition__queue',
-            )
-            .prefetch_related(
-                Prefetch('scores', queryset=SubmissionScore.objects.select_related('column'))
+        submissions_qs = Submission.objects.filter(
+            phase=instance,
+            is_soft_deleted=False,
+            is_specific_task_re_run=False,
+        ).select_related(
+            'owner',
+            'organization',
+            'queue',
+            'parent',
+            'phase',
+            'phase__competition',
+            'phase__competition__queue',
+        ).prefetch_related(
+            Prefetch(
+                'scores',
+                queryset=SubmissionScore.objects.select_related('column'),
             )
         )
         if primary_col.computation == Column.AVERAGE_RANK:
