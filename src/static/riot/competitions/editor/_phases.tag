@@ -154,116 +154,108 @@
                     <textarea class="markdown-editor" ref="description" name="description"></textarea>
                 </div>
 
-                <div class="ui accordion" ref="advanced_settings">
-                    <div class="title">
-                        <i class="dropdown icon"></i>
-                        Advanced
-                        <i class="cogs icon"></i>
+                <div class="three fields">
+                    <div class="field">
+                        <label>
+                            Execution Time Limit (seconds)<span data-tooltip="600s if unset, { CODALAB.state.public_env_variables.MAX_EXECUTION_TIME_LIMIT }s max with default queue."
+                                                       data-inverted=""
+                                                       data-position="bottom center">
+                            <i class="help icon circle"></i></span>
+                        </label>
+                        <input type="number" name="execution_time_limit">
                     </div>
-                    <div class="content">
-                        <div class="three fields">
-                            <div class="field">
-                                <label>
-                                    Execution Time Limit (seconds)<span data-tooltip="600s if unset, { CODALAB.state.public_env_variables.MAX_EXECUTION_TIME_LIMIT }s max with default queue."
-                                                               data-inverted=""
-                                                               data-position="bottom center">
-                                    <i class="help icon circle"></i></span>
-                                </label>
-                                <input type="number" name="execution_time_limit">
-                            </div>
-                            <div class="field">
-                                <label>
-                                    Max Submissions Per Day <span
-                                        data-tooltip="The maximum number of submissions a user can be made per day"
-                                        data-inverted=""
-                                        data-position="bottom center">
-                                    <i class="help icon circle"></i></span>
-                                </label>
-                                <input type="number" name="max_submissions_per_day">
-                            </div>
-                            <div class="field">
-                                <label>
-                                    Max Submissions Per Person <span
-                                        data-tooltip="The maximum number of submissions any single user can make to the phase"
-                                        data-inverted=""
-                                        data-position="bottom center">
-                                    <i class="help icon circle"></i></span>
-                                </label>
-                                <input type="number" name="max_submissions_per_person">
-                            </div>
-                        </div>
-                        <div class="field">
-                            <label>
-                                Max Submissions Scope <span
-                                    data-tooltip="Whether the submission limits apply to each participant or are shared by all members of a participant's organization (team)"
-                                    data-inverted=""
-                                    data-position="bottom center">
-                                <i class="help icon circle"></i></span>
-                            </label>
-                            <select name="max_submissions_scope" ref="max_submissions_scope">
-                                <option value="participant">Per participant</option>
-                                <option value="organization">Per organization (team)</option>
-                            </select>
-                        </div>
-                        <div class="field">
-                            <div class="ui checkbox">
-                                <label>Hide Submission Output
-                                    <span data-tooltip="Hide all submission output" data-inverted=""
-                              data-position="bottom center"><i class="help icon circle"></i></span>
-                                </label>
-                                <input type="checkbox" ref="hide_output">
-                            </div>
-                        </div>
-                        <div class="field">
-                            <div class="ui checkbox">
-                                <label>Hide Prediction Output 
-                                    <span data-tooltip="Prevent participants from downloading 'Output from prediction step'" data-inverted=""
-                              data-position="bottom center"><i class="help icon circle"></i></span>
-                                </label>
-                                <input type="checkbox" ref="hide_prediction_output">
-                            </div>
-                        </div>
-                        <div class="field">
-                            <div class="ui checkbox">
-                                <label>Hide Score Output 
-                                    <span data-tooltip="Prevent participants from downloading 'Output from scoring step'" data-inverted=""
-                              data-position="bottom center"><i class="help icon circle"></i></span>
-                                </label>
-                                <input type="checkbox" ref="hide_score_output">
-                            </div>
-                        </div>
+                    <div class="field">
+                        <label>
+                            Max Submissions Per Day <span
+                                data-tooltip="The maximum number of submissions a user can be made per day"
+                                data-inverted=""
+                                data-position="bottom center">
+                            <i class="help icon circle"></i></span>
+                        </label>
+                        <input type="number" name="max_submissions_per_day">
+                    </div>
+                    <div class="field">
+                        <label>
+                            Max Submissions Per Person <span
+                                data-tooltip="The maximum number of submissions any single user can make to the phase"
+                                data-inverted=""
+                                data-position="bottom center">
+                            <i class="help icon circle"></i></span>
+                        </label>
+                        <input type="number" name="max_submissions_per_person">
+                    </div>
+                </div>
+                <div class="field">
+                    <label>
+                        Max Submissions Scope <span
+                            data-tooltip="Whether the submission limits apply to each participant or are shared by all members of a participant's organization (team)"
+                            data-inverted=""
+                            data-position="bottom center">
+                        <i class="help icon circle"></i></span>
+                    </label>
+                    <select name="max_submissions_scope" ref="max_submissions_scope">
+                        <option value="participant">Per participant</option>
+                        <option value="organization">Per organization (team)</option>
+                    </select>
+                </div>
+                <div class="field"><b>Advanced</b></div>
+                <div class="field">
+                    <div class="ui checkbox">
+                        <label>Hide Submission Output
+                            <span data-tooltip="Hide all submission output" data-inverted=""
+                      data-position="bottom center"><i class="help icon circle"></i></span>
+                        </label>
+                        <input type="checkbox" ref="hide_output">
+                    </div>
+                </div>
+                <div class="field">
+                    <div class="ui checkbox">
+                        <label>Hide Prediction Output 
+                            <span data-tooltip="Prevent participants from downloading 'Output from prediction step'" data-inverted=""
+                      data-position="bottom center"><i class="help icon circle"></i></span>
+                        </label>
+                        <input type="checkbox" ref="hide_prediction_output">
+                    </div>
+                </div>
+                <div class="field">
+                    <div class="ui checkbox">
+                        <label>Hide Score Output 
+                            <span data-tooltip="Prevent participants from downloading 'Output from scoring step'" data-inverted=""
+                      data-position="bottom center"><i class="help icon circle"></i></span>
+                        </label>
+                        <input type="checkbox" ref="hide_score_output">
+                    </div>
+                </div>
 
-                        <div class="field">
-                            <div class="ui checkbox">
-                                <label>Parallel phase
-                                    <span data-tooltip="A parallel phase can run at the same time as other phases" data-inverted=""
-                                        data-position="bottom center"><i class="help icon circle"></i></span>
-                                </label>
-                                <input type="checkbox" ref="is_parallel">
-                            </div>
-                        </div>
+                <div class="field">
+                    <div class="ui checkbox">
+                        <label>Parallel phase
+                            <span data-tooltip="A parallel phase can run at the same time as other phases" data-inverted=""
+                                data-position="bottom center"><i class="help icon circle"></i></span>
+                        </label>
+                        <input type="checkbox" ref="is_parallel">
+                    </div>
+                </div>
 
-                        <div class="field">
-                            <div class="ui checkbox">
-                                <label>Locked phase
-                                    <span data-tooltip="Participants cannot submit to this phase. Only submission migrations are allowed."
-                                        data-inverted="" data-position="bottom center"><i class="help icon circle"></i></span>
-                                </label>
-                                <input type="checkbox" ref="is_locked_phase">
-                            </div>
-                        </div>
+                <div class="field">
+                    <div class="ui checkbox">
+                        <label>Locked phase
+                            <span data-tooltip="Participants cannot submit to this phase. Only submission migrations are allowed."
+                                data-inverted="" data-position="bottom center"><i class="help icon circle"></i></span>
+                        </label>
+                        <input type="checkbox" ref="is_locked_phase">
+                    </div>
+                </div>
 
-                        <div class="inline field" if="{phases.length > 0 && ![null, undefined, 0].includes(selected_phase_index)}">
-                            <div class="ui checkbox">
-                                <input type="checkbox" name="auto_migrate_to_this_phase" ref="auto_migrate">
-                                <label>
-                                    Auto migrate to this phase <span data-tooltip="Re-submit all leaderboard submissions automatically when the phase starts."
-                                                               data-inverted=""
-                                                               data-position="bottom center">
-                                    <i class="help icon circle"></i></span>
-                                </label>
-                            </div>
-                        </div>
+                <div class="inline field" if="{phases.length > 0 && ![null, undefined, 0].includes(selected_phase_index)}">
+                    <div class="ui checkbox">
+                        <input type="checkbox" name="auto_migrate_to_this_phase" ref="auto_migrate">
+                        <label>
+                            Auto migrate to this phase <span data-tooltip="Re-submit all leaderboard submissions automatically when the phase starts."
+                                                       data-inverted=""
+                                                       data-position="bottom center">
+                            <i class="help icon circle"></i></span>
+                        </label>
                     </div>
                 </div>
             </form>
@@ -373,7 +365,6 @@
                     self.clear_form()
                 }
             })
-            $(self.refs.advanced_settings).accordion()
         })
 
         /*---------------------------------------------------------------------
