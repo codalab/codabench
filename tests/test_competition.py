@@ -129,7 +129,6 @@ def test_manual_competition_creation(page: Page):
     tasks_dropdown.locator(".visible.menu .item").filter(
         has_text=f"{titleNum}Playwright Task"
     ).click()
-    page.locator(".title > .dropdown").click()
     page.locator('input[name="execution_time_limit"]').click()
     page.locator('input[name="execution_time_limit"]').fill("100")
     page.locator('input[name="max_submissions_per_day"]').click()
