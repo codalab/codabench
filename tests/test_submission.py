@@ -19,7 +19,7 @@ def browser_context_args(browser_context_args):
 def run_tests(page, competition, submission, expected_result="Finished") -> None:
     page.goto("/")
     page.get_by_role("link", name=" Benchmarks/Competitions").click()
-    page.get_by_role("link", name=" Upload").click()
+    page.get_by_role("link", name="Upload", exact=True).click()
     with page.expect_file_chooser() as fc_info:
         page.get_by_role("button", name="").click()
     file_chooser = fc_info.value
@@ -137,7 +137,7 @@ def test_v18_autowsl(page: Page):
 def test_v2_multiTask(page: Page) -> None:
     page.goto("/")
     page.get_by_role("link", name=" Benchmarks/Competitions").click()
-    page.get_by_role("link", name=" Upload").click()
+    page.get_by_role("link", name="Upload", exact=True).click()
     with page.expect_file_chooser() as fc_info:
         page.get_by_role("button", name="").click()
     file_chooser = fc_info.value
@@ -191,7 +191,7 @@ def test_v2_multiTask(page: Page) -> None:
 def test_v2_multiTaskFactSheet(page: Page) -> None:
     page.goto("/")
     page.get_by_role("link", name=" Benchmarks/Competitions").click()
-    page.get_by_role("link", name=" Upload").click()
+    page.get_by_role("link", name="Upload", exact=True).click()
     with page.expect_file_chooser() as fc_info:
         page.get_by_role("button", name="").click()
     file_chooser = fc_info.value

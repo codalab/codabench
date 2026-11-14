@@ -1,0 +1,98 @@
+/* --------------------------------------------------------------------------------------
+ Buttons, used on all redesigned pages.
+ A button gets the base class and one color, for example: cb-button cb-button-primary
+
+ Why the cb- prefix: a plain .button class would also style the Semantic UI
+ "ui button" elements used on the old pages.
+ */
+.cb-button
+    display inline-flex
+    align-items center
+    gap 6px
+    padding 8px 16px
+    border 1px solid transparent
+    border-radius 6px
+    font-family inherit
+    font-size 14px
+    font-weight 500
+    line-height 1.2
+    cursor pointer
+
+    &:disabled
+        opacity 0.5
+        cursor not-allowed
+
+    // Why: Semantic UI icons have a right margin that pushes the text away
+    .icon
+        margin 0
+
+// Bigger button, for the main action of a page or message
+.cb-button-large
+    padding 10px 20px
+
+// Smaller button, for small actions inside a box or card
+.cb-button-small
+    padding 6px 12px
+    font-size 13px
+
+// Filled blue, for the main action
+.cb-button-primary
+    border-color $cb-blue-500
+    background-color $cb-blue-500
+    color #fff
+
+    &:hover
+        border-color darken($cb-blue-500, 12%)
+        background-color darken($cb-blue-500, 12%)
+        color #fff
+
+// Blue outline, filled on hover
+.cb-button-outline
+    border-color $cb-blue-500
+    background-color #fff
+    color $cb-blue-500
+
+    &:hover
+        background-color $cb-blue-500
+        color #fff
+
+    // Keeps the outlined look while the button cannot be clicked
+    &:disabled:hover
+        background-color #fff
+        color $cb-blue-500
+
+// Grey outline, for Cancel and similar actions
+.cb-button-secondary
+    border-color rgba($cb-navy-900, 0.2)
+    background-color #fff
+    color $cb-navy-700
+
+    &:hover
+        border-color $cb-blue-500
+        background-color $cb-blue-50
+        color $cb-blue-500
+
+// Red outline, for actions that delete
+.cb-button-danger
+    border-color $cb-danger
+    background-color #fff
+    color $cb-danger
+
+    &:hover
+        background-color $cb-danger
+        color #fff
+
+    // Keeps the outlined look while the button cannot be clicked
+    &:disabled:hover
+        background-color #fff
+        color $cb-danger
+
+// Looks like a link
+.cb-button-link
+    padding 0
+    border none
+    background none
+    color $cb-blue-500
+
+    &:hover
+        color $cb-blue-400
