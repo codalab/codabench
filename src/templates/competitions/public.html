@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Public Benchmarks and Competitions - Codabench{% endblock %}
 
@@ -9,7 +10,7 @@
             {% if user.is_authenticated %}
                 <div class="public-competitions-actions">
                     <a class="cb-button cb-button-primary" href="{% url 'competitions:create' %}"><i class="bi bi-plus-lg" aria-hidden="true"></i>Create</a>
-                    <a class="cb-button cb-button-outline" href="{% url 'competitions:upload' %}"><i class="bi bi-cloud-arrow-up" aria-hidden="true"></i>Upload</a>
+                    <a class="cb-button cb-button-outline" href="{% url 'competitions:upload' %}"><i class="bi bi-upload" aria-hidden="true"></i>Upload</a>
                 </div>
             {% endif %}
         </div>
@@ -24,11 +25,11 @@
         {# Why hidden without results and filters: there are no public competitions at all, so there is nothing to search #}
         {% if competitions or filter_pills %}
             <!-- Search, filters and sort. Each change reloads the page with them in the URL -->
-            <form class="public-competitions-filters" id="public-competitions-filters" method="get">
+            <form class="public-competitions-filters" id="public-competitions-filters" method="get" data-default-filter-mode="{{ default_filter_mode }}">
                 <div class="public-competitions-toolbar">
                     <div class="public-competitions-search">
                         <i class="bi bi-search"></i>
-                        <input type="search" name="search" value="{{ filters.search }}" placeholder="Search by title" aria-label="Search by title">
+                        <input type="search" name="search" value="{{ filters.search }}" placeholder="Search by title or organizer" aria-label="Search by title or organizer">
                     </div>
 
                     <button type="button" class="cb-button cb-button-secondary public-competitions-tool-button" id="public-competitions-filters-button" aria-expanded="false" aria-controls="public-competitions-filters-panel">
@@ -59,19 +60,73 @@
                     <input type="hidden" name="ordering" value="{{ filters.ordering }}">
                 {% endif %}
 
-                <!-- Closed by default. Each group is one column, so a new filter only adds a group -->
+                <!-- Closed by default -->
                 <div class="public-competitions-panel" id="public-competitions-filters-panel" hidden>
-                    {% if user.is_authenticated %}
+                    <!-- Match: its own row, because it decides how all the filters below combine -->
+                    <div class="public-competitions-match">
+                        <p class="public-competitions-group-title" id="public-competitions-match-title">Match</p>
+                        <div class="public-competitions-segmented" role="radiogroup" aria-labelledby="public-competitions-match-title">
+                            {% for option in filter_mode_options %}
+                                <label><input type="radio" name="filter_mode" value="{{ option.value }}"{% if option.is_selected %} checked{% endif %}><span>{{ option.label }}</span></label>
+                            {% endfor %}
+                        </div>
+                        {% for option in filter_mode_options %}
+                            {% if option.is_selected %}<p class="public-competitions-help">{{ option.help }}</p>{% endif %}
+                        {% endfor %}
+                    </div>
+
+                    <!-- Each group is one column, so a new filter only adds a group -->
+                    <div class="public-competitions-groups">
+                        {% if user.is_authenticated %}
+                            <div class="public-competitions-group">
+                                <p class="public-competitions-group-title">Your competitions</p>
+                                <label><input type="checkbox" name="participating_in" value="true"{% if filters.participating_in %} checked{% endif %}> Participating in</label>
+                                <label><input type="checkbox" name="organizing" value="true"{% if filters.organizing %} checked{% endif %}> Organizing</label>
+                            </div>
+                        {% endif %}
                         <div class="public-competitions-group">
-                            <p class="public-competitions-group-title">Your competitions</p>
-                            <label><input type="checkbox" name="participating_in" value="true"{% if filters.participating_in %} checked{% endif %}> Participating in</label>
-                            <label><input type="checkbox" name="organizing" value="true"{% if filters.organizing %} checked{% endif %}> Organizing</label>
+                            <p class="public-competitions-group-title">Prize</p>
+                            <label><input type="checkbox" name="has_a_prize" value="true"{% if filters.has_a_prize %} checked{% endif %}> Has a prize</label>
+                        </div>
+                        <div class="public-competitions-group">
+                            <p class="public-competitions-group-title">Created</p>
+                            <div class="public-competitions-dates">
+                                <label><span>From</span><input type="date" name="start_date" value="{{ filters.start_date|date:'Y-m-d' }}" aria-label="Created from"></label>
+                                <label><span>To</span><input type="date" name="end_date" value="{{ filters.end_date|date:'Y-m-d' }}" aria-label="Created to"></label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tags: one dropdown for each category. Ticks apply when the dropdown closes. -->
+                    {% if tag_categories %}
+                        <div class="public-competitions-tags">
+                            <p class="public-competitions-group-title">Tags</p>
+                            <div class="public-competitions-dropdowns">
+                                {% for category in tag_categories %}
+                                    <div class="public-competitions-dropdown">
+                                        <button type="button" class="cb-button cb-button-secondary public-competitions-dropdown-button" aria-expanded="false" aria-controls="public-competitions-tags-{{ forloop.counter }}">
+                                            {{ category.name }}
+                                            {% if category.selected_count %}<span class="public-competitions-badge">{{ category.selected_count }}</span>{% endif %}
+                                            <i class="bi bi-chevron-down public-competitions-chevron"></i>
+                                        </button>
+                                        <div class="public-competitions-dropdown-menu" id="public-competitions-tags-{{ forloop.counter }}" hidden>
+                                            <div class="public-competitions-tag-search">
+                                                <i class="bi bi-search"></i>
+                                                {# No name: the text only filters this list and is not sent #}
+                                                <input type="search" placeholder="Find a tag" aria-label="Find a tag in {{ category.name }}">
+                                            </div>
+                                            <div class="public-competitions-dropdown-list">
+                                                {% for tag in category.tags %}
+                                                    <label><input type="checkbox" name="tags" value="{{ tag.id }}"{% if tag.is_selected %} checked{% endif %}> {{ tag.name }}</label>
+                                                {% endfor %}
+                                                <p class="public-competitions-no-tag" hidden>No tag matches your search.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
                         </div>
                     {% endif %}
-                    <div class="public-competitions-group">
-                        <p class="public-competitions-group-title">Other</p>
-                        <label><input type="checkbox" name="has_reward" value="true"{% if filters.has_reward %} checked{% endif %}> Has reward</label>
-                    </div>
                 </div>
             </form>
 
@@ -79,7 +134,11 @@
                 <!-- Active search and filters. Each pill links to the list without it -->
                 <div class="public-competitions-pills">
                     {% for pill in filter_pills %}
-                        <span class="public-competitions-pill">{{ pill.label }}<a href="?{{ pill.query }}" aria-label="Remove {{ pill.label }}"><i class="bi bi-x-lg"></i></a></span>
+                        <span class="public-competitions-pill">
+                            {% if pill.prefix %}<span class="public-competitions-pill-prefix">{{ pill.prefix }}</span>{% endif %}
+                            {{ pill.label }}
+                            <a href="?{{ pill.query }}" aria-label="Remove {% if pill.prefix %}{{ pill.prefix }} {% endif %}{{ pill.label }}"><i class="bi bi-x-lg"></i></a>
+                        </span>
                     {% endfor %}
                     <a class="public-competitions-clear" href="{{ clear_filters_url }}">Clear all</a>
                 </div>
@@ -103,6 +162,7 @@
 {% endblock %}
 
 {% block extra_js %}
+    <script src="{% static "js/ours/card_tags.js" %}"></script>
     <script>
         (function () {
             var form = document.getElementById('public-competitions-filters')
@@ -128,11 +188,128 @@
                 set_panel_open(filters_panel.hidden)
             })
 
-            // A checkbox applies right away. The search applies on Enter, like any form.
-            form.querySelectorAll('input[type="checkbox"]').forEach(function (checkbox) {
-                checkbox.addEventListener('change', function () {
-                    form.submit()
+            // A filter change reloads the page, and the browser would start it at the top.
+            // So the page saves how far down the visitor is before a filter change, and scrolls back there after the reload.
+            // Why not for Next and Previous: a new page of results should start at the top.
+            var scroll_storage_key = 'public-competitions-scroll'
+
+            function remember_scroll() {
+                sessionStorage.setItem(scroll_storage_key, window.scrollY)
+            }
+
+            var saved_scroll = sessionStorage.getItem(scroll_storage_key)
+            if (saved_scroll !== null) {
+                sessionStorage.removeItem(scroll_storage_key)
+                window.scrollTo(0, Number(saved_scroll))
+            }
+
+            // The pill ✕ links, Clear all and the Sort options also change the filters
+            document.querySelectorAll('.public-competitions-pill a, .public-competitions-clear, .public-competitions-sort-option').forEach(function (link) {
+                link.addEventListener('click', remember_scroll)
+            })
+
+            // Leaves the empty fields and the default Match out of the URL, then sends the form.
+            // Example: without it, an unset date adds start_date= to the URL.
+            // Why disabled: a disabled field is not sent.
+            function send_form() {
+                form.querySelectorAll('input[name="search"], input[type="date"]').forEach(function (input) {
+                    input.disabled = input.value === ''
                 })
+                var match = form.querySelector('input[name="filter_mode"]:checked')
+                if (match && match.value === form.dataset.defaultFilterMode) {
+                    match.disabled = true
+                }
+                remember_scroll()
+                form.submit()
+            }
+
+            // The search applies on Enter, like any form
+            form.addEventListener('submit', function (event) {
+                event.preventDefault()
+                send_form()
+            })
+
+            // The checkboxes outside the tag dropdowns, the Match buttons and the dates apply right away.
+            // Why change for the dates: it fires once a full date is picked or the box is cleared, not on each key.
+            form.querySelectorAll('.public-competitions-groups input, input[name="filter_mode"]').forEach(function (input) {
+                input.addEventListener('change', send_form)
+            })
+
+            // Tag dropdowns: one open at a time. Ticks apply when the dropdown closes,
+            // so the visitor can pick several tags with one reload.
+            var dropdowns = Array.prototype.slice.call(form.querySelectorAll('.public-competitions-dropdown'))
+            var open_dropdown = null
+            // The ticked tags when the dropdown opened, to know if anything changed
+            var ticked_when_opened = ''
+
+            function ticked_tags(dropdown) {
+                return Array.prototype.slice.call(dropdown.querySelectorAll('input[name="tags"]:checked'))
+                    .map(function (checkbox) { return checkbox.value })
+                    .join(',')
+            }
+
+            function set_dropdown_open(dropdown, is_open) {
+                var button = dropdown.querySelector('.public-competitions-dropdown-button')
+                dropdown.querySelector('.public-competitions-dropdown-menu').hidden = !is_open
+                button.classList.toggle('public-competitions-tool-button-open', is_open)
+                button.setAttribute('aria-expanded', is_open)
+            }
+
+            function open_tag_dropdown(dropdown) {
+                set_dropdown_open(dropdown, true)
+                open_dropdown = dropdown
+                ticked_when_opened = ticked_tags(dropdown)
+                dropdown.querySelector('input[type="search"]').focus()
+            }
+
+            // Closes the open dropdown, and reloads the list if its ticks changed
+            function close_tag_dropdown() {
+                if (!open_dropdown) {
+                    return
+                }
+                var dropdown = open_dropdown
+                set_dropdown_open(dropdown, false)
+                open_dropdown = null
+                if (ticked_tags(dropdown) !== ticked_when_opened) {
+                    send_form()
+                }
+            }
+
+            dropdowns.forEach(function (dropdown) {
+                dropdown.querySelector('.public-competitions-dropdown-button').addEventListener('click', function () {
+                    var was_open = open_dropdown === dropdown
+                    close_tag_dropdown()
+                    if (!was_open) {
+                        open_tag_dropdown(dropdown)
+                    }
+                })
+
+                // Find a tag: shows only the tags whose name has the typed text
+                var search = dropdown.querySelector('input[type="search"]')
+                var labels = Array.prototype.slice.call(dropdown.querySelectorAll('.public-competitions-dropdown-list label'))
+                var no_tag = dropdown.querySelector('.public-competitions-no-tag')
+                search.addEventListener('input', function () {
+                    var text = search.value.trim().toLowerCase()
+                    var shown_count = 0
+                    labels.forEach(function (label) {
+                        var is_shown = label.textContent.toLowerCase().indexOf(text) !== -1
+                        label.hidden = !is_shown
+                        shown_count += is_shown ? 1 : 0
+                    })
+                    no_tag.hidden = shown_count > 0
+                })
+                // Why: Enter in the tag search would send the form with the old ticks
+                search.addEventListener('keydown', function (event) {
+                    if (event.key === 'Enter') {
+                        event.preventDefault()
+                    }
+                })
+            })
+
+            document.addEventListener('click', function (event) {
+                if (open_dropdown && !open_dropdown.contains(event.target)) {
+                    close_tag_dropdown()
+                }
             })
 
             // Sort menu: opens on click, closes on an outside click or Escape. Its options are links.
@@ -156,6 +333,7 @@
             document.addEventListener('keydown', function (event) {
                 if (event.key === 'Escape') {
                     set_sort_open(false)
+                    close_tag_dropdown()
                 }
             })
         })()

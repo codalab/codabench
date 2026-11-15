@@ -12,8 +12,9 @@ from django.shortcuts import get_object_or_404
 from profiles.models import CustomGroup, User
 
 from .models import Competition, CompetitionParticipant
-from .public_competitions import DEFAULT_ORDERING, get_public_competitions, read_filters, query_string_without, \
-    get_sort_options, get_filter_pills
+from .public_competitions import DEFAULT_ORDERING, DEFAULT_FILTER_MODE, get_public_competitions, read_filters, query_string_without, \
+    get_sort_options, get_filter_pills, get_tag_categories, get_filter_mode_options, put_matching_tags_first, \
+    count_active_filters
 from pages.serializers import HomePageBenchmarkSerializer
 from django.db import transaction
 from django.urls import reverse
@@ -43,20 +44,27 @@ class CompetitionPublic(TemplateView):
         paginator = Paginator(object_list=competitions, per_page=self.competitions_per_page)
         page = paginator.get_page(params.get('page'))
 
-        context['competitions'] = HomePageBenchmarkSerializer(page.object_list, many=True).data
+        cards = HomePageBenchmarkSerializer(page.object_list, many=True).data
+        context['competitions'] = put_matching_tags_first(competitions=cards, selected_tag_ids=filters['tag_ids'])
         context['page'] = page
         # Why: the page links keep the search, filters and sort
         context['page_query'] = query_string_without(params, 'page')
 
-        # Current values for the search box, the checkboxes and the sort menu
+        # Current values for the search box, the checkboxes, the dates, the Match buttons and the sort menu
         context['filters'] = filters
         context['default_ordering'] = DEFAULT_ORDERING
-        context['active_filter_count'] = sum([filters['participating_in'], filters['organizing'], filters['has_reward']])
+        context['filter_mode_options'] = get_filter_mode_options(filter_mode=filters['filter_mode'])
+        # Why: the page script leaves the default mode out of the URL
+        context['default_filter_mode'] = DEFAULT_FILTER_MODE
+        context['active_filter_count'] = count_active_filters(filters=filters)
+
+        # The tag dropdowns of the Filters panel
+        context['tag_categories'] = get_tag_categories(selected_tag_ids=filters['tag_ids'])
 
         context['sort_options'] = get_sort_options(params=params, ordering=filters['ordering'])
         context['selected_sort_label'] = next(option['label'] for option in context['sort_options'] if option['is_selected'])
 
-        context['filter_pills'] = get_filter_pills(params=params, filters=filters)
+        context['filter_pills'] = get_filter_pills(params=params, filters=filters, tag_categories=context['tag_categories'])
         # Clear all keeps the sort. Why: the sort is not a filter.
         context['clear_filters_url'] = f"?ordering={filters['ordering']}" if filters['ordering'] != DEFAULT_ORDERING else "?"
 

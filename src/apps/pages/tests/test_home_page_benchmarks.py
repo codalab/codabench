@@ -6,8 +6,9 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils.timezone import now
 
-from competitions.models import Competition
+from competitions.models import Competition, Tag, TagCategory
 from factories import CompetitionFactory, UserFactory
+from profiles.models import User
 from pages.home_page import get_featured_benchmarks, get_popular_benchmarks, get_recent_benchmarks
 
 
@@ -205,7 +206,7 @@ class HomePageBenchmarkSectionsTests(TestCase):
         """
         Creates a benchmark with an organizer display name, 1,234 participants, 56 submissions
         and a reward. Expects its card to link to the benchmark in a new tab and show the
-        title, organizer, counts with separators and the Prize pill.
+        title, organizer, the counts in their pills with separators, and the Prize pill.
         """
         competition = make_benchmark(
             participants_count=1234, published=True, title="Card Title", reward="1000 EUR",
@@ -218,8 +219,8 @@ class HomePageBenchmarkSectionsTests(TestCase):
         assert f'href="/competitions/{competition.id}/" target="_blank"' in content
         assert '<h3 class="bc-title">Card Title</h3>' in content
         assert '<span class="bc-organizer-name">Org Name</span>' in content
-        assert "1,234 participants" in content
-        assert "56 submissions" in content
+        assert re.search(r'title="Participants"><i [^>]*></i>1,234<', content)
+        assert re.search(r'title="Submissions"><i [^>]*></i>56<', content)
         assert 'class="bc-pill bc-prize"' in content
 
     def test_card_logo_or_initial(self):
@@ -239,7 +240,7 @@ class HomePageBenchmarkSectionsTests(TestCase):
     def test_card_organizer_fallbacks(self):
         """
         Creates a benchmark whose creator has no display name, and one whose creator was deleted.
-        Expects the first card to show the creator's username, and only one organizer pill
+        Expects the first card to show the creator's username, and only one organizer line
         on the page (none for the deleted creator).
         """
         creator = UserFactory(display_name=None)
@@ -250,7 +251,7 @@ class HomePageBenchmarkSectionsTests(TestCase):
         content = self.get_home().content.decode()
 
         assert f'<span class="bc-organizer-name">{creator.username}</span>' in content
-        assert content.count('class="bc-pill bc-organizer"') == 1
+        assert content.count('class="bc-organizer"') == 1
 
     def test_card_date_is_formatted(self):
         """
@@ -259,7 +260,7 @@ class HomePageBenchmarkSectionsTests(TestCase):
         """
         make_benchmark(published=True, created_when=datetime(2026, 9, 23, 12, tzinfo=timezone.utc))
 
-        assert re.search(r'calendar alternate icon"></i>Sep 23, 2026<', self.get_home().content.decode())
+        assert re.search(r'bi-calendar-event" aria-hidden="true"></i>Sep 23, 2026<', self.get_home().content.decode())
 
     def test_empty_message_without_benchmarks(self):
         """
@@ -270,10 +271,9 @@ class HomePageBenchmarkSectionsTests(TestCase):
 
     def test_card_shows_tags(self):
         """
-        Creates a published benchmark with a tag and loads the home page.
-        Expects its card to show the tag name, category title and comp-tag class.
+        Creates a published benchmark with the tag Computer Vision in the category Domain.
+        Expects its card to show the tag, with the category as its hover text.
         """
-        from competitions.models import Tag, TagCategory
         category = TagCategory.objects.create(name="Domain")
         tag = Tag.objects.create(name="Computer Vision", category=category)
         competition = make_benchmark(published=True)
@@ -281,32 +281,63 @@ class HomePageBenchmarkSectionsTests(TestCase):
 
         content = self.get_home().content.decode()
 
-        expected_color = int(((category.id + 45) * 137.5) % 360)
-        assert 'class="comp-tags"' in content
-        assert "Computer Vision" in content
-        assert 'title="Domain"' in content
-        assert f'style="--tag-color: {expected_color};"' in content
+        assert '<span class="bc-tag" title="Domain">Computer Vision</span>' in content
 
-    def test_card_limits_tags_to_five_per_category(self):
+    def test_card_shows_no_tags_text(self):
         """
-        Creates a benchmark with 7 tags in one category and 2 in another.
-        Expects only the first 5 of the first category and both of the second.
+        Creates a published benchmark without tags.
+        Expects its card to show No tags instead of a tag row.
         """
-        from competitions.models import Tag, TagCategory
+        make_benchmark(published=True)
+
+        content = self.get_home().content.decode()
+
+        assert '<span class="bc-tag-empty">No tags</span>' in content
+        assert 'class="bc-tag-row"' not in content
+
+    def test_card_sends_all_tags_sorted(self):
+        """
+        Creates a benchmark with 7 tags in the category Domain and 2 in the category Field,
+        added out of order. Expects all 9 tags on its card, Domain first, then Field,
+        and A to Z inside each category.
+        """
         domain = TagCategory.objects.create(name="Domain")
         field = TagCategory.objects.create(name="Field")
-        domain_tags = [Tag.objects.create(name=f"Domain {i}", category=domain) for i in range(7)]
-        field_tags = [Tag.objects.create(name=f"Field {i}", category=field) for i in range(2)]
-
+        domain_tags = [Tag.objects.create(name=f"Domain {number}", category=domain) for number in range(7)]
+        field_tags = [Tag.objects.create(name=f"Field {number}", category=field) for number in range(2)]
         competition = make_benchmark(published=True)
-        competition.tags.add(*domain_tags, *field_tags)
+        # Out of order on purpose: Field before Domain, and Domain from 6 down to 0
+        competition.tags.add(*field_tags, *reversed(domain_tags))
 
         context = self.get_home().context
         all_cards = context["featured_benchmarks"] + context["popular_benchmarks"] + context["recent_benchmarks"]
-        benchmark_data = next(b for b in all_cards if b["id"] == competition.id)
+        card = next(card for card in all_cards if card["id"] == competition.id)
+        tag_names = [tag["name"] for tag in card["tags"]]
 
-        domain_serialized = [t for t in benchmark_data["tags"] if t["category"] == "Domain"]
-        field_serialized = [t for t in benchmark_data["tags"] if t["category"] == "Field"]
+        assert tag_names == [f"Domain {number}" for number in range(7)] + ["Field 0", "Field 1"]
 
-        assert len(domain_serialized) == 5
-        assert len(field_serialized) == 2
+    def test_card_organizer_photo_or_initial(self):
+        """
+        Creates one benchmark whose creator has a profile photo, and one whose creator has none.
+        Expects the first card to show the photo in the avatar, and the second to show
+        the first letter of the creator's name instead.
+        """
+        with_photo = UserFactory(display_name="Photo Owner")
+        User.objects.filter(pk=with_photo.pk).update(photo="profile_photos/owner.png")
+        make_benchmark(published=True, created_by=with_photo)
+        make_benchmark(published=True, created_by=UserFactory(display_name="no photo"))
+
+        content = self.get_home().content.decode()
+
+        # Why no closing quote after .png: the storage adds a signature to the address, like ?AWSAccessKeyId=...
+        assert re.search(r'class="bc-avatar">\s*<img src="[^"]*profile_photos/owner\.png', content)
+        assert re.search(r'class="bc-avatar">\s*N\s*</span>', content)
+
+    def test_home_page_loads_card_tags_script(self):
+        """
+        Loads the home page.
+        Expects it to include card_tags.js, which fits the tags of each card on one line.
+        """
+        content = self.get_home().content.decode()
+
+        assert 'src="/static/js/ours/card_tags.js"' in content
