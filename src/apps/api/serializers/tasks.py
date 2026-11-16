@@ -5,7 +5,7 @@ from api.serializers.datasets import DataDetailSerializer, DataSimpleSerializer
 from competitions.models import PhaseTaskInstance, Phase
 from datasets.models import Data
 from tasks.models import Task, Solution
-from competitions.models import Competition
+from competitions.models import Competition, CompetitionCreationTaskStatus, CompetitionDump
 
 
 class SolutionSerializer(WritableNestedModelSerializer):
@@ -240,7 +240,27 @@ class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):
         if not datasets:
             return []
         try:
-            return DataDetailSerializer(sorted(datasets.values(), key=lambda d: d.pk), many=True).data
+            orphan_ids = [pk for pk, d in datasets.items() if d.competition_id is None]
+            bundle_competitions, dump_competitions = {}, {}
+            if orphan_ids:
+                bundle_competitions = {
+                    s.dataset_id: s.resulting_competition
+                    for s in CompetitionCreationTaskStatus.objects
+                    .filter(dataset_id__in=orphan_ids).select_related('resulting_competition')
+                }
+                dump_competitions = {
+                    d.dataset_id: d.competition
+                    for d in CompetitionDump.objects
+                    .filter(dataset_id__in=orphan_ids).select_related('competition')
+                }
+            context = {
+                **self.context,
+                'bundle_competitions': bundle_competitions,
+                'dump_competitions': dump_competitions,
+            }
+            return DataDetailSerializer(
+                sorted(datasets.values(), key=lambda d: d.pk), many=True, context=context
+            ).data
         except Exception:
             return []
 

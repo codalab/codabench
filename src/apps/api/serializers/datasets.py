@@ -191,42 +191,27 @@ class DataDetailSerializer(serializers.ModelSerializer):
         return obj.file_size or 0
 
     def get_prediction_result_file_size(self, obj):
-        return sum([s.prediction_result_file_size or 0 for s in obj.submission.all()])
+        if obj.type != Data.SUBMISSION:
+            return None
+        return sum(s.prediction_result_file_size or 0 for s in obj.submission.all())
 
     def get_scoring_result_file_size(self, obj):
-        return sum([s.scoring_result_file_size or 0 for s in obj.submission.all()])
+        if obj.type != Data.SUBMISSION:
+            return None
+        return sum(s.scoring_result_file_size or 0 for s in obj.submission.all())
 
     def get_detailed_result_file_size(self, obj):
-        return sum([s.detailed_result_file_size or 0 for s in obj.submission.all()])
+        if obj.type != Data.SUBMISSION:
+            return None
+        return sum(s.detailed_result_file_size or 0 for s in obj.submission.all())
 
     def get_competition(self, obj):
-        if obj.competition:
-            # Submission
-            return {
-                "id": obj.competition.id,
-                "title": obj.competition.title,
-            }
-        else:
-            competition = None
-            try:
-                # Check if it is a bundle
-                competition = CompetitionCreationTaskStatus.objects.get(dataset=obj).resulting_competition
-            except CompetitionCreationTaskStatus.DoesNotExist:
-                competition = None
-            if not competition:
-                # Check if it is a dump
-                try:
-                    competition = CompetitionDump.objects.get(dataset=obj).competition
-                except CompetitionDump.DoesNotExist:
-                    competition = None
-
-            if competition:
-                return {
-                    "id": competition.id,
-                    "title": competition.title
-                }
-
-        return None
-
-    def get_owner_display_name(self, instance):
-        return instance.created_by.display_name if instance.created_by.display_name else instance.created_by.username
+        competition = obj.competition
+        if not competition:
+            bundles = self.context.get('bundle_competitions')
+            dumps = self.context.get('dump_competitions')
+            if bundles is not None and dumps is not None:
+                competition = bundles.get(obj.pk) or dumps.get(obj.pk)
+            else:
+                competition = self._lookup_competition(obj)
+        return {"id": competition.id, "title": competition.title} if competition else None
