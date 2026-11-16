@@ -31,7 +31,7 @@ def collaborator_tasks_filter(user):
     return Q(phases__competition__created_by=F('created_by'), phases__competition__collaborators=user)
 
 
-# TODO:// TaskViewSimple uses simple serializer from tasks, which exists purely for the use of Select2 on phase modal
+# TODO: TaskViewSimple uses simple serializer from tasks, which exists purely for the use of Select2 on phase modal
 #   is there a better way to do it using get_serializer_class() method?
 class TaskViewSet(ModelViewSet):
     queryset = Task.objects.all()

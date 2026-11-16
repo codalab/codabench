@@ -113,7 +113,7 @@
                     }
                 })
                 .fail(function () {
-                    toastr.error("An error occured. Please contact administrators");
+                    toastr.error("An error occurred. Please contact administrators");
                 })
         }
 

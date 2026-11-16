@@ -477,7 +477,7 @@ class SubmissionViewSet(ModelViewSet):
 
         return Response({'migrated': migrated, 'skipped': skipped})
 
-    # TODO: The 3 functions download many should be bundled inside a genereic with the function like "get_prediction_result" as a parameter instead of the same code 3 times
+    # TODO: The 3 functions download many should be bundled inside a generic with the function like "get_prediction_result" as a parameter instead of the same code 3 times
     @action(detail=False, methods=('POST',))
     def download_many_submissions(self, request):
         return self._download_many_files(request=request, file_type='submission')
