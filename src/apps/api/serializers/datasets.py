@@ -2,6 +2,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from api.mixins import DefaultUserCreateMixin
+from apps.competitions.models import CompetitionCreationTaskStatus, CompetitionDump
 from datasets.models import Data
 
 
@@ -217,3 +218,34 @@ class DataDetailSerializer(serializers.ModelSerializer):
             else:
                 competition = self._lookup_competition(obj)
         return {"id": competition.id, "title": competition.title} if competition else None
+
+    def _lookup_competition(self, obj):
+        try:
+            competition = (
+                CompetitionCreationTaskStatus.objects
+                .select_related('resulting_competition')
+                .get(dataset=obj)
+                .resulting_competition
+            )
+        except CompetitionCreationTaskStatus.DoesNotExist:
+            competition = None
+
+        if not competition:
+            try:
+                competition = (
+                    CompetitionDump.objects
+                    .select_related('competition')
+                    .get(dataset=obj)
+                    .competition
+                )
+            except CompetitionDump.DoesNotExist:
+                competition = None
+
+        return competition
+
+    def get_owner_display_name(self, instance):
+        return (
+            instance.created_by.display_name
+            if instance.created_by.display_name
+            else instance.created_by.username
+        )
