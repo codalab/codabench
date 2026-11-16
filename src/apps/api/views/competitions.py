@@ -192,7 +192,8 @@ class CompetitionViewSet(ModelViewSet):
                     'task__reference_data', 'task__reference_data__created_by', 'task__reference_data__competition',
                     'task__ingestion_program', 'task__ingestion_program__created_by', 'task__ingestion_program__competition',
                     'task__scoring_program', 'task__scoring_program__created_by', 'task__scoring_program__competition',
-                )
+                ).prefetch_related('task__solutions__data', 'task__solutions__tasks')
+
                 qs = qs.select_related('queue').prefetch_related(
                     Prefetch('phases', queryset=Phase.objects.select_related('public_data', 'starting_kit', 'leaderboard').prefetch_related('leaderboard__columns')
                              ),

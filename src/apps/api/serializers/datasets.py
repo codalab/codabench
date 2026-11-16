@@ -190,19 +190,22 @@ class DataDetailSerializer(serializers.ModelSerializer):
         return obj.file_size or 0
 
     def get_prediction_result_file_size(self, obj):
-        if obj.type != Data.SUBMISSION:
-            return None
-        return sum(s.prediction_result_file_size or 0 for s in obj.submission.all())
+        return sum(
+            submission.prediction_result_file_size or 0
+            for submission in obj.submission.all()
+        )
 
     def get_scoring_result_file_size(self, obj):
-        if obj.type != Data.SUBMISSION:
-            return None
-        return sum(s.scoring_result_file_size or 0 for s in obj.submission.all())
+        return sum(
+            submission.scoring_result_file_size or 0
+            for submission in obj.submission.all()
+        )
 
     def get_detailed_result_file_size(self, obj):
-        if obj.type != Data.SUBMISSION:
-            return None
-        return sum(s.detailed_result_file_size or 0 for s in obj.submission.all())
+        return sum(
+            submission.detailed_result_file_size or 0
+            for submission in obj.submission.all()
+        )
 
     def get_competition(self, obj):
         competition = obj.competition

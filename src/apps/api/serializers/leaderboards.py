@@ -200,6 +200,8 @@ class LeaderboardPhaseSerializer(serializers.ModelSerializer):
             phase=instance,
             is_soft_deleted=False,
             is_specific_task_re_run=False,
+            has_children=False,
+            leaderboard=instance.leaderboard,
         ).select_related(
             'owner',
             'organization',
