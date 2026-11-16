@@ -1357,8 +1357,6 @@
                 return;
                 }
 
-                console.log("Files returned by server:", files);
-
                 const zip = new JSZip();
                 const total = files.length;
                 let completed = 0;
@@ -1450,7 +1448,8 @@
 
         self.submission_handling = function () {
             if (self.checked_submissions.length === 0) {
-                console.log("no submission is selected");
+                // No submission is selected, so there is nothing to do
+                return
             } else {
                 var submission_operation = self.refs.submission_handling_operation.value
                 switch (submission_operation) {
@@ -1475,8 +1474,6 @@
                     case "migrate":
                         self.migrate_selected_submissions()
                         break
-                    default:
-                        console.log("should never be in this state of default..")
                 }
             }
         }
