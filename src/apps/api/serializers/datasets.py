@@ -2,7 +2,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from api.mixins import DefaultUserCreateMixin
-from apps.competitions.models import CompetitionCreationTaskStatus, CompetitionDump
+from competitions.models import CompetitionCreationTaskStatus, CompetitionDump
 from datasets.models import Data
 
 
