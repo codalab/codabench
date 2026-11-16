@@ -3,7 +3,6 @@ from rest_framework.exceptions import ValidationError
 
 from api.mixins import DefaultUserCreateMixin
 from datasets.models import Data
-from competitions.models import CompetitionCreationTaskStatus, CompetitionDump
 
 
 class DataSerializer(DefaultUserCreateMixin, serializers.ModelSerializer):
