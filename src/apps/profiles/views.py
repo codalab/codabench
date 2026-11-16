@@ -329,7 +329,7 @@ class CustomPasswordResetForm(auth_forms.PasswordResetForm):
         body = render_to_string(email_template_name, context)
 
         email_message = EmailMultiAlternatives(subject, body, from_email, [to_email])
-        print(email_message.message())
+
         if html_email_template_name is not None:
             html_email = render_to_string(html_email_template_name, context)
             email_message.attach_alternative(html_email, "text/html")
