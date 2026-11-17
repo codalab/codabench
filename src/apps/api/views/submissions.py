@@ -320,7 +320,7 @@ class SubmissionViewSet(ModelViewSet):
         submission = self.get_object()
         if not self.has_admin_permission(request.user, submission):
             if submission.owner != request.user:
-                raise PermissionDenied(f'You do not have permission to cancel submissions')
+                raise PermissionDenied('You do not have permission to cancel submissions')
         for child in submission.children.all():
             child.cancel()
         canceled = submission.cancel()
@@ -483,7 +483,7 @@ class SubmissionViewSet(ModelViewSet):
 
         return Response({'migrated': migrated, 'skipped': skipped})
 
-    # TODO: The 3 functions download many should be bundled inside a genereic with the function like "get_prediction_result" as a parameter instead of the same code 3 times
+    # TODO: The 3 functions download many should be bundled inside a generic with the function like "get_prediction_result" as a parameter instead of the same code 3 times
     @action(detail=False, methods=('POST',))
     def download_many_submissions(self, request):
         return self._download_many_files(request=request, file_type='submission')
