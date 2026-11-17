@@ -106,31 +106,6 @@ class CompetitionViewSet(ModelViewSet):
             ).values_list('status')[:1]
             qs = qs.annotate(participant_status=Subquery(participant_status_query))
 
-            # if `search_query` is true, this is called form search bar
-            if search_query:
-                # competitions which this user owns
-                # or
-                # competitions in which this user is collaborator
-                # or
-                # competitions is published and belongs to someone else
-                # or
-                # competitions in which this user is participant and status is approved
-                qs = qs.filter(
-                    (
-                        Q(title__icontains=search_query)
-                        | Q(description__icontains=search_query)
-                    )
-                    & (
-                        Q(created_by=self.request.user)
-                        | Q(collaborators=self.request.user)
-                        | Q(published=True)
-                        | Q(
-                            participants__user=self.request.user,
-                            participants__status="approved",
-                        )
-                    )
-                ).distinct()
-
             # if `secret_key` is true, this is called for a secret competition
             if secret_key:
                 qs = qs.filter(Q(secret_key=secret_key))
@@ -181,6 +156,37 @@ class CompetitionViewSet(ModelViewSet):
                 (Q(published=True)) |
                 (Q(secret_key=secret_key))
             )
+
+        # if `search_query` is true, this is called form search bar
+        if search_query:
+            if self.request.user.is_authenticated:
+                # competitions which this user owns
+                # or
+                # competitions in which this user is collaborator
+                # or
+                # competitions is published and belongs to someone else
+                # or
+                # competitions in which this user is participant and status is approved
+                qs = qs.filter(
+                    (
+                        Q(title__icontains=search_query)
+                        | Q(description__icontains=search_query)
+                    )
+                    & (
+                        Q(created_by=self.request.user)
+                        | Q(collaborators=self.request.user)
+                        | Q(published=True)
+                        | Q(
+                            participants__user=self.request.user,
+                            participants__status="approved",
+                        )
+                    )
+                ).distinct()
+            else:
+                qs = qs.filter(
+                    Q(title__icontains=search_query)
+                    | Q(description__icontains=search_query)
+                )
 
         # On GETs lets optimize the query to reduce DB calls
         if self.request.method == 'GET':
