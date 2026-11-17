@@ -2,8 +2,8 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from api.mixins import DefaultUserCreateMixin
-from datasets.models import Data
 from competitions.models import CompetitionCreationTaskStatus, CompetitionDump
+from datasets.models import Data
 
 
 class DataSerializer(DefaultUserCreateMixin, serializers.ModelSerializer):
@@ -191,42 +191,61 @@ class DataDetailSerializer(serializers.ModelSerializer):
         return obj.file_size or 0
 
     def get_prediction_result_file_size(self, obj):
-        return sum([s.prediction_result_file_size or 0 for s in obj.submission.all()])
+        return sum(
+            submission.prediction_result_file_size or 0
+            for submission in obj.submission.all()
+        )
 
     def get_scoring_result_file_size(self, obj):
-        return sum([s.scoring_result_file_size or 0 for s in obj.submission.all()])
+        return sum(
+            submission.scoring_result_file_size or 0
+            for submission in obj.submission.all()
+        )
 
     def get_detailed_result_file_size(self, obj):
-        return sum([s.detailed_result_file_size or 0 for s in obj.submission.all()])
+        return sum(
+            submission.detailed_result_file_size or 0
+            for submission in obj.submission.all()
+        )
 
     def get_competition(self, obj):
-        if obj.competition:
-            # Submission
-            return {
-                "id": obj.competition.id,
-                "title": obj.competition.title,
-            }
-        else:
+        competition = obj.competition
+        if not competition:
+            bundles = self.context.get('bundle_competitions')
+            dumps = self.context.get('dump_competitions')
+            if bundles is not None and dumps is not None:
+                competition = bundles.get(obj.pk) or dumps.get(obj.pk)
+            else:
+                competition = self._lookup_competition(obj)
+        return {"id": competition.id, "title": competition.title} if competition else None
+
+    def _lookup_competition(self, obj):
+        try:
+            competition = (
+                CompetitionCreationTaskStatus.objects
+                .select_related('resulting_competition')
+                .get(dataset=obj)
+                .resulting_competition
+            )
+        except CompetitionCreationTaskStatus.DoesNotExist:
             competition = None
+
+        if not competition:
             try:
-                # Check if it is a bundle
-                competition = CompetitionCreationTaskStatus.objects.get(dataset=obj).resulting_competition
-            except CompetitionCreationTaskStatus.DoesNotExist:
+                competition = (
+                    CompetitionDump.objects
+                    .select_related('competition')
+                    .get(dataset=obj)
+                    .competition
+                )
+            except CompetitionDump.DoesNotExist:
                 competition = None
-            if not competition:
-                # Check if it is a dump
-                try:
-                    competition = CompetitionDump.objects.get(dataset=obj).competition
-                except CompetitionDump.DoesNotExist:
-                    competition = None
 
-            if competition:
-                return {
-                    "id": competition.id,
-                    "title": competition.title
-                }
-
-        return None
+        return competition
 
     def get_owner_display_name(self, instance):
-        return instance.created_by.display_name if instance.created_by.display_name else instance.created_by.username
+        return (
+            instance.created_by.display_name
+            if instance.created_by.display_name
+            else instance.created_by.username
+        )

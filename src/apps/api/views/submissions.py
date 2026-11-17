@@ -1,7 +1,7 @@
 import json
 import uuid
 from django.utils.timezone import now
-from django.db.models import Q
+from django.db.models import Q, Prefetch
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, action
@@ -15,13 +15,15 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework_csv import renderers
 from django.core.files.base import ContentFile
 
-from profiles.models import Organization, Membership
+from profiles.models import Organization, Membership, CustomGroup
 from api.pagination import DynamicChoicePagination
 from api.serializers.submissions import SubmissionCreationSerializer, SubmissionSerializer, SubmissionFilesSerializer
 from competitions.models import Submission, SubmissionDetails, Phase, CompetitionParticipant
 from leaderboards.strategies import put_on_leaderboard_by_submission_rule
 from leaderboards.models import SubmissionScore, Column, Leaderboard
 import logging
+
+from utils.data import make_url_sassy
 logger = logging.getLogger(__name__)
 
 
@@ -142,11 +144,15 @@ class SubmissionViewSet(ModelViewSet):
                 'participant__user',
                 'owner',
                 'data',
+                'task',
             ).prefetch_related(
                 'children',
                 'scores',
                 'scores__column',
-                'task',
+                Prefetch(
+                    'phase__competition__participant_groups',
+                    queryset=CustomGroup.objects.prefetch_related('user_set'),
+                ),
             )
         elif self.action in ['delete_many', 're_run_many_submissions', 'resubmit_many_submissions']:
             try:
@@ -584,7 +590,7 @@ class SubmissionViewSet(ModelViewSet):
     @action(detail=True, methods=('GET',))
     def get_detail_result(self, request, pk):
         # Soft-deleted submissions are not found
-        submission = get_object_or_404(Submission, pk=pk, is_soft_deleted=False)
+        submission = get_object_or_404(Submission.objects.select_related('phase', 'phase__competition', 'owner', 'data',), pk=pk, is_soft_deleted=False)
         competition = submission.phase.competition
         user = request.user
 
@@ -632,8 +638,11 @@ class SubmissionViewSet(ModelViewSet):
                     status=status.HTTP_403_FORBIDDEN,
                 )
 
-        data = SubmissionFilesSerializer(submission, context=self.get_serializer_context()).data
-        return Response(data.get("detailed_result"), status=status.HTTP_200_OK)
+        url = (
+            make_url_sassy(submission.detailed_result.name)
+            if submission.detailed_result.name else None
+        )
+        return Response(url, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=('GET',))
     def toggle_public(self, request, pk):
