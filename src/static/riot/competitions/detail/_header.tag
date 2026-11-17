@@ -13,6 +13,9 @@
                             <div class="competition-name underline">
                                 {competition.title}
                             </div>
+                            <div if="{ resolved_tags && resolved_tags.length > 0 }" class="comp-tags" style="margin-top: 8px; margin-bottom: 0;">
+                                <tag-badge each="{ tag in resolved_tags }" tag="{ tag }" size="normal"></tag-badge>
+                            </div>
                         </div>
                     </div>
                     <div class="row">
@@ -221,6 +224,7 @@
         let self = this
 
         self.competition = {}
+
         self.files = []
 
         self.tr_show = false
@@ -229,6 +233,15 @@
             competition.admin = CODALAB.state.user.has_competition_admin_privileges(competition)
             self.competition = competition
             self.update()
+            
+            if (competition.tags && competition.tags.length > 0) {
+                CODALAB.api.request('GET', URLS.API + 'tags/')
+                    .done(function (tags) {
+                        const tagMap = _.keyBy(tags, 'id');
+                        self.resolved_tags = competition.tags.map(id => tagMap[id]).filter(Boolean);
+                        self.update();
+                    });
+            }
             if (self.competition.admin) {
                 self.update_files()
             }

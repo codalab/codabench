@@ -7,11 +7,16 @@ from django.urls import path
 from ajax_select import urls as ajax_select_urls
 
 
+# Error pages that close their database connection, see utils/error_handlers.py
+handler403 = 'utils.error_handlers.permission_denied'
+handler404 = 'utils.error_handlers.page_not_found'
+
 urlpatterns = [
     # Our URLS
     path('', include('pages.urls', namespace='pages')),
     path('competitions/', include('competitions.urls', namespace='competitions')),
     path('analytics/', include('analytics.urls', namespace='analytics')),
+    path('dashboard/', include('dashboard.urls', namespace='dashboard')),
     path('datasets/', include('datasets.urls', namespace='datasets')),
     path('profiles/', include('profiles.urls', namespace='profiles')),
     path('tasks/', include('tasks.urls', namespace='tasks')),

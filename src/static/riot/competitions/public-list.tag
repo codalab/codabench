@@ -22,44 +22,7 @@
   <div class="content-container">
 
     <!-- Filters -->
-    <div class="filters-panel">
-        <!-- Filters main heading   -->
-        <h3>Filters</h3>
-
-        <!--  Search by title filter  -->
-        <div class="filter-group">
-            <label class="filter-label" for="search-title"><strong>Search by Title</strong></label>
-            <div class="ui input">
-              <input type="text" id="search-title" oninput="{on_title_input}" placeholder="Enter title...">
-            </div>
-        </div>
-
-        <!-- Order by filter   -->
-        <div class="filter-group">
-            <strong class="filter-label">Order By</strong>
-            <label><input type="radio" name="order" value="popular" onchange="{set_ordering}"> Most popular first</label>
-            <label><input type="radio" name="order" value="recent" onchange="{set_ordering}"> Recently added first</label>
-            <label><input type="radio" name="order" value="with_most_submissions" onchange="{set_ordering}"> With most submissions first</label>
-        </div>
-
-        <!-- Your competitions filters   -->
-        <div class="filter-group">
-            <strong class="filter-label">Your Competitions</strong>
-            <label><input type="checkbox" onchange="{toggle_participating}"> Participating In</label>
-            <label><input type="checkbox" onchange="{toggle_organizing}"> Organizing</label>
-        </div>
-
-        <!-- Your Other filter   -->
-        <div class="filter-group">
-            <strong class="filter-label">Other filters</strong>
-            <label><input type="checkbox" onchange="{toggle_has_reward}"> Has reward</label>
-        </div>
-
-        <!--  Clear filters  -->
-        <div class="filter-group" show="{should_show_clear_filters()}">
-            <button class="clear-filters-btn ui button" onclick="{clear_all_filters}">Clear All Filters</button>
-        </div>
-    </div>
+    <competition-filter-panel show_ordering="{ true }" initial_filters="{ filter_state }" onfilterchange="{ handle_filter_change }"></competition-filter-panel>
 
     <!-- Competitions -->
     <div class="list-panel">
@@ -76,6 +39,9 @@
           <a class="link-no-deco" href="../{competition.id}">
             <div class="comp-info">
               <h4 class="heading">{competition.title}</h4>
+              <div if="{competition.tags && competition.tags.length > 0}" class="comp-tags">
+                <tag-badge each="{tag in get_visible_tags(competition.tags)}" tag="{tag}" size="mini"></tag-badge>
+              </div>
               <p class="comp-description">{ pretty_description(competition.description) }</p>
               <p class="organizer"><em>Organized by: <strong>{competition.created_by}</strong></em></p>
             </div>
@@ -114,96 +80,43 @@
 
   <script>
     var self = this
-    self.search_timer = null
+    self.isLoggedIn = typeof CODALAB !== "undefined" && CODALAB.state && CODALAB.state.user && CODALAB.state.user.logged_in
     self.competitions = {}
 
-    // Filters state dictionary to keep track of which filters to apply
-    self.filter_state = {
-        search: '',
-        ordering: '',
-        participating_in: false,
-        organizing: false,
-        has_reward: false
-    }
-    // Function to set search title (triggered when title is typed in the text box)
-    self.on_title_input = function(e) {
-        const value = e.target.value
-        self.filter_state.search = value
-        self.update()
-
-        if (self.search_timer) {
-            clearTimeout(self.search_timer)
-        }
-
-        self.search_timer = setTimeout(() => {
-            self.update_competitions_list(1)
-        }, 1000)  // wait 1 second after user stops typing
-    }
-    // Function to set ordering (triggered when a radio button is clicked)
-    self.set_ordering = function (e) {
-        self.filter_state.ordering = e.target.value
-        self.update()
-        self.update_competitions_list(1)
-    }
-    // Function to toggle participating (triggered when the checkbox is checked/uncheked)
-    self.toggle_participating = function(e) {
-        self.filter_state.participating_in = e.target.checked
-        self.update()
-        self.update_competitions_list(1)
-    }
-    // Function to toggle organizing (triggered when the checkbox is checked/uncheked)
-    self.toggle_organizing = function(e) {
-        self.filter_state.organizing = e.target.checked
-        self.update()
-        self.update_competitions_list(1)
-    }
-    // Function to toggle has reward (triggered when the checkbox is checked/uncheked)
-    self.toggle_has_reward = function(e) {
-        self.filter_state.has_reward = e.target.checked
-        self.update()
-        self.update_competitions_list(1)
-    }
-
-    // Function that decides to show clear filter button or not
-    self.should_show_clear_filters = function () {
-        const { search, ordering, participating_in, organizing, has_reward } = self.filter_state
-        return search || ordering || participating_in || organizing || has_reward
-    }
-    // Function to clear all filters
-    self.clear_all_filters = function() {
-        self.filter_state = {
+    self.get_initial_filter_state = function () {
+        return {
             search: '',
+            filter_mode: 'or',
+            tags: '',
+            no_tags_by_category: {},
+            selected_tags: {},
+            start_date: '',
+            end_date: '',
             ordering: '',
             participating_in: false,
             organizing: false,
             has_reward: false
         }
+    }
 
-        // Clear inputs
-        document.getElementById('search-title').value = ''
-        document.querySelectorAll('input[name="order"]').forEach(r => r.checked = false)
-        document.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false)
+    self.filter_state = self.get_initial_filter_state()
 
-        // Call list update
+    self.handle_filter_change = function (filters) {
+        self.filter_state = filters
         self.update_competitions_list(1)
     }
 
     self.one("mount", function () {
         const urlParams = new URLSearchParams(window.location.search)
 
-        // Check if ordering is set in the URL (e.g., ?ordering=popular)
         if (urlParams.has("ordering")) {
             const ordering = urlParams.get("ordering")
-            if (["popular", "recent"].includes(ordering)) {
-            self.filter_state.ordering = ordering
-
-            // Set the corresponding radio button as checked
-            const radio = document.querySelector(`input[name="order"][value="${ordering}"]`)
-            if (radio) radio.checked = true
+            if (["popular", "recent", "with_most_submissions"].includes(ordering)) {
+                self.filter_state.ordering = ordering
             }
         }
-        
-      self.update_competitions_list(self.get_url_page_number_or_default())
+
+        self.update_competitions_list(self.get_url_page_number_or_default())
     })
 
     self.handle_ajax_pages = function (num) {
@@ -212,28 +125,44 @@
     }
 
     self.update_competitions_list = function (num) {
-
-        self.current_page = num;
-        $('#loading').show();
-        $('.pagination-nav').hide();
+        self.current_page = num
+        $('#loading').show()
+        $('.pagination-nav').hide()
 
         function handleSuccess(response) {
-            self.competitions = response;
-            $('#loading').hide();
-            $('.pagination-nav').show();
-            history.pushState("", document.title, "?page=" + self.current_page);
-            $('.pagination-nav > button').prop('disabled', false);
-            self.update();
+            self.competitions = response
+            $('#loading').hide()
+            $('.pagination-nav').show()
+            history.pushState("", document.title, "?page=" + self.current_page)
+            $('.pagination-nav > button').prop('disabled', false)
+            self.update()
         }
 
-        return CODALAB.api.get_public_competitions({ 
-            "page": self.current_page,
-            "search": self.filter_state.search,
-            "ordering": self.filter_state.ordering,
-            "participating_in": self.filter_state.participating_in,
-            "organizing": self.filter_state.organizing,
-            "has_reward": self.filter_state.has_reward
+        var tag_ids = Object.keys(self.filter_state.selected_tags)
+            .filter(function (id) { return self.filter_state.selected_tags[id] && id !== '_no_tags_' })
+            .join(',')
+
+        var params = {
+            "page": self.current_page
+        }
+
+        if (self.filter_state.search) {
+            params.search = self.filter_state.search
+        }
+        if (tag_ids) {
+            params.tags = tag_ids
+        }
+        if (self.filter_state.filter_mode) {
+            params.filter_mode = self.filter_state.filter_mode
+        }
+        var scalar_filters = ['start_date', 'end_date', 'ordering', 'participating_in', 'organizing', 'has_reward']
+        scalar_filters.forEach(function (k) {
+            if (self.filter_state[k]) {
+                params[k] = self.filter_state[k]
+            }
         })
+
+        return CODALAB.api.get_public_competitions(params)
         .fail(function (resp) {
             $('#loading').hide()
             $('.pagination-nav').show()
@@ -248,14 +177,13 @@
                         message = json.detail
                     }
                 } catch (_) {
-                    // fallback to raw text if not JSON
-                    message = resp.responseText;
+                    message = resp.responseText
                 }
             }
             toastr.error(message)
         })
-        .done(handleSuccess);
-    };
+        .done(handleSuccess)
+    }
 
     self.get_array_length = function (arr) {
         return arr === undefined ? 0 : arr.length
@@ -269,16 +197,28 @@
         return description.substring(0, 120) + (description.length > 120 ? '...' : '') || ''
     }
 
+    self.get_visible_tags = function (tags) {
+        if (!tags || !tags.length) {
+            return []
+        }
+        var counts = {}
+        return tags.filter(function (tag) {
+            var cat = tag.category_id || tag.category || 'default'
+            counts[cat] = (counts[cat] || 0) + 1
+            return counts[cat] <= 5
+        })
+    }
+
     self.get_url_page_number_or_default = function () {
         let urlParams = new URLSearchParams(window.location.search)
         if (urlParams.has('page')) {
             let pagenum = parseInt(urlParams.get('page'))
-        if (pagenum < 1) {
-            history.pushState("test", document.title, "?page=1")
-            return 1
-        } else {
-            return pagenum
-        }
+            if (pagenum < 1) {
+                history.pushState("test", document.title, "?page=1")
+                return 1
+            } else {
+                return pagenum
+            }
         } else {
             history.pushState("test", document.title, "?page=1")
             return 1
@@ -337,39 +277,10 @@
       display flex
       width 100%
 
-    .filters-panel
-      width 250px
+    competition-filter-panel
+      width 270px
       flex-shrink 0
-      border 1px solid #ddd
-      padding 10px
-      margin-right 10px
-      margin-left 0 !important
-      background #f9f9f9
-
-      input[type="text"]
-          width 100%
-          padding 5px
-          margin 5px 0 5px 0
-          border 1px solid #ddd
-          border-radius 4px
-
-      input[type="radio"],
-      input[type="checkbox"]
-          margin-right 5px
-
-    .filter-group
-        margin-bottom 20px
-
-    .filter-label
-        font-size 14px
-        font-weight bold
-        display block
-        margin-bottom 8px
-
-    .filter-group label
-        display block
-        font-size 13px
-        margin-bottom 6px
+      margin-right 15px
 
     .list-panel
       flex-grow 1
@@ -432,6 +343,10 @@
       padding 5px
       color #1b1b1b
       margin-bottom 0
+
+    .comp-tags
+      padding 2px 5px
+      margin 2px 0 4px 0
 
     .comp-info .comp-description
       text-align left

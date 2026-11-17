@@ -105,16 +105,12 @@ class SubmissionSerializer(serializers.ModelSerializer):
 
         competition = instance.phase.competition
 
-        groups = competition.participant_groups.filter(
-            queue_id=instance.queue_id
-        )
+        for group in competition.participant_groups.all():
+            if group.queue_id != instance.queue_id:
+                continue
 
-        group = groups.filter(
-            user__username=instance.owner.username
-        ).first()
-
-        if group:
-            return _group_display_name(group.name, competition.pk)
+            if any(user.pk == instance.owner_id for user in group.user_set.all()):
+                return _group_display_name(group.name, competition.pk)
 
         return None
 
@@ -168,7 +164,7 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
         selected_groups = validated_data.pop('selected_groups', None)
         sub = super().create(validated_data)
 
-        # Save the group(s) selected by the user, usefull for when Auto-Run Submission is unchecked
+        # Save the group(s) selected by the user, useful for when Auto-Run Submission is unchecked
         if sub.phase.competition.auto_run_submissions:
             group_ids = [g.id for g in selected_groups] if selected_groups is not None else None
             sub.start(tasks=tasks, group_ids=group_ids)

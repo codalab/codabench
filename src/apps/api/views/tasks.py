@@ -31,7 +31,7 @@ def collaborator_tasks_filter(user):
     return Q(phases__competition__created_by=F('created_by'), phases__competition__collaborators=user)
 
 
-# TODO:// TaskViewSimple uses simple serializer from tasks, which exists purely for the use of Select2 on phase modal
+# TODO: TaskViewSimple uses simple serializer from tasks, which exists purely for the use of Select2 on phase modal
 #   is there a better way to do it using get_serializer_class() method?
 class TaskViewSet(ModelViewSet):
     queryset = Task.objects.all()
@@ -257,15 +257,15 @@ class TaskViewSet(ModelViewSet):
 
                     # Check if task has a name
                     if "name" not in task_data:
-                        return Response({"error": f"Missing: name, task must have a name"}, status=status.HTTP_400_BAD_REQUEST)
+                        return Response({"error": "Missing: name, task must have a name"}, status=status.HTTP_400_BAD_REQUEST)
 
                     # Check if task has a description
                     if "description" not in task_data:
-                        return Response({"error": f"Missing: description, task must have a description"}, status=status.HTTP_400_BAD_REQUEST)
+                        return Response({"error": "Missing: description, task must have a description"}, status=status.HTTP_400_BAD_REQUEST)
 
                     # Check if task has a scoring program
                     if Data.SCORING_PROGRAM not in task_data:
-                        return Response({"error": f"Missing: scoring_program, task must have a scoring_program"}, status=status.HTTP_400_BAD_REQUEST)
+                        return Response({"error": "Missing: scoring_program, task must have a scoring_program"}, status=status.HTTP_400_BAD_REQUEST)
 
                     # ------------------------------
                     # Process datasets and programs

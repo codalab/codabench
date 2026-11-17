@@ -67,6 +67,7 @@ THIRD_PARTY_APPS = (
 OUR_APPS = (
     'profiles',
     'analytics',
+    'dashboard',
     'competitions',
     'datasets',
     'pages',

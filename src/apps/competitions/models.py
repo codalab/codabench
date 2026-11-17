@@ -24,6 +24,27 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+class TagCategory(models.Model):
+    name = models.CharField(max_length=256, unique=True, default="Other")
+
+    class Meta:
+        verbose_name_plural = "Tag categories"
+
+    def __str__(self):
+        return self.name
+
+
+class Tag(models.Model):
+    name = models.CharField(max_length=256, default="Other")
+    category = models.ForeignKey(TagCategory, on_delete=models.CASCADE, related_name='tags')
+
+    class Meta:
+        unique_together = ('name', 'category')
+
+    def __str__(self):
+        return f"{self.name} ({self.category.name})"
+
+
 class Competition(models.Model):
     COMPETITION = "competition"
     BENCHMARK = "benchmark"
@@ -38,6 +59,8 @@ class Competition(models.Model):
     logo_icon = models.ImageField(upload_to=PathWrapper('logos', manual_override=True), null=True, blank=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
                                    related_name="competitions")
+
+    tags = models.ManyToManyField(Tag, blank=True, related_name='competitions')
     created_when = models.DateTimeField(default=now)
     collaborators = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name="collaborations", blank=True)
     published = models.BooleanField(default=False)
@@ -561,6 +584,23 @@ class Submission(models.Model):
     def __str__(self):
         return f"{self.phase.competition.title} submission PK={self.pk} by {self.owner.username}"
 
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=['phase', 'is_soft_deleted', '-id'],
+                name='sub_phase_del_id_idx',
+            ),
+            models.Index(
+                fields=['phase', 'owner', 'created_when'],
+                name='sub_phase_owner_created_idx',
+            ),
+            models.Index(
+                fields=['phase'],
+                condition=models.Q(leaderboard__isnull=False, is_soft_deleted=False),
+                name='sub_phase_on_lb_idx',
+            ),
+        ]
+
     def soft_delete(self):
         """
         Soft delete the submission: remove files but keep record in DB.
@@ -928,6 +968,9 @@ class CompetitionParticipant(models.Model):
 
     class Meta:
         unique_together = ('user', 'competition')
+        indexes = [
+            models.Index(fields=['competition', 'status'], name='participant_comp_status_idx'),
+        ]
 
     def __str__(self):
         return f"({self.id}) - User: {self.user.username} in Competition: {self.competition.title}"

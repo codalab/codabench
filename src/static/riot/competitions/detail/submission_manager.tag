@@ -465,7 +465,10 @@
         self.expanded_submissions = {}
         self.request_id = 0
         self.fetching = false
+        self.pending_refresh = null
+        self.destroyed = false
         self.burst = 0
+
         self.TERMINAL = ['Finished', 'Failed', 'Cancelled', 'None', 'Unknown']
 
         // ---- Status helpers -------------------------------------------------
@@ -537,13 +540,16 @@
                 !_.includes(self.TERMINAL, s.status) && !self.is_waiting_manual(s))
         }
 
-        // Immediate refresh + keep polling for a few ticks whatever the statuses are
-        // (covers async child creation and the Submitting -> Submitted transition)
         self.refresh_soon = function (ticks) {
+            if (self.destroyed) return
+
             self.burst = Math.max(self.burst, ticks || 6)
             self.update_submissions(undefined, true)
         }
-        self.refresh_soon_debounced = _.debounce(function () { self.refresh_soon(3) }, 800)
+
+        self.refresh_soon_debounced = _.debounce(function () {
+            if (!self.destroyed) self.refresh_soon(3)
+        }, 800)
 
         self.refresh_now = function (event) {
             if (event) event.stopPropagation()
@@ -551,7 +557,8 @@
         }
 
         self.on_visibility = function () {
-            if (!document.hidden) self.update_submissions(undefined, true)
+            if (self.destroyed || document.hidden) return
+            self.update_submissions(undefined, true)
         }
 
         self.build_filters = function () {
@@ -581,6 +588,10 @@
             }
         }
 
+        self.on_migrate_keydown = function (e) {
+            if (e.key === 'Escape') self.close_migrate_menu()
+        }
+
         self.on("mount", function () {
             $(self.refs.search).dropdown()
             $(self.refs.status).dropdown()
@@ -588,9 +599,7 @@
             $(self.refs.rerun_button).dropdown()
             $(self.refs.submission_handling_operation).dropdown()
             $(document).on('click.migrate_menu', self.close_migrate_menu)
-            $(document).on('keydown.migrate_menu', function (e) {
-                if (e.key === 'Escape') self.close_migrate_menu()
-            })
+            $(document).on('keydown.migrate_menu', self.on_migrate_keydown)
 
             self.poll = setInterval(function () {
                 if (document.hidden || self.fetching) return
@@ -603,10 +612,22 @@
         })
 
         self.on("unmount", function () {
+            self.destroyed = true
+            self.request_id++
+            self.pending_refresh = null
+
+            if (self.refresh_soon_debounced &&
+                typeof self.refresh_soon_debounced.cancel === 'function') {
+                self.refresh_soon_debounced.cancel()
+            }
+
             $(document).off('click.migrate_menu', self.close_migrate_menu)
-            $(document).off('keydown.migrate_menu')
+            $(document).off('keydown.migrate_menu', self.on_migrate_keydown)
+
             clearInterval(self.poll)
             document.removeEventListener('visibilitychange', self.on_visibility)
+
+            self.remove_codalab_listeners()
         })
 
         self.pretty_date = function (date_string) {
@@ -743,6 +764,8 @@
                     toastr.error(self.error_message(response, 'Error migrating submission'))
                 })
                 .always(function () {
+                    if (self.destroyed) return
+
                     self.migrating = false
                     self.update()
                 })
@@ -812,7 +835,19 @@
         }
 
         self.update_submissions = function (filters, silent) {
+            if (self.destroyed) return
+
             filters = _.clone(filters || self.build_filters())
+
+            if (self.fetching) {
+                const previous = self.pending_refresh
+                self.pending_refresh = {
+                    filters: filters,
+                    silent: previous ? (previous.silent && !!silent) : !!silent
+                }
+                return
+            }
+
             const request_id = ++self.request_id
             self.fetching = true
             if (!silent) {
@@ -825,8 +860,7 @@
 
             CODALAB.api.get_submissions(filters)
                 .done(function (response) {
-                    // A newer request was sent meanwhile: this answer is stale
-                    if (request_id !== self.request_id) return
+                    if (self.destroyed || request_id !== self.request_id) return
 
                     let results = response
                     if (response && typeof response === 'object' && response.hasOwnProperty('results')) {
@@ -928,22 +962,31 @@
                         self.loading = false
                     } else {
                         _.delay(() => {
+                            if (self.destroyed) return
                             self.loading = false
                             self.update()
                         }, 300)
                     }
                 })
                 .fail(function () {
-                    // Never leave `loading` stuck: it would freeze the polling
+                    if (self.destroyed || request_id !== self.request_id) return
                     self.loading = false
                     self.update()
                     if (!silent) toastr.error("Error retrieving submissions")
                 })
                 .always(function () {
-                    if (request_id === self.request_id) self.fetching = false
+                    if (request_id !== self.request_id) return
+
+                    self.fetching = false
+
+                    if (self.pending_refresh && !self.destroyed) {
+                        const pending = self.pending_refresh
+                        self.pending_refresh = null
+
+                        self.update_submissions(pending.filters, pending.silent)
+                    }
                 })
         }
-
 
         self.go_to_page = function (p) {
             let newPage = parseInt(p, 10)
@@ -1337,8 +1380,6 @@
                 return;
                 }
 
-                console.log("Files returned by server:", files);
-
                 const zip = new JSZip();
                 const total = files.length;
                 let completed = 0;
@@ -1430,7 +1471,8 @@
 
         self.submission_handling = function () {
             if (self.checked_submissions.length === 0) {
-                console.log("no submission is selected");
+                // No submission is selected, so there is nothing to do
+                return
             } else {
                 var submission_operation = self.refs.submission_handling_operation.value
                 switch (submission_operation) {
@@ -1455,38 +1497,61 @@
                     case "migrate":
                         self.migrate_selected_submissions()
                         break
-                    default:
-                        console.log("should never be in this state of default..")
                 }
             }
         }
 
-        CODALAB.events.on('phase_selected', function (selected_phase) {
-            self.selected_phase = selected_phase
-            self.selected_phase.hide_output = selected_phase.hide_output && !CODALAB.state.user.has_competition_admin_privileges(self.opts.competition)
-            self.update_submissions()
-        })
+        // ---- Global event listeners -----------------------------------------
+        self.on_phase_selected = function (selected_phase) {
+            if (self.destroyed) return
 
-                CODALAB.events.on('new_submission_created', function (new_submission_data) {
+            self.selected_phase = selected_phase
+            self.selected_phase.hide_output =
+                selected_phase.hide_output &&
+                !CODALAB.state.user.has_competition_admin_privileges(self.opts.competition)
+
+            self.update_submissions()
+        }
+
+        self.on_new_submission_created = function (new_submission_data) {
+            if (self.destroyed) return
+
             self.submissions = self.submissions || []
             self.submissions.unshift(new_submission_data)
             self.update()
             self.refresh_soon(8)
-        })
+        }
 
-        CODALAB.events.on('score_updated', () => {
+        self.on_score_updated = function () {
+            if (self.destroyed) return
             $(self.refs.modal).modal('hide')
             self.refresh_soon()
-        })
+        }
 
-        CODALAB.events.on('submission_status_update', data => {
-            let sub = _.find(self.submissions, submission => submission.id === data.submission_id)
+        self.on_submission_status_update = function (data) {
+            if (self.destroyed) return
+            let sub = _.find(
+                self.submissions,
+                submission => submission.id === data.submission_id
+            )
             if (sub) {
                 sub.status = data.status
                 self.update()
             }
             self.refresh_soon_debounced()
-        })
+        }
+
+        CODALAB.events.on('phase_selected', self.on_phase_selected)
+        CODALAB.events.on('new_submission_created', self.on_new_submission_created)
+        CODALAB.events.on('score_updated', self.on_score_updated)
+        CODALAB.events.on('submission_status_update', self.on_submission_status_update)
+
+        self.remove_codalab_listeners = function () {
+            CODALAB.events.off('phase_selected', self.on_phase_selected)
+            CODALAB.events.off('new_submission_created', self.on_new_submission_created)
+            CODALAB.events.off('score_updated', self.on_score_updated)
+            CODALAB.events.off('submission_status_update', self.on_submission_status_update)
+        }
     </script>
 
     <style type="text/stylus">

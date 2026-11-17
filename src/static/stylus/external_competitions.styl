@@ -65,40 +65,102 @@ external-competition-list
     display flex
     width 100%
 
-  .filters-panel
-    width 250px
+  .filters-panel.ui.segments
+    width 270px
     flex-shrink 0
     align-self flex-start
-    border 1px solid #ddd
-    padding 10px
-    margin-right 10px
+    margin-right 15px
     margin-left 0 !important
+    margin-top 0 !important
     background #fff
-    border-radius 5px
+    border 1px solid #e3e7ec !important
+    border-radius 10px !important
+    box-shadow 0 1px 2px rgba(0, 0, 0, 0.04) !important
+    overflow hidden
 
-    input[type="text"]
-      width 100%
-      padding 5px
-      margin 5px 0 5px 0
-      border 1px solid #ddd
-      border-radius 4px
+    > .ui.segment
+      background #fff !important
+      border-top 1px solid #f1f4f7 !important
+      padding 12px 14px !important
+      margin 0 !important
+
+      &:first-child
+        border-top none !important
+
+    .ui.header
+      color var(--cb-navy-900, #1b2f40) !important
+      font-weight 700 !important
+      font-size 13px !important
+      letter-spacing -0.01em
+      margin 0 0 8px 0
+
+    // Search input
+    .ui.input input
+      border 1px solid #e3e7ec !important
+      border-radius 6px !important
+      font-size 13px
+      color var(--cb-navy-900, #1b2f40)
+      background #fff
+      padding 8px 10px 8px 34px !important
+      transition border-color 0.15s ease, box-shadow 0.15s ease
+
+      &:focus
+        border-color var(--cb-blue-500, #3b6e9b) !important
+        box-shadow 0 0 0 2px rgba(59, 110, 155, 0.15) !important
+        outline none
+
+    .ui.icon.input > i.icon
+      color var(--cb-blue-500, #3b6e9b) !important
+      opacity 0.75
+
+    .filter-item
+      display block !important
+      margin-bottom 6px !important
+      font-size 13px
+      color var(--cb-navy-700, #36536d)
+
+      label
+        cursor pointer
+        color var(--cb-navy-700, #36536d)
+        font-size 13px
+
+        &:hover
+          color var(--cb-navy-900, #1b2f40)
+
+    .clear-filters-btn
+      border 1px solid #e3e7ec !important
+      border-radius 4px !important
+      background-color #f8fafc !important
+      color var(--cb-navy-700, #36536d) !important
+      font-weight 500 !important
+      font-size 13px !important
+      padding 9px 12px !important
+      box-shadow none !important
+      outline none !important
+      transition all 0.15s ease-in-out !important
+
+      i.icon
+        color var(--cb-blue-500, #3b6e9b) !important
+        opacity 0.85
+
+      &:hover
+        background-color var(--cb-blue-50, #eef4fa) !important
+        border-color var(--cb-blue-500, #3b6e9b) !important
+        color var(--cb-blue-500, #3b6e9b) !important
+        box-shadow none !important
+        outline none !important
+
+      &:focus,
+      &:active
+        background-color #f8fafc !important
+        border-color #e3e7ec !important
+        color var(--cb-navy-700, #36536d) !important
+        box-shadow none !important
+        outline none !important
 
     input[type="checkbox"]
-      margin-right 5px
-
-  .filter-group
-    margin-bottom 20px
-
-  .filter-group label
-    display block
-    font-size 13px
-    margin-bottom 6px
-
-  .filter-label
-    font-size 14px
-    font-weight bold
-    display block
-    margin-bottom 8px
+      margin-right 6px
+      accent-color var(--cb-blue-500, #3b6e9b)
 
   .list-panel
     flex-grow 1

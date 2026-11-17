@@ -6,7 +6,7 @@ from io import StringIO
 from django.http import HttpResponse
 from tempfile import SpooledTemporaryFile
 from django.db import IntegrityError
-from django.db.models import Subquery, OuterRef, Q
+from django.db.models import Subquery, OuterRef, Q, Prefetch
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
@@ -20,14 +20,14 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework_csv.renderers import CSVRenderer
 from api.pagination import DynamicChoicePagination, LargePagination
 from api.renderers import ZipRenderer
-from rest_framework.viewsets import ModelViewSet
-from api.serializers.competitions import CompetitionSerializerSimple, PhaseSerializer, \
+from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
+from api.serializers.competitions import TagSerializer, CompetitionSerializerSimple, PhaseSerializer, \
     CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer, CompetitionParticipantSerializer, \
     PhaseResultsSerializer, CompetitionUpdateSerializer, CompetitionCreateSerializer
 from api.serializers.leaderboards import LeaderboardPhaseSerializer, LeaderboardSerializer
 from competitions.emails import send_participation_requested_emails, send_participation_accepted_emails, \
     send_participation_denied_emails, send_direct_participant_email
-from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant, Submission
+from competitions.models import Tag, Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant, Submission, PhaseTaskInstance
 from datasets.models import Data
 from competitions.tasks import batch_send_email, manual_migration, create_competition_dump
 from leaderboards.models import Leaderboard, Column
@@ -36,6 +36,8 @@ from utils.data import make_url_sassy
 from api.permissions import IsOrganizerOrCollaborator
 from django.db import transaction
 from django.conf import settings
+from datetime import datetime
+import pytz
 from django.utils.timezone import now
 
 
@@ -46,7 +48,20 @@ class CompetitionViewSet(ModelViewSet):
 
     def get_queryset(self):
 
-        qs = super().get_queryset()
+        qs = super().get_queryset().prefetch_related('tags__category')
+
+        # Dashboard visibility filter
+        visibility = self.request.query_params.get('visibility', None)
+        if visibility:
+            # If the visibility is not 'public' and the user is not a staff or superuser, raise a permission denied error
+            if visibility != 'public' and not (self.request.user.is_authenticated and (self.request.user.is_staff or self.request.user.is_superuser)):
+                raise PermissionDenied("You cannot view private competitions if you are not a superuser.")
+
+            if visibility == 'public':
+                qs = qs.filter(published=True)
+            elif visibility == 'private':
+                qs = qs.filter(published=False)
+            # else visibility == 'all' and no filter is applied
 
         # filter by competition_type first, 'competition' by default
         competition_type = self.request.query_params.get('type', Competition.COMPETITION)
@@ -91,22 +106,6 @@ class CompetitionViewSet(ModelViewSet):
             ).values_list('status')[:1]
             qs = qs.annotate(participant_status=Subquery(participant_status_query))
 
-            # if `search_query` is true, this is called form search bar
-            if search_query:
-                # competitions which this user owns
-                # or
-                # competitions in which this user is collaborator
-                # or
-                # competitions is published and belongs to someone else
-                # or
-                # competitions in which this user is participant and status is approved
-                qs = qs.filter(
-                    (Q(created_by=self.request.user)) |
-                    (Q(collaborators__in=[self.request.user])) |
-                    (Q(published=True) & ~Q(created_by=self.request.user)) |
-                    (Q(participants__user=self.request.user) & Q(participants__status="approved"))
-                ).distinct()
-
             # if `secret_key` is true, this is called for a secret competition
             if secret_key:
                 qs = qs.filter(Q(secret_key=secret_key))
@@ -116,7 +115,7 @@ class CompetitionViewSet(ModelViewSet):
             # not called from i'm participating in tab
             # not called from search bar
             # not called with a valid secret key
-            if (not mine) and (not participating_in) and (not secret_key) and (not search_query):
+            if (not mine) and (not participating_in) and (not secret_key) and (not search_query) and (not visibility):
                 # If authenticated user is not super user
                 if not self.request.user.is_superuser:
                     # Return the following ---
@@ -158,34 +157,59 @@ class CompetitionViewSet(ModelViewSet):
                 (Q(secret_key=secret_key))
             )
 
+        # if `search_query` is true, this is called form search bar
+        if search_query:
+            if self.request.user.is_authenticated:
+                # competitions which this user owns
+                # or
+                # competitions in which this user is collaborator
+                # or
+                # competitions is published and belongs to someone else
+                # or
+                # competitions in which this user is participant and status is approved
+                qs = qs.filter(
+                    (
+                        Q(title__icontains=search_query)
+                        | Q(description__icontains=search_query)
+                    )
+                    & (
+                        Q(created_by=self.request.user)
+                        | Q(collaborators=self.request.user)
+                        | Q(published=True)
+                        | Q(
+                            participants__user=self.request.user,
+                            participants__status="approved",
+                        )
+                    )
+                ).distinct()
+            else:
+                qs = qs.filter(
+                    Q(title__icontains=search_query)
+                    | Q(description__icontains=search_query)
+                )
+
         # On GETs lets optimize the query to reduce DB calls
         if self.request.method == 'GET':
-
             qs = qs.select_related('created_by')
-            if self.action != 'list':
-                qs = qs.select_related('created_by')
-                qs = qs.prefetch_related(
-                    'phases',
-                    'phases__submissions',
-                    'phases__tasks',
-                    'phases__tasks__solutions',
-                    'phases__tasks__solutions__data',
-                    'pages',
-                    'phases__leaderboard',
-                    'phases__leaderboard__columns',
-                    'collaborators',
-                )
-                # qs = qs.annotate(participant_count=Count(F('participants'), distinct=True))
-                # qs = qs.annotate(submission_count=Count(
-                #     # Filtering out children submissions so we only count distinct submissions
-                #     Case(
-                #         When(phases__submissions__parent__isnull=True, then='phases__submissions__pk')
-                #     ), distinct=True)
-                # )
+            if self.action == 'retrieve':
+                task_instances = PhaseTaskInstance.objects.select_related(
+                    'task',
+                    'task__input_data', 'task__input_data__created_by', 'task__input_data__competition',
+                    'task__reference_data', 'task__reference_data__created_by', 'task__reference_data__competition',
+                    'task__ingestion_program', 'task__ingestion_program__created_by', 'task__ingestion_program__competition',
+                    'task__scoring_program', 'task__scoring_program__created_by', 'task__scoring_program__competition',
+                ).prefetch_related('task__solutions__data', 'task__solutions__tasks')
 
-        # search_query is true when called from searchbar
-        if search_query:
-            qs = qs.filter(Q(title__icontains=search_query) | Q(description__icontains=search_query))
+                qs = qs.select_related('queue').prefetch_related(
+                    Prefetch('phases', queryset=Phase.objects.select_related('public_data', 'starting_kit', 'leaderboard').prefetch_related('leaderboard__columns')
+                             ),
+                    Prefetch('phases__task_instances', queryset=task_instances),
+                    'pages',
+                    'collaborators',
+                    'whitelist_emails',
+                )
+            elif self.action != 'list':
+                qs = qs.prefetch_related('phases')
 
         qs = qs.order_by('-created_when')
         return qs
@@ -583,18 +607,22 @@ class CompetitionViewSet(ModelViewSet):
 
         Query Parameters:
         -----------------
-        - search (str, optional): A search term to filter competitions by their title.
+        - search (str, optional): A search term to filter competitions (title, username, or display name).
+        - tags (str, optional): Comma-separated tag IDs (e.g., '1,2,5').
+        - filter_mode (str, optional): 'or' (default) or 'and'. Match competitions with any or all active facets (tags, reward, participation, organizing).
+        - start_date (str, optional): Filter competitions created on or after this date.
+        - end_date (str, optional): Filter competitions created on or before this date (end of day).
         - ordering (str, optional): Specifies the order of the results. Supported values:
-            * "recent" - Most recently created competitions.
-            * "popular" - Competitions with the most participants.
-            * "with_most_submissions" - Competitions with the highest number of submissions.
+            * "recent" - Most recently created competitions (-id).
+            * "popular" - Competitions with the most participants (-participants_count).
+            * "with_most_submissions" - Competitions with the highest number of submissions (-submissions_count).
             Defaults to "recent" if not provided or invalid.
         - participating_in (bool, optional): If "true", filters competitions where the user
-        is an approved participant. Requires authentication.
+          is an approved participant. Requires authentication.
         - organizing (bool, optional): If "true", filters competitions organized by the user
-        (either created or as a collaborator). Requires authentication.
+          (either created or as a collaborator). Requires authentication.
         - has_reward (bool, optional): If "true", includes only competitions that have a
-        non-empty reward field.
+          non-empty reward field.
 
         Returns:
         --------
@@ -604,6 +632,10 @@ class CompetitionViewSet(ModelViewSet):
 
         # Receive filters from request query params
         search = request.query_params.get("search")
+        tags_param = request.query_params.get("tags")
+        filter_mode = request.query_params.get("filter_mode", "or").lower()
+        start_date = request.query_params.get("start_date")
+        end_date = request.query_params.get("end_date")
         ordering = request.query_params.get("ordering")
         participating_in = request.query_params.get("participating_in", "false").lower() == "true"
         organizing = request.query_params.get("organizing", "false").lower() == "true"
@@ -616,13 +648,48 @@ class CompetitionViewSet(ModelViewSet):
                 status=status.HTTP_401_UNAUTHORIZED
             )
 
-        qs = Competition.objects.filter(published=True)
+        qs = Competition.objects.filter(published=True).prefetch_related('tags__category')
 
-        # Filter by title (search)
+        # Filter by search term
         if search:
-            qs = qs.filter(title__icontains=search)
+            search = search.strip()
+            if search:
+                qs = qs.filter(
+                    Q(title__icontains=search) |
+                    Q(created_by__username__icontains=search) |
+                    Q(created_by__display_name__icontains=search)
+                )
 
-        # Filter by participation
+        # Date filtering
+        if start_date:
+            try:
+                _start_date = datetime.strptime(start_date, '%Y-%m-%d').replace(tzinfo=pytz.UTC)
+                qs = qs.filter(created_when__gte=_start_date)
+            except (ValueError, TypeError):
+                pass
+
+        if end_date:
+            try:
+                _end_date = datetime.strptime(end_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59, tzinfo=pytz.UTC)
+                qs = qs.filter(created_when__lte=_end_date)
+            except (ValueError, TypeError):
+                pass
+
+        # Parse tags
+        tag_ids = []
+        if tags_param:
+            for t in tags_param.split(","):
+                t = t.strip()
+                if not t:
+                    continue
+                try:
+                    tag_ids.append(int(t))
+                except (ValueError, TypeError):
+                    continue
+            tag_ids = list(dict.fromkeys(tag_ids))
+
+        # Participant competitions
+        participant_comp_ids = None
         if participating_in:
             # Exclude competitions the user organizes: creators/collaborators are auto-added
             # as approved participants (see Competition.save()), but they belong under "organizing", not here.
@@ -632,25 +699,44 @@ class CompetitionViewSet(ModelViewSet):
             ).exclude(
                 Q(competition__created_by=request.user) | Q(competition__collaborators=request.user)
             ).values_list("competition_id", flat=True)
-            qs = qs.filter(id__in=participant_comp_ids)
 
-        # Filter by organizing (created_by or collaborator)
-        if organizing:
-            qs = qs.filter(Q(created_by=request.user) | Q(collaborators=request.user)).distinct()
+        # Apply facets according to filter_mode
+        if filter_mode == 'and':
+            if tag_ids:
+                for tag_id in tag_ids:
+                    qs = qs.filter(tags__id=tag_id)
+            if has_reward:
+                qs = qs.exclude(reward__isnull=True).exclude(reward__exact='')
+            if participating_in:
+                qs = qs.filter(id__in=participant_comp_ids)
+            if organizing:
+                qs = qs.filter(Q(created_by=request.user) | Q(collaborators=request.user))
+            if tag_ids or organizing:
+                qs = qs.distinct()
+        else:
+            active_facet_qs = []
+            if tag_ids:
+                active_facet_qs.append(Q(tags__id__in=tag_ids))
+            if has_reward:
+                active_facet_qs.append(~Q(reward__isnull=True) & ~Q(reward__exact=''))
+            if participating_in:
+                active_facet_qs.append(Q(id__in=participant_comp_ids))
+            if organizing:
+                active_facet_qs.append(Q(created_by=request.user) | Q(collaborators=request.user))
+
+            if active_facet_qs:
+                combined_facet_q = active_facet_qs[0]
+                for facet_q in active_facet_qs[1:]:
+                    combined_facet_q |= facet_q
+                qs = qs.filter(combined_facet_q).distinct()
 
         # Apply ordering
-        if ordering == "recent":
-            qs = qs.order_by("-id")  # most recently created
-        elif ordering == "popular":
-            qs = qs.order_by("-participants_count")
-        elif ordering == "with_most_submissions":
-            qs = qs.order_by("-submissions_count")
-        else:
-            qs = qs.order_by("-id")  # default fallback
-
-        # Applying has reward
-        if has_reward:
-            qs = qs.exclude(reward__isnull=True).exclude(reward__exact='')
+        ordering_map = {
+            "popular": "-participants_count",
+            "with_most_submissions": "-submissions_count",
+            "recent": "-id",
+        }
+        qs = qs.order_by(ordering_map.get(ordering, "-id"))
 
         queryset = self.filter_queryset(qs)
         page = self.paginate_queryset(queryset)
@@ -692,8 +778,6 @@ class CompetitionViewSet(ModelViewSet):
 
     def perform_update(self, serializer):
         instance = self.get_object()
-        instance.make_programs_available
-        instance.make_input_data_available
         initial_tasks = {phase.id: set(phase.tasks.all()) for phase in instance.phases.all().prefetch_related('tasks')}
         instance = serializer.save()
         self._ensure_organizer_participants_accepted(instance)
@@ -705,11 +789,22 @@ class CompetitionViewSet(ModelViewSet):
                 self.run_new_task_submissions(instance.phases.get(pk=phase_id), new_tasks)
 
 
+class TagViewSet(ReadOnlyModelViewSet):
+    queryset = Tag.objects.all().select_related('category')
+    serializer_class = TagSerializer
+    permission_classes = (AllowAny,)
+    pagination_class = None
+
+
 class PhaseViewSet(ModelViewSet):
     serializer_class = PhaseSerializer
 
     def get_queryset(self):
-        qs = Phase.objects.all()
+        qs = Phase.objects.select_related('competition', 'leaderboard')
+        if self.action == 'get_leaderboard':
+            qs = qs.prefetch_related(
+                Prefetch('task_instances', queryset=PhaseTaskInstance.objects.select_related('task'))
+            )
         return qs
 
     def list(self, request, *args, **kwargs):

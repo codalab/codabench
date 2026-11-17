@@ -152,6 +152,8 @@ class UserSerializer(ModelSerializer):
             'allow_organization_invite_emails',
         )
 
+        read_only_fields = ('email', 'username')
+
     def get_organizations(self, instance):
         participant_orgs = []
         for org in instance.organizations.all():

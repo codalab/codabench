@@ -24,19 +24,19 @@ class PlatformAnnouncementsBannerTests(TestCase):
 
     def test_platform_announcement_shown_on_other_pages(self):
         """
-        Creates an active platform announcement and loads the search page.
+        Creates an active platform announcement and loads the News page.
         Expects the banner with the announcement text to be rendered there too.
         """
         Announcement.objects.create(text="platform text", placement=Announcement.PLACEMENT_PLATFORM)
 
-        content = self.client.get(reverse('pages:search')).content.decode()
+        content = self.client.get(reverse('pages:news')).content.decode()
 
         assert 'class="platform-announcements-banner"' in content
         assert "platform text" in content
 
     def test_home_page_and_platform_announcement_shown_in_banner(self):
         """
-        Creates one announcement for the home page and all pages, and loads the search page.
+        Creates one announcement for the home page and all pages, and loads the News page.
         Expects the banner with the announcement text to be rendered there.
         """
         Announcement.objects.create(
@@ -44,32 +44,32 @@ class PlatformAnnouncementsBannerTests(TestCase):
             placement=Announcement.PLACEMENT_HOME_PAGE_AND_PLATFORM,
         )
 
-        content = self.client.get(reverse('pages:search')).content.decode()
+        content = self.client.get(reverse('pages:news')).content.decode()
 
         assert 'class="platform-announcements-banner"' in content
         assert "home page and platform text" in content
 
     def test_home_page_announcement_not_shown_in_banner(self):
         """
-        Creates only an active home page announcement and loads the search page.
+        Creates only an active home page announcement and loads the News page.
         Expects no banner and no announcement text, since home page announcements
         are only shown on the home page.
         """
         Announcement.objects.create(text="home page text", placement=Announcement.PLACEMENT_HOME_PAGE)
 
-        content = self.client.get(reverse('pages:search')).content.decode()
+        content = self.client.get(reverse('pages:news')).content.decode()
 
         assert 'class="platform-announcements-banner"' not in content
         assert "home page text" not in content
 
     def test_inactive_platform_announcement_not_shown(self):
         """
-        Creates only an inactive platform announcement and loads the search page.
+        Creates only an inactive platform announcement and loads the News page.
         Expects no banner and no announcement text.
         """
         Announcement.objects.create(text="inactive text", placement=Announcement.PLACEMENT_PLATFORM, is_active=False)
 
-        content = self.client.get(reverse('pages:search')).content.decode()
+        content = self.client.get(reverse('pages:news')).content.decode()
 
         assert 'class="platform-announcements-banner"' not in content
         assert "inactive text" not in content
@@ -100,13 +100,13 @@ class PlatformAnnouncementsBannerTests(TestCase):
             placement=Announcement.PLACEMENT_PLATFORM,
         )
 
-        content = self.client.get(reverse('pages:search')).content.decode()
+        content = self.client.get(reverse('pages:news')).content.decode()
 
         assert content.index("low priority new") < content.index("low priority old") < content.index("high priority")
 
     def test_platform_announcement_levels_render_with_their_styles(self):
         """
-        Creates one platform announcement of each level and loads the search page.
+        Creates one platform announcement of each level and loads the News page.
         Expects each row to have its level class, and the plain row to have no icon.
         """
         Announcement.objects.create(level=Announcement.LEVEL_CRITICAL, text="critical text", placement=Announcement.PLACEMENT_PLATFORM)
@@ -114,7 +114,7 @@ class PlatformAnnouncementsBannerTests(TestCase):
         Announcement.objects.create(level=Announcement.LEVEL_INFO, text="info text", placement=Announcement.PLACEMENT_PLATFORM)
         Announcement.objects.create(level=Announcement.LEVEL_PLAIN, text="plain text", placement=Announcement.PLACEMENT_PLATFORM)
 
-        content = self.client.get(reverse('pages:search')).content.decode()
+        content = self.client.get(reverse('pages:news')).content.decode()
 
         assert 'class="platform-announcement platform-announcement-critical"' in content
         assert 'class="platform-announcement platform-announcement-warning"' in content
@@ -126,9 +126,9 @@ class PlatformAnnouncementsBannerTests(TestCase):
 
     def test_banner_hidden_without_platform_announcements(self):
         """
-        Loads the search page with no announcements at all.
+        Loads the News page with no announcements at all.
         Expects the banner wrapper not to be rendered.
         """
-        content = self.client.get(reverse('pages:search')).content.decode()
+        content = self.client.get(reverse('pages:news')).content.decode()
 
         assert 'class="platform-announcements-banner"' not in content

@@ -1,7 +1,7 @@
 import json
 import uuid
 from django.utils.timezone import now
-from django.db.models import Q
+from django.db.models import Q, Prefetch
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, action
@@ -15,13 +15,15 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework_csv import renderers
 from django.core.files.base import ContentFile
 
-from profiles.models import Organization, Membership
+from profiles.models import Organization, Membership, CustomGroup
 from api.pagination import DynamicChoicePagination
 from api.serializers.submissions import SubmissionCreationSerializer, SubmissionSerializer, SubmissionFilesSerializer
 from competitions.models import Submission, SubmissionDetails, Phase, CompetitionParticipant
 from leaderboards.strategies import put_on_leaderboard_by_submission_rule
 from leaderboards.models import SubmissionScore, Column, Leaderboard
 import logging
+
+from utils.data import make_url_sassy
 logger = logging.getLogger(__name__)
 
 
@@ -142,11 +144,15 @@ class SubmissionViewSet(ModelViewSet):
                 'participant__user',
                 'owner',
                 'data',
+                'task',
             ).prefetch_related(
                 'children',
                 'scores',
                 'scores__column',
-                'task',
+                Prefetch(
+                    'phase__competition__participant_groups',
+                    queryset=CustomGroup.objects.prefetch_related('user_set'),
+                ),
             )
         elif self.action in ['delete_many', 're_run_many_submissions', 'resubmit_many_submissions']:
             try:
@@ -178,26 +184,42 @@ class SubmissionViewSet(ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         """
-        - If user is neither owner nor admin, user cannot delete the submission
-        - If a user is not admin and is owner of a submission and submission is on the leaderboard, user cannot delete the submission
-        - In rest of the cases i.e. user is admin/super user or user is owner of the submisison and submission is not on the leaderboard, user can delete the submisison
+        - Superuser / organizer (or collaborator): hard delete.
+        - Participant: soft delete only (quota not reset).
+        - Everyone else: dismissed.
         """
         submission = self.get_object()
 
-        is_owner = request.user == submission.owner
-        is_super_user_or_competition_admin = self.has_admin_permission(request.user, submission)
+        if self.has_admin_permission(request.user, submission):
+            self.perform_destroy(submission)
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
-        # If user is neither owner nor super user/admin return permission denied
-        if not is_owner and not is_super_user_or_competition_admin:
-            raise PermissionDenied("You do not have permission to delete this submission!")
+        if request.user.is_authenticated and request.user == submission.owner:
+            return self._soft_delete_as_owner(request, submission)
 
-        # If user is not admin, is owner and submission is on the leaderboard return permission denied
-        if not is_super_user_or_competition_admin and is_owner and submission.leaderboard:
-            raise PermissionDenied("You cannot delete a leaderboard submission!")
+        raise PermissionDenied("You do not have permission to delete this submission!")
 
-        # Otherwise, delete the submission
-        self.perform_destroy(submission)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+    def _soft_delete_as_owner(self, request, submission):
+        """Shared by destroy and soft_delete."""
+        if submission.owner != request.user:
+            return Response({'error': 'You are not allowed to delete this submission'}, status=status.HTTP_403_FORBIDDEN)
+
+        if submission.is_soft_deleted:
+            return Response({'error': 'Submission already deleted'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if submission.status == Submission.FINISHED and submission.on_leaderboard:
+            return Response({'error': 'You are not allowed to delete a leaderboard submission'}, status=status.HTTP_403_FORBIDDEN)
+
+        if submission.status not in [Submission.FAILED, Submission.FINISHED, Submission.CANCELLED]:
+            return Response({'error': 'You are not allowed to delete a running submission'}, status=status.HTTP_403_FORBIDDEN)
+
+        submission.soft_delete()
+        return Response({'message': 'Submission deleted successfully'}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=('DELETE',))
+    def soft_delete(self, request, pk):
+        submission = self.get_object()
+        return self._soft_delete_as_owner(request, submission)
 
     def check_submission_permissions(self, request, submissions):
         # Check permissions
@@ -219,34 +241,6 @@ class SubmissionViewSet(ModelViewSet):
             raise PermissionDenied(
                 "You do not have permission to download one or more of the requested submissions"
             )
-
-    @action(detail=True, methods=('DELETE',))
-    def soft_delete(self, request, pk):
-        submission = self.get_object()
-
-        # Check if submission exists
-        if not submission:
-            return Response({'error': 'Submission not found'}, status=status.HTTP_404_NOT_FOUND)
-
-        # Check if owner is requesting soft delete
-        if submission.owner != request.user:
-            return Response({'error': 'You are not allowed to delete this submission'}, status=status.HTTP_403_FORBIDDEN)
-
-        # Check if submission is finished and on the leaderboard
-        if submission.status == Submission.FINISHED and submission.on_leaderboard:
-            return Response({'error': 'You are not allowed to delete a leaderboard submission'}, status=status.HTTP_403_FORBIDDEN)
-
-        # Check if submission is in running state
-        if submission.status not in [Submission.FAILED, Submission.FINISHED, Submission.CANCELLED]:
-            return Response({'error': 'You are not allowed to delete a running submission'}, status=status.HTTP_403_FORBIDDEN)
-
-        # Check if submission is not already soft deleted
-        if submission.is_soft_deleted:
-            return Response({'error': 'Submission already deleted'}, status=status.HTTP_400_BAD_REQUEST)
-
-        # soft delete submission and return success response
-        submission.soft_delete()
-        return Response({'message': 'Submission deleted successfully'}, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=('DELETE',))
     def delete_many(self, request, *args, **kwargs):
@@ -326,7 +320,7 @@ class SubmissionViewSet(ModelViewSet):
         submission = self.get_object()
         if not self.has_admin_permission(request.user, submission):
             if submission.owner != request.user:
-                raise PermissionDenied(f'You do not have permission to cancel submissions')
+                raise PermissionDenied('You do not have permission to cancel submissions')
         for child in submission.children.all():
             child.cancel()
         canceled = submission.cancel()
@@ -489,7 +483,7 @@ class SubmissionViewSet(ModelViewSet):
 
         return Response({'migrated': migrated, 'skipped': skipped})
 
-    # TODO: The 3 functions download many should be bundled inside a genereic with the function like "get_prediction_result" as a parameter instead of the same code 3 times
+    # TODO: The 3 functions download many should be bundled inside a generic with the function like "get_prediction_result" as a parameter instead of the same code 3 times
     @action(detail=False, methods=('POST',))
     def download_many_submissions(self, request):
         return self._download_many_files(request=request, file_type='submission')
@@ -596,7 +590,7 @@ class SubmissionViewSet(ModelViewSet):
     @action(detail=True, methods=('GET',))
     def get_detail_result(self, request, pk):
         # Soft-deleted submissions are not found
-        submission = get_object_or_404(Submission, pk=pk, is_soft_deleted=False)
+        submission = get_object_or_404(Submission.objects.select_related('phase', 'phase__competition', 'owner', 'data',), pk=pk, is_soft_deleted=False)
         competition = submission.phase.competition
         user = request.user
 
@@ -644,8 +638,11 @@ class SubmissionViewSet(ModelViewSet):
                     status=status.HTTP_403_FORBIDDEN,
                 )
 
-        data = SubmissionFilesSerializer(submission, context=self.get_serializer_context()).data
-        return Response(data.get("detailed_result"), status=status.HTTP_200_OK)
+        url = (
+            make_url_sassy(submission.detailed_result.name)
+            if submission.detailed_result.name else None
+        )
+        return Response(url, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=('GET',))
     def toggle_public(self, request, pk):
@@ -681,9 +678,9 @@ class SubmissionViewSet(ModelViewSet):
         return Response({})
 
     def paginate_queryset(self, queryset):
-        '''
-            This Méthode is added to override pagination when trying to download the Sub CSV
-        '''
+        """
+        This method is added to override pagination when trying to download the Sub CSV
+        """
         if getattr(getattr(self.request, "accepted_renderer", None), "format", None) == "csv":
             return None
         return super().paginate_queryset(queryset)

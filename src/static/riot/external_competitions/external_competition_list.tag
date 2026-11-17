@@ -19,30 +19,33 @@
   <div class="content-container">
 
     <!-- Filters -->
-    <div class="filters-panel">
-        <!-- Filters main heading   -->
-        <h3>Filters</h3>
-
-        <!--  Search filter  -->
-        <div class="filter-group">
-            <label class="filter-label" for="search-title"><strong>Search</strong></label>
-            <div class="ui input">
-              <input type="text" id="search-title" oninput="{on_search_input}" placeholder="Search by name...">
-            </div>
+    <div class="filters-panel ui segments">
+      <!-- Search -->
+      <div class="ui segment">
+        <h4 class="ui header" style="margin-bottom: 8px;">Search</h4>
+        <div class="ui fluid small left icon input">
+          <i class="search icon"></i>
+          <input type="text" id="search-title" oninput="{ on_search_input }" placeholder="Search by name..." value="{ filter_state.search }">
         </div>
+      </div>
 
-        <!-- Platform filter   -->
-        <div class="filter-group" id="platform-filter-group">
-            <strong class="filter-label">Platform</strong>
-            <label each="{platform in platforms}">
-                <input type="checkbox" value="{platform.id}" onclick="{on_platform_toggle}"> {platform.name}
-            </label>
+      <!-- Platform filter -->
+      <div class="ui segment" id="platform-filter-group" if="{ platforms && platforms.length > 0 }">
+        <h5 class="ui header" style="margin-bottom: 8px;">Platform</h5>
+        <div class="filter-item" each="{ platform in platforms }">
+          <label>
+            <input type="checkbox" value="{ platform.id }" onclick="{ on_platform_toggle }">
+            { platform.name }
+          </label>
         </div>
+      </div>
 
-        <!--  Clear filters  -->
-        <div class="filter-group" show="{should_show_clear_filters()}">
-            <button class="clear-filters-btn ui button theme-btn" onclick="{clear_all_filters}">Clear All Filters</button>
-        </div>
+      <!-- Clear filters -->
+      <div class="ui secondary segment" show="{ should_show_clear_filters() }">
+        <button type="button" class="ui fluid basic compact button clear-filters-btn" onclick="{ clear_all_filters }">
+          <i class="undo icon"></i> Clear All Filters
+        </button>
+      </div>
     </div>
 
     <!-- Competitions -->
