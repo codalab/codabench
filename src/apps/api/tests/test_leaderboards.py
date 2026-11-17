@@ -1,6 +1,6 @@
 from django.urls import reverse
 from rest_framework.test import APITestCase
-
+from datetime import timedelta
 import factories
 
 
@@ -220,7 +220,10 @@ class HiddenColumnScoreTests(APITestCase):
         """
         visible_score = self.submission.scores.get(column=self.visible_column).score
         hidden_score = self.submission.scores.get(column=self.hidden_column).score
-        later = factories.SubmissionFactory(phase=self.phase, leaderboard=self.leaderboard)
+        later = factories.SubmissionFactory(
+            phase=self.phase, leaderboard=self.leaderboard,
+            created_when=self.submission.created_when + timedelta(seconds=1),
+        )
         factories.SubmissionScoreFactory(submissions=[later], column=self.visible_column, score=visible_score)
         better = hidden_score - 1 if self.hidden_column.sorting == 'asc' else hidden_score + 1
         factories.SubmissionScoreFactory(submissions=[later], column=self.hidden_column, score=better)
