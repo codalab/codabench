@@ -94,16 +94,12 @@ class SubmissionSerializer(serializers.ModelSerializer):
 
         competition = instance.phase.competition
 
-        groups = competition.participant_groups.filter(
-            queue_id=instance.queue_id
-        )
+        for group in competition.participant_groups.all():
+            if group.queue_id != instance.queue_id:
+                continue
 
-        group = groups.filter(
-            user__username=instance.owner.username
-        ).first()
-
-        if group:
-            return _group_display_name(group.name, competition.pk)
+            if any(user.pk == instance.owner_id for user in group.user_set.all()):
+                return _group_display_name(group.name, competition.pk)
 
         return None
 
