@@ -18,7 +18,7 @@ class CompetitionLeaderboardStressTests(APITestCase):
 
     def test_getting_many_submissions_doesnt_cause_too_many_queries(self):
         self.client.login(username='creator', password='creator')
-        with self.assertNumQueries(11):
+        with self.assertNumQueries(13):
             resp = self.client.get(reverse('leaderboard-detail', args=(self.leaderboard.pk,)))
             assert resp.status_code == 200
 
@@ -132,22 +132,20 @@ class HiddenLeaderboardTests(APITestCase):
 
 class HiddenColumnScoreTests(APITestCase):
     """
-    Column.hidden is meant to hide a score from everyone
-    viewing the leaderboard (e.g. so participants can't tune submissions
-    against it), so a hidden column's score must never appear in the
-    leaderboard-detail (`/api/leaderboards/<id>/`) response, for any viewer
-    - anonymous, logged-in, or organizer/admin alike - consistent with how
-    the `columns` metadata list already filters hidden columns out.
-    (Previously `submissions[*].scores` was built from a query with no
-    hidden-column filter, so a hidden column's score leaked through even
-    though the UI never rendered a column for it.)
+    Column.hidden keeps a score private to the competition admins (creator,
+    collaborators, superusers): participants can't tune submissions against
+    it, while the organizers can monitor it. Its score is left out for
+    everyone else, both on leaderboard-detail (`/api/leaderboards/<id>/`) and
+    on the phase leaderboard (`/api/phases/<id>/get_leaderboard/`, the Results
+    tab), whose column list then also includes the hidden column for admins.
     """
 
     def setUp(self):
         self.creator = factories.UserFactory(username='hcs_creator', password='test')
+        self.collab = factories.UserFactory(username='hcs_collab', password='test')
         self.admin = factories.UserFactory(username='hcs_admin', password='test', super_user=True)
         self.normal_user = factories.UserFactory(username='hcs_normal', password='test')
-        self.comp = factories.CompetitionFactory(created_by=self.creator)
+        self.comp = factories.CompetitionFactory(created_by=self.creator, collaborators=[self.collab])
         self.leaderboard = factories.LeaderboardFactory(hidden=False, primary_index=0)
         self.phase = factories.PhaseFactory(competition=self.comp, leaderboard=self.leaderboard)
 
@@ -163,63 +161,74 @@ class HiddenColumnScoreTests(APITestCase):
     def get_leaderboard(self):
         return self.client.get(reverse('leaderboard-detail', kwargs={'pk': self.leaderboard.id}))
 
+    def get_phase_leaderboard(self):
+        return self.client.get(reverse('phases-get-leaderboard', kwargs={'pk': self.phase.id}))
+
     def score_column_keys(self, resp):
         submissions = resp.json()['submissions']
         assert len(submissions) == 1
         return {score['column_key'] for score in submissions[0]['scores']}
 
-    def test_anonymous_user_does_not_see_hidden_column_score(self):
-        """
-        An anonymous (unauthenticated) GET on leaderboard-detail must not
-        include the hidden column's score in the submission's scores array.
-        Expected: only the visible column's score is returned.
-        """
+    def phase_column_keys(self, resp):
+        return {column['key'] for task in resp.json()['tasks'] for column in task['columns']}
+
+    def assert_hidden_score_excluded(self):
         resp = self.get_leaderboard()
         assert resp.status_code == 200
-        keys = self.score_column_keys(resp)
-        assert self.hidden_column.key not in keys
-        assert self.visible_column.key in keys
+        assert self.score_column_keys(resp) == {self.visible_column.key}
+
+        resp = self.get_phase_leaderboard()
+        assert resp.status_code == 200
+        assert self.score_column_keys(resp) == {self.visible_column.key}
+        assert self.phase_column_keys(resp) == {self.visible_column.key}
+
+    def assert_hidden_score_included(self):
+        resp = self.get_leaderboard()
+        assert resp.status_code == 200
+        assert self.score_column_keys(resp) == {self.visible_column.key, self.hidden_column.key}
+
+        resp = self.get_phase_leaderboard()
+        assert resp.status_code == 200
+        keys = {self.visible_column.key, self.hidden_column.key}
+        assert self.score_column_keys(resp) == keys
+        assert self.phase_column_keys(resp) == keys
+
+    def test_anonymous_user_does_not_see_hidden_column_score(self):
+        self.assert_hidden_score_excluded()
 
     def test_normal_authenticated_user_does_not_see_hidden_column_score(self):
-        """
-        A logged-in user with no organizer/collaborator/admin relationship to
-        the competition must not see the hidden column's score via
-        leaderboard-detail either. Expected: only the visible column's score
-        is returned.
-        """
         self.client.force_login(self.normal_user)
-        resp = self.get_leaderboard()
-        assert resp.status_code == 200
-        keys = self.score_column_keys(resp)
-        assert self.hidden_column.key not in keys
-        assert self.visible_column.key in keys
+        self.assert_hidden_score_excluded()
 
-    def test_competition_creator_does_not_see_hidden_column_score(self):
-        """
-        For consistency with the columns metadata (which already filters out
-        hidden columns for everyone, organizers included), the competition
-        creator must not see the hidden column's score via leaderboard-detail
-        either. Expected: only the visible column's score is returned.
-        """
+    def test_competition_creator_sees_hidden_column_score(self):
         self.client.force_login(self.creator)
-        resp = self.get_leaderboard()
-        assert resp.status_code == 200
-        keys = self.score_column_keys(resp)
-        assert self.hidden_column.key not in keys
-        assert self.visible_column.key in keys
+        self.assert_hidden_score_included()
 
-    def test_superuser_does_not_see_hidden_column_score(self):
-        """
-        Even a superuser/site-admin must not see the hidden column's score
-        via this endpoint, for the same consistency reason. Expected: only
-        the visible column's score is returned.
-        """
+    def test_collaborator_sees_hidden_column_score(self):
+        self.client.force_login(self.collab)
+        self.assert_hidden_score_included()
+
+    def test_superuser_sees_hidden_column_score(self):
         self.client.force_login(self.admin)
-        resp = self.get_leaderboard()
-        assert resp.status_code == 200
-        keys = self.score_column_keys(resp)
-        assert self.hidden_column.key not in keys
-        assert self.visible_column.key in keys
+        self.assert_hidden_score_included()
+
+    def test_hidden_column_does_not_change_ranking(self):
+        """
+        The admin view ranks by the visible columns only, like everyone else's:
+        with tied visible scores, a better hidden score does not move a later
+        submission up. Expects both views in creation order.
+        """
+        visible_score = self.submission.scores.get(column=self.visible_column).score
+        hidden_score = self.submission.scores.get(column=self.hidden_column).score
+        later = factories.SubmissionFactory(phase=self.phase, leaderboard=self.leaderboard)
+        factories.SubmissionScoreFactory(submissions=[later], column=self.visible_column, score=visible_score)
+        better = hidden_score - 1 if self.hidden_column.sorting == 'asc' else hidden_score + 1
+        factories.SubmissionScoreFactory(submissions=[later], column=self.hidden_column, score=better)
+
+        for user in (self.normal_user, self.creator):
+            self.client.force_login(user)
+            rows = self.get_phase_leaderboard().json()['submissions']
+            assert [row['id'] for row in rows] == [self.submission.id, later.id]
 
 
 class LeaderboardMissingScoreOrderingTests(APITestCase):

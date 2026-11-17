@@ -103,6 +103,9 @@
                 <th style="cursor:pointer;" onclick="{ sort_by.bind(this, 'score') }">
                     Score <i if="{ sort_column === 'score' }" class="icon { sort_direction === 'asc' ? 'caret up' : 'caret down' }"></i>
                 </th>
+                <th if="{ has_hidden_scores() }" data-tooltip="Hidden leaderboard columns, only competition admins see them" data-inverted="">
+                    Hidden scores <i class="eye slash outline icon"></i>
+                </th>
                 <th if="{ opts.competition.enable_detailed_results && opts.competition.show_detailed_results_in_submission_panel}">
                     Detailed Results
                 </th>
@@ -163,6 +166,9 @@
                     </sup>
                 </td>
                 <td>{get_score(submission)}</td>
+                <td if="{ has_hidden_scores() }">
+                    <div each="{ score in get_hidden_scores(submission) }">{ score.column_key }: { format_score(score) }</div>
+                </td>
                 <td
                     if="{ opts.competition.enable_detailed_results && opts.competition.show_detailed_results_in_submission_panel }">
                     <a if="{submission.status === 'Finished'}" href="detailed_results/{submission.id}" target="_blank"
@@ -287,6 +293,7 @@
                                 <th>Date</th>
                                 <th>Status</th>
                                 <th>Score</th>
+                                <th if="{ has_hidden_scores() }">Hidden scores</th>
                                 <th class="center aligned">Actions</th>
                             </tr>
                         </thead>
@@ -305,6 +312,9 @@
                                     </sup>
                                 </td>
                                 <td>{ get_score(child) }</td>
+                                <td if="{ has_hidden_scores() }">
+                                    <div each="{ score in get_hidden_scores(child) }">{ score.column_key }: { format_score(score) }</div>
+                                </td>
 
                                 <td if="{ child.is_soft_deleted }">
                                     <virtual if="{ opts.admin }">
@@ -1198,15 +1208,28 @@
 
         self.get_score = function (submission) {
             try {
-                // Look for a primary score, fallback to the first score if not found
-                let score_obj = _.find(submission.scores, s => s.is_primary) || submission.scores[0]
+                // Look for a primary score, fallback to the first visible score if not found
+                let score_obj = _.find(submission.scores, s => s.is_primary) || _.find(submission.scores, s => !s.hidden)
                 if (score_obj) {
-                    return parseFloat(score_obj.score).toFixed(score_obj.precision || 0)
+                    return self.format_score(score_obj)
                 }
                 return ""
             } catch {
                 return ""
             }
+        }
+
+        self.format_score = function (score_obj) {
+            return parseFloat(score_obj.score).toFixed(score_obj.precision || 0)
+        }
+
+        // The API only sends hidden-column scores to competition admins
+        self.get_hidden_scores = function (submission) {
+            return _.filter(submission.scores, 'hidden')
+        }
+
+        self.has_hidden_scores = function () {
+            return _.some(self.submissions, submission => !_.isEmpty(self.get_hidden_scores(submission)))
         }
 
         self.toggle_submission_is_public = function (submission) {

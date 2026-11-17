@@ -587,6 +587,62 @@ class CompetitionResultDatatypesTests(APITestCase):
                 self.assertIn(f'{self.leaderboard.title} - {phase.name}({phase.id}).csv', zipped_file.namelist())
 
 
+class CompetitionResultsHiddenColumnTests(APITestCase):
+    """
+    The results export is for the competition admins: it includes the hidden
+    columns, and `all_submissions=true` lists every finished submission of the
+    phase, on the leaderboard or not, with its creation date.
+    """
+
+    def setUp(self):
+        self.creator = UserFactory(username='rhc_creator', password='test')
+        self.participant = UserFactory(username='rhc_participant', password='test')
+        self.comp = CompetitionFactory(created_by=self.creator)
+        self.leaderboard = LeaderboardFactory(primary_index=0)
+        self.task = TaskFactory()
+        self.phase = PhaseFactory(competition=self.comp, leaderboard=self.leaderboard, tasks=[self.task])
+        self.visible_column = ColumnFactory(leaderboard=self.leaderboard, index=0, key='visible_col', title='Visible')
+        self.hidden_column = ColumnFactory(
+            leaderboard=self.leaderboard, index=1, key='hidden_col', title='Hidden', hidden=True)
+
+        self.on_leaderboard = self.make_submission(leaderboard=self.leaderboard)
+        self.off_leaderboard = self.make_submission(leaderboard=None)
+        SubmissionFactory(owner=self.participant, phase=self.phase, task=self.task, status=Submission.FAILED)
+
+    def make_submission(self, leaderboard):
+        submission = SubmissionFactory(
+            owner=self.participant, phase=self.phase, task=self.task, leaderboard=leaderboard,
+            status=Submission.FINISHED)
+        SubmissionScoreFactory(submissions=[submission], column=self.visible_column)
+        SubmissionScoreFactory(submissions=[submission], column=self.hidden_column)
+        return submission
+
+    def get_rows(self, **params):
+        self.client.force_login(self.creator)
+        url = reverse('competition-results', kwargs={"pk": self.comp.id})[0:-1] + '.json'
+        resp = self.client.get(url, {'phase': self.phase.id, **params})
+        assert resp.status_code == 200
+        (rows,) = json.loads(resp.content).values()
+        return rows
+
+    def row_key(self, submission):
+        return f'{self.participant.username}-{submission.id}'
+
+    def test_results_include_hidden_column(self):
+        rows = self.get_rows()
+        assert list(rows) == [self.row_key(self.on_leaderboard)]
+        hidden_score = self.on_leaderboard.scores.get(column=self.hidden_column).score
+        column_title = f'{self.task.name}({self.task.id})-{self.hidden_column.title}'
+        assert float(rows[self.row_key(self.on_leaderboard)][column_title]) == float(hidden_score)
+
+    def test_results_of_all_finished_submissions(self):
+        rows = self.get_rows(all_submissions='true')
+        assert set(rows) == {self.row_key(self.on_leaderboard), self.row_key(self.off_leaderboard)}
+        assert rows[self.row_key(self.on_leaderboard)]['on_leaderboard'] is True
+        assert rows[self.row_key(self.off_leaderboard)]['on_leaderboard'] is False
+        assert all(row['created_when'] for row in rows.values())
+
+
 class TestCompetitionFactSheets(APITestCase):
     def setUp(self):
         self.leaderboard = LeaderboardFactory()

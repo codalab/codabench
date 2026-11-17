@@ -20,6 +20,7 @@
                             <div style="padding-top: 8px; right: 0; left: auto;" class="menu">
                                 <a href="{URLS.COMPETITION_GET_CSV(competition_id, selected_leaderboard.id)}" target="new" class="item">This CSV</a>
                                 <a href="{URLS.COMPETITION_GET_JSON_BY_ID(competition_id, selected_leaderboard.id)}" target="new" class="item">This JSON</a>
+                                <a href="{URLS.COMPETITION_GET_CSV(competition_id, selected_leaderboard.id)}&all_submissions=true" target="new" class="item">All finished submissions (CSV)</a>
                             </div>
                         </div>
                     </div>
@@ -37,7 +38,12 @@
             <th>Date</th>
             <th>ID</th>
             <th if="{ has_group_queues }">Groups</th>
-            <th each="{ column in filtered_columns }" colspan="1">{column.title}</th>
+            <th each="{ column in filtered_columns }" colspan="1">
+                {column.title}
+                <span if="{ column.hidden }" data-tooltip="Hidden column, only competition admins see it" data-inverted="">
+                    <i class="eye slash outline icon"></i>
+                </span>
+            </th>
         </tr>
         </thead>
         <!--  Always show leaderboard  -->
