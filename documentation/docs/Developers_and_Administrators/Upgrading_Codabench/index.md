@@ -1,14 +1,13 @@
 ## Upgrade Codabench
 
-Run these commands for every upgrade. They put the site in maintenance mode, pull the new version, rebuild and restart the containers, apply the Django migrations and collect the static files:
+Run these commands for every upgrade. They put the site in maintenance mode, back up the database (optional, but recommended), pull the new version, rebuild and restart the containers, apply the Django migrations and collect the static files:
 
 ```sh
 cd codabench
 touch maintenance_mode/maintenance.on
+./bin/pg_dump.py  # Optional: back up the database
 git pull
 docker compose build && docker compose up -d
-docker compose exec django ./manage.py migrate
-docker compose exec django ./manage.py collectstatic --noinput
 rm maintenance_mode/maintenance.on
 ```
 
