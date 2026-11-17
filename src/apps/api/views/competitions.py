@@ -39,8 +39,11 @@ from django.conf import settings
 from datetime import datetime
 import pytz
 from django.utils.timezone import now
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_control
 
 
+@method_decorator(cache_control(max_age=15 * 60, private=True), name='list')
 class CompetitionViewSet(ModelViewSet):
     queryset = Competition.objects.all()
     permission_classes = (AllowAny,)
