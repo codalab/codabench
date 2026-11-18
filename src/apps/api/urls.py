@@ -13,6 +13,7 @@ from rest_framework.urlpatterns import format_suffix_patterns
 from .views import (
     analytics,
     competitions,
+    dashboard,
     datasets,
     external_competitions,
     profiles,
@@ -46,6 +47,7 @@ urlpatterns = [
     path('can_make_submission/<phase_id>/', submissions.can_make_submission, name="can_make_submission"),
     path('user_lookup/', profiles.user_lookup),
     path('analytics/', analytics.AnalyticsView.as_view(), name='analytics_api'),
+    path('dashboard/competitions/', dashboard.DashboardCompetitionsView.as_view(), name='dashboard_competitions_api'),
 
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('api-token-auth/', obtain_auth_token),

@@ -287,39 +287,29 @@
 
             var baseUrl = (typeof URLS !== "undefined" && URLS.API) ? URLS.API : "/api/";
             var endpoint = self.isAdmin
-                ? baseUrl + "competitions/?visibility=all&type=any&page_size=5000"
-                : baseUrl + "competitions/?visibility=public&type=any&page_size=5000";
-            var allRawCompetitions = [];
+                ? baseUrl + "dashboard/competitions/?visibility=all&type=any"
+                : baseUrl + "dashboard/competitions/?visibility=public&type=any";
 
-            const fetchPage = (url) => {
-                var req = (typeof CODALAB !== "undefined" && CODALAB.api && CODALAB.api.request)
-                    ? CODALAB.api.request("GET", url)
-                    : fetch(url).then((r) => r.json());
+            var req = (typeof CODALAB !== "undefined" && CODALAB.api && CODALAB.api.request)
+                ? CODALAB.api.request("GET", endpoint)
+                : fetch(endpoint).then((r) => r.json());
 
-                const handleSuccess = (response) => {
-                    var rawList = Array.isArray(response) ? response : (response.results || []);
-                    allRawCompetitions = allRawCompetitions.concat(rawList);
-                    if (response && response.next) {
-                        fetchPage(response.next);
-                    } else {
-                        self.allCompetitions = self.classifyCompetitions(allRawCompetitions);
-                        self.onDataLoaded();
-                    }
-                };
-
-                const handleError = () => {
-                    self.allCompetitions = self.classifyCompetitions(allRawCompetitions);
-                    self.onDataLoaded();
-                };
-
-                if (req && typeof req.done === "function") {
-                    req.done(handleSuccess).fail(handleError);
-                } else if (req && typeof req.then === "function") {
-                    req.then(handleSuccess).catch(handleError);
-                }
+            const handleSuccess = (response) => {
+                var rawList = Array.isArray(response) ? response : (response.results || []);
+                self.allCompetitions = self.classifyCompetitions(rawList);
+                self.onDataLoaded();
             };
 
-            fetchPage(endpoint);
+            const handleError = () => {
+                self.allCompetitions = [];
+                self.onDataLoaded();
+            };
+
+            if (req && typeof req.done === "function") {
+                req.done(handleSuccess).fail(handleError);
+            } else if (req && typeof req.then === "function") {
+                req.then(handleSuccess).catch(handleError);
+            }
         };
 
         self.onDataLoaded = () => {
