@@ -71,6 +71,8 @@ urlpatterns = [
     path('analytics/users_usage/', analytics.users_usage, name='users_usage'),
     path('analytics/orphan-files/scan/', analytics.start_orphan_files_scan, name='start_orphan_files_scan'),
     path('analytics/orphan-files/scan/<uuid:task_id>/', analytics.orphan_files_scan_status, name='orphan_files_scan_status'),
+    path("analytics/orphan-files/cleanup/", analytics.start_orphan_files_cleanup, name="start_orphan_files_cleanup"),
+    path("analytics/orphan-files/cleanup/<uuid:task_id>/", analytics.orphan_files_cleanup_status, name="orphan_files_cleanup_status"),
 
     # API Docs
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
