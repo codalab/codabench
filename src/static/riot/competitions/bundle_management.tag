@@ -48,7 +48,7 @@
             </tr>
             <tr if="{competition_bundles.length === 0}">
                 <td class="center aligned" colspan="6">
-                    <em>No Competition Bundles Yet!</em>
+                    <em>No Competition Bundles/Dumps Yet!</em>
                 </td>
             </tr>
         </tbody>
