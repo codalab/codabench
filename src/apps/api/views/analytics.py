@@ -12,7 +12,7 @@ from rest_framework_csv import renderers as r
 from competitions.models import Competition, Submission
 from analytics.models import StorageUsageHistory, CompetitionStorageDataPoint, UserStorageDataPoint
 from api.serializers.analytics import AnalyticsSerializer
-from apps.analytics.tasks import delete_orphan_files as delete_orphan_files_async_task
+
 
 import os
 import datetime
@@ -22,7 +22,6 @@ logger = logging.getLogger(__name__)
 
 
 User = get_user_model()
-delete_orphan_files_task = None
 
 
 def merge_dicts(d1, d2):
@@ -262,43 +261,6 @@ def users_usage(request):
     return Response(response, status=status.HTTP_200_OK)
 
 
-@api_view(["GET"])
-def get_orphan_files(request):
-    """
-    Get the orphan files based on the last storage analytics
-    """
-
-    if not request.user.is_superuser:
-        raise PermissionDenied(detail="Admin only")
-
-    # Find most recent file
-    most_recent_log_file = get_most_recent_storage_inconsistency_log_file()
-    if not most_recent_log_file:
-        logger.warning("No storage inconsistency log file found.")
-        return Response({"message": "No storage inconsistency log file found."}, status=status.HTTP_404_NOT_FOUND)
-
-    # Get the list of orphan files from the content of the most recent log file
-    log_folder = "/app/logs/"
-    orphan_files_path = get_files_path_from_orphan_log_file(os.path.join(log_folder, most_recent_log_file))
-
-    return Response({"data": orphan_files_path}, status=status.HTTP_200_OK)
-
-
-@api_view(["DELETE"])
-def delete_orphan_files(request):
-    """
-    Start the deletion of orphan files task
-    """
-
-    if not request.user.is_superuser:
-        raise PermissionDenied(detail="Admin only")
-
-    global delete_orphan_files_task
-    delete_orphan_files_task = delete_orphan_files_async_task.delay()
-
-    return Response({"success": True, "message": "orphan files deletion started"}, status=status.HTTP_200_OK)
-
-
 def get_most_recent_storage_inconsistency_log_file():
     logger = logging.getLogger(__name__)
 
@@ -350,20 +312,3 @@ def get_files_path_from_orphan_log_file(log_file_path):
         logger.error(f"An I/O error occurred while accessing the file at {log_file_path}: {e}")
 
     return files_path
-
-
-@api_view(["GET"])
-def check_orphans_deletion_status(request):
-    """
-    Get the orphan files deletion task status.
-    Return one of ["PENDING", "STARTED", "SUCCESS", "FAILURE", "RETRY", "REVOKED"]
-    """
-
-    if not request.user.is_superuser:
-        raise PermissionDenied(detail="Admin only")
-
-    state = None
-    if delete_orphan_files_task:
-        state = delete_orphan_files_task.state
-
-    return Response({"status": state}, status=status.HTTP_200_OK)
