@@ -12,7 +12,8 @@ from rest_framework_csv import renderers as r
 from competitions.models import Competition, Submission
 from analytics.models import StorageUsageHistory, CompetitionStorageDataPoint, UserStorageDataPoint
 from api.serializers.analytics import AnalyticsSerializer
-
+from celery.result import AsyncResult
+from analytics.tasks import scan_orphan_files_task
 
 import os
 import datetime
@@ -288,27 +289,71 @@ def get_most_recent_storage_inconsistency_log_file():
     return most_recent_log_file
 
 
-def get_files_path_from_orphan_log_file(log_file_path):
-    logger = logging.getLogger(__name__)
+@api_view(["POST"])
+def start_orphan_files_scan(request):
+    """
+    Start a read-only MinIO orphan files scan.
+    Superusers only.
+    """
+    if not request.user.is_superuser:
+        raise PermissionDenied(detail="Admin only")
 
-    files_path = []
+    grace_period_days = request.data.get("grace_period_days", 7)
 
     try:
-        with open(log_file_path) as log_file:
-            lines = log_file.readlines()
-            orphan_files_lines = []
-            for i, line in enumerate(lines):
-                if "Orphaned files" in line:
-                    orphan_files_lines = lines[i + 1:]
-                    break
+        grace_period_days = int(grace_period_days)
+    except (TypeError, ValueError):
+        return Response(
+            {"detail": "grace_period_days must be an integer"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
-            for orphan_files_line in orphan_files_lines:
-                files_path.append(orphan_files_line.split(maxsplit=1)[0])
-    except FileNotFoundError:
-        logger.error(f"File '{log_file_path}' does not exist.")
-    except PermissionError:
-        logger.error(f"Permission denied for reading the file '{log_file_path}'.")
-    except IOError as e:
-        logger.error(f"An I/O error occurred while accessing the file at {log_file_path}: {e}")
+    if not 0 <= grace_period_days <= 3650:
+        return Response(
+            {"detail": "grace_period_days must be between 0 and 3650"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
-    return files_path
+    task = scan_orphan_files_task.apply_async(
+        kwargs={"grace_period_days": grace_period_days},
+    )
+
+    return Response(
+        {
+            "task_id": task.id,
+            "status": task.state,
+        },
+        status=status.HTTP_202_ACCEPTED,
+    )
+
+
+
+@api_view(["GET"])
+def orphan_files_scan_status(request, task_id):
+    """
+    Return Celery scan state and result.
+    Superusers only.
+    """
+    if not request.user.is_superuser:
+        raise PermissionDenied(detail="Admin only")
+
+    task_id = str(task_id)
+    task = AsyncResult(task_id, app=scan_orphan_files_task.app)
+
+    response = {
+        "task_id": task_id,
+        "status": task.state,
+    }
+
+    if task.state == "SUCCESS":
+        response["result"] = task.result
+
+    elif task.state == "PROGRESS":
+        response["progress"] = task.info
+
+    elif task.state == "FAILURE":
+        logger.error("Orphan files scan failed: %s", task_id)
+        response["error"] = "The scan failed. Check worker logs."
+
+    return Response(response, status=status.HTTP_200_OK)
+

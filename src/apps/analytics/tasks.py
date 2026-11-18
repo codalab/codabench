@@ -1,5 +1,8 @@
 import time
 import json
+from apps.analytics.orphan_files.scanner import scan_orphan_files
+from apps.analytics.orphan_files.reports import build_report
+
 from celery_config import app
 from datetime import datetime, timezone, timedelta
 from django.db.models import (
@@ -582,3 +585,33 @@ def update_home_page_counters():
     logger.info(
         "Task update_home_page_counters Completed. Duration = {:.3f} seconds".format(elapsed_time)
     )
+
+@app.task(bind=True, queue="site-worker",soft_time_limit=60 * 60)
+def scan_orphan_files_task(self, grace_period_days=7):
+    """
+    Read-only scan of managed MinIO objects.
+
+    Returns a summary and a limited preview of detected files.
+    """
+    self.update_state(
+        state="PROGRESS",
+        meta={"message": "Scanning MinIO objects..."},
+    )
+
+    result = scan_orphan_files(
+        grace_period_days=grace_period_days,
+    )
+
+    report = build_report(result, grace_period_days)
+
+    return {
+        "summary": report["summary"],
+        "grace_period_days": grace_period_days,
+        "generated_at": report["generated_at"],
+        "orphaned_preview": report["orphaned"][:100],
+        "recent_unreferenced_preview": report[
+            "recent_unreferenced"
+        ][:100],
+        "missing_preview": report["missing"][:100],
+        "preview_limit": 100,
+    }
