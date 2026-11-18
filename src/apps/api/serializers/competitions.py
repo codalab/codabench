@@ -583,3 +583,43 @@ class PhaseResultsSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     tasks = PhaseResultsTaskSerializer(many=True, read_only=True)
     submissions = PhaseResultsSubmissionSerializer(many=True)
+
+
+class DashboardCompetitionSerializer(serializers.ModelSerializer):
+    created_by = serializers.SerializerMethodField()
+    tags = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Competition
+        fields = (
+            'id',
+            'title',
+            'created_by',
+            'created_when',
+            'published',
+            'participants_count',
+            'submissions_count',
+            'competition_type',
+            'reward',
+            'tags',
+        )
+
+    def get_created_by(self, obj):
+        if not obj.created_by:
+            return "Unknown"
+        # Get the user's display name if not None, otherwise return username
+        return obj.created_by.display_name if obj.created_by.display_name else obj.created_by.username
+
+    def get_tags(self, obj):
+        if not hasattr(obj, 'prefetched_tags_cached'):
+            obj.prefetched_tags_cached = [
+                {
+                    'id': tag.id,
+                    'name': tag.name,
+                    'category': tag.category.name if tag.category else 'Other',
+                    'category_id': tag.category_id,
+                }
+                for tag in obj.tags.all()
+            ]
+        return obj.prefetched_tags_cached
+
