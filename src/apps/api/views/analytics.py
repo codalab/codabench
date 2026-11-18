@@ -13,7 +13,9 @@ from competitions.models import Competition, Submission
 from analytics.models import StorageUsageHistory, CompetitionStorageDataPoint, UserStorageDataPoint
 from api.serializers.analytics import AnalyticsSerializer
 from celery.result import AsyncResult
-from analytics.tasks import scan_orphan_files_task
+from analytics.tasks import scan_orphan_files_task, cleanup_orphan_files_task
+from analytics.orphan_files.cleanup import is_allowed_object
+
 
 import os
 import datetime
@@ -357,3 +359,150 @@ def orphan_files_scan_status(request, task_id):
 
     return Response(response, status=status.HTTP_200_OK)
 
+
+@api_view(["POST"])
+def start_orphan_files_cleanup(request):
+    if not request.user.is_superuser:
+        raise PermissionDenied(detail="Admin only")
+
+    data = request.data
+
+    grace_period_days = data.get("grace_period_days", 7)
+    mode = data.get("mode", "all")
+    dry_run = data.get("dry_run", True)
+
+    if (
+        isinstance(grace_period_days, bool)
+        or not isinstance(grace_period_days, int)
+        or not 0 <= grace_period_days <= 3650
+    ):
+        return Response(
+            {"detail": "Invalid grace_period_days"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if mode not in ("all", "selected"):
+        return Response(
+            {"detail": "Invalid cleanup mode"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if not isinstance(dry_run, bool):
+        return Response(
+            {"detail": "dry_run must be a boolean"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if not dry_run:
+        return Response(
+            {
+                "detail": (
+                    "Physical deletion is not enabled yet. "
+                    "Run a dry-run first."
+                )
+            },
+            status=status.HTTP_409_CONFLICT,
+        )
+
+    selected_objects = None
+
+    if mode == "selected":
+        selected_objects = data.get("selected_objects")
+
+        if (
+            not isinstance(selected_objects, list)
+            or not 1 <= len(selected_objects) <= 100
+        ):
+            return Response(
+                {"detail": "Select between 1 and 100 objects"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        identities = set()
+
+        for item in selected_objects:
+            if not isinstance(item, dict):
+                return Response(
+                    {"detail": "Invalid selected object"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            bucket = item.get("bucket")
+            key = item.get("key")
+
+            if not is_allowed_object(bucket, key):
+                return Response(
+                    {"detail": "Object outside allowed prefixes"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            identities.add((bucket, key))
+
+        if len(identities) != len(selected_objects):
+            return Response(
+                {"detail": "Duplicate selected objects"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+    elif data.get("selected_objects") is not None:
+        return Response(
+            {"detail": "selected_objects is only valid in selected mode"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    task = cleanup_orphan_files_task.apply_async(
+        kwargs={
+            "grace_period_days": grace_period_days,
+            "mode": mode,
+            "selected_objects": selected_objects,
+            "dry_run": True,
+        }
+    )
+
+    return Response(
+        {
+            "task_id": task.id,
+            "status": task.state,
+            "mode": mode,
+            "dry_run": True,
+        },
+        status=status.HTTP_202_ACCEPTED,
+    )
+
+
+@api_view(["GET"])
+def orphan_files_cleanup_status(request, task_id):
+    if not request.user.is_superuser:
+        raise PermissionDenied(detail="Admin only")
+
+    task_id = str(task_id)
+
+    task = AsyncResult(
+        task_id,
+        app=cleanup_orphan_files_task.app,
+    )
+
+    response = {
+        "task_id": task_id,
+        "status": task.state,
+    }
+
+    if task.state == "SUCCESS":
+        response["result"] = task.result
+
+    elif task.state == "PROGRESS":
+        response["progress"] = task.info
+
+    elif task.state == "FAILURE":
+        logger.error(
+            "Orphan files cleanup failed: %s",
+            task_id,
+        )
+        response["error"] = (
+            "The cleanup failed. Check worker logs."
+        )
+
+    return Response(
+        response,
+        status=status.HTTP_200_OK,
+    )

@@ -2,6 +2,7 @@ import time
 import json
 from apps.analytics.orphan_files.scanner import scan_orphan_files
 from apps.analytics.orphan_files.reports import build_report
+from apps.analytics.orphan_files.cleanup import cleanup_orphan_files
 
 from celery_config import app
 from datetime import datetime, timezone, timedelta
@@ -586,7 +587,8 @@ def update_home_page_counters():
         "Task update_home_page_counters Completed. Duration = {:.3f} seconds".format(elapsed_time)
     )
 
-@app.task(bind=True, queue="site-worker",soft_time_limit=60 * 60)
+
+@app.task(bind=True, queue="site-worker", soft_time_limit=60 * 60)
 def scan_orphan_files_task(self, grace_period_days=7):
     """
     Read-only scan of managed MinIO objects.
@@ -614,4 +616,43 @@ def scan_orphan_files_task(self, grace_period_days=7):
         ][:100],
         "missing_preview": report["missing"][:100],
         "preview_limit": 100,
+    }
+
+
+@app.task(bind=True, queue="site-worker", soft_time_limit=60 * 60)
+def cleanup_orphan_files_task(
+    self,
+    grace_period_days=7,
+    mode="all",
+    selected_objects=None,
+    dry_run=True,
+):
+    """
+    Re-scan managed MinIO objects and simulate cleanup.
+
+    Physical deletion remains disabled until concurrent
+    storage/database writes are safely coordinated.
+    """
+    if not dry_run:
+        raise ValueError(
+            "Physical deletion is not enabled yet."
+        )
+
+    self.update_state(
+        state="PROGRESS",
+        meta={"message": "Checking orphaned objects..."},
+    )
+
+    result = cleanup_orphan_files(
+        grace_period_days=grace_period_days,
+        selected_objects=(
+            selected_objects if mode == "selected" else None
+        ),
+        dry_run=True,
+    )
+
+    return {
+        **result,
+        "grace_period_days": grace_period_days,
+        "completed_at": datetime.now(timezone.utc).isoformat(),
     }
