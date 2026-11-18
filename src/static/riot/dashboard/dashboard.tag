@@ -75,6 +75,10 @@
         self.isLoggedIn = typeof CODALAB !== "undefined" && CODALAB.state && CODALAB.state.user && CODALAB.state.user.logged_in;
 
         self.loading = true;
+        self.rawPublicCompetitions = [];
+        self.rawPrivateCompetitions = [];
+        self.hasFetchedPrivate = false;
+        self.isFetchingPrivate = false;
         self.allCompetitions = [];
         self.filteredCompetitions = [];
 
@@ -281,28 +285,24 @@
             });
         };
 
-        self.fetchData = () => {
-            self.loading = true;
-            self.update();
-
+        self.fetchCompetitions = (visibility, callback) => {
             var baseUrl = (typeof URLS !== "undefined" && URLS.API) ? URLS.API : "/api/";
-            var endpoint = self.isAdmin
-                ? baseUrl + "dashboard/competitions/?visibility=all&type=any"
-                : baseUrl + "dashboard/competitions/?visibility=public&type=any";
+            var endpoint = baseUrl + "dashboard/competitions/?visibility=" + visibility + "&type=any";
 
-            var req = (typeof CODALAB !== "undefined" && CODALAB.api && CODALAB.api.request)
-                ? CODALAB.api.request("GET", endpoint)
-                : fetch(endpoint).then((r) => r.json());
+            var req = (typeof CODALAB !== "undefined" && CODALAB.api && CODALAB.api.get_dashboard_competitions)
+                ? CODALAB.api.get_dashboard_competitions({ visibility: visibility, type: 'any' })
+                : (typeof CODALAB !== "undefined" && CODALAB.api && CODALAB.api.request)
+                    ? CODALAB.api.request("GET", endpoint)
+                    : fetch(endpoint).then((r) => r.json());
 
             const handleSuccess = (response) => {
                 var rawList = Array.isArray(response) ? response : (response.results || []);
-                self.allCompetitions = self.classifyCompetitions(rawList);
-                self.onDataLoaded();
+                callback(rawList);
             };
 
-            const handleError = () => {
-                self.allCompetitions = [];
-                self.onDataLoaded();
+            const handleError = (err) => {
+                console.error("Failed to fetch " + visibility + " competitions:", err);
+                callback([]);
             };
 
             if (req && typeof req.done === "function") {
@@ -310,6 +310,17 @@
             } else if (req && typeof req.then === "function") {
                 req.then(handleSuccess).catch(handleError);
             }
+        };
+
+        self.fetchData = () => {
+            self.loading = true;
+            self.update();
+
+            self.fetchCompetitions('public', (publicList) => {
+                self.rawPublicCompetitions = publicList;
+                self.allCompetitions = self.classifyCompetitions(self.rawPublicCompetitions);
+                self.onDataLoaded();
+            });
         };
 
         self.onDataLoaded = () => {
@@ -353,10 +364,13 @@
             });
 
             self.availableCategories = Object.keys(self.globalCategoryTags).sort();
-            self.state.selectedTags = {};
-
+            if (!self.state.selectedTags) {
+                self.state.selectedTags = {};
+            }
             self.availableCategories.forEach((cat) => {
-                self.state.selectedTags[cat] = {};
+                if (!self.state.selectedTags[cat]) {
+                    self.state.selectedTags[cat] = {};
+                }
             });
 
             mapped.forEach((comp) => {
@@ -378,6 +392,28 @@
             self.state.startDate = filters.startDate || (filters.start_date ? new Date(filters.start_date) : null);
             self.state.endDate = filters.endDate || (filters.end_date ? new Date(filters.end_date) : null);
             self.state.selectedTags = filters.selected_tags_by_cat || {};
+
+            // If admin filters by private or all, lazy-load private competitions if not already fetched
+            if (self.isAdmin && (self.state.visibility === 'private' || self.state.visibility === 'all') && !self.hasFetchedPrivate) {
+                if (!self.isFetchingPrivate) {
+                    self.isFetchingPrivate = true;
+                    self.loading = true;
+                    self.update();
+
+                    self.fetchCompetitions('private', (privateList) => {
+                        self.isFetchingPrivate = false;
+                        self.hasFetchedPrivate = true;
+                        self.rawPrivateCompetitions = privateList;
+                        self.allCompetitions = self.classifyCompetitions(
+                            self.rawPublicCompetitions.concat(self.rawPrivateCompetitions)
+                        );
+                        self.loading = false;
+                        self.applyFilters();
+                        self.update();
+                    });
+                }
+                return;
+            }
 
             self.applyFilters();
             self.update();
