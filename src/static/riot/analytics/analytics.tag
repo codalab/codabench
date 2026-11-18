@@ -132,6 +132,7 @@
             <a class="item" data-tab="usage-history">Usage history</a>
             <a class="item" data-tab="competitions-usage">Competitions usage</a>
             <a class="item" data-tab="users-usage">Users usage</a>
+            <a class="item" data-tab="orphan-files">Orphan files</a>
         </div>
 
         <div class="ui bottom attached tab segment" data-tab="usage-history">
@@ -145,6 +146,147 @@
         <div class="ui bottom attached tab segment" data-tab="users-usage">
             <analytics-storage-users-usage start_date={start_date_string} end_date={end_date_string} resolution={time_unit} is_visible={current_view=="users-usage"}></analytics-storage-users-usage>
         </div>
+
+        <div class="ui bottom attached tab segment" data-tab="orphan-files">
+            <h3>Orphan files scanner</h3>
+
+            <p>
+                Scan managed MinIO objects and identify files without
+                database references. This operation does not delete files.
+            </p>
+
+            <div class="ui form">
+                <div class="two fields">
+                    <div class="field">
+                        <label>Grace period</label>
+                        <input
+                            type="number"
+                            min="0"
+                            max="3650"
+                            step="1"
+                            value={orphan_grace_period}
+                            oninput={onOrphanGracePeriodChange}
+                            disabled={orphan_scan_running}
+                        >
+                    </div>
+
+                    <div class="field">
+                        <label>Unit</label>
+                        <select
+                            class="ui dropdown"
+                            onchange={onOrphanGraceUnitChange}
+                            disabled={orphan_scan_running}
+                        >
+                            <option value="days" selected={orphan_grace_unit === "days"}>Days</option>
+                            <option value="months" selected={orphan_grace_unit === "months"}>Months</option>
+                            <option value="years" selected={orphan_grace_unit === "years"}>Years</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button
+                    type="button"
+                    class="ui primary button {loading: orphan_scan_running, disabled: orphan_scan_running}"
+                    onclick={startOrphanScan}
+                    disabled={orphan_scan_running}
+                >
+                    <i class="search icon"></i>
+                    Start scan
+                </button>
+            </div>
+
+            <div if={orphan_scan_running} class="ui info message">
+                <i class="spinner loading icon"></i>
+                Scan in progress...
+                <span if={orphan_scan_status}>
+                    ({orphan_scan_status})
+                </span>
+            </div>
+
+            <div if={orphan_scan_error} class="ui negative message">
+                {orphan_scan_error}
+            </div>
+
+            <div if={orphan_scan_result}>
+                <h4 class="ui dividing header">Scan results</h4>
+
+                <p>
+                    <strong>Generated:</strong>
+                    {pretty_date(orphan_scan_result.generated_at)}
+                </p>
+
+                <div class="ui small statistics">
+                    <div class="statistic">
+                        <div class="value">
+                            {orphan_scan_result.summary.scanned_count}
+                        </div>
+                        <div class="label">Scanned</div>
+                    </div>
+
+                    <div class="statistic">
+                        <div class="value">
+                            {orphan_scan_result.summary.referenced_count}
+                        </div>
+                        <div class="label">Referenced</div>
+                    </div>
+
+                    <div class="statistic">
+                        <div class="value">
+                            {orphan_scan_result.summary.orphaned_count}
+                        </div>
+                        <div class="label">Orphaned</div>
+                    </div>
+
+                    <div class="statistic">
+                        <div class="value">
+                            {orphan_scan_result.summary.recent_unreferenced_count}
+                        </div>
+                        <div class="label">Recent unreferenced</div>
+                    </div>
+
+                    <div class="statistic">
+                        <div class="value">
+                            {orphan_scan_result.summary.missing_count}
+                        </div>
+                        <div class="label">Missing</div>
+                    </div>
+                </div>
+
+                <h4 class="ui dividing header">Orphaned objects</h4>
+
+                <div if={orphan_scan_result.summary.orphaned_count === 0}
+                    class="ui positive message">
+                    No orphaned files detected.
+                </div>
+
+                <div if={orphan_scan_result.summary.orphaned_count > 0}>
+                    <p>
+                        Showing up to {orphan_scan_result.preview_limit}
+                        orphaned objects.
+                    </p>
+
+                    <table class="ui celled compact table">
+                        <thead>
+                            <tr>
+                                <th>Bucket</th>
+                                <th>Object key</th>
+                                <th>Size</th>
+                                <th>Last modified</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            <tr each={file in orphan_scan_result.orphaned_preview}>
+                                <td>{file.bucket}</td>
+                                <td class="orphan-object-key">{file.key}</td>
+                                <td>{pretty_bytes(file.size)}</td>
+                                <td>{pretty_date(file.last_modified)}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 
     </div>
@@ -157,7 +299,20 @@
         ---------------------------------------------------------------------*/
         self.current_view = "overview";
         self.currentAnalyticsTab = "overview";
-        self.currentStorageTab = "usageHistory";
+        self.currentStorageTab = "usage-history";
+
+        /****** Orphan files scanner *****/
+        self.orphan_grace_period = 7;
+        self.orphan_grace_unit = "days";
+        self.orphan_scan_running = false;
+        self.orphan_scan_status = null;
+        self.orphan_scan_error = null;
+        self.orphan_scan_result = null;
+        self.orphan_scan_task_id = null;
+        self.orphan_scan_poll_timer = null;
+        self.orphan_scan_destroyed = false;
+        self.orphan_scan_started_at = null;
+
         self.isDataReloadNeeded = {
             "overview": true,
             "storage": {
@@ -298,6 +453,11 @@
             self.update_chart_resolution("day");
         })
 
+        self.on("unmount", function() {
+            self.orphan_scan_destroyed = true;
+            self.clearOrphanScanTimer();
+        });
+
         /*---------------------------------------------------------------------
          Methods
         ---------------------------------------------------------------------*/
@@ -356,6 +516,28 @@
             chart.data.datasets[0].data = build_chart_data(data, day_resolution, false)
             chart.update()
         }
+
+        self.pretty_bytes = function(bytes) {
+            if (bytes === null || bytes === undefined) {
+                return "-";
+            }
+
+            if (bytes === 0) {
+                return "0 B";
+            }
+
+            const units = ["B", "KB", "MB", "GB", "TB"];
+            const index = Math.min(
+                Math.floor(Math.log(bytes) / Math.log(1024)),
+                units.length - 1
+            );
+
+            if (index === 0) {
+                return bytes + " B";
+            }
+
+            return (bytes / Math.pow(1024, index)).toFixed(2) + " " + units[index];
+        };
 
         self.update_analytics = function (start, end, time_unit) {
             if (!end) {
@@ -476,6 +658,158 @@
             self.update();
         }
 
+        self.onOrphanGracePeriodChange = function(event) {
+            self.orphan_grace_period = event.target.value;
+        };
+        self.onOrphanGraceUnitChange = function(event) {
+            self.orphan_grace_unit = event.target.value;
+        };
+
+        self.clearOrphanScanTimer = function() {
+            if (self.orphan_scan_poll_timer !== null) {
+                clearTimeout(self.orphan_scan_poll_timer);
+                self.orphan_scan_poll_timer = null;
+            }
+        };
+
+        self.startOrphanScan = function(event) {
+            if (event) {
+                event.preventDefault();
+            }
+            if (self.orphan_scan_running) {
+                return;
+            }
+
+            const graceValue = Number(self.orphan_grace_period);
+            const multipliers = {
+                days: 1,
+                months: 30,
+                years: 365
+            };
+
+            const multiplier = multipliers[self.orphan_grace_unit];
+            const gracePeriod = graceValue * multiplier;
+
+            if (
+                self.orphan_grace_period === "" ||
+                !Number.isInteger(graceValue) ||
+                !multiplier ||
+                gracePeriod < 0 ||
+                gracePeriod > 3650
+            ) {
+                toastr.error("Grace period must be between 0 and 3650 days.");
+                return;
+            }
+
+            self.clearOrphanScanTimer();
+
+            self.orphan_scan_started_at = Date.now();
+            self.orphan_scan_running = true;
+            self.orphan_scan_status = "PENDING";
+            self.orphan_scan_error = null;
+            self.orphan_scan_result = null;
+            self.orphan_scan_task_id = null;
+            self.update();
+
+            CODALAB.api.start_orphan_files_scan(gracePeriod)
+                .done(function(data) {
+                    if (self.orphan_scan_destroyed) {
+                        return;
+                    }
+
+                    self.orphan_scan_task_id = data.task_id;
+                    self.orphan_scan_status = data.status || "PENDING";
+                    self.update();
+
+                    self.pollOrphanScan();
+                })
+                .fail(function(xhr) {
+                    if (self.orphan_scan_destroyed) {
+                        return;
+                    }
+
+                    self.orphan_scan_running = false;
+                    self.orphan_scan_status = "FAILURE";
+                    self.orphan_scan_error =
+                        (xhr.responseJSON && xhr.responseJSON.detail) ||
+                        "Could not start orphan files scan.";
+
+                    self.update();
+                });
+        };
+
+        self.pollOrphanScan = function() {
+            if (
+                self.orphan_scan_started_at &&
+                Date.now() - self.orphan_scan_started_at > 60 * 60 * 1000
+            ) {
+                self.orphan_scan_running = false;
+                self.orphan_scan_error = "Scan status polling timed out after one hour.";
+                self.clearOrphanScanTimer();
+                self.update();
+                return;
+            }
+            if (
+                self.orphan_scan_destroyed ||
+                !self.orphan_scan_running ||
+                !self.orphan_scan_task_id
+            ) {
+                return;
+            }
+
+            CODALAB.api.get_orphan_files_scan_status(self.orphan_scan_task_id)
+                .done(function(data) {
+                    if (self.orphan_scan_destroyed) {
+                        return;
+                    }
+
+                    self.orphan_scan_status = data.status;
+
+                    if (data.status === "SUCCESS") {
+                        self.orphan_scan_running = false;
+                        self.orphan_scan_result = data.result;
+                        self.clearOrphanScanTimer();
+                        self.update();
+
+                    } else if (data.status === "FAILURE" ||
+                            data.status === "REVOKED") {
+                        self.orphan_scan_running = false;
+                        self.orphan_scan_error =
+                            data.error || "Orphan files scan failed.";
+                        self.clearOrphanScanTimer();
+                        self.update();
+
+                    } else {
+                        self.update();
+                        self.scheduleOrphanScanPoll();
+                    }
+                })
+                .fail(function() {
+                    if (self.orphan_scan_destroyed) {
+                        return;
+                    }
+
+                    self.orphan_scan_running = false;
+                    self.orphan_scan_error =
+                        "Could not retrieve orphan files scan status.";
+                    self.clearOrphanScanTimer();
+                    self.update();
+                });
+        };
+
+        self.scheduleOrphanScanPoll = function() {
+            self.clearOrphanScanTimer();
+
+            if (self.orphan_scan_destroyed || !self.orphan_scan_running) {
+                return;
+            }
+
+            self.orphan_scan_poll_timer = setTimeout(function() {
+                self.orphan_scan_poll_timer = null;
+                self.pollOrphanScan();
+            }, 2000);
+        };
+
         self.pretty_date = function (date_string) {
             if (!!date_string) {
                 return luxon.DateTime.fromISO(date_string).toLocaleString(luxon.DateTime.DATE_FULL)
@@ -534,6 +868,13 @@
 
         .chart-container {
             min-height: 450px;
+        }
+
+        .orphan-object-key {
+            overflow-wrap: anywhere;
+            word-break: break-word;
+            max-width: 450px;
+            font-family: monospace;
         }
     </style>
 </analytics>
