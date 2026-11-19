@@ -103,6 +103,43 @@ class PopularBenchmarksTests(TestCase):
 
         assert get_popular_benchmarks() == [normal]
 
+    def test_keeps_one_benchmark_per_organizer(self):
+        """
+        Creates 3 benchmarks by Alice (100, 90 and 80 participants) and one each by two
+        other organizers (10 and 5), and makes the random pick keep the pool order.
+        Expects only Alice's most popular benchmark, followed by the two others.
+        """
+        alice = UserFactory()
+        alice_most_popular = make_benchmark(participants_count=100, published=True, created_by=alice)
+        make_benchmark(participants_count=90, published=True, created_by=alice)
+        make_benchmark(participants_count=80, published=True, created_by=alice)
+        other_ten = make_benchmark(participants_count=10, published=True)
+        other_five = make_benchmark(participants_count=5, published=True)
+
+        with mock.patch('pages.home_page.random.sample', side_effect=first_items):
+            result = get_popular_benchmarks()
+
+        assert result == [alice_most_popular, other_ten, other_five]
+
+    def test_organizer_with_many_benchmarks_does_not_shrink_pool(self):
+        """
+        Creates 7 benchmarks by Alice with the most participants (100 to 94) and one each
+        by 8 other organizers (10 to 3), then asks for 8 benchmarks.
+        Expects 8 benchmarks from 8 different organizers, with Alice's most popular one among them.
+        """
+        alice = UserFactory()
+        alice_most_popular = make_benchmark(participants_count=100, published=True, created_by=alice)
+        for count in range(99, 93, -1):
+            make_benchmark(participants_count=count, published=True, created_by=alice)
+        for count in range(10, 2, -1):
+            make_benchmark(participants_count=count, published=True)
+
+        result = get_popular_benchmarks(limit=8)
+
+        assert len(result) == 8
+        assert len({benchmark.created_by_id for benchmark in result}) == 8
+        assert alice_most_popular in result
+
 
 class RecentBenchmarksTests(TestCase):
 
@@ -149,6 +186,45 @@ class RecentBenchmarksTests(TestCase):
         excluded = make_benchmark(published=True)
 
         assert get_recent_benchmarks(exclude_ids=[excluded.id]) == [normal]
+
+    def test_keeps_one_benchmark_per_organizer(self):
+        """
+        Creates 3 benchmarks by Alice (today, 1 and 2 days ago) and one each by two other
+        organizers (10 and 20 days ago), and makes the random pick keep the pool order.
+        Expects only Alice's newest benchmark, followed by the two others.
+        """
+        current = now()
+        alice = UserFactory()
+        alice_newest = make_benchmark(published=True, created_by=alice, created_when=current)
+        make_benchmark(published=True, created_by=alice, created_when=current - timedelta(days=1))
+        make_benchmark(published=True, created_by=alice, created_when=current - timedelta(days=2))
+        other_ten_days = make_benchmark(published=True, created_when=current - timedelta(days=10))
+        other_twenty_days = make_benchmark(published=True, created_when=current - timedelta(days=20))
+
+        with mock.patch('pages.home_page.random.sample', side_effect=first_items):
+            result = get_recent_benchmarks()
+
+        assert result == [alice_newest, other_ten_days, other_twenty_days]
+
+    def test_organizer_with_many_benchmarks_does_not_shrink_pool(self):
+        """
+        Creates the 7 newest benchmarks by Alice (today to 6 days ago) and one each by
+        8 other organizers (10 to 17 days ago), then asks for 8 benchmarks.
+        Expects 8 benchmarks from 8 different organizers, with Alice's newest one among them.
+        """
+        current = now()
+        alice = UserFactory()
+        alice_newest = make_benchmark(published=True, created_by=alice, created_when=current)
+        for days in range(1, 7):
+            make_benchmark(published=True, created_by=alice, created_when=current - timedelta(days=days))
+        for days in range(10, 18):
+            make_benchmark(published=True, created_when=current - timedelta(days=days))
+
+        result = get_recent_benchmarks(limit=8)
+
+        assert len(result) == 8
+        assert len({benchmark.created_by_id for benchmark in result}) == 8
+        assert alice_newest in result
 
 
 class HomePageBenchmarkSectionsTests(TestCase):
