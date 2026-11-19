@@ -7,7 +7,7 @@ from factories import CompetitionFactory, UserFactory, TagFactory
 
 class DashboardCompetitionsApiTests(APITestCase):
     def setUp(self):
-        self.url = reverse('dashboard_competitions_api')
+        self.url = reverse('dashboard_api')
 
         self.regular_user = UserFactory(username='regular_user')
         self.admin = UserFactory(username='admin', is_staff=True, is_superuser=True)
@@ -86,3 +86,7 @@ class DashboardCompetitionsApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
         self.assertEqual(len(data), 2)
+
+    def test_invalid_visibility_raises_validation_error(self):
+        response = self.client.get(f"{self.url}?visibility=invalid_visibility")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

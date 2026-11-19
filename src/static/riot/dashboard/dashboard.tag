@@ -286,30 +286,16 @@
         };
 
         self.fetchCompetitions = (visibility, callback) => {
-            var baseUrl = (typeof URLS !== "undefined" && URLS.API) ? URLS.API : "/api/";
-            var endpoint = baseUrl + "dashboard/competitions/?visibility=" + visibility + "&type=any";
-
-            var req = (typeof CODALAB !== "undefined" && CODALAB.api && CODALAB.api.get_dashboard_competitions)
-                ? CODALAB.api.get_dashboard_competitions({ visibility: visibility, type: 'any' })
-                : (typeof CODALAB !== "undefined" && CODALAB.api && CODALAB.api.request)
-                    ? CODALAB.api.request("GET", endpoint)
-                    : fetch(endpoint).then((r) => r.json());
-
-            const handleSuccess = (response) => {
-                var rawList = Array.isArray(response) ? response : (response.results || []);
-                callback(rawList);
-            };
-
-            const handleError = (err) => {
-                console.error("Failed to fetch " + visibility + " competitions:", err);
-                callback([]);
-            };
-
-            if (req && typeof req.done === "function") {
-                req.done(handleSuccess).fail(handleError);
-            } else if (req && typeof req.then === "function") {
-                req.then(handleSuccess).catch(handleError);
-            }
+            CODALAB.api.get_dashboard({ visibility: visibility, type: 'any' })
+                .done((response) => {
+                    var rawList = Array.isArray(response) ? response : (response.results || []);
+                    callback(rawList);
+                })
+                .fail((err) => {
+                    console.error("Failed to fetch " + visibility + " competitions:", err);
+                    toastr.error("Could not load " + visibility + " competitions");
+                    callback([]);
+                });
         };
 
         self.fetchData = () => {

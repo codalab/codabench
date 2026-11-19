@@ -8,7 +8,6 @@ from competitions.models import Competition
 
 class DashboardCompetitionsView(generics.ListAPIView):
     """
-    Dedicated endpoint for the Competitions Dashboard.
     Returns only the fields strictly needed by dashboard charts and tables.
     """
     permission_classes = (AllowAny,)
@@ -18,7 +17,7 @@ class DashboardCompetitionsView(generics.ListAPIView):
     def get_queryset(self):
         visibility = self.request.query_params.get('visibility', 'public')
 
-        if not visibility in ('public', 'private', 'all'):
+        if visibility not in ('public', 'private', 'all'):
             raise ValidationError("Invalid visibility parameter. Must be one of 'public', 'private', or 'all'.")
         
         user_is_admin = self.request.user.is_authenticated and (self.request.user.is_staff or self.request.user.is_superuser)
