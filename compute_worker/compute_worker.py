@@ -1300,8 +1300,8 @@ class Run:
         # During Ingestion: Add `/app/input_data` to volumes_host and update volumes_config
         if kind == ProgramKind.INGESTION_PROGRAM:
             # Model cache, instead of having to download it every time
-            volumes_host.extend([self._get_host_path(self.model_cache_dir, "model_cache")])
-            volumes_config.update({volumes_host[-1]: {"bind": "/app/model_cache"}})
+            volumes_host.extend([self._get_host_path(self.model_cache_dir)])
+            volumes_config.update({volumes_host[-1]: {"bind": "/app/model_cache", "mode": "ro"}})
             # NOTE: self.input_data is valid when running an ingestion program and competition task has input data
             if self.input_data:
                 volumes_host.extend([self._get_host_path(self.root_dir, "input_data")])
