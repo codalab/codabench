@@ -1,4 +1,5 @@
 from django.urls import path
+from django.views.generic import RedirectView
 
 from . import views
 
@@ -12,4 +13,5 @@ urlpatterns = [
     path('organization/accept_invite/', views.OrganizationInviteView.as_view(), name='organization_accept_invite'),
     path('organization/<int:pk>/edit/', views.OrganizationEditView.as_view(), name='organization_edit'),
     path('organization/<int:pk>/', views.OrganizationDetailView.as_view(), name="organization_profile"),
+    path('user/<slug:username>/', RedirectView.as_view(pattern_name='users:profile', permanent=True)),
 ]

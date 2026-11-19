@@ -88,8 +88,10 @@ class PublicProfileView(LoginRequiredMixin, DetailView):
             .filter(Q(created_by=profile_user) | Q(collaborators=profile_user), published=True)
             .distinct()
             .select_related("created_by")
+            .prefetch_related("tags__category")
             .order_by("-created_when")
         )
+
         # Why this serializer: the cards are the same as on the home page
         context["competitions"] = HomePageBenchmarkSerializer(competitions, many=True).data
         return context
