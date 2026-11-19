@@ -151,7 +151,7 @@
             <h3>Orphan files scanner</h3>
 
             <p>
-                Scan managed MinIO objects and identify files without
+                Scan managed storage objects and identify files without
                 database references. This operation does not delete files.
             </p>
 
