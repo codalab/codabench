@@ -588,7 +588,7 @@ def update_home_page_counters():
     )
 
 
-@app.task(bind=True, queue="site-worker", soft_time_limit=60 * 60)
+@app.task(bind=True, queue="site-worker", soft_time_limit=7 * 24 * 60 * 60)
 def scan_orphan_files_task(self, grace_period_days=7):
     """
     Read-only scan of managed MinIO objects.
@@ -619,13 +619,12 @@ def scan_orphan_files_task(self, grace_period_days=7):
     }
 
 
-@app.task(bind=True, queue="site-worker", soft_time_limit=60 * 60)
+@app.task(bind=True, queue="site-worker", soft_time_limit=7 * 24 * 60 * 60)
 def cleanup_orphan_files_task(
     self,
     grace_period_days=7,
     mode="all",
     selected_objects=None,
-    dry_run=True,
 ):
     """
     Re-scan managed MinIO objects and simulate cleanup.
@@ -633,14 +632,15 @@ def cleanup_orphan_files_task(
     Physical deletion remains disabled until concurrent
     storage/database writes are safely coordinated.
     """
-    if not dry_run:
-        raise ValueError(
-            "Physical deletion is not enabled yet."
-        )
+    if mode not in ("all", "selected"):
+        raise ValueError("Invalid cleanup mode.")
+
+    if mode == "selected" and not selected_objects:
+        raise ValueError("No objects selected.")
 
     self.update_state(
         state="PROGRESS",
-        meta={"message": "Checking orphaned objects..."},
+        meta={"message": "Deleting orphaned objects..."},
     )
 
     result = cleanup_orphan_files(
@@ -648,7 +648,6 @@ def cleanup_orphan_files_task(
         selected_objects=(
             selected_objects if mode == "selected" else None
         ),
-        dry_run=True,
     )
 
     return {

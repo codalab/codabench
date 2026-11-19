@@ -873,11 +873,11 @@
 
             if (
                 self.orphan_scan_started_at &&
-                Date.now() - self.orphan_scan_started_at > 60 * 60 * 1000
+                Date.now() - self.orphan_scan_started_at > 7 * 24 * 60 * 60 * 1000
             ) {
                 self.orphan_scan_running = false;
                 self.orphan_scan_error =
-                    "Scan status polling timed out after one hour.";
+                    "Scan status polling timed out after seven days.";
                 self.clearOrphanScanTimer();
                 self.update();
                 return;
@@ -1099,11 +1099,11 @@
 
             if (
                 Date.now() - self.orphan_cleanup_started_at >
-                60 * 60 * 1000
+                7 * 24 * 60 * 60 * 1000
             ) {
                 self.orphan_cleanup_running = false;
                 self.orphan_cleanup_error =
-                    "Cleanup status polling timed out after one hour.";
+                    "Cleanup status polling timed out after seven days.";
                 self.clearOrphanCleanupTimer();
                 self.update();
                 return;
