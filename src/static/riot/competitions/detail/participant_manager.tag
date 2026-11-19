@@ -4,7 +4,7 @@
             <input type="text" placeholder="Search..." ref="participant_search" onkeyup="{ search_participants }">
             <i class="search icon"></i>
         </div>
-        <select ref="participant_status" class="ui dropdown" onchange="{ update_participants.bind(this, undefined) }">
+        <select ref="participant_status" class="ui dropdown" onchange="{ filters_changed }">
             <option value="">Status</option>
             <option value="-">----</option>
             <option value="approved">Approved</option>
@@ -13,7 +13,7 @@
             <option value="unknown">Unknown</option>
         </select>
         <div class="ui checkbox">
-            <input type="checkbox" ref="participant_show_deleted" onchange="{ update_participants.bind(this, undefined) }">
+            <input type="checkbox" ref="participant_show_deleted" onchange="{ filters_changed }">
             <label>Show deleted accounts</label>
         </div>
         <div style="margin-top: 1em;">
@@ -26,19 +26,23 @@
                 <i class="download icon"></i> Download all participants
             </div>
         </div>
-        <table class="ui celled striped table">
+        <table class="ui celled striped sortable table">
             <thead>
             <tr>
-                <th>Username</th>
-                <th>Email</th>
-                <th>Status</th>
-                <th class="center aligned">Actions</th>
+                <th class="{ sort_class('user__username') }" onclick="{ sort_by.bind(this, 'user__username') }">Username</th>
+                <th class="{ sort_class('user__email') }" onclick="{ sort_by.bind(this, 'user__email') }">Email</th>
+                <th class="{ sort_class('organization_sort') }" onclick="{ sort_by.bind(this, 'organization_sort') }">Organization</th>
+                <th if="{ has_routing_groups }" class="{ sort_class('routing_groups_sort') }" onclick="{ sort_by.bind(this, 'routing_groups_sort') }">Routing groups</th>
+                <th class="{ sort_class('status') }" onclick="{ sort_by.bind(this, 'status') }">Status</th>
+                <th class="center aligned" style="cursor: default;">Actions</th>
             </tr>
             </thead>
             <tbody>
             <tr each="{participants}">
                 <td><a href="/profiles/user/{username}" target="_BLANK">{username}</a></td>
                 <td>{email}</td>
+                <td>{ organizations.join(', ') }</td>
+                <td if="{ parent.has_routing_groups }">{ routing_groups.join(', ') }</td>
                 <td>{is_deleted ? "account deleted" : _.startCase(status)}</td>
                 <td class="right aligned">
                     <button class="mini ui red button icon"
@@ -73,6 +77,38 @@
             </tr>
             </tbody>
         </table>
+
+        <div class="ui pagination menu" style="display:flex; align-items:center; justify-content:space-between; margin-top: 12px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <button class="ui button" onclick="{ go_to_page.bind(this, page - 1) }" disabled="{ page <= 1 }">
+                    <i class="icon chevron left"></i> Previous
+                </button>
+
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <span>Page</span>
+                    <input type="number" min="1" value="{ page }" onkeydown="{ handle_page_enter }" style="width:70px; text-align:center;" />
+                    <span> / { total_pages }</span>
+                </div>
+
+                <button class="ui button" onclick="{ go_to_page.bind(this, page + 1) }" disabled="{ !next }">
+                    Next <i class="icon chevron right"></i>
+                </button>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:8px;">
+                <label>Per page</label>
+                <select class="ui dropdown" value="{ page_size }" onchange="{ change_page_size }">
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                    <option value="500">500</option>
+                    <option value="all">1000</option>
+                </select>
+
+                <div style="margin-right: 10px; color: #8c8c8c;">
+                    <small>{ total_count } total</small>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="ui modal" ref="email_modal">
@@ -102,6 +138,15 @@
         self.competition_id = undefined
         self.selected_participant = undefined
         self.competition_title = undefined
+        self.has_routing_groups = false
+
+        // Pagination & sorting (server side, see DynamicChoicePagination)
+        self.page = 1
+        self.page_size = 50
+        self.total_pages = 1
+        self.total_count = 0
+        self.next = null
+        self.ordering = 'user__username'  // DRF ordering field, '-' prefix for descending
 
         self.on('mount', () => {
             $(self.refs.participant_status).dropdown()
@@ -140,12 +185,8 @@
                 })
         }
 
-        self.update_participants = filters => {
-            if (!CODALAB.state.user.logged_in) {
-                return
-            }
-            filters = filters || {}
-            filters.competition = self.competition_id
+        self.build_filters = () => {
+            let filters = {competition: self.competition_id}
             let status = self.refs.participant_status.value
             if (status && status !== '-') {
                 filters.status = status
@@ -156,14 +197,80 @@
                 filters.user__is_deleted = show_deleted_users
             }
 
+            let search = self.refs.participant_search.value
+            if (search) {
+                filters.search = search
+            }
+
+            // Username as tie-breaker so rows don't jump between pages
+            filters.ordering = self.ordering.endsWith('user__username') ? self.ordering : `${self.ordering},user__username`
+            return filters
+        }
+
+        self.update_participants = () => {
+            if (!CODALAB.state.user.logged_in) {
+                return
+            }
+            let filters = Object.assign(self.build_filters(), {page: self.page, page_size: self.page_size})
+
             CODALAB.api.get_participants(filters)
-                .done(participants => {
-                    self.participants = participants
+                .done(data => {
+                    self.participants = data.results
+                    self.has_routing_groups = data.has_routing_groups
+                    self.next = data.next
+                    self.total_count = data.count
+                    let effective_page_size = self.page_size === 'all' ? 1000 : self.page_size
+                    self.total_pages = Math.max(1, Math.ceil(data.count / effective_page_size))
                     self.update()
                 })
-                .fail(() => {
+                .fail(resp => {
+                    // Current page no longer exists (e.g. rows left the filter after an approve/revoke)
+                    if (resp.status === 404 && self.page > 1) {
+                        self.page = 1
+                        self.update_participants()
+                        return
+                    }
                     toastr.error('Error returning competition participants')
                 })
+        }
+
+        // Filters changed: go back to first page
+        self.filters_changed = () => {
+            self.page = 1
+            self.update_participants()
+        }
+
+        self.sort_by = field => {
+            self.ordering = self.ordering === field ? `-${field}` : field
+            self.filters_changed()
+        }
+
+        // Semantic UI "sortable table" header classes
+        self.sort_class = field => {
+            if (self.ordering === field) return 'sorted ascending'
+            if (self.ordering === `-${field}`) return 'sorted descending'
+            return ''
+        }
+
+        self.go_to_page = p => {
+            let new_page = parseInt(p, 10)
+            if (isNaN(new_page) || new_page < 1) new_page = 1
+            if (new_page > self.total_pages) new_page = self.total_pages
+            if (new_page === self.page) return
+            self.page = new_page
+            self.update_participants()
+        }
+
+        self.handle_page_enter = ev => {
+            if (ev.key === 'Enter') {
+                self.go_to_page(ev.target.value)
+            }
+        }
+
+        self.change_page_size = e => {
+            let raw = String(e.target.value).toLowerCase()
+            self.page_size = raw === 'all' ? 'all' : parseInt(raw, 10)
+            self.filters_changed()
         }
 
         self._update_status = (id, status) => {
@@ -198,8 +305,7 @@
         }
 
         self.search_participants = () => {
-            let filter = self.refs.participant_search.value
-            delay(() => self.update_participants({search: filter}), 100)
+            delay(() => self.filters_changed(), 100)
         }
 
         self.show_email_modal = (participant_pk) => {
@@ -212,22 +318,37 @@
         }
 
         // Function to download participants in csv file
+        // The table is paginated, so fetch every page (with current filters & sorting)
+        self.fetch_all_participants = (page = 1, acc = []) => {
+            let filters = Object.assign(self.build_filters(), {page: page, page_size: 'all'})
+            return CODALAB.api.get_participants(filters).then(data => {
+                acc.push(...data.results)
+                return data.next ? self.fetch_all_participants(page + 1, acc) : acc
+            })
+        }
+
         self.download_participants_csv = () => {
+            self.fetch_all_participants()
+                .done(participants => self._download_participants_csv(participants))
+                .fail(() => toastr.error('Error returning competition participants'))
+        }
+
+        self._download_participants_csv = participants => {
             // Show warning when there is no participant
-            if (!self.participants || self.participants.length === 0) {
+            if (!participants || participants.length === 0) {
                 toastr.warning('No participants to download')
                 return
             }
 
             // prepare csv header
-            const headers = ['ID', 'Username', 'Email', 'Status'];
+            const headers = ['ID', 'Username', 'Email', 'Organization', 'Status'];
+            if (self.has_routing_groups) headers.splice(4, 0, 'Routing groups')
             // prepare csv rows
-            const rows = self.participants.map(p => [
-                p.id,
-                p.username,
-                p.email,
-                p.status
-            ]);
+            const rows = participants.map(p => {
+                const row = [p.id, p.username, p.email, p.organizations.join(', '), p.status]
+                if (self.has_routing_groups) row.splice(4, 0, p.routing_groups.join(', '))
+                return row
+            });
 
             // prepare csv content using header and rows
             const csvContent = [headers, ...rows]

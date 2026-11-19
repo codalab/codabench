@@ -6,13 +6,14 @@ from io import StringIO
 from django.http import HttpResponse
 from tempfile import SpooledTemporaryFile
 from django.db import IntegrityError
-from django.db.models import Subquery, OuterRef, Q, Prefetch
+from django.contrib.auth.models import Group
+from django.db.models import Subquery, OuterRef, Q, Prefetch, Min
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
-from rest_framework.filters import SearchFilter
+from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -29,6 +30,7 @@ from competitions.emails import send_participation_requested_emails, send_partic
     send_participation_denied_emails, send_direct_participant_email
 from competitions.models import Tag, Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant, Submission, PhaseTaskInstance
 from datasets.models import Data
+from profiles.models import Membership
 from competitions.tasks import batch_send_email, manual_migration, create_competition_dump
 from leaderboards.models import Leaderboard, Column
 from leaderboards.ranking import inject_average_ranks
@@ -1088,9 +1090,11 @@ class PhaseViewSet(ModelViewSet):
 class CompetitionParticipantViewSet(ModelViewSet):
     queryset = CompetitionParticipant.objects.all()
     serializer_class = CompetitionParticipantSerializer
-    filter_backends = (DjangoFilterBackend, SearchFilter)
+    pagination_class = DynamicChoicePagination
+    filter_backends = (DjangoFilterBackend, SearchFilter, OrderingFilter)
     filterset_fields = ('user__username', 'user__email', 'status', 'competition', 'user__is_deleted')
     search_fields = ('user__username', 'user__email',)
+    ordering_fields = ('user__username', 'user__email', 'status', 'organization_sort', 'routing_groups_sort')
 
     def get_queryset(self):
 
@@ -1124,6 +1128,26 @@ class CompetitionParticipantViewSet(ModelViewSet):
             if not user.is_superuser:
                 qs = qs.filter(competition__in=user.competitions.all() | user.collaborations.all())
             qs = qs.select_related('user').order_by('user__username')
+            competition_id = self.request.GET.get('competition', '')
+            if self.request.method == "GET" and competition_id.isdigit():
+                active_memberships = Q(user__membership__group__in=Membership.ALL_GROUP)
+                competition_groups = Q(user__groups__customgroup__competitions=competition_id)
+                qs = qs.annotate(
+                    # Sort keys for the organizer "Participants" table
+                    organization_sort=Min('user__membership__organization__name', filter=active_memberships),
+                    routing_groups_sort=Min('user__groups__name', filter=competition_groups),
+                ).prefetch_related(
+                    Prefetch(
+                        'user__membership_set',
+                        queryset=Membership.objects.filter(group__in=Membership.ALL_GROUP).select_related('organization'),
+                        to_attr='active_memberships',
+                    ),
+                    Prefetch(
+                        'user__groups',
+                        queryset=Group.objects.filter(customgroup__competitions=competition_id).order_by('name'),
+                        to_attr='competition_routing_groups',
+                    ),
+                )
             return qs
         else:
             # API will work but will return empty participants list
@@ -1149,6 +1173,15 @@ class CompetitionParticipantViewSet(ModelViewSet):
                 emails[participation_status](participant, request)
 
         return super().update(request, *args, **kwargs)
+
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, *args, **kwargs)
+        # Lets the front-end show the "Routing groups" column only when routing is used
+        competition_id = request.GET.get('competition')
+        response.data['has_routing_groups'] = str(competition_id).isdigit() and Competition.objects.filter(
+            pk=competition_id, participant_groups__isnull=False
+        ).exists()
+        return response
 
     @action(detail=True, methods=('POST',))
     def send_email(self, request, pk):
