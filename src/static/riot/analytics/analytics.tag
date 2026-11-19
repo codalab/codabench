@@ -166,7 +166,7 @@
                             step="1"
                             value={orphan_grace_period}
                             oninput={onOrphanGracePeriodChange}
-                            disabled={orphan_scan_running}
+                            disabled={orphan_scan_running || orphan_cleanup_running}
                         >
                     </div>
 
@@ -175,7 +175,7 @@
                         <select
                             class="ui dropdown"
                             onchange={onOrphanGraceUnitChange}
-                            disabled={orphan_scan_running}
+                            disabled={orphan_scan_running || orphan_cleanup_running}
                         >
                             <option value="days" selected={orphan_grace_unit === "days"}>Days</option>
                             <option value="months" selected={orphan_grace_unit === "months"}>Months</option>
@@ -186,10 +186,9 @@
 
                 <button
                     type="button"
-                    class="ui primary button {loading: orphan_scan_running, disabled: orphan_scan_running}"
+                    class="ui primary button {loading: orphan_scan_running, disabled: orphan_scan_running || orphan_cleanup_running}"
                     onclick={startOrphanScan}
-                    disabled={orphan_scan_running}
-                >
+                    disabled={orphan_scan_running || orphan_cleanup_running}>
                     <i class="search icon"></i>
                     Start scan
                 </button>
@@ -205,6 +204,42 @@
 
             <div if={orphan_scan_error} class="ui negative message">
                 {orphan_scan_error}
+            </div>
+
+            <div if={orphan_cleanup_running} class="ui info message">
+                <i class="spinner loading icon"></i>
+                Cleanup progress...
+                <span if={orphan_cleanup_status}>
+                    ({orphan_cleanup_status})
+                </span>
+            </div>
+
+            <div if={orphan_cleanup_error} class="ui negative message">
+                {orphan_cleanup_error}
+            </div>
+
+            <div if={orphan_cleanup_result}
+                class="ui message {positive: orphan_cleanup_result.failed === 0, warning: orphan_cleanup_result.failed > 0}">
+
+                <div class="header">Cleanup completed</div>
+
+                <p>
+                    Candidates: {orphan_cleanup_result.candidates} |
+                    Deleted: {orphan_cleanup_result.deleted} |
+                    Skipped: {orphan_cleanup_result.skipped} |
+                    Failed: {orphan_cleanup_result.failed}
+                </p>
+
+                <div if={orphan_cleanup_result.errors && orphan_cleanup_result.errors.length > 0}>
+                    <h5>Errors</h5>
+
+                    <div class="ui bulleted list">
+                        <div class="item" each={error in orphan_cleanup_result.errors}>
+                            <strong>{error.bucket}/{error.key}</strong>:
+                            {error.error}
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div if={orphan_scan_result}>
@@ -305,27 +340,7 @@
                         </button>
                     </div>
 
-                    <div if={orphan_cleanup_running} class="ui info message">
-                        <i class="spinner loading icon"></i>
-                        Cleanup progress...
-                        <span if={orphan_cleanup_status}>
-                            ({orphan_cleanup_status})
-                        </span>
-                    </div>
-
-                    <div if={orphan_cleanup_error} class="ui negative message">
-                        {orphan_cleanup_error}
-                    </div>
-
-                    <div if={orphan_cleanup_result} class="ui positive message">
-                        <div class="header">Cleanup simulation completed</div>
-                        <p>
-                            Candidates: {orphan_cleanup_result.candidates} |
-                            Skipped: {orphan_cleanup_result.skipped} |
-                            Failed: {orphan_cleanup_result.failed}
-                        </p>
-                        <p>No files were deleted.</p>
-                    </div>
+                    
 
                     <table class="ui celled compact table">
                         <thead>
@@ -384,6 +399,7 @@
         self.orphan_scan_task_id = null;
         self.orphan_scan_poll_timer = null;
         self.orphan_scan_destroyed = false;
+        self.orphan_scan_started_at = null;
         
         /****** Orphan files cleanup *****/
         self.orphan_selected_objects = {};
@@ -758,31 +774,44 @@
             }
         };
 
-        self.startOrphanScan = function(event) {
+        self.startOrphanScan = function(event, options) {
             if (event) {
                 event.preventDefault();
             }
+
+            options = options || {};
+
             if (self.orphan_scan_running || self.orphan_cleanup_running) {
                 return;
             }
-            if (self.orphan_scan_running) {
-                return;
+
+            let gracePeriod;
+
+            if (options.grace_period_days !== undefined) {
+                gracePeriod = Number(options.grace_period_days);
+            } else {
+                const graceValue = Number(self.orphan_grace_period);
+                const multipliers = {
+                    days: 1,
+                    months: 30,
+                    years: 365
+                };
+
+                const multiplier = multipliers[self.orphan_grace_unit];
+                gracePeriod = graceValue * multiplier;
+
+                if (
+                    self.orphan_grace_period === "" ||
+                    !Number.isInteger(graceValue) ||
+                    !multiplier
+                ) {
+                    toastr.error("Invalid grace period.");
+                    return;
+                }
             }
 
-            const graceValue = Number(self.orphan_grace_period);
-            const multipliers = {
-                days: 1,
-                months: 30,
-                years: 365
-            };
-
-            const multiplier = multipliers[self.orphan_grace_unit];
-            const gracePeriod = graceValue * multiplier;
-
             if (
-                self.orphan_grace_period === "" ||
-                !Number.isInteger(graceValue) ||
-                !multiplier ||
+                !Number.isInteger(gracePeriod) ||
                 gracePeriod < 0 ||
                 gracePeriod > 3650
             ) {
@@ -798,29 +827,30 @@
             self.orphan_scan_error = null;
             self.orphan_scan_result = null;
             self.orphan_scan_task_id = null;
+
             self.orphan_selected_objects = {};
             self.orphan_selected_count = 0;
             self.orphan_all_preview_selected = false;
-            self.orphan_cleanup_result = null;
-            self.orphan_cleanup_error = null;
+
+            if (!options.preserve_cleanup_result) {
+                self.orphan_cleanup_result = null;
+                self.orphan_cleanup_error = null;
+            }
+
             self.update();
 
             CODALAB.api.start_orphan_files_scan(gracePeriod)
                 .done(function(data) {
-                    if (self.orphan_scan_destroyed) {
-                        return;
-                    }
+                    if (self.orphan_scan_destroyed) return;
 
                     self.orphan_scan_task_id = data.task_id;
                     self.orphan_scan_status = data.status || "PENDING";
-                    self.update();
 
+                    self.update();
                     self.pollOrphanScan();
                 })
                 .fail(function(xhr) {
-                    if (self.orphan_scan_destroyed) {
-                        return;
-                    }
+                    if (self.orphan_scan_destroyed) return;
 
                     self.orphan_scan_running = false;
                     self.orphan_scan_status = "FAILURE";
@@ -834,16 +864,6 @@
 
         self.pollOrphanScan = function() {
             if (
-                self.orphan_scan_started_at &&
-                Date.now() - self.orphan_scan_started_at > 60 * 60 * 1000
-            ) {
-                self.orphan_scan_running = false;
-                self.orphan_scan_error = "Scan status polling timed out after one hour.";
-                self.clearOrphanScanTimer();
-                self.update();
-                return;
-            }
-            if (
                 self.orphan_scan_destroyed ||
                 !self.orphan_scan_running ||
                 !self.orphan_scan_task_id
@@ -851,11 +871,21 @@
                 return;
             }
 
+            if (
+                self.orphan_scan_started_at &&
+                Date.now() - self.orphan_scan_started_at > 60 * 60 * 1000
+            ) {
+                self.orphan_scan_running = false;
+                self.orphan_scan_error =
+                    "Scan status polling timed out after one hour.";
+                self.clearOrphanScanTimer();
+                self.update();
+                return;
+            }
+
             CODALAB.api.get_orphan_files_scan_status(self.orphan_scan_task_id)
                 .done(function(data) {
-                    if (self.orphan_scan_destroyed) {
-                        return;
-                    }
+                    if (self.orphan_scan_destroyed) return;
 
                     self.orphan_scan_status = data.status;
 
@@ -865,8 +895,10 @@
                         self.clearOrphanScanTimer();
                         self.update();
 
-                    } else if (data.status === "FAILURE" ||
-                            data.status === "REVOKED") {
+                    } else if (
+                        data.status === "FAILURE" ||
+                        data.status === "REVOKED"
+                    ) {
                         self.orphan_scan_running = false;
                         self.orphan_scan_error =
                             data.error || "Orphan files scan failed.";
@@ -879,9 +911,7 @@
                     }
                 })
                 .fail(function() {
-                    if (self.orphan_scan_destroyed) {
-                        return;
-                    }
+                    if (self.orphan_scan_destroyed) return;
 
                     self.orphan_scan_running = false;
                     self.orphan_scan_error =
@@ -1014,10 +1044,6 @@
                 return;
             }
 
-            if (!window.confirm(message + "\n\nNo files will be deleted.")) {
-                return;
-            }
-
             // Reuse the grace period of the completed scan,
             // not potentially edited form values.
             const gracePeriod = self.orphan_scan_result.grace_period_days;
@@ -1035,7 +1061,6 @@
             const payload = {
                 grace_period_days: gracePeriod,
                 mode: mode,
-                dry_run: true
             };
 
             if (mode === "selected") {
@@ -1058,7 +1083,7 @@
                     self.orphan_cleanup_status = "FAILURE";
                     self.orphan_cleanup_error =
                         (xhr.responseJSON && xhr.responseJSON.detail) ||
-                        "Could not start cleanup simulation.";
+                        "Could not start orphan files cleanup.";
                     self.update();
                 });
         };
@@ -1096,7 +1121,36 @@
                         self.orphan_cleanup_running = false;
                         self.orphan_cleanup_result = data.result;
                         self.clearOrphanCleanupTimer();
+
+                        const gracePeriod = self.orphan_scan_result
+                            ? self.orphan_scan_result.grace_period_days
+                            : null;
+
+                        self.orphan_selected_objects = {};
+                        self.orphan_selected_count = 0;
+                        self.orphan_all_preview_selected = false;
+
+                        self.orphan_scan_result = null;
+
                         self.update();
+
+                        if (data.result.failed > 0) {
+                            toastr.warning(
+                                data.result.deleted + " files deleted, " +
+                                data.result.failed + " failed."
+                            );
+                        } else {
+                            toastr.success(
+                                data.result.deleted + " orphaned files deleted."
+                            );
+                        }
+
+                        if (gracePeriod !== null && gracePeriod !== undefined) {
+                            self.startOrphanScan(null, {
+                                grace_period_days: gracePeriod,
+                                preserve_cleanup_result: true
+                            });
+                        }
 
                     } else if (
                         data.status === "FAILURE" ||
@@ -1104,7 +1158,7 @@
                     ) {
                         self.orphan_cleanup_running = false;
                         self.orphan_cleanup_error =
-                            data.error || "Cleanup simulation failed.";
+                            data.error || "Orphan files cleanup failed.";
                         self.clearOrphanCleanupTimer();
                         self.update();
 
