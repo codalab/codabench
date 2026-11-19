@@ -622,4 +622,3 @@ class DashboardCompetitionSerializer(serializers.ModelSerializer):
                 for tag in obj.tags.all()
             ]
         return obj.prefetched_tags_cached
-

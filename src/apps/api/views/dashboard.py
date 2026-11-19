@@ -19,7 +19,7 @@ class DashboardCompetitionsView(generics.ListAPIView):
 
         if visibility not in ('public', 'private', 'all'):
             raise ValidationError("Invalid visibility parameter. Must be one of 'public', 'private', or 'all'.")
-        
+
         user_is_admin = self.request.user.is_authenticated and (self.request.user.is_staff or self.request.user.is_superuser)
 
         # Restrict private and all visibility to staff and superusers
