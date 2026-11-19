@@ -62,7 +62,7 @@
 
     <script>
         var self = this;
-        self.user = user;
+        self.username = username;
         self.contact_email = contact_email;
         self.modal_open = false;
         self.is_submit_disabled = true;
@@ -96,7 +96,7 @@
         // The button stays disabled until the username and the sentence are typed correctly
         self.check_fields = function() {
             const form_values = self.get_form_values();
-            self.is_submit_disabled = !(form_values.username === self.user.username && form_values.confirmation === self.confirmation_phrase);
+            self.is_submit_disabled = !(form_values.username === self.username && form_values.confirmation === self.confirmation_phrase);
             self.update();
         }
 

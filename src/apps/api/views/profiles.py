@@ -42,8 +42,7 @@ class UserViewSet(mixins.UpdateModelMixin,
         serializer = self.get_serializer(instance, data=data, partial=partial)
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
-        resp = self.get_serializer(instance)
-        return Response(reverse('profiles:user_profile', args=[resp.data['username']]))
+        return Response(reverse('users:my_profile'))
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def participant_organizations(self, request):
