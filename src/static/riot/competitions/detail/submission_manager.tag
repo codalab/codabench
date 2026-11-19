@@ -21,6 +21,7 @@
                 <option value="download_prediction_results">Download prediction results of selected submissions</option>
                 <option value="download_scoring_results">Download scoring results of selected submissions</option>
                 <option value="delete">Delete selected submissions</option>
+                <option value="cancel">Cancel selected submissions</option>
                 <option value="rerun">Rerun selected submissions</option>
                 <option value="resubmit">Resubmit selected submissions on current tasks</option>
                     <option value="migrate">Migrate selected submissions</option>
@@ -125,7 +126,7 @@
                 onclick="{ submission_clicked.bind(this, submission) }" class="submission_row {submission.is_soft_deleted ? 'soft-deleted' : ''}">
                 <td if="{ opts.admin }">
                     <div if="{ !submission.is_soft_deleted }" class="ui checkbox" onclick="{on_submission_checked.bind(this)}">
-                        <input type="checkbox" name="{submission.id}">
+                        <input type="checkbox" name="{submission.id}" checked="{ checked_submissions.includes(String(submission.id)) }">
                         <label></label>
                     </div>
                 </td>
@@ -945,8 +946,8 @@
                     self.csv_link = CODALAB.api.get_submission_csv_URL(filters)
 
                     self.update()
-                    // Silent refreshes must not re-read the checkboxes (selection could be lost)
-                    if (!silent) self.submission_checked()
+                    // Checkboxes are bound to checked_submissions, re-reading them drops submissions no longer listed
+                    self.submission_checked()
 
                     if (silent) {
                         self.loading = false
@@ -1128,6 +1129,19 @@
                     toastr.success('Submissions queued')
                     self.refresh_soon()
                 })
+        }
+
+        self.cancel_selected_submissions = function () {
+            if (confirm(`Cancel the ${self.checked_submissions.length} selected submissions?`)) {
+                CODALAB.api.cancel_many_submissions(self.checked_submissions)
+                    .done(function (response) {
+                        toastr.success(`${response.count} submissions cancelled`)
+                        self.refresh_soon()
+                    })
+                    .fail(function (response) {
+                        toastr.error('Something went wrong')
+                    })
+            }
         }
 
         self.cancel_submission = function (submission) {
@@ -1465,6 +1479,9 @@
                     case "download_prediction_results":
                         self.bulk_download("prediction_results")
                         break;
+                    case "cancel":
+                        self.cancel_selected_submissions()
+                        break
                     case "rerun":
                         self.rerun_selected_submissions()
                         break
