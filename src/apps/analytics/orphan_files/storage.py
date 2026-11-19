@@ -1,6 +1,8 @@
 
 from dataclasses import dataclass
 from datetime import datetime
+from django.conf import settings
+from django.apps import apps
 
 from apps.analytics.orphan_files.references import FILE_FIELDS
 
@@ -36,8 +38,6 @@ def get_storage_backends():
     Resolve backends from the actual model fields rather than
     assuming that BundleStorage always uses 'private'.
     """
-    from django.apps import apps
-
     backends = {}
 
     for app_label, model_name, field_name in FILE_FIELDS:
@@ -87,13 +87,24 @@ def iter_managed_objects(page_size=1000):
     """
     Iterate over objects in managed application prefixes.
 
-    Unknown buckets and prefixes are not scanned.
+    Resolve logical bucket names to actual configured S3 buckets.
+    Unknown buckets are not scanned.
     """
     backends = get_storage_backends()
 
-    for bucket_name, prefixes in ALLOWED_PREFIXES.items():
+    bucket_mapping = {
+        "private": settings.AWS_STORAGE_PRIVATE_BUCKET_NAME,
+        "public": settings.AWS_STORAGE_BUCKET_NAME,
+    }
+
+    for logical_name, prefixes in ALLOWED_PREFIXES.items():
+        bucket_name = bucket_mapping[logical_name]
+
         if bucket_name not in backends:
-            continue
+            raise ValueError(
+                f"No storage backend found for {logical_name} "
+                f"bucket: {bucket_name}"
+            )
 
         yield from iter_storage_objects(
             bucket_name=bucket_name,
