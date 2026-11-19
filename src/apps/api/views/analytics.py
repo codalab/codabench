@@ -329,7 +329,6 @@ def start_orphan_files_scan(request):
     )
 
 
-
 @api_view(["GET"])
 def orphan_files_scan_status(request, task_id):
     """
