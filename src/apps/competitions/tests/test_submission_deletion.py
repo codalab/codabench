@@ -8,7 +8,7 @@ from competitions.submission_deletion import SubmissionDeleter
 from datasets.models import Data
 from factories import (
     UserFactory, CompetitionFactory, PhaseFactory, LeaderboardFactory, ColumnFactory, SubmissionFactory,
-    SubmissionScoreFactory, DataFactory,
+    SubmissionScoreFactory, DataFactory, TaskFactory,
 )
 from leaderboards.models import SubmissionScore
 from utils.storage import BundleStorage
