@@ -29,12 +29,12 @@ class SubmissionDeleter:
     For each submission, it deletes:
         - its child submissions
         - its logs
-        - its leaderboard scores
+        - its leaderboard scores (except the ones a submission we keep still uses, e.g. a parent)
         - its zip
         - its files: prediction result, scoring result, detailed result, logs and zip
 
     It works for a submission with children and for a submission without children.
-    If you give it a child, it deletes only that child.
+    If you give it a child, it deletes only that child, and updates its parent.
 
     A zip is not deleted if another submission still uses it.
 
@@ -148,7 +148,7 @@ class SubmissionDeleter:
             Submission.objects.filter(id__in=self.submission_ids).delete()
 
             Data.objects.filter(id__in=self.zip_ids).delete()
-            
+
             self._update_parents()
 
             # Lower the submission count of each competition. It never goes below 0.
