@@ -326,3 +326,53 @@ class SubmissionSoftDeleteTests(SubmissionDeletionTestBase):
         assert {call.args[0] for call in storage_delete.call_args_list} == (
             self._file_names('parent') | self._file_names('child') | {'dataset/parent.zip'}
         )
+
+
+class DeletingAChildTests(TestCase):
+    """
+    A parent with 2 children: one Finished, one Failed.
+    Like in the real score upload, each child's score is also attached to the parent.
+    """
+
+    def setUp(self):
+        user = UserFactory()
+        leaderboard = LeaderboardFactory()
+        column = ColumnFactory(leaderboard=leaderboard, index=0)
+        phase = PhaseFactory(competition=CompetitionFactory(created_by=user), leaderboard=leaderboard)
+        self.parent = SubmissionFactory(
+            owner=user, phase=phase, has_children=True, status=Submission.FINISHED, task=None
+        )
+        self.children = []
+        for status in (Submission.FINISHED, Submission.FAILED):
+            child = SubmissionFactory(
+                owner=user, phase=phase, parent=self.parent, data=self.parent.data, task=TaskFactory(), status=status
+            )
+            score = SubmissionScoreFactory(column=column, submissions=child)
+            self.parent.scores.add(score)
+            self.children.append(child)
+
+    def run_and_commit(self, fn):
+        """Runs `fn` and the on_commit callbacks (file deletion), without touching real storage."""
+        with mock.patch.object(BundleStorage, 'delete'), self.captureOnCommitCallbacks(execute=True):
+            fn()
+
+    def test_delete_child_keeps_parent_scores_and_updates_status(self):
+        # Delete the Finished child: only the Failed one is left
+        self.run_and_commit(self.children[0].delete)
+        self.parent.refresh_from_db()
+        assert self.parent.scores.count() == 2
+        assert self.parent.status == Submission.FAILED
+
+    def test_delete_all_children_parent_has_no_children(self):
+        for child in self.children:
+            self.run_and_commit(child.delete)
+        self.parent.refresh_from_db()
+        assert self.parent.has_children is False
+
+    def test_soft_delete_child_keeps_parent_scores(self):
+        self.run_and_commit(self.children[0].soft_delete)
+        assert self.parent.scores.count() == 2
+
+    def test_delete_parent_still_deletes_all_scores(self):
+        self.run_and_commit(self.parent.delete)
+        assert SubmissionScore.objects.count() == 0

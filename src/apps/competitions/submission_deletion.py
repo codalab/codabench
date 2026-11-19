@@ -57,8 +57,26 @@ class SubmissionDeleter:
         submissions = Submission.objects.filter(id__in=self.submission_ids)
 
         # Ids of their leaderboard scores
-        self.score_ids = list(
-            SubmissionScore.objects.filter(submissions__in=submissions).values_list('id', flat=True).distinct()
+        score_ids = set(SubmissionScore.objects.filter(submissions__in=submissions).values_list('id', flat=True))
+
+        # Some scores must not be deleted.
+        # Why: a child's scores are also attached to its parent.
+        # If we delete only the child, the parent still needs them.
+        # So: find the scores also used by submissions NOT in our list. They are kept.
+        used_score_ids = set(
+            Submission.scores.through.objects.filter(submissionscore_id__in=score_ids)
+            .exclude(submission_id__in=self.submission_ids)
+            .values_list('submissionscore_id', flat=True)
+        )
+
+        # Ids of the scores to delete: our scores, without the ones to keep
+        self.score_ids = sorted(score_ids - used_score_ids)
+
+        # Parents of the children we delete, when the parent itself is not deleted.
+        # Why: after the delete, they must be updated (see _update_parents()).
+        self.parent_ids = list(
+            submissions.filter(parent__isnull=False).exclude(parent_id__in=self.submission_ids)
+            .values_list('parent_id', flat=True).distinct()
         )
 
         # Ids of their zips
@@ -130,6 +148,8 @@ class SubmissionDeleter:
             Submission.objects.filter(id__in=self.submission_ids).delete()
 
             Data.objects.filter(id__in=self.zip_ids).delete()
+            
+            self._update_parents()
 
             # Lower the submission count of each competition. It never goes below 0.
             for competition_id, count in self.parents_deleted_per_competition.items():
@@ -175,6 +195,14 @@ class SubmissionDeleter:
             # Delete the files only after the records are really changed.
             # robust=True: if deleting the files fails, we log the error and the soft delete still succeeds.
             transaction.on_commit(lambda: self._delete_files(files), robust=True)
+
+    def _update_parents(self):
+        """Updates the parents that lost a child (only after a hard delete)."""
+        for parent in Submission.objects.filter(id__in=self.parent_ids):
+            parent.has_children = parent.children.exists()
+            parent.save(update_fields=['has_children'])
+            if parent.has_children:
+                parent.check_child_submission_statuses()
 
     def _delete_files(self, files):
         """
