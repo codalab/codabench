@@ -35,7 +35,6 @@ nav = [
             {"Update programs or data" = "Organizers/Running_a_benchmark/Update-programs-or-data.md"}, 
             {"Queue Management" = "Organizers/Running_a_benchmark/Queue-Management.md"},
             {"Compute Worker Management & Setup" = "Organizers/Running_a_benchmark/Compute-Worker-Management---Setup.md"},
-            {"Compute Worker Management with Podman" = "Organizers/Running_a_benchmark/Compute-worker-installation-with-Podman.md"},
             {"Server Status" = "Organizers/Running_a_benchmark/Server-status-page.md"},
             {"Human in the loop" = "Organizers/Running_a_benchmark/Competition-HITL.md"}
         ]}
@@ -102,6 +101,7 @@ features = [
     "navigation.instant",
     "navigation.instant.progress",
     "navigation.indexes",
+    "content.tabs.link",
 ]
 font = false
 # Palette toggle for automatic mode
@@ -143,6 +143,7 @@ custom_fences = [
 [project.markdown_extensions.tables]
 [project.markdown_extensions.pymdownx.tabbed]
 alternate_style = true
+combine_header_slug = true
 [project.markdown_extensions.pymdownx.tabbed.slugify]
 object = "pymdownx.slugs.slugify"
 kwds = { case = "lower" }
