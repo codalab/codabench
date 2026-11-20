@@ -13,7 +13,7 @@
         <link rel="prev" href="../Queue-Management/">
       
       
-        <link rel="next" href="../Compute-worker-installation-with-Podman/">
+        <link rel="next" href="../Server-status-page/">
       
       
         
@@ -1265,8 +1265,6 @@
       
         
       
-        
-      
     
     
     
@@ -1506,10 +1504,49 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#install-docker" class="md-nav__link">
+  <a href="#requirements" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Install Docker
+        Requirements
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Requirements">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#docker" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Docker
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#podman" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Podman
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cpu-worker-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        CPU Worker configuration
       </span>
     </span>
   </a>
@@ -1517,10 +1554,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#pull-compute-worker-image" class="md-nav__link">
+  <a href="#gpu-worker-configuration" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Pull Compute Worker Image
+        GPU Worker configuration
       </span>
     </span>
   </a>
@@ -1528,21 +1565,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#start-cpu-worker" class="md-nav__link">
+  <a href="#start-the-worker" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Start CPU worker
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#start-gpu-worker" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Start GPU worker
+        Start the Worker
       </span>
     </span>
   </a>
@@ -1565,17 +1591,6 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         Cleaning up periodically
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#keep-track-of-the-worker" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Keep track of the worker
       </span>
     </span>
   </a>
@@ -1633,10 +1648,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#update-docker-image" class="md-nav__link">
+  <a href="#update-the-compute-worker-image" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Update docker image
+        Update the compute worker image
       </span>
     </span>
   </a>
@@ -1647,33 +1662,6 @@
   
 </nav>
       
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../Compute-worker-installation-with-Podman/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Compute Worker Management with Podman
-
-    
-  </span>
-  
-  
-
-      </a>
     </li>
   
 
@@ -2998,10 +2986,49 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#install-docker" class="md-nav__link">
+  <a href="#requirements" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Install Docker
+        Requirements
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Requirements">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#docker" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Docker
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#podman" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Podman
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cpu-worker-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        CPU Worker configuration
       </span>
     </span>
   </a>
@@ -3009,10 +3036,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#pull-compute-worker-image" class="md-nav__link">
+  <a href="#gpu-worker-configuration" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Pull Compute Worker Image
+        GPU Worker configuration
       </span>
     </span>
   </a>
@@ -3020,21 +3047,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#start-cpu-worker" class="md-nav__link">
+  <a href="#start-the-worker" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Start CPU worker
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#start-gpu-worker" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Start GPU worker
+        Start the Worker
       </span>
     </span>
   </a>
@@ -3057,17 +3073,6 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         Cleaning up periodically
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#keep-track-of-the-worker" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Keep track of the worker
       </span>
     </span>
   </a>
@@ -3125,10 +3130,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#update-docker-image" class="md-nav__link">
+  <a href="#update-the-compute-worker-image" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Update docker image
+        Update the compute worker image
       </span>
     </span>
   </a>
@@ -3171,10 +3176,12 @@
   <h1>Compute Worker Management & Setup</h1>
 
 <p>Compute workers are simply machines that are able to accept/send celery messages on the port used by the broker URL you wish to connect to that have a compute worker image, or other software to receive submissions. This means that you can add computing power to your competitions or benchmarks if needed! Any computer, from your own physical machines to virtual machines on cloud computing services can be used for this purpose. You can add multiple workers to a queue to process several submissions simultaneously.</p>
-<div class="admonition note">
-<p class="admonition-title">To use Podman, go to the <a href="../Compute-worker-installation-with-Podman/">Podman documentation</a>.</p>
-</div>
-<p><strong>To use Docker, follow these instructions below:</strong></p>
+<p>You can find these images <a href="https://hub.docker.com/r/codalab/codabench-compute-worker/tags">here</a></p>
+<h2 id="requirements">Requirements<a class="headerlink" href="#requirements" title="Permanent link">&para;</a></h2>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="requirements-docker" name="__tabbed_1" type="radio" /><input id="requirements-podman" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="requirements-docker">Docker</label><label for="requirements-podman">Podman</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<h3 id="docker">Docker<a class="headerlink" href="#docker" title="Permanent link">&para;</a></h3>
 <p>Steps:</p>
 <ul>
 <li>Have a machine (<em>either physical or virtual, 100 GB storage recommended</em>)</li>
@@ -3182,70 +3189,185 @@
 <li>Pull Compute Worker Image</li>
 <li>Run the compute worker via Docker</li>
 </ul>
-<h2 id="install-docker">Install Docker<a class="headerlink" href="#install-docker" title="Permanent link">&para;</a></h2>
 <p>Either:</p>
 <p>a) Install docker via the installation script: https://docs.docker.com/install/linux/docker-ce/ubuntu/#install-using-the-convenience-script</p>
 <div class="language-bash highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>curl<span class="w"> </span>https://get.docker.com<span class="w"> </span><span class="p">|</span><span class="w"> </span>sudo<span class="w"> </span>sh
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>sudo<span class="w"> </span>usermod<span class="w"> </span>-aG<span class="w"> </span>docker<span class="w"> </span><span class="nv">$USER</span>
 </span></code></pre></div>
 <p>b) Install manually, following the steps at: https://docs.docker.com/install/</p>
-<h2 id="pull-compute-worker-image">Pull Compute Worker Image<a class="headerlink" href="#pull-compute-worker-image" title="Permanent link">&para;</a></h2>
-<p>On the compute worker machine, run the following command in a shell:
-<div class="language-bash highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>docker<span class="w"> </span>pull<span class="w"> </span>codalab/codabench-compute-worker
-</span></code></pre></div></p>
-<p>That will pull the latest image for the v2 worker. For specific versions, see the docker hub page at:
-https://hub.docker.com/r/codalab/codabench-compute-worker/tags</p>
-<h2 id="start-cpu-worker">Start CPU worker<a class="headerlink" href="#start-cpu-worker" title="Permanent link">&para;</a></h2>
-<p>You will get your Broker URL from the instance. More information about Queues <a href="../Queue-Management/">here</a></p>
-<p>Make a file <code>.env</code> and put this in it:
-<div class="language-ini highlight"><span class="filename">.env</span><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1">#######################################################################</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1">#                       Connection URL                                #</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1">#######################################################################</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="na">BROKER_URL</span><span class="o">=</span><span class="s">pyamqp://&lt;login&gt;:&lt;password&gt;@www.codabench.org:5672/</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1"># If SSL isn't enabled, then comment or remove the following line</span>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="na">BROKER_USE_SSL</span><span class="o">=</span><span class="s">True</span>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="c1">#######################################################################</span>
-</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="c1">#                       Temporary Storage                             #</span>
-</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="c1">#######################################################################</span>
-</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="na">HOST_DIRECTORY</span><span class="o">=</span><span class="s">/codabench</span>
-</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>
-</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>
-</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="c1">#######################################################################</span>
-</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="c1">#                       Runtime                                       #</span>
-</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="c1">#######################################################################</span>
-</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="na">CONTAINER_ENGINE_EXECUTABLE</span><span class="o">=</span><span class="s">docker</span>
-</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="c1">#USE_GPU=True</span>
-</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="c1">#GPU_DEVICE=nvidia.com/gpu=all</span>
-</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="c1">#HUMAN_IN_THE_LOOP=False</span>
-</span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a>
-</span><span id="__span-2-22"><a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="c1"># If set to False, the compute worker will never pull for the </span>
-</span><span id="__span-2-23"><a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="c1"># competition image, the image will need to be downloaded</span>
-</span><span id="__span-2-24"><a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="c1"># manually on the host before running submissions. True by default</span>
-</span><span id="__span-2-25"><a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a><span class="c1">#COMPETITION_ALLOW_IMAGE_PULL=True</span>
-</span><span id="__span-2-26"><a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a>
-</span><span id="__span-2-27"><a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a><span class="c1"># This option removes the ability of the compute worker to send logs to</span>
-</span><span id="__span-2-28"><a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a><span class="c1"># codabench, instead writing them locally on disk. Combine with</span>
-</span><span id="__span-2-29"><a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a><span class="c1"># COMPUTE_WORKER_NO_CLEANUP=true to stop the worker's cleanup to keep</span>
-</span><span id="__span-2-30"><a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a><span class="c1"># all the logs locally only</span>
-</span><span id="__span-2-31"><a id="__codelineno-2-31" name="__codelineno-2-31" href="#__codelineno-2-31"></a><span class="c1">#COMPUTE_WORKER_DISABLE_LOG_UPLOAD=False</span>
-</span><span id="__span-2-32"><a id="__codelineno-2-32" name="__codelineno-2-32" href="#__codelineno-2-32"></a>
-</span><span id="__span-2-33"><a id="__codelineno-2-33" name="__codelineno-2-33" href="#__codelineno-2-33"></a><span class="c1"># Stop the predictions from being sent to Codabench.</span>
-</span><span id="__span-2-34"><a id="__codelineno-2-34" name="__codelineno-2-34" href="#__codelineno-2-34"></a><span class="c1"># This option requires only having one compute worker for ingestion</span>
-</span><span id="__span-2-35"><a id="__codelineno-2-35" name="__codelineno-2-35" href="#__codelineno-2-35"></a><span class="c1"># and scoring.</span>
-</span><span id="__span-2-36"><a id="__codelineno-2-36" name="__codelineno-2-36" href="#__codelineno-2-36"></a><span class="c1">#COMPUTE_WORKER_DISABLE_PREDICTION_UPLOAD=False</span>
-</span><span id="__span-2-37"><a id="__codelineno-2-37" name="__codelineno-2-37" href="#__codelineno-2-37"></a>
-</span><span id="__span-2-38"><a id="__codelineno-2-38" name="__codelineno-2-38" href="#__codelineno-2-38"></a><span class="c1">#COMPUTE_WORKER_NO_CLEANUP=False</span>
-</span><span id="__span-2-39"><a id="__codelineno-2-39" name="__codelineno-2-39" href="#__codelineno-2-39"></a>
-</span><span id="__span-2-40"><a id="__codelineno-2-40" name="__codelineno-2-40" href="#__codelineno-2-40"></a><span class="c1">#######################################################################</span>
-</span><span id="__span-2-41"><a id="__codelineno-2-41" name="__codelineno-2-41" href="#__codelineno-2-41"></a><span class="c1">#                       Network                                       #</span>
-</span><span id="__span-2-42"><a id="__codelineno-2-42" name="__codelineno-2-42" href="#__codelineno-2-42"></a><span class="c1">#######################################################################</span>
-</span><span id="__span-2-43"><a id="__codelineno-2-43" name="__codelineno-2-43" href="#__codelineno-2-43"></a><span class="c1">#COMPETITION_CONTAINER_NETWORK_DISABLED=False</span>
-</span><span id="__span-2-44"><a id="__codelineno-2-44" name="__codelineno-2-44" href="#__codelineno-2-44"></a>
-</span><span id="__span-2-45"><a id="__codelineno-2-45" name="__codelineno-2-45" href="#__codelineno-2-45"></a><span class="c1">#COMPETITION_CONTAINER_HTTP_PROXY=http://example_proxy:123</span>
-</span><span id="__span-2-46"><a id="__codelineno-2-46" name="__codelineno-2-46" href="#__codelineno-2-46"></a><span class="c1">#COMPETITION_CONTAINER_HTTPS_PROXY=https://example_proxy:1233</span>
+<p>Create a <code>docker-compose.yml</code> file and paste the following content in it:</p>
+<div class="language-yaml highlight"><span class="filename">docker-compose.yml</span><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Codabench Worker</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="nt">services</span><span class="p">:</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="nt">worker</span><span class="p">:</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">        </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">codalab/codabench-compute-worker:latest</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">        </span><span class="nt">container_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">compute_worker</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">        </span><span class="nt">volumes</span><span class="p">:</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/codabench:/codabench</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/var/run/docker.sock:/var/run/docker.sock</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">        </span><span class="nt">env_file</span><span class="p">:</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">.env</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">        </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">unless-stopped</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">        </span><span class="nt">hostname</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${HOSTNAME}</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">        </span><span class="nt">logging</span><span class="p">:</span>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">            </span><span class="nt">options</span><span class="p">:</span>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w">                </span><span class="nt">max-size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">50m</span>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="w">                </span><span class="nt">max-file</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span>
 </span></code></pre></div>
-By default, the competition container created by the compute worker has access to internet. If you want to remove this access, you can uncomment <code>COMPETITION_CONTAINER_NETWORK_DISABLED</code> and set it to <code>True</code></p>
+</div>
+<div class="tabbed-block">
+<h3 id="podman">Podman<a class="headerlink" href="#podman" title="Permanent link">&para;</a></h3>
+<p>We need to install Podman on the Host. For this example, we use a Debian based OS.</p>
+<p><code>sudo apt install podman</code></p>
+<p>After installing Podman, you will need to launch the service associated with it with </p>
+<div class="language-bash highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>systemctl<span class="w"> </span>--user<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>--now<span class="w"> </span>podman
+</span></code></pre></div>
+<p>Then, configure where Podman will download the images: Podman will use Dockerhub by adding this line into <code>/etc/containers/registries.conf</code>:</p>
+<div class="language-ini highlight"><span class="filename">INI</span><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="na">unqualified-search-registries</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">["docker.io"]</span>
+</span></code></pre></div>
+<p>You will also need to create the <code>codabench</code> folder defined in the <code>.env</code> file, as well as change its permissions to the user that is running the compute worker.</p>
+<div class="language-bash highlight"><span class="filename">In your terminal</span><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>sudo<span class="w"> </span>mkdir<span class="w"> </span>/codabench
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>sudo<span class="w"> </span>mkdir<span class="w"> </span>/codabench/data
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>sudo<span class="w"> </span>chown<span class="w"> </span>-R<span class="w"> </span><span class="k">$(</span>id<span class="w"> </span>-u<span class="k">)</span>:<span class="k">$(</span>id<span class="w"> </span>-g<span class="k">)</span><span class="w"> </span>/codabench
+</span></code></pre></div>
+<p>You should also run the following command if you don't want the container to be shutdown when you log out of the user:</p>
+<p><div class="language-bash highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>sudo<span class="w"> </span>loginctl<span class="w"> </span>enable-linger<span class="w"> </span>*username*
+</span></code></pre></div>
+Make sure to use the username of the user running the podman container.</p>
+<p>Create a <code>run_podman.sh</code> file with the following content:</p>
+<div class="language-bash highlight"><span class="filename">run_podman.sh</span><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>podman<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>--volume<span class="w"> </span>/run/user/<span class="k">$(</span>id<span class="w"> </span>-u<span class="k">)</span>/podman/podman.sock:/run/user/1000/podman/podman.sock:U<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>--env-file<span class="w"> </span>.env<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>--name<span class="w"> </span>compute_worker<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>--security-opt<span class="o">=</span><span class="s2">"label=disable"</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>--userns<span class="w"> </span>host<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>--restart<span class="w"> </span>unless-stopped<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>--log-opt<span class="w"> </span>max-size<span class="o">=</span>50m<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>--log-opt<span class="w"> </span>max-file<span class="o">=</span><span class="m">3</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>--hostname<span class="w"> </span><span class="si">${</span><span class="nv">HOSTNAME</span><span class="si">}</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>--cap-drop<span class="w"> </span>all<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-6-12"><a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>--volume<span class="w"> </span>/codabench:/codabench:U,z<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-6-13"><a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>codalab/codabench-compute-worker:latest
+</span></code></pre></div>
+<p>Then run the command :</p>
+<div class="language-bash highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>chmod<span class="w"> </span>+x<span class="w"> </span>run_podman.sh
+</span></code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p><strong>To launch a Podman compatible GPU worker, you will need to have podman version 5.4.2 minimum</strong></p>
+</div>
+</div>
+</div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code>hostname</code> allows you to set the hostname of the compute worker container, which will then be shown in the <a href="../Server-status-page/">server status</a> page on Codabench (available to both you and the participants of your competition). This can be set to anything you want, by setting the <code>HOSTNAME</code> environment variable on the machine hosting the Compute Worker or changing <code>${HOSTNAME}</code> to something else</p>
+</div>
+<h2 id="cpu-worker-configuration">CPU Worker configuration<a class="headerlink" href="#cpu-worker-configuration" title="Permanent link">&para;</a></h2>
+<p>You will get your Broker URL from the instance. More information about Queues <a href="../Queue-Management/">here</a></p>
+<p>Make a file <code>.env</code> and put this in it:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="cpu-worker-configuration-docker" name="__tabbed_2" type="radio" /><input id="cpu-worker-configuration-podman" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="cpu-worker-configuration-docker">Docker</label><label for="cpu-worker-configuration-podman">Podman</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-ini highlight"><span class="filename">.env</span><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1">#######################################################################</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="c1">#                       Connection URL                                #</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="c1">#######################################################################</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="na">BROKER_URL</span><span class="o">=</span><span class="s">pyamqp://&lt;login&gt;:&lt;password&gt;@www.codabench.org:5672/</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="c1"># If SSL isn't enabled, then comment or remove the following line</span>
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="na">BROKER_USE_SSL</span><span class="o">=</span><span class="s">True</span>
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>
+</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="c1">#######################################################################</span>
+</span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="c1">#                       Temporary Storage                             #</span>
+</span><span id="__span-8-10"><a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="c1">#######################################################################</span>
+</span><span id="__span-8-11"><a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="na">HOST_DIRECTORY</span><span class="o">=</span><span class="s">/codabench</span>
+</span><span id="__span-8-12"><a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>
+</span><span id="__span-8-13"><a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>
+</span><span id="__span-8-14"><a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a><span class="c1">#######################################################################</span>
+</span><span id="__span-8-15"><a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a><span class="c1">#                       Runtime                                       #</span>
+</span><span id="__span-8-16"><a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a><span class="c1">#######################################################################</span>
+</span><span id="__span-8-17"><a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a><span class="na">CONTAINER_ENGINE_EXECUTABLE</span><span class="o">=</span><span class="s">docker</span>
+</span><span id="__span-8-18"><a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a><span class="c1">#USE_GPU=True</span>
+</span><span id="__span-8-19"><a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a><span class="c1">#GPU_DEVICE=nvidia.com/gpu=all</span>
+</span><span id="__span-8-20"><a id="__codelineno-8-20" name="__codelineno-8-20" href="#__codelineno-8-20"></a><span class="c1">#HUMAN_IN_THE_LOOP=False</span>
+</span><span id="__span-8-21"><a id="__codelineno-8-21" name="__codelineno-8-21" href="#__codelineno-8-21"></a>
+</span><span id="__span-8-22"><a id="__codelineno-8-22" name="__codelineno-8-22" href="#__codelineno-8-22"></a><span class="c1"># If set to False, the compute worker will never pull for the </span>
+</span><span id="__span-8-23"><a id="__codelineno-8-23" name="__codelineno-8-23" href="#__codelineno-8-23"></a><span class="c1"># competition image, the image will need to be downloaded</span>
+</span><span id="__span-8-24"><a id="__codelineno-8-24" name="__codelineno-8-24" href="#__codelineno-8-24"></a><span class="c1"># manually on the host before running submissions. True by default</span>
+</span><span id="__span-8-25"><a id="__codelineno-8-25" name="__codelineno-8-25" href="#__codelineno-8-25"></a><span class="c1">#COMPETITION_ALLOW_IMAGE_PULL=True</span>
+</span><span id="__span-8-26"><a id="__codelineno-8-26" name="__codelineno-8-26" href="#__codelineno-8-26"></a>
+</span><span id="__span-8-27"><a id="__codelineno-8-27" name="__codelineno-8-27" href="#__codelineno-8-27"></a><span class="c1"># This option removes the ability of the compute worker to send logs to</span>
+</span><span id="__span-8-28"><a id="__codelineno-8-28" name="__codelineno-8-28" href="#__codelineno-8-28"></a><span class="c1"># codabench, instead writing them locally on disk. Combine with</span>
+</span><span id="__span-8-29"><a id="__codelineno-8-29" name="__codelineno-8-29" href="#__codelineno-8-29"></a><span class="c1"># COMPUTE_WORKER_NO_CLEANUP=true to stop the worker's cleanup to keep</span>
+</span><span id="__span-8-30"><a id="__codelineno-8-30" name="__codelineno-8-30" href="#__codelineno-8-30"></a><span class="c1"># all the logs locally only</span>
+</span><span id="__span-8-31"><a id="__codelineno-8-31" name="__codelineno-8-31" href="#__codelineno-8-31"></a><span class="c1">#COMPUTE_WORKER_DISABLE_LOG_UPLOAD=False</span>
+</span><span id="__span-8-32"><a id="__codelineno-8-32" name="__codelineno-8-32" href="#__codelineno-8-32"></a>
+</span><span id="__span-8-33"><a id="__codelineno-8-33" name="__codelineno-8-33" href="#__codelineno-8-33"></a><span class="c1"># Stop the predictions from being sent to Codabench.</span>
+</span><span id="__span-8-34"><a id="__codelineno-8-34" name="__codelineno-8-34" href="#__codelineno-8-34"></a><span class="c1"># This option requires only having one compute worker for ingestion</span>
+</span><span id="__span-8-35"><a id="__codelineno-8-35" name="__codelineno-8-35" href="#__codelineno-8-35"></a><span class="c1"># and scoring.</span>
+</span><span id="__span-8-36"><a id="__codelineno-8-36" name="__codelineno-8-36" href="#__codelineno-8-36"></a><span class="c1">#COMPUTE_WORKER_DISABLE_PREDICTION_UPLOAD=False</span>
+</span><span id="__span-8-37"><a id="__codelineno-8-37" name="__codelineno-8-37" href="#__codelineno-8-37"></a>
+</span><span id="__span-8-38"><a id="__codelineno-8-38" name="__codelineno-8-38" href="#__codelineno-8-38"></a><span class="c1">#COMPUTE_WORKER_NO_CLEANUP=False</span>
+</span><span id="__span-8-39"><a id="__codelineno-8-39" name="__codelineno-8-39" href="#__codelineno-8-39"></a>
+</span><span id="__span-8-40"><a id="__codelineno-8-40" name="__codelineno-8-40" href="#__codelineno-8-40"></a><span class="c1">#######################################################################</span>
+</span><span id="__span-8-41"><a id="__codelineno-8-41" name="__codelineno-8-41" href="#__codelineno-8-41"></a><span class="c1">#                       Network                                       #</span>
+</span><span id="__span-8-42"><a id="__codelineno-8-42" name="__codelineno-8-42" href="#__codelineno-8-42"></a><span class="c1">#######################################################################</span>
+</span><span id="__span-8-43"><a id="__codelineno-8-43" name="__codelineno-8-43" href="#__codelineno-8-43"></a><span class="c1">#COMPETITION_CONTAINER_NETWORK_DISABLED=False</span>
+</span><span id="__span-8-44"><a id="__codelineno-8-44" name="__codelineno-8-44" href="#__codelineno-8-44"></a>
+</span><span id="__span-8-45"><a id="__codelineno-8-45" name="__codelineno-8-45" href="#__codelineno-8-45"></a><span class="c1">#COMPETITION_CONTAINER_HTTP_PROXY=http://example_proxy:123</span>
+</span><span id="__span-8-46"><a id="__codelineno-8-46" name="__codelineno-8-46" href="#__codelineno-8-46"></a><span class="c1">#COMPETITION_CONTAINER_HTTPS_PROXY=https://example_proxy:1233</span>
+</span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-ini highlight"><span class="filename">.env</span><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="c1">#######################################################################</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="c1">#                       Connection URL                                #</span>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="c1">#######################################################################</span>
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="na">BROKER_URL</span><span class="o">=</span><span class="s">pyamqp://&lt;login&gt;:&lt;password&gt;@www.codabench.org:5672/</span>
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="c1"># If SSL isn't enabled, then comment or remove the following line</span>
+</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="na">BROKER_USE_SSL</span><span class="o">=</span><span class="s">True</span>
+</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>
+</span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="c1">#######################################################################</span>
+</span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="c1">#                       Temporary Storage                             #</span>
+</span><span id="__span-9-10"><a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="c1">#######################################################################</span>
+</span><span id="__span-9-11"><a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="na">HOST_DIRECTORY</span><span class="o">=</span><span class="s">/codabench</span>
+</span><span id="__span-9-12"><a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a>
+</span><span id="__span-9-13"><a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a>
+</span><span id="__span-9-14"><a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a><span class="c1">#######################################################################</span>
+</span><span id="__span-9-15"><a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a><span class="c1">#                       Runtime                                       #</span>
+</span><span id="__span-9-16"><a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a><span class="c1">#######################################################################</span>
+</span><span id="__span-9-17"><a id="__codelineno-9-17" name="__codelineno-9-17" href="#__codelineno-9-17"></a><span class="na">CONTAINER_ENGINE_EXECUTABLE</span><span class="o">=</span><span class="s">podman</span>
+</span><span id="__span-9-18"><a id="__codelineno-9-18" name="__codelineno-9-18" href="#__codelineno-9-18"></a><span class="c1">#USE_GPU=True</span>
+</span><span id="__span-9-19"><a id="__codelineno-9-19" name="__codelineno-9-19" href="#__codelineno-9-19"></a><span class="c1">#GPU_DEVICE=nvidia.com/gpu=all</span>
+</span><span id="__span-9-20"><a id="__codelineno-9-20" name="__codelineno-9-20" href="#__codelineno-9-20"></a><span class="c1">#HUMAN_IN_THE_LOOP=False</span>
+</span><span id="__span-9-21"><a id="__codelineno-9-21" name="__codelineno-9-21" href="#__codelineno-9-21"></a>
+</span><span id="__span-9-22"><a id="__codelineno-9-22" name="__codelineno-9-22" href="#__codelineno-9-22"></a><span class="c1"># If set to False, the compute worker will never pull for the</span>
+</span><span id="__span-9-23"><a id="__codelineno-9-23" name="__codelineno-9-23" href="#__codelineno-9-23"></a><span class="c1"># competition image, the image will need to be downloaded</span>
+</span><span id="__span-9-24"><a id="__codelineno-9-24" name="__codelineno-9-24" href="#__codelineno-9-24"></a><span class="c1"># manually on the host before running submissions. True by default</span>
+</span><span id="__span-9-25"><a id="__codelineno-9-25" name="__codelineno-9-25" href="#__codelineno-9-25"></a><span class="c1">#COMPETITION_ALLOW_IMAGE_PULL=True</span>
+</span><span id="__span-9-26"><a id="__codelineno-9-26" name="__codelineno-9-26" href="#__codelineno-9-26"></a>
+</span><span id="__span-9-27"><a id="__codelineno-9-27" name="__codelineno-9-27" href="#__codelineno-9-27"></a><span class="c1"># This option removes the ability of the compute worker to send logs to</span>
+</span><span id="__span-9-28"><a id="__codelineno-9-28" name="__codelineno-9-28" href="#__codelineno-9-28"></a><span class="c1"># codabench, instead writing them locally on disk. Combine with</span>
+</span><span id="__span-9-29"><a id="__codelineno-9-29" name="__codelineno-9-29" href="#__codelineno-9-29"></a><span class="c1"># COMPUTE_WORKER_NO_CLEANUP=true to stop the worker's cleanup to keep</span>
+</span><span id="__span-9-30"><a id="__codelineno-9-30" name="__codelineno-9-30" href="#__codelineno-9-30"></a><span class="c1"># all the logs locally only</span>
+</span><span id="__span-9-31"><a id="__codelineno-9-31" name="__codelineno-9-31" href="#__codelineno-9-31"></a><span class="c1">#COMPUTE_WORKER_DISABLE_LOG_UPLOAD=False</span>
+</span><span id="__span-9-32"><a id="__codelineno-9-32" name="__codelineno-9-32" href="#__codelineno-9-32"></a>
+</span><span id="__span-9-33"><a id="__codelineno-9-33" name="__codelineno-9-33" href="#__codelineno-9-33"></a><span class="c1"># Stop the predictions from being sent to Codabench.</span>
+</span><span id="__span-9-34"><a id="__codelineno-9-34" name="__codelineno-9-34" href="#__codelineno-9-34"></a><span class="c1"># This option requires only having one compute worker for ingestion</span>
+</span><span id="__span-9-35"><a id="__codelineno-9-35" name="__codelineno-9-35" href="#__codelineno-9-35"></a><span class="c1"># and scoring.</span>
+</span><span id="__span-9-36"><a id="__codelineno-9-36" name="__codelineno-9-36" href="#__codelineno-9-36"></a><span class="c1">#COMPUTE_WORKER_DISABLE_PREDICTION_UPLOAD=False</span>
+</span><span id="__span-9-37"><a id="__codelineno-9-37" name="__codelineno-9-37" href="#__codelineno-9-37"></a>
+</span><span id="__span-9-38"><a id="__codelineno-9-38" name="__codelineno-9-38" href="#__codelineno-9-38"></a><span class="c1">#COMPUTE_WORKER_NO_CLEANUP=False</span>
+</span><span id="__span-9-39"><a id="__codelineno-9-39" name="__codelineno-9-39" href="#__codelineno-9-39"></a>
+</span><span id="__span-9-40"><a id="__codelineno-9-40" name="__codelineno-9-40" href="#__codelineno-9-40"></a><span class="c1">#######################################################################</span>
+</span><span id="__span-9-41"><a id="__codelineno-9-41" name="__codelineno-9-41" href="#__codelineno-9-41"></a><span class="c1">#                       Network                                       #</span>
+</span><span id="__span-9-42"><a id="__codelineno-9-42" name="__codelineno-9-42" href="#__codelineno-9-42"></a><span class="c1">#######################################################################</span>
+</span><span id="__span-9-43"><a id="__codelineno-9-43" name="__codelineno-9-43" href="#__codelineno-9-43"></a><span class="c1">#COMPETITION_CONTAINER_NETWORK_DISABLED=False</span>
+</span><span id="__span-9-44"><a id="__codelineno-9-44" name="__codelineno-9-44" href="#__codelineno-9-44"></a>
+</span><span id="__span-9-45"><a id="__codelineno-9-45" name="__codelineno-9-45" href="#__codelineno-9-45"></a><span class="c1">#COMPETITION_CONTAINER_HTTP_PROXY=http://example_proxy:123</span>
+</span><span id="__span-9-46"><a id="__codelineno-9-46" name="__codelineno-9-46" href="#__codelineno-9-46"></a><span class="c1">#COMPETITION_CONTAINER_HTTPS_PROXY=https://example_proxy:1233</span>
+</span></code></pre></div>
+</div>
+</div>
+</div>
+<p>By default, the competition container created by the compute worker has access to internet. If you want to remove this access, you can uncomment <code>COMPETITION_CONTAINER_NETWORK_DISABLED</code> and set it to <code>True</code></p>
 <p>If the VM hosting the compute worker is behind a proxy, and you want to allow the competition container to access internet, you will also need to set the proxy for the competition container to use, in which case you can use <code>COMPETITION_CONTAINER_HTTP_PROXY</code></p>
 <p>To control the scoring output before sending it to the instance, you can use the human in the loop feature to check the scoring file (json or txt) before sending anything to the instance, see: <a href="../Competition-HITL/">HITL documentation</a></p>
 <div class="admonition note">
@@ -3259,91 +3381,72 @@ By default, the competition container created by the compute worker has access t
 </li>
 </ul>
 </div>
-<p>Create a <code>docker-compose.yml</code> file and paste the following content in it:
-<div class="language-yaml highlight"><span class="filename">docker-compose.yml</span><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Codabench Worker</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="nt">services</span><span class="p">:</span>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="nt">worker</span><span class="p">:</span>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">        </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">codalab/codabench-compute-worker:latest</span>
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">        </span><span class="nt">container_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">compute_worker</span>
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">        </span><span class="nt">volumes</span><span class="p">:</span>
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/codabench:/codabench</span>
-</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/var/run/docker.sock:/var/run/docker.sock</span>
-</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">        </span><span class="nt">env_file</span><span class="p">:</span>
-</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">.env</span>
-</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="w">        </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">unless-stopped</span>
-</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="w">        </span><span class="c1">#hostname: ${HOSTNAME}</span>
-</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="w">        </span><span class="nt">logging</span><span class="p">:</span>
-</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="w">            </span><span class="nt">options</span><span class="p">:</span>
-</span><span id="__span-3-15"><a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="w">                </span><span class="nt">max-size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">50m</span>
-</span><span id="__span-3-16"><a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="w">                </span><span class="nt">max-file</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span>
-</span></code></pre></div></p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p><code>hostname: ${HOSTNAME}</code> allows you to set the hostname of the compute worker container, which will then be shown in the <a href="../Server-status-page/">server status</a> page on Codabench. This can be set to anything you want, by setting the <code>HOSTNAME</code> environment variable on the machine hosting the Compute Worker, then uncommenting the line in the <code>docker-compose.yml</code> before launching the compute worker.</p>
-</div>
-<p>You can then launch the worker by running this command in the terminal where the <code>docker-compose.yml</code> file is located:
-<div class="language-bash highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d
-</span></code></pre></div></p>
-<h2 id="start-gpu-worker">Start GPU worker<a class="headerlink" href="#start-gpu-worker" title="Permanent link">&para;</a></h2>
-<p>Make a <code>.env</code> file, as explained in CPU worker instructions.</p>
+<h2 id="gpu-worker-configuration">GPU Worker configuration<a class="headerlink" href="#gpu-worker-configuration" title="Permanent link">&para;</a></h2>
+<p>Make a <code>.env</code> file, as explained in CPU worker configuration instructions.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>Don't forget the <code>USE_GPU=true</code> in the <code>.env</code> if you want to use a GPU runner</p>
+<p>Don't forget <code>USE_GPU=true</code> in the <code>.env</code></p>
 </div>
 <p>Then, install the NVIDIA toolkit:
 <a href="https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/index.html">Nvidia toolkit installation instructions</a></p>
-<p>Once you install and configure the NVIDIA container toolkit, you can create a <code>docker-compose.yml</code> file with the following content:
-<div class="language-yaml highlight"><span class="filename">docker-compose.yml</span><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># Codabench GPU worker (NVIDIA)</span>
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="nt">services</span><span class="p">:</span>
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span><span class="nt">worker</span><span class="p">:</span>
-</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">        </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">codalab/codabench-compute-worker:latest</span>
-</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">        </span><span class="nt">container_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">compute_worker</span>
-</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">        </span><span class="nt">volumes</span><span class="p">:</span>
-</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/codabench:/codabench</span>
-</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/var/run/docker.sock:/var/run/docker.sock</span>
-</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">        </span><span class="nt">env_file</span><span class="p">:</span>
-</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">.env</span>
-</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="w">        </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">unless-stopped</span>
-</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="w">        </span><span class="c1">#hostname: ${HOSTNAME}</span>
-</span><span id="__span-5-13"><a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="w">        </span><span class="nt">logging</span><span class="p">:</span>
-</span><span id="__span-5-14"><a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a><span class="w">            </span><span class="nt">options</span><span class="p">:</span>
-</span><span id="__span-5-15"><a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a><span class="w">                </span><span class="nt">max-size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">50m</span>
-</span><span id="__span-5-16"><a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a><span class="w">                </span><span class="nt">max-file</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span>
-</span></code></pre></div></p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p><code>hostname: ${HOSTNAME}</code> allows you to set the hostname of the compute worker container, which will then be shown in the <a href="../Server-status-page/">server status</a> page on Codabench. This can be set to anything you want, by setting the <code>HOSTNAME</code> environment variable on the machine hosting the Compute Worker, then uncommenting the line in the <code>docker-compose.yml</code> before launching the compute worker.</p>
-</div>
-<p>You can then launch the worker by running this command in the terminal where the <code>docker-compose.yml</code> file is located:
-<div class="language-bash highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d
+<p>If you have multiple Nvidia GPUs, you can uncomment <code>#GPU_DEVICE=nvidia.com/gpu=all</code> and put the name of the GPU you want the compute worker to use. You can get the name by launching the following command :
+<div class="language-bash highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>nvidia-ctk<span class="w"> </span>cdi<span class="w"> </span>list
 </span></code></pre></div></p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>Make sure to add the necessary packages inside the competition image to allow the use of the connected GPU</p>
 </div>
+<h2 id="start-the-worker">Start the Worker<a class="headerlink" href="#start-the-worker" title="Permanent link">&para;</a></h2>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="start-the-worker-docker" name="__tabbed_3" type="radio" /><input id="start-the-worker-podman" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="start-the-worker-docker">Docker</label><label for="start-the-worker-podman">Podman</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<p>You can then launch the worker by running this command in the terminal where the <code>docker-compose.yml</code> file is located:</p>
+<div class="language-bash highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d
+</span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<p>You can launch the worker by running this command in the terminal where the <code>run_podman.sh</code> file is located:</p>
+<div class="language-bash highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>./run_podman.sh
+</span></code></pre></div>
+</div>
+</div>
+</div>
 <h2 id="check-logs">Check logs<a class="headerlink" href="#check-logs" title="Permanent link">&para;</a></h2>
 <p>Use the following command to check logs and ensure everything is working fine:</p>
-<div class="language-bash highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>docker<span class="w"> </span>logs<span class="w"> </span>-f<span class="w"> </span>compute_worker
+<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="check-logs-docker" name="__tabbed_4" type="radio" /><input id="check-logs-podman" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="check-logs-docker">Docker</label><label for="check-logs-podman">Podman</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-bash highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>docker<span class="w"> </span>logs<span class="w"> </span>-f<span class="w"> </span>compute_worker
 </span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-bash highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>podman<span class="w"> </span>logs<span class="w"> </span>-f<span class="w"> </span>compute_worker
+</span></code></pre></div>
+</div>
+</div>
+</div>
 <h2 id="cleaning-up-periodically">Cleaning up periodically<a class="headerlink" href="#cleaning-up-periodically" title="Permanent link">&para;</a></h2>
 <p>It is recommended to clean up docker images and containers regularly to avoid filling up the storage.</p>
 <ol>
 <li>Run the following command:</li>
 </ol>
-<div class="language-bash highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>sudo<span class="w"> </span>crontab<span class="w"> </span>-e
+<div class="language-bash highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>sudo<span class="w"> </span>crontab<span class="w"> </span>-e
 </span></code></pre></div>
 <ol>
 <li>Add the following line:</li>
 </ol>
-<div class="language-bash highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>@daily<span class="w"> </span>docker<span class="w"> </span>system<span class="w"> </span>prune<span class="w"> </span>-af
+<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="cleaning-up-periodically-docker" name="__tabbed_5" type="radio" /><input id="cleaning-up-periodically-podman" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="cleaning-up-periodically-docker">Docker</label><label for="cleaning-up-periodically-podman">Podman</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-bash highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>@daily<span class="w"> </span>docker<span class="w"> </span>system<span class="w"> </span>prune<span class="w"> </span>-af
 </span></code></pre></div>
-<h2 id="keep-track-of-the-worker">Keep track of the worker<a class="headerlink" href="#keep-track-of-the-worker" title="Permanent link">&para;</a></h2>
-<p>It is recommended to store the docker container hostname to identify the worker. This way, it is easier to troubleshoot issues when having multiple workers in one queue. To get the hostname, simply run <code>docker ps</code> and look at the key <code>CONTAINER ID</code> at the beginning of the output:</p>
-<div class="language-sh highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>$<span class="w"> </span>docker<span class="w"> </span>ps
-</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>CONTAINER<span class="w"> </span>ID<span class="w">   </span>IMAGE<span class="w">                                           </span>COMMAND<span class="w">                  </span>CREATED<span class="w">      </span>STATUS<span class="w">      </span>PORTS<span class="w">     </span>NAMES
-</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>1a2b3d4e5f67<span class="w">   </span>codalab/codabench-compute-worker:latest<span class="w">   </span><span class="s2">"/bin/sh -c 'celery …"</span><span class="w">   </span><span class="m">3</span><span class="w"> </span>days<span class="w"> </span>ago<span class="w">   </span>Up<span class="w"> </span><span class="m">3</span><span class="w"> </span>days<span class="w">             </span>compute_worker
+</div>
+<div class="tabbed-block">
+<div class="language-bash highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>@daily<span class="w"> </span>podman<span class="w"> </span>system<span class="w"> </span>prune<span class="w"> </span>-af
 </span></code></pre></div>
-<p>For each submission made to your queue, you can know what worker computed the ingestion and the scoring jobs in the <a href="../Server-status-page/">server status page</a>.</p>
+</div>
+</div>
+</div>
 <hr />
 <h2 id="optional-put-data-directly-inside-the-compute-worker">Optional: Put data directly inside the compute worker<a class="headerlink" href="#optional-put-data-directly-inside-the-compute-worker" title="Permanent link">&para;</a></h2>
 <h3 id="datasets">Datasets<a class="headerlink" href="#datasets" title="Permanent link">&para;</a></h3>
@@ -3369,26 +3472,73 @@ By default, the competition container created by the compute worker has access t
 </div>
 <hr />
 <h2 id="building-compute-worker">Building compute worker<a class="headerlink" href="#building-compute-worker" title="Permanent link">&para;</a></h2>
-<p>This is helpful only if you want to build the compute worker image. It is not needed if you simply want to set up compute workers to run submissions.</p>
-<p>To build the normal image:</p>
-<div class="language-bash highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>docker<span class="w"> </span>build<span class="w"> </span>-t<span class="w"> </span>*account_name*/codabench-compute-worker:latest<span class="w"> </span>-f<span class="w"> </span>packaging/container/Containerfile.compute_worker<span class="w"> </span>.
+<p>This is helpful only if you want to build the compute worker image. It is not needed if you simply want to set up compute workers to run submissions.
+To build the image, you will first need to clone the Codabench repository:
+<div class="language-sh highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/codalab/codabench.git
+</span></code></pre></div></p>
+<p>Then, to build the default image:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="building-compute-worker-docker" name="__tabbed_6" type="radio" /><input id="building-compute-worker-podman" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="building-compute-worker-docker">Docker</label><label for="building-compute-worker-podman">Podman</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-bash highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="nb">cd</span><span class="w"> </span>codabench
+</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>docker<span class="w"> </span>build<span class="w"> </span>-t<span class="w"> </span>*account_name*/codabench-compute-worker:latest<span class="w"> </span>-f<span class="w"> </span>packaging/container/Containerfile.compute_worker<span class="w"> </span>.
 </span></code></pre></div>
-<p>To update the image</p>
-<div class="language-bash highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>docker<span class="w"> </span>push<span class="w"> </span>*account_name*/codabench-compute-worker:latest
-</span></code></pre></div>
-<div class="admonition note">
-<p class="admonition-title">If you have running compute workers, you'll need to pull again the image and to restart the workers to take into account the changes.</p>
 </div>
-<h2 id="update-docker-image">Update docker image<a class="headerlink" href="#update-docker-image" title="Permanent link">&para;</a></h2>
+<div class="tabbed-block">
+<div class="language-bash highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="nb">cd</span><span class="w"> </span>codabench
+</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>podman<span class="w"> </span>build<span class="w"> </span>-t<span class="w"> </span>*account_name*/codabench-compute-worker:latest<span class="w"> </span>-f<span class="w"> </span>packaging/container/Containerfile.compute_worker<span class="w"> </span>.
+</span></code></pre></div>
+</div>
+</div>
+</div>
+<p>To update the image on your container registry:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="building-compute-worker-docker_1" name="__tabbed_7" type="radio" /><input id="building-compute-worker-podman_1" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="building-compute-worker-docker_1">Docker</label><label for="building-compute-worker-podman_1">Podman</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-bash highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>docker<span class="w"> </span>push<span class="w"> </span>*repository_name*/*account_name*/codabench-compute-worker:latest
+</span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-bash highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>podman<span class="w"> </span>push<span class="w"> </span>*repository_name*/*account_name*/codabench-compute-worker:latest
+</span></code></pre></div>
+</div>
+</div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">If you have running compute workers, you'll need to update all your workers with the new image manually.</p>
+</div>
+<h2 id="update-the-compute-worker-image">Update the compute worker image<a class="headerlink" href="#update-the-compute-worker-image" title="Permanent link">&para;</a></h2>
 <p>If the compute worker docker image was updated, you can reflect the changes using the following commands.</p>
 <p>Check no job is running:</p>
-<div class="language-sh highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>docker<span class="w"> </span>ps
+<div class="tabbed-set tabbed-alternate" data-tabs="8:2"><input checked="checked" id="update-the-compute-worker-image-docker" name="__tabbed_8" type="radio" /><input id="update-the-compute-worker-image-podman" name="__tabbed_8" type="radio" /><div class="tabbed-labels"><label for="update-the-compute-worker-image-docker">Docker</label><label for="update-the-compute-worker-image-podman">Podman</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-sh highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>docker<span class="w"> </span>ps
 </span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-sh highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>podman<span class="w"> </span>ps
+</span></code></pre></div>
+</div>
+</div>
+</div>
 <p>Update the worker:</p>
-<div class="language-sh highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>down
-</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>docker<span class="w"> </span>compose<span class="w"> </span>pull
-</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d
+<div class="tabbed-set tabbed-alternate" data-tabs="9:2"><input checked="checked" id="update-the-compute-worker-image-docker_1" name="__tabbed_9" type="radio" /><input id="update-the-compute-worker-image-podman_1" name="__tabbed_9" type="radio" /><div class="tabbed-labels"><label for="update-the-compute-worker-image-docker_1">Docker</label><label for="update-the-compute-worker-image-podman_1">Podman</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-sh highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>down
+</span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>docker<span class="w"> </span>compose<span class="w"> </span>pull
+</span><span id="__span-25-3"><a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d
 </span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-sh highlight"><span class="filename">Bash</span><pre><span></span><code><span id="__span-26-1"><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>podman<span class="w"> </span>stop<span class="w"> </span>compute_worker
+</span><span id="__span-26-2"><a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>podman<span class="w"> </span>pull<span class="w"> </span>codalab/codabench-compute-worker:latest
+</span><span id="__span-26-3"><a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>./run_podman.sh
+</span></code></pre></div>
+</div>
+</div>
+</div>
 
 
 
@@ -3408,6 +3558,8 @@ By default, the competition container created by the compute worker has access t
             </div>
           
           
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
 <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
         </div>
         
@@ -3443,13 +3595,13 @@ By default, the competition container created by the compute worker has access t
         
         
           
-          <a href="../Compute-worker-installation-with-Podman/" class="md-footer__link md-footer__link--next" aria-label="Next: Compute Worker Management with Podman">
+          <a href="../Server-status-page/" class="md-footer__link md-footer__link--next" aria-label="Next: Server Status">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Compute Worker Management with Podman
+                Server Status
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -3511,7 +3663,7 @@ By default, the competition container created by the compute worker has access t
       
         
         
-      <script id="__config" type="application/json">{"annotate":null,"base":"../../..","features":["content.code.copy","navigation.tabs","navigation.tabs.sticky","search.share","navigation.footer","navigation.top","content.action.edit","content.action.view","navigation.expand","navigation.instant","navigation.instant.progress","navigation.indexes"],"redirect":null,"search":"../../../assets/javascripts/workers/search.719e0d91.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":{"provider":"mike"}}</script>
+      <script id="__config" type="application/json">{"annotate":null,"base":"../../..","features":["content.code.copy","navigation.tabs","navigation.tabs.sticky","search.share","navigation.footer","navigation.top","content.action.edit","content.action.view","navigation.expand","navigation.instant","navigation.instant.progress","navigation.indexes","content.tabs.link"],"redirect":null,"search":"../../../assets/javascripts/workers/search.719e0d91.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":{"provider":"mike"}}</script>
     
     
       <script src="../../../assets/javascripts/bundle.d31f0ffa.min.js"></script>
