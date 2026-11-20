@@ -223,10 +223,16 @@
                 form.submit()
             }
 
-            // The search applies on Enter, like any form
-            form.addEventListener('submit', function (event) {
-                event.preventDefault()
-                send_form()
+            // The search applies on Enter.
+            // Why a key listener and not the form submit event: the form has no submit button
+            // and has more than one text box (search, dates, tag search), so the browser
+            // does not send it on Enter by itself.
+            var search_input = form.querySelector('input[name="search"]')
+            search_input.addEventListener('keydown', function (event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault()
+                    send_form()
+                }
             })
 
             // The checkboxes outside the tag dropdowns, the Match buttons and the dates apply right away.
