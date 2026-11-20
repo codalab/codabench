@@ -75,6 +75,10 @@
         self.isLoggedIn = typeof CODALAB !== "undefined" && CODALAB.state && CODALAB.state.user && CODALAB.state.user.logged_in;
 
         self.loading = true;
+        self.rawPublicCompetitions = [];
+        self.rawPrivateCompetitions = [];
+        self.hasFetchedPrivate = false;
+        self.isFetchingPrivate = false;
         self.allCompetitions = [];
         self.filteredCompetitions = [];
 
@@ -281,45 +285,35 @@
             });
         };
 
+        self.fetchCompetitions = (visibility, callback) => {
+            CODALAB.api.get_dashboard({ visibility: visibility, type: 'any' })
+                .done((response) => {
+                    var rawList = Array.isArray(response) ? response : (response.results || []);
+                    callback(rawList);
+                })
+                .fail((err) => {
+                    console.error("Failed to fetch " + visibility + " competitions:", err);
+                    toastr.error("Could not load " + visibility + " competitions");
+                    callback([]);
+                });
+        };
+
         self.fetchData = () => {
             self.loading = true;
             self.update();
 
-            var baseUrl = (typeof URLS !== "undefined" && URLS.API) ? URLS.API : "/api/";
-            var endpoint = self.isAdmin
-                ? baseUrl + "competitions/?visibility=all&type=any&page_size=5000"
-                : baseUrl + "competitions/?visibility=public&type=any&page_size=5000";
-            var allRawCompetitions = [];
+            self.fetchCompetitions('public', (publicList) => {
+                self.rawPublicCompetitions = publicList;
+                self.rebuild();
+                self.onDataLoaded();
+            });
+        };
 
-            const fetchPage = (url) => {
-                var req = (typeof CODALAB !== "undefined" && CODALAB.api && CODALAB.api.request)
-                    ? CODALAB.api.request("GET", url)
-                    : fetch(url).then((r) => r.json());
-
-                const handleSuccess = (response) => {
-                    var rawList = Array.isArray(response) ? response : (response.results || []);
-                    allRawCompetitions = allRawCompetitions.concat(rawList);
-                    if (response && response.next) {
-                        fetchPage(response.next);
-                    } else {
-                        self.allCompetitions = self.classifyCompetitions(allRawCompetitions);
-                        self.onDataLoaded();
-                    }
-                };
-
-                const handleError = () => {
-                    self.allCompetitions = self.classifyCompetitions(allRawCompetitions);
-                    self.onDataLoaded();
-                };
-
-                if (req && typeof req.done === "function") {
-                    req.done(handleSuccess).fail(handleError);
-                } else if (req && typeof req.then === "function") {
-                    req.then(handleSuccess).catch(handleError);
-                }
-            };
-
-            fetchPage(endpoint);
+        // Rebuild from both raw lists so the public and private fetches can complete in any order
+        self.rebuild = () => {
+            self.allCompetitions = self.classifyCompetitions(
+                self.rawPublicCompetitions.concat(self.rawPrivateCompetitions)
+            );
         };
 
         self.onDataLoaded = () => {
@@ -363,10 +357,13 @@
             });
 
             self.availableCategories = Object.keys(self.globalCategoryTags).sort();
-            self.state.selectedTags = {};
-
+            if (!self.state.selectedTags) {
+                self.state.selectedTags = {};
+            }
             self.availableCategories.forEach((cat) => {
-                self.state.selectedTags[cat] = {};
+                if (!self.state.selectedTags[cat]) {
+                    self.state.selectedTags[cat] = {};
+                }
             });
 
             mapped.forEach((comp) => {
@@ -388,6 +385,26 @@
             self.state.startDate = filters.startDate || (filters.start_date ? new Date(filters.start_date) : null);
             self.state.endDate = filters.endDate || (filters.end_date ? new Date(filters.end_date) : null);
             self.state.selectedTags = filters.selected_tags_by_cat || {};
+
+            // If admin filters by private or all, lazy-load private competitions if not already fetched
+            if (self.isAdmin && (self.state.visibility === 'private' || self.state.visibility === 'all') && !self.hasFetchedPrivate) {
+                if (!self.isFetchingPrivate) {
+                    self.isFetchingPrivate = true;
+                    self.loading = true;
+                    self.update();
+
+                    self.fetchCompetitions('private', (privateList) => {
+                        self.isFetchingPrivate = false;
+                        self.hasFetchedPrivate = true;
+                        self.rawPrivateCompetitions = privateList;
+                        self.rebuild();
+                        self.loading = false;
+                        self.applyFilters();
+                        self.update();
+                    });
+                }
+                return;
+            }
 
             self.applyFilters();
             self.update();
