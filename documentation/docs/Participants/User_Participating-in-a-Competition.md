@@ -1,6 +1,26 @@
 ### Signing up and updating your settings
 When you sign up, you will have to provide your name and a valid email.
 
+### Finding a Benchmark or Competition
+Click **Benchmarks/Competitions** in the top menu to see all the public benchmarks and competitions. Each card shows the organizer, the start date, the number of participants and submissions, a **Prize** label when the competition has a prize, and its tags. When the tags do not fit on one line, the card shows **+N more**: hover over it to see the other tags, and hover over a tag to see its category.
+
+**Search:** type a word and press Enter. The search looks in the titles and in the names of the organizers.
+
+**Sort:** show the most recent competitions first, the most popular ones (most participants), or the ones with the most submissions.
+
+**Filters:** click **Filters** to open the filters panel.
+
+- **Match**: with **Any filter** (the default), the list shows the competitions that match at least one of the filters and tags you pick. With **All filters**, it shows only the competitions that match all of them. The search and the dates always apply.
+- **Your competitions**: the competitions you take part in, or the ones you organize. You need to be logged in.
+- **Prize**: only the competitions with a prize.
+- **Created**: only the competitions created between two dates.
+- **Tags**: one list for each tag category, for example *Machine Learning Domain* or *Conference*. Tick the tags you want; the list of competitions updates when you close the tag list. Use **Find a tag** to search a long list.
+
+The number on the **Filters** button tells you how many filters are on. The search and each filter also show as a label under the search bar: click its **×** to remove it, or **Clear all** to remove them all. When you filter by tags, the cards show the matching tags first, highlighted in blue.
+
+!!! tip "Using the API"
+    The same list, with the same search, filters and sort, is available from the API at `/api/competitions/public/`. See the API documentation at `/api/docs/` for every parameter.
+
 ### Registering for a Benchmark
 To make an entry in a benchmark click on the "My Submissions" tab, you will then be prompted to accept the rules to register to that benchmark. When registering, a request may be sent to the benchmark organizer. You will be notified when the benchmark organizer has approved your registration request. Follow the instructions of the organizers.
 

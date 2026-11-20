@@ -46,6 +46,7 @@ class HomePageNewsPostSerializer(serializers.ModelSerializer):
 class HomePageBenchmarkSerializer(serializers.ModelSerializer):
     logo_url = serializers.SerializerMethodField()
     owner_display_name = serializers.SerializerMethodField()
+    owner_photo_url = serializers.SerializerMethodField()
     first_phase_start = serializers.SerializerMethodField()
     tags = serializers.SerializerMethodField()
 
@@ -58,6 +59,7 @@ class HomePageBenchmarkSerializer(serializers.ModelSerializer):
             'competition_type',
             'logo_url',
             'owner_display_name',
+            'owner_photo_url',
             'first_phase_start',
             'participants_count',
             'submissions_count',
@@ -66,22 +68,15 @@ class HomePageBenchmarkSerializer(serializers.ModelSerializer):
         )
 
     def get_tags(self, obj):
-        tags_data = []
-        category_counts = {}
-        for tag in obj.tags.all():
-            cat_id = tag.category_id
-            category_counts[cat_id] = category_counts.get(cat_id, 0) + 1
-            if category_counts[cat_id] > 5:
-                continue
+        """
+        Return all the tags of the competition, sorted by category and then by name.
+        Example: [{'id': 3, 'name': 'Computer Vision', 'category': 'Machine Learning Domain'}, ...]
 
-            tags_data.append({
-                'id': tag.id,
-                'name': tag.name,
-                'category': tag.category.name,
-                'category_id': cat_id,
-                'color': int(((cat_id + 45) * 137.5) % 360),
-            })
-        return tags_data
+        Why all: the card counts the hidden ones in "+N more".
+        Why sorted in Python: it uses the tags already loaded with prefetch_related, with no extra query.
+        """
+        tags = sorted(obj.tags.all(), key=lambda tag: (tag.category_id, tag.name.lower()))
+        return [{'id': tag.id, 'name': tag.name, 'category': tag.category.name} for tag in tags]
 
     def get_logo_url(self, obj):
         # Prefer the small logo icon, fall back to the full logo
@@ -93,6 +88,12 @@ class HomePageBenchmarkSerializer(serializers.ModelSerializer):
         if not obj.created_by:
             return None
         return obj.created_by.display_name or obj.created_by.username
+
+    def get_owner_photo_url(self, obj):
+        # Profile photo of the creator, nothing if there is no photo or the creator was deleted
+        if not obj.created_by or not obj.created_by.photo:
+            return None
+        return obj.created_by.photo.url
 
     def get_first_phase_start(self, obj):
         return format_date(obj.first_phase_start)
