@@ -304,9 +304,16 @@
 
             self.fetchCompetitions('public', (publicList) => {
                 self.rawPublicCompetitions = publicList;
-                self.allCompetitions = self.classifyCompetitions(self.rawPublicCompetitions);
+                self.rebuild();
                 self.onDataLoaded();
             });
+        };
+
+        // Rebuild from both raw lists so the public and private fetches can complete in any order
+        self.rebuild = () => {
+            self.allCompetitions = self.classifyCompetitions(
+                self.rawPublicCompetitions.concat(self.rawPrivateCompetitions)
+            );
         };
 
         self.onDataLoaded = () => {
@@ -390,9 +397,7 @@
                         self.isFetchingPrivate = false;
                         self.hasFetchedPrivate = true;
                         self.rawPrivateCompetitions = privateList;
-                        self.allCompetitions = self.classifyCompetitions(
-                            self.rawPublicCompetitions.concat(self.rawPrivateCompetitions)
-                        );
+                        self.rebuild();
                         self.loading = false;
                         self.applyFilters();
                         self.update();
