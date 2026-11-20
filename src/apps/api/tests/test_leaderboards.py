@@ -2,6 +2,8 @@ from django.urls import reverse
 from rest_framework.test import APITestCase
 
 import factories
+from leaderboards.models import Column
+from profiles.models import CustomGroup
 
 
 class CompetitionLeaderboardStressTests(APITestCase):
@@ -357,3 +359,168 @@ class PhaseLeaderboardRowIdTests(APITestCase):
         assert len(rows) == 2
         assert [row['id'] for row in rows] == [parent.id, parent.id]
         assert {row['queue_name'] for row in rows} == {f'{parent.id}_GroupA', f'{parent.id}_GroupB'}
+
+
+class PhaseLeaderboardResponseTests(APITestCase):
+    """Content of the phase leaderboard response (Results tab, `phases/<pk>/get_leaderboard/`)."""
+
+    def setUp(self):
+        self.creator = factories.UserFactory(username='plr_creator', password='test')
+        self.participant = factories.UserFactory(username='plr_participant', password='test')
+        self.comp = factories.CompetitionFactory(created_by=self.creator)
+        self.leaderboard = factories.LeaderboardFactory(primary_index=0)
+        self.column = factories.ColumnFactory(
+            leaderboard=self.leaderboard, index=0, key='accuracy', sorting='desc', precision=2)
+        self.task = factories.TaskFactory()
+        self.phase = factories.PhaseFactory(competition=self.comp, leaderboard=self.leaderboard, tasks=[self.task])
+
+    def make_submission(self, owner=None, task=None, parent=None, has_children=False, queue=None, score=0.5, **kwargs):
+        """Create a submission (on the leaderboard with one `accuracy` score, unless it is a parent)."""
+        submission = factories.SubmissionFactory(
+            owner=owner or self.participant,
+            phase=self.phase,
+            task=None if has_children else (task or self.task),
+            parent=parent,
+            has_children=has_children,
+            leaderboard=None if has_children else self.leaderboard,
+            queue=queue,
+            **kwargs,
+        )
+        if not has_children:
+            factories.SubmissionScoreFactory(column=self.column, submissions=[submission], score=score)
+        return submission
+
+    def get_leaderboard(self):
+        self.client.force_login(self.creator)
+        resp = self.client.get(reverse('phases-get-leaderboard', kwargs={'pk': self.phase.pk}))
+        assert resp.status_code == 200
+        return resp.json()
+
+    def test_response_content_for_a_single_submission(self):
+        """Expects the top-level fields, the task headers and one row with a score rounded to the column precision."""
+        submission = self.make_submission(score=0.123456)
+
+        data = self.get_leaderboard()
+
+        assert data['title'] == self.leaderboard.title
+        assert data['id'] == self.phase.id
+        assert data['primary_index'] == 0
+        assert data['fact_sheet_keys'] is None
+        assert data['has_group_queues'] is False
+        assert data['count'] == 1
+        assert data['page_size'] == '50'
+        assert data['next'] is None
+        assert data['previous'] is None
+        assert data['allowed_page_sizes'] == [50, 100, 500, 'all']
+
+        assert len(data['tasks']) == 1
+        task = data['tasks'][0]
+        assert (task['id'], task['name'], task['colWidth']) == (self.task.id, self.task.name, 1)
+        assert [col['key'] for col in task['columns']] == ['accuracy']
+
+        assert len(data['submissions']) == 1
+        row = data['submissions'][0]
+        assert row['id'] == submission.id
+        assert row['owner'] == (self.participant.display_name or self.participant.username)
+        assert row['queue_name'] is None
+        assert row['organization'] is None
+        assert row['slug_url'] == self.participant.slug_url
+        assert row['detailed_results'] == [{'task': self.task.id, 'id': submission.id}]
+        assert len(row['scores']) == 1
+        assert row['scores'][0]['score'] == '0.12'
+        assert row['scores'][0]['task_id'] == self.task.id
+        assert row['scores'][0]['column_key'] == 'accuracy'
+
+    def test_fact_sheet_keys_only_list_questions_shown_on_leaderboard(self):
+        """Expects [key, title] pairs for the fact sheet questions marked `is_on_leaderboard`."""
+        self.comp.fact_sheet = {
+            'q1': {'key': 'model', 'title': 'Model', 'is_on_leaderboard': 'true'},
+            'q2': {'key': 'secret', 'title': 'Secret', 'is_on_leaderboard': 'false'},
+        }
+        self.comp.save()
+
+        data = self.get_leaderboard()
+
+        assert data['fact_sheet_keys'] == [['model', 'Model']]
+
+    def test_multi_task_row_lists_detailed_results_of_every_child(self):
+        """Children of a multi-task submission form one row; expects one detailed result per child."""
+        task2 = factories.TaskFactory()
+        self.phase.tasks.add(task2)
+        parent = self.make_submission(has_children=True)
+        child1 = self.make_submission(task=self.task, parent=parent)
+        child2 = self.make_submission(task=task2, parent=parent)
+
+        data = self.get_leaderboard()
+
+        assert len(data['submissions']) == 1
+        row = data['submissions'][0]
+        assert row['id'] == parent.id
+        assert sorted(row['detailed_results'], key=lambda d: d['id']) == [
+            {'task': self.task.id, 'id': child1.id},
+            {'task': task2.id, 'id': child2.id},
+        ]
+        assert data['has_group_queues'] is False
+
+    def test_children_on_the_same_task_without_queue_get_one_row_each(self):
+        """Several children of one parent on the same task, with no queue: expects one row per child."""
+        parent = self.make_submission(has_children=True)
+        self.make_submission(parent=parent)
+        self.make_submission(parent=parent)
+
+        data = self.get_leaderboard()
+
+        assert [row['id'] for row in data['submissions']] == [parent.id, parent.id]
+        assert [row['queue_name'] for row in data['submissions']] == [None, None]
+        assert data['has_group_queues'] is True
+
+    def test_group_label_comes_from_the_participant_group(self):
+        """Participant group linked to the submission queue: expects the row group label to be the group name."""
+        queue = factories.QueueFactory(name='comp__queue-name')
+        group = CustomGroup.objects.create(name='comp__Team', queue=queue)
+        group.user_set.add(self.participant)
+        self.comp.participant_groups.add(group)
+        submission = self.make_submission(queue=queue)
+
+        data = self.get_leaderboard()
+
+        assert [row['queue_name'] for row in data['submissions']] == [f'{submission.id}_Team']
+        assert data['has_group_queues'] is True
+
+    def test_queue_label_used_when_no_participant_group(self):
+        """Submission queue not linked to a group of the owner: expects the row group label to be the queue name."""
+        queue = factories.QueueFactory(name='comp__GroupA')
+        submission = self.make_submission(queue=queue)
+
+        data = self.get_leaderboard()
+
+        assert [row['queue_name'] for row in data['submissions']] == [f'{submission.id}_GroupA']
+        assert data['has_group_queues'] is True
+
+    def test_owners_whose_name_and_id_look_alike_get_separate_rows(self):
+        """Owners `u1` (submission 2900) and `u12` (submission 900): expects two rows, not one merged row."""
+        self.make_submission(owner=factories.UserFactory(username='u1'), id=2900)
+        self.make_submission(owner=factories.UserFactory(username='u12'), id=900)
+
+        data = self.get_leaderboard()
+
+        assert sorted(row['id'] for row in data['submissions']) == [900, 2900]
+
+    def test_average_rank_uses_scores_before_rounding(self):
+        """Scores 0.9004 and 0.9001 both show as 0.9; expects average ranks 1 and 2, not a tie at 1.5."""
+        factories.ColumnFactory(
+            leaderboard=self.leaderboard, index=1, key='avg_rank', sorting='asc', precision=2,
+            computation=Column.AVERAGE_RANK, computation_indexes='0')
+        self.column.precision = 1
+        self.column.save()
+        best = self.make_submission(score=0.9004)
+        second = self.make_submission(score=0.9001)
+
+        data = self.get_leaderboard()
+
+        scores = {
+            row['id']: {score['column_key']: score['score'] for score in row['scores']}
+            for row in data['submissions']
+        }
+        assert scores[best.id] == {'accuracy': '0.9', 'avg_rank': '1.0'}
+        assert scores[second.id] == {'accuracy': '0.9', 'avg_rank': '2.0'}
