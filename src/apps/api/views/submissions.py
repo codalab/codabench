@@ -154,7 +154,7 @@ class SubmissionViewSet(ModelViewSet):
                     queryset=CustomGroup.objects.prefetch_related('user_set'),
                 ),
             )
-        elif self.action in ['delete_many', 're_run_many_submissions', 'resubmit_many_submissions']:
+        elif self.action in ['delete_many', 're_run_many_submissions', 'resubmit_many_submissions', 'cancel_many_submissions']:
             try:
                 pks = list(self.request.data)
             except TypeError as err:
@@ -325,6 +325,14 @@ class SubmissionViewSet(ModelViewSet):
             child.cancel()
         canceled = submission.cancel()
         return Response({'canceled': canceled})
+
+    @action(detail=False, methods=('POST',))
+    def cancel_many_submissions(self, request):
+        # cancel() skips submissions that are already done and cancels children too
+        qs = list(self.get_queryset())
+        selected = {s.pk for s in qs}
+        count = sum(s.cancel() for s in qs if s.parent_id not in selected)
+        return Response({'count': count})
 
     @action(detail=True, methods=('POST',))
     def run_submission(self, request, pk):
