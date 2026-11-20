@@ -25,7 +25,8 @@
         {# Why hidden without results and filters: there are no public competitions at all, so there is nothing to search #}
         {% if competitions or filter_pills %}
             <!-- Search, filters and sort. Each change reloads the page with them in the URL -->
-            <form class="public-competitions-filters" id="public-competitions-filters" method="get" data-default-filter-mode="{{ default_filter_mode }}">
+
+            <form class="public-competitions-filters" id="public-competitions-filters" method="get" autocomplete="off" data-default-filter-mode="{{ default_filter_mode }}">
                 <div class="public-competitions-toolbar">
                     <div class="public-competitions-search">
                         <i class="bi bi-search"></i>
@@ -170,6 +171,20 @@
                 return
             }
 
+            // Back and Forward can show the page as it was when the visitor left it,
+            // with the checkbox they had just ticked. reset() puts back the values
+            // written in the HTML, which are the ones of the URL.
+            window.addEventListener('pageshow', function (event) {
+                if (event.persisted) {
+                    form.reset()
+                    if (open_dropdown) {
+                        set_dropdown_open(open_dropdown, false)
+                        open_dropdown = null
+                    }
+                    set_sort_open(false)
+                }
+            })
+
             // Filters button opens and closes the panel.
             // Why sessionStorage: a filter change reloads the page, and the panel should stay open.
             var filters_button = document.getElementById('public-competitions-filters-button')
@@ -208,19 +223,21 @@
                 link.addEventListener('click', remember_scroll)
             })
 
-            // Leaves the empty fields and the default Match out of the URL, then sends the form.
+            // Sends the form without the empty fields and the default Match, to keep the URL short.
             // Example: without it, an unset date adds start_date= to the URL.
-            // Why disabled: a disabled field is not sent.
+            // Why not disable these fields: Back can bring the page back with them still disabled.
             function send_form() {
-                form.querySelectorAll('input[name="search"], input[type="date"]').forEach(function (input) {
-                    input.disabled = input.value === ''
+                var params = new URLSearchParams(new FormData(form))
+                ;['search', 'start_date', 'end_date'].forEach(function (name) {
+                    if (params.get(name) === '') {
+                        params.delete(name)
+                    }
                 })
-                var match = form.querySelector('input[name="filter_mode"]:checked')
-                if (match && match.value === form.dataset.defaultFilterMode) {
-                    match.disabled = true
+                if (params.get('filter_mode') === form.dataset.defaultFilterMode) {
+                    params.delete('filter_mode')
                 }
                 remember_scroll()
-                form.submit()
+                window.location.search = params.toString()
             }
 
             // The search applies on Enter.
