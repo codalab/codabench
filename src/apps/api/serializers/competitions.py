@@ -554,6 +554,8 @@ class CompetitionParticipantSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username')
     email = serializers.CharField(source='user.email')
     is_deleted = serializers.BooleanField(source='user.is_deleted')
+    organizations = serializers.SerializerMethodField()
+    routing_groups = serializers.SerializerMethodField()
 
     class Meta:
         model = CompetitionParticipant
@@ -563,7 +565,19 @@ class CompetitionParticipantSerializer(serializers.ModelSerializer):
             'email',
             'status',
             'is_deleted',
+            'organizations',
+            'routing_groups',
         )
+
+    def get_organizations(self, obj):
+        # Filled by a Prefetch in CompetitionParticipantViewSet (excludes pending invitations)
+        return [m.organization.name for m in getattr(obj.user, 'active_memberships', [])]
+
+    def get_routing_groups(self, obj):
+        # Filled by a Prefetch in CompetitionParticipantViewSet (only this competition's groups)
+        prefix = f"comp{obj.competition_id}__"
+        return [g.name[len(prefix):] if g.name.startswith(prefix) else g.name
+                for g in getattr(obj.user, 'competition_routing_groups', [])]
 
 
 class PhaseResultsSubmissionSerializer(serializers.Serializer):

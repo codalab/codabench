@@ -2,7 +2,8 @@ from django.urls import reverse
 from rest_framework.test import APITransactionTestCase
 
 from competitions.models import CompetitionParticipant
-from factories import UserFactory, CompetitionFactory, CompetitionParticipantFactory
+from factories import UserFactory, CompetitionFactory, CompetitionParticipantFactory, OrganizationFactory
+from profiles.models import CustomGroup, Membership
 
 
 # Note: Using APITransactionTestCase because we are raising an integrity error on purpose
@@ -29,25 +30,26 @@ class CompetitionParticipantTests(APITransactionTestCase):
         self.client.login(username='admin', password='admin')
         resp = self.get_participants()
         assert resp.status_code == 200
-        assert len(resp.json()) == CompetitionParticipant.objects.filter(competition=self.comp).count()
+        assert resp.json()['count'] == CompetitionParticipant.objects.filter(competition=self.comp).count()
 
     def test_comp_creator_can_see_participants(self):
         self.client.login(username='creator', password='creator')
         resp = self.get_participants()
         assert resp.status_code == 200
-        assert len(resp.json()) == CompetitionParticipant.objects.filter(competition=self.comp).count()
+        assert resp.json()['count'] == CompetitionParticipant.objects.filter(competition=self.comp).count()
 
     def test_collab_can_see_participants(self):
         self.client.login(username='collab', password='collab')
         resp = self.get_participants()
         assert resp.status_code == 200
-        assert len(resp.json()) == CompetitionParticipant.objects.filter(competition=self.comp).count()
+        assert resp.json()['count'] == CompetitionParticipant.objects.filter(competition=self.comp).count()
 
     def test_normal_user_cannot_see_participants(self):
         self.client.login(username='norm', password='norm')
         resp = self.get_participants()
         assert CompetitionParticipant.objects.filter(competition=self.comp).count() > 0
-        assert len(resp.json()) == 0
+        assert resp.json()['count'] == 0
+        assert resp.json()['results'] == []
 
     def test_cant_participate_multiple_times(self):
         self.client.login(username='norm', password='norm')
@@ -58,3 +60,28 @@ class CompetitionParticipantTests(APITransactionTestCase):
         assert resp.status_code == 400
         assert "You already applied for participation in this competition!" in resp.data[0]
         assert CompetitionParticipant.objects.filter(user=self.norm, competition=self.comp).count() == 1
+
+    def test_participants_organizations_routing_groups_and_ordering(self):
+        alice = UserFactory(username='alice')
+        bob = UserFactory(username='bob')
+        CompetitionParticipantFactory(competition=self.comp, user=alice)
+        CompetitionParticipantFactory(competition=self.comp, user=bob)
+        org = OrganizationFactory(name='Zorg')
+        Membership.objects.create(organization=org, user=bob, group=Membership.MEMBER)
+        invited_org = OrganizationFactory(name='Aorg')
+        Membership.objects.create(organization=invited_org, user=alice, group=Membership.INVITED)
+        group = CustomGroup.objects.create(name=f'comp{self.comp.pk}__GPU')
+        group.user_set.add(alice)
+        self.comp.participant_groups.add(group)
+
+        self.client.login(username='creator', password='creator')
+        data = self.client.get(reverse('participants-list'), {'competition': self.comp.id, 'ordering': '-organization_sort'}).json()
+        assert data['has_routing_groups'] is True
+        rows = {p['username']: p for p in data['results']}
+        assert rows['bob']['organizations'] == ['Zorg']
+        assert rows['alice']['organizations'] == []  # pending invitation is not shown
+        assert rows['alice']['routing_groups'] == ['GPU']
+        assert rows['bob']['routing_groups'] == []
+
+        data = self.client.get(reverse('participants-list'), {'competition': self.comp.id, 'ordering': 'routing_groups_sort', 'page_size': 50}).json()
+        assert data['results'][0]['username'] == 'alice'
