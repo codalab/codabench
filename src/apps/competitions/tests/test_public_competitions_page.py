@@ -431,7 +431,7 @@ class PublicCompetitionsTagFilterTests(TestCase):
     def test_invalid_and_unknown_tag_ids_are_ignored(self):
         """
         Creates a competition and filters by tags=abc and by a tag id that does not exist.
-        Expects the text value to be skipped, and the unknown id to find nothing but to get no pill.
+        Expects both to be skipped, so the list shows all competitions.
         """
         CompetitionFactory(title="Open Competition", published=True)
 
@@ -440,8 +440,8 @@ class PublicCompetitionsTagFilterTests(TestCase):
 
         assert card_titles(with_text) == ["Open Competition"]
         assert with_text.context['filters']['tag_ids'] == []
-        assert card_titles(with_unknown_id) == []
-        assert with_unknown_id.context['filter_pills'] == []
+        assert card_titles(with_unknown_id) == ["Open Competition"]
+        assert with_unknown_id.context['filters']['tag_ids'] == []
 
     def test_matching_tags_come_first_and_are_marked_on_the_card(self):
         """

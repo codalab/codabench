@@ -8,7 +8,7 @@ import pytz
 from django.db.models import Q
 from django.utils import dateformat
 
-from .models import Competition, CompetitionParticipant, TagCategory
+from .models import Competition, CompetitionParticipant, Tag, TagCategory
 
 # Date format of the date pills, for example Jan 1, 2026
 PILL_DATE_FORMAT = "M j, Y"
@@ -197,19 +197,23 @@ def read_filters(params, user):
 
     The Match switch is Any filter unless the URL has filter_mode=and.
     Invalid tags and dates are skipped, for example tags=abc or start_date=2026-13-45.
+    Tag ids that do not exist are skipped too. Why: a stale link to a deleted tag would otherwise
+    find nothing, with no pill to remove the filter.
 
     :param params: The query parameters of the request (request.GET).
     :param user: The user who looks at the page.
     :rtype: dict, with the same keys as the get_public_competitions arguments (without user)
     """
     ordering = params.get('ordering')
+    tag_ids = read_tag_ids(params.getlist('tags'))
+    existing_tag_ids = set(Tag.objects.filter(id__in=tag_ids).values_list('id', flat=True))
     return {
         'search': params.get('search', '').strip(),
         'ordering': ordering if ordering in ORDERINGS else DEFAULT_ORDERING,
         'participating_in': user.is_authenticated and params.get('participating_in') == 'true',
         'organizing': user.is_authenticated and params.get('organizing') == 'true',
         'has_a_prize': params.get('has_a_prize') == 'true',
-        'tag_ids': read_tag_ids(params.getlist('tags')),
+        'tag_ids': [tag_id for tag_id in tag_ids if tag_id in existing_tag_ids],
         'filter_mode': FILTER_MODE_AND if params.get('filter_mode') == FILTER_MODE_AND else DEFAULT_FILTER_MODE,
         'start_date': read_date(params.get('start_date')),
         'end_date': read_date(params.get('end_date'), end_of_day=True),
