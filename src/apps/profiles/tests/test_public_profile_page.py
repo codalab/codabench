@@ -214,6 +214,14 @@ class PublicProfilePageTests(TestCase):
 
         assert response.status_code == 404
 
+    def test_username_that_differs_from_slug_opens_the_profile(self):
+        user = UserFactory(username='trailing_user__')
+        self.client.force_login(UserFactory())
+
+        assert user.slug != user.username
+        assert self.get_public_profile_response_for(user).status_code == 200
+        assert self.client.get(reverse('users:profile', kwargs={'username': user.slug})).status_code == 200
+
     def test_script_in_user_data_is_not_run_by_the_page(self):
         """
         Saves a bio and a location that try to close a script block and start a new one.
