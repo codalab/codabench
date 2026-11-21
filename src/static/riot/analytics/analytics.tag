@@ -132,12 +132,7 @@
             <a class="item" data-tab="usage-history">Usage history</a>
             <a class="item" data-tab="competitions-usage">Competitions usage</a>
             <a class="item" data-tab="users-usage">Users usage</a>
-            <div class="delete-oprhans-container">
-                <button class="ui red button { disabled: delete_orphans_button_modal_disabled }" onclick="{showConfirmationModal}">
-                    <i class="icon { warning: !delete_orphans_button_modal_loading}"></i>
-                    {delete_orphans_button_modal_text}
-                </button>
-            </div>
+            <a class="item" data-tab="orphan-files">Orphan files</a>
         </div>
 
         <div class="ui bottom attached tab segment" data-tab="usage-history">
@@ -152,23 +147,233 @@
             <analytics-storage-users-usage start_date={start_date_string} end_date={end_date_string} resolution={time_unit} is_visible={current_view=="users-usage"}></analytics-storage-users-usage>
         </div>
 
-        <!--  Orphan Deletion Modal  -->
-        <div ref="confirmation_modal" class="ui small modal">
-        <div class="header">
-            Delete orphan files
-        </div>
-        <div class="content">
-            <h4>You are about to delete {nb_orphan_files} orphan files.</h4>
-            <h5><i>Note: The number of orphan files displayed is based on the most recent storage inconsistency analytics. Its value will be updated during the next storage analytics task.</i></h5>
-            <h3>This operation is irreversible!</h3>
-            <h3>Do you want to proceed ?</h3>
-        </div>
-        <div class="actions">
-            <button class="ui icon button {delete_button_color} { disabled: delete_button_disabled }" onclick="{deleteOrphanFiles}">
-                <i if={delete_button_color=="green"} class="check icon"></i>
-                {delete_button_text}
-            </button>
-            <button class="ui cancel button">Close</button>
+        <div class="ui bottom attached tab segment" data-tab="orphan-files">
+            <h3>Orphan files scanner</h3>
+
+            <p>
+                Scan managed storage objects and identify files without
+                database references. This operation does not delete files.
+            </p>
+
+            <div class="ui form">
+                <div class="two fields">
+                    <div class="field">
+                        <label>Grace period</label>
+                        <input
+                            type="number"
+                            min="0"
+                            max="3650"
+                            step="1"
+                            value={orphan_grace_period}
+                            oninput={onOrphanGracePeriodChange}
+                            disabled={orphan_scan_running || orphan_cleanup_running}
+                        >
+                    </div>
+
+                    <div class="field">
+                        <label>Unit</label>
+                        <select
+                            class="ui dropdown"
+                            onchange={onOrphanGraceUnitChange}
+                            disabled={orphan_scan_running || orphan_cleanup_running}
+                        >
+                            <option value="days" selected={orphan_grace_unit === "days"}>Days</option>
+                            <option value="months" selected={orphan_grace_unit === "months"}>Months</option>
+                            <option value="years" selected={orphan_grace_unit === "years"}>Years</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button
+                    type="button"
+                    class="ui primary button {loading: orphan_scan_running, disabled: orphan_scan_running || orphan_cleanup_running}"
+                    onclick={startOrphanScan}
+                    disabled={orphan_scan_running || orphan_cleanup_running}>
+                    <i class="search icon"></i>
+                    Start scan
+                </button>
+            </div>
+
+            <div if={orphan_scan_running} class="ui info message">
+                <i class="spinner loading icon"></i>
+                Scan in progress...
+                <span if={orphan_scan_status}>
+                    ({orphan_scan_status})
+                </span>
+            </div>
+
+            <div if={orphan_scan_error} class="ui negative message">
+                {orphan_scan_error}
+            </div>
+
+            <div if={orphan_cleanup_running} class="ui info message">
+                <i class="spinner loading icon"></i>
+                Cleanup progress...
+                <span if={orphan_cleanup_status}>
+                    ({orphan_cleanup_status})
+                </span>
+            </div>
+
+            <div if={orphan_cleanup_error} class="ui negative message">
+                {orphan_cleanup_error}
+            </div>
+
+            <div if={orphan_cleanup_result}
+                class="ui message {positive: orphan_cleanup_result.failed === 0, warning: orphan_cleanup_result.failed > 0}">
+
+                <div class="header">Cleanup completed</div>
+
+                <p>
+                    Candidates: {orphan_cleanup_result.candidates} |
+                    Deleted: {orphan_cleanup_result.deleted} |
+                    Skipped: {orphan_cleanup_result.skipped} |
+                    Failed: {orphan_cleanup_result.failed}
+                </p>
+
+                <div if={orphan_cleanup_result.errors && orphan_cleanup_result.errors.length > 0}>
+                    <h5>Errors</h5>
+
+                    <div class="ui bulleted list">
+                        <div class="item" each={error in orphan_cleanup_result.errors}>
+                            <strong>{error.bucket}/{error.key}</strong>:
+                            {error.error}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div if={orphan_scan_result}>
+                <h4 class="ui dividing header">Scan results</h4>
+
+                <p>
+                    <strong>Generated:</strong>
+                    {pretty_date(orphan_scan_result.generated_at)}
+                </p>
+
+                <div class="ui small statistics">
+                    <div class="statistic">
+                        <div class="value">
+                            {orphan_scan_result.summary.scanned_count}
+                        </div>
+                        <div class="label">Scanned</div>
+                    </div>
+
+                    <div class="statistic">
+                        <div class="value">
+                            {orphan_scan_result.summary.referenced_count}
+                        </div>
+                        <div class="label">Referenced</div>
+                    </div>
+
+                    <div class="statistic">
+                        <div class="value">
+                            {orphan_scan_result.summary.orphaned_count}
+                        </div>
+                        <div class="label">Orphaned</div>
+                    </div>
+
+                    <div class="statistic">
+                        <div class="value">
+                            {orphan_scan_result.summary.recent_unreferenced_count}
+                        </div>
+                        <div class="label">Recent unreferenced</div>
+                    </div>
+
+                    <div class="statistic">
+                        <div class="value">
+                            {orphan_scan_result.summary.missing_count}
+                        </div>
+                        <div class="label">Missing</div>
+                    </div>
+                </div>
+
+                <h4 class="ui dividing header">Orphaned objects</h4>
+
+                <div if={orphan_scan_result.summary.orphaned_count === 0}
+                    class="ui positive message">
+                    No orphaned files detected.
+                </div>
+
+                <div if={orphan_scan_result.summary.orphaned_count > 0}>
+
+                    <p>
+                        Showing up to {orphan_scan_result.preview_limit}
+                        orphaned objects out of
+                        {orphan_scan_result.summary.orphaned_count}.
+                    </p>
+
+                    <!-- Actions above the file list -->
+                    <div class="orphan-cleanup-toolbar">
+
+                        <div class="ui checkbox">
+                            <input
+                                type="checkbox"
+                                checked={orphan_all_preview_selected}
+                                onchange={toggleAllOrphanSelection}
+                                disabled={orphan_cleanup_running || orphan_scan_running}
+                            >
+                            <label>Select all displayed</label>
+                        </div>
+
+                        <span>
+                            {orphan_selected_count} selected
+                        </span>
+
+                        <button
+                            type="button"
+                            class="ui orange button {loading: orphan_cleanup_running}"
+                            onclick={startSelectedOrphanCleanup}
+                            disabled={orphan_cleanup_running || orphan_scan_running || orphan_selected_count === 0}
+                        >
+                            <i class="check square outline icon"></i>
+                            Delete selected ({orphan_selected_count})
+                        </button>
+
+                        <button
+                            type="button"
+                            class="ui red button {loading: orphan_cleanup_running}"
+                            onclick={startAllOrphanCleanup}
+                            disabled={orphan_cleanup_running || orphan_scan_running}
+                        >
+                            <i class="trash icon"></i>
+                            Delete all orphaned ({orphan_scan_result.summary.orphaned_count})
+                        </button>
+                    </div>
+
+                    
+
+                    <table class="ui celled compact table">
+                        <thead>
+                            <tr>
+                                <th class="collapsing">Select</th>
+                                <th>Bucket</th>
+                                <th>Object key</th>
+                                <th>Size</th>
+                                <th>Last modified</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            <tr each={file in orphan_scan_result.orphaned_preview}>
+                                <td class="collapsing">
+                                    <input
+                                        type="checkbox"
+                                        checked={isOrphanSelected(file)}
+                                        onchange={toggleOrphanSelection}
+                                        data-bucket={file.bucket}
+                                        data-key={file.key}
+                                        disabled={orphan_cleanup_running || orphan_scan_running}
+                                    >
+                                </td>
+                                <td>{file.bucket}</td>
+                                <td class="orphan-object-key">{file.key}</td>
+                                <td>{pretty_bytes(file.size)}</td>
+                                <td>{pretty_date(file.last_modified)}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -182,7 +387,33 @@
         ---------------------------------------------------------------------*/
         self.current_view = "overview";
         self.currentAnalyticsTab = "overview";
-        self.currentStorageTab = "usageHistory";
+        self.currentStorageTab = "usage-history";
+
+        /****** Orphan files scanner *****/
+        self.orphan_grace_period = 7;
+        self.orphan_grace_unit = "days";
+        self.orphan_scan_running = false;
+        self.orphan_scan_status = null;
+        self.orphan_scan_error = null;
+        self.orphan_scan_result = null;
+        self.orphan_scan_task_id = null;
+        self.orphan_scan_poll_timer = null;
+        self.orphan_scan_destroyed = false;
+        self.orphan_scan_started_at = null;
+        
+        /****** Orphan files cleanup *****/
+        self.orphan_selected_objects = {};
+        self.orphan_selected_count = 0;
+        self.orphan_all_preview_selected = false;
+
+        self.orphan_cleanup_running = false;
+        self.orphan_cleanup_status = null;
+        self.orphan_cleanup_error = null;
+        self.orphan_cleanup_result = null;
+        self.orphan_cleanup_task_id = null;
+        self.orphan_cleanup_poll_timer = null;
+        self.orphan_cleanup_started_at = null;
+
         self.isDataReloadNeeded = {
             "overview": true,
             "storage": {
@@ -211,17 +442,6 @@
         self.users_data;
 
         /****** Storage *****/
-
-        self.nb_orphan_files = 0
-        self.delete_button_color = "red"
-        self.delete_button_loading = false
-        self.delete_button_disabled = false
-        self.delete_button_text = "Yes, delete all orphan files"
-
-        self.delete_orphans_button_modal_text = "Delete orphan files"
-        self.delete_orphans_button_modal_loading = false
-        self.delete_orphans_button_modal_disabled = false
-        self.pollingInterval;
 
         self.one("mount", function () {
             // Semantic UI
@@ -332,9 +552,13 @@
             self.update_analytics(self.start_date, null, self.time_unit);
             self.time_range_shortcut("month");
             self.update_chart_resolution("day");
-            self.getOrphanFiles();
-            self.startCheckOrphansDeletionStatus();
         })
+
+        self.on("unmount", function() {
+            self.orphan_scan_destroyed = true;
+            self.clearOrphanScanTimer();
+            self.clearOrphanCleanupTimer();
+        });
 
         /*---------------------------------------------------------------------
          Methods
@@ -394,6 +618,28 @@
             chart.data.datasets[0].data = build_chart_data(data, day_resolution, false)
             chart.update()
         }
+
+        self.pretty_bytes = function(bytes) {
+            if (bytes === null || bytes === undefined) {
+                return "-";
+            }
+
+            if (bytes === 0) {
+                return "0 B";
+            }
+
+            const units = ["B", "KB", "MB", "GB", "TB"];
+            const index = Math.min(
+                Math.floor(Math.log(bytes) / Math.log(1024)),
+                units.length - 1
+            );
+
+            if (index === 0) {
+                return bytes + " B";
+            }
+
+            return (bytes / Math.pow(1024, index)).toFixed(2) + " " + units[index];
+        };
 
         self.update_analytics = function (start, end, time_unit) {
             if (!end) {
@@ -514,137 +760,438 @@
             self.update();
         }
 
+        self.onOrphanGracePeriodChange = function(event) {
+            self.orphan_grace_period = event.target.value;
+        };
+        self.onOrphanGraceUnitChange = function(event) {
+            self.orphan_grace_unit = event.target.value;
+        };
+
+        self.clearOrphanScanTimer = function() {
+            if (self.orphan_scan_poll_timer !== null) {
+                clearTimeout(self.orphan_scan_poll_timer);
+                self.orphan_scan_poll_timer = null;
+            }
+        };
+
+        self.startOrphanScan = function(event, options) {
+            if (event) {
+                event.preventDefault();
+            }
+
+            options = options || {};
+
+            if (self.orphan_scan_running || self.orphan_cleanup_running) {
+                return;
+            }
+
+            let gracePeriod;
+
+            if (options.grace_period_days !== undefined) {
+                gracePeriod = Number(options.grace_period_days);
+            } else {
+                const graceValue = Number(self.orphan_grace_period);
+                const multipliers = {
+                    days: 1,
+                    months: 30,
+                    years: 365
+                };
+
+                const multiplier = multipliers[self.orphan_grace_unit];
+                gracePeriod = graceValue * multiplier;
+
+                if (
+                    self.orphan_grace_period === "" ||
+                    !Number.isInteger(graceValue) ||
+                    !multiplier
+                ) {
+                    toastr.error("Invalid grace period.");
+                    return;
+                }
+            }
+
+            if (
+                !Number.isInteger(gracePeriod) ||
+                gracePeriod < 0 ||
+                gracePeriod > 3650
+            ) {
+                toastr.error("Grace period must be between 0 and 3650 days.");
+                return;
+            }
+
+            self.clearOrphanScanTimer();
+
+            self.orphan_scan_started_at = Date.now();
+            self.orphan_scan_running = true;
+            self.orphan_scan_status = "PENDING";
+            self.orphan_scan_error = null;
+            self.orphan_scan_result = null;
+            self.orphan_scan_task_id = null;
+
+            self.orphan_selected_objects = {};
+            self.orphan_selected_count = 0;
+            self.orphan_all_preview_selected = false;
+
+            if (!options.preserve_cleanup_result) {
+                self.orphan_cleanup_result = null;
+                self.orphan_cleanup_error = null;
+            }
+
+            self.update();
+
+            CODALAB.api.start_orphan_files_scan(gracePeriod)
+                .done(function(data) {
+                    if (self.orphan_scan_destroyed) return;
+
+                    self.orphan_scan_task_id = data.task_id;
+                    self.orphan_scan_status = data.status || "PENDING";
+
+                    self.update();
+                    self.pollOrphanScan();
+                })
+                .fail(function(xhr) {
+                    if (self.orphan_scan_destroyed) return;
+
+                    self.orphan_scan_running = false;
+                    self.orphan_scan_status = "FAILURE";
+                    self.orphan_scan_error =
+                        (xhr.responseJSON && xhr.responseJSON.detail) ||
+                        "Could not start orphan files scan.";
+
+                    self.update();
+                });
+        };
+
+        self.pollOrphanScan = function() {
+            if (
+                self.orphan_scan_destroyed ||
+                !self.orphan_scan_running ||
+                !self.orphan_scan_task_id
+            ) {
+                return;
+            }
+
+            if (
+                self.orphan_scan_started_at &&
+                Date.now() - self.orphan_scan_started_at > 7 * 24 * 60 * 60 * 1000
+            ) {
+                self.orphan_scan_running = false;
+                self.orphan_scan_error =
+                    "Scan status polling timed out after seven days.";
+                self.clearOrphanScanTimer();
+                self.update();
+                return;
+            }
+
+            CODALAB.api.get_orphan_files_scan_status(self.orphan_scan_task_id)
+                .done(function(data) {
+                    if (self.orphan_scan_destroyed) return;
+
+                    self.orphan_scan_status = data.status;
+
+                    if (data.status === "SUCCESS") {
+                        self.orphan_scan_running = false;
+                        self.orphan_scan_result = data.result;
+                        self.clearOrphanScanTimer();
+                        self.update();
+
+                    } else if (
+                        data.status === "FAILURE" ||
+                        data.status === "REVOKED"
+                    ) {
+                        self.orphan_scan_running = false;
+                        self.orphan_scan_error =
+                            data.error || "Orphan files scan failed.";
+                        self.clearOrphanScanTimer();
+                        self.update();
+
+                    } else {
+                        self.update();
+                        self.scheduleOrphanScanPoll();
+                    }
+                })
+                .fail(function() {
+                    if (self.orphan_scan_destroyed) return;
+
+                    self.orphan_scan_running = false;
+                    self.orphan_scan_error =
+                        "Could not retrieve orphan files scan status.";
+                    self.clearOrphanScanTimer();
+                    self.update();
+                });
+        };
+
+        self.scheduleOrphanScanPoll = function() {
+            self.clearOrphanScanTimer();
+
+            if (self.orphan_scan_destroyed || !self.orphan_scan_running) {
+                return;
+            }
+
+            self.orphan_scan_poll_timer = setTimeout(function() {
+                self.orphan_scan_poll_timer = null;
+                self.pollOrphanScan();
+            }, 2000);
+        };
+
+        self.orphanObjectId = function(bucket, key) {
+            return JSON.stringify([bucket, key]);
+        };
+
+        self.isOrphanSelected = function(file) {
+            return !!self.orphan_selected_objects[
+                self.orphanObjectId(file.bucket, file.key)
+            ];
+        };
+
+        self.refreshOrphanSelection = function() {
+            const files = self.orphan_scan_result
+                ? self.orphan_scan_result.orphaned_preview
+                : [];
+
+            self.orphan_selected_count = files.filter(
+                file => self.isOrphanSelected(file)
+            ).length;
+
+            self.orphan_all_preview_selected =
+                files.length > 0 &&
+                self.orphan_selected_count === files.length;
+
+            self.update();
+        };
+
+        self.toggleOrphanSelection = function(event) {
+            const bucket = event.target.getAttribute("data-bucket");
+            const key = event.target.getAttribute("data-key");
+            const id = self.orphanObjectId(bucket, key);
+
+            if (event.target.checked) {
+                self.orphan_selected_objects[id] = {bucket, key};
+            } else {
+                delete self.orphan_selected_objects[id];
+            }
+
+            self.refreshOrphanSelection();
+        };
+
+        self.toggleAllOrphanSelection = function(event) {
+            const checked = event.target.checked;
+            const files = self.orphan_scan_result.orphaned_preview;
+
+            files.forEach(function(file) {
+                const id = self.orphanObjectId(file.bucket, file.key);
+
+                if (checked) {
+                    self.orphan_selected_objects[id] = {
+                        bucket: file.bucket,
+                        key: file.key
+                    };
+                } else {
+                    delete self.orphan_selected_objects[id];
+                }
+            });
+
+            self.refreshOrphanSelection();
+        };
+
+        self.clearOrphanCleanupTimer = function() {
+            if (self.orphan_cleanup_poll_timer !== null) {
+                clearTimeout(self.orphan_cleanup_poll_timer);
+                self.orphan_cleanup_poll_timer = null;
+            }
+        };
+
+        self.startSelectedOrphanCleanup = function(event) {
+            if (event) event.preventDefault();
+
+            const selected = Object.values(self.orphan_selected_objects);
+
+            if (!selected.length || selected.length > 100) {
+                toastr.error("Select between 1 and 100 files.");
+                return;
+            }
+
+            self.startOrphanCleanup("selected", selected);
+        };
+
+        self.startAllOrphanCleanup = function(event) {
+            if (event) event.preventDefault();
+
+            self.startOrphanCleanup("all", null);
+        };
+
+        self.startOrphanCleanup = function(mode, selectedObjects) {
+            if (
+                self.orphan_cleanup_running ||
+                self.orphan_scan_running ||
+                !self.orphan_scan_result
+            ) {
+                return;
+            }
+
+            const count = mode === "all"
+                ? self.orphan_scan_result.summary.orphaned_count
+                : selectedObjects.length;
+
+            const message = mode === "all"
+                ? "Permanently delete all " + count +
+                " eligible orphaned files, including files not displayed?"
+                : "Permanently delete " + count + " selected orphaned files?";
+
+            if (!window.confirm(
+                message + "\n\nThis operation cannot be undone."
+            )) {
+                return;
+            }
+
+            // Reuse the grace period of the completed scan,
+            // not potentially edited form values.
+            const gracePeriod = self.orphan_scan_result.grace_period_days;
+
+            self.clearOrphanCleanupTimer();
+
+            self.orphan_cleanup_running = true;
+            self.orphan_cleanup_status = "PENDING";
+            self.orphan_cleanup_error = null;
+            self.orphan_cleanup_result = null;
+            self.orphan_cleanup_task_id = null;
+            self.orphan_cleanup_started_at = Date.now();
+            self.update();
+
+            const payload = {
+                grace_period_days: gracePeriod,
+                mode: mode,
+            };
+
+            if (mode === "selected") {
+                payload.selected_objects = selectedObjects;
+            }
+
+            CODALAB.api.start_orphan_files_cleanup(payload)
+                .done(function(data) {
+                    if (self.orphan_scan_destroyed) return;
+
+                    self.orphan_cleanup_task_id = data.task_id;
+                    self.orphan_cleanup_status = data.status || "PENDING";
+                    self.update();
+                    self.pollOrphanCleanup();
+                })
+                .fail(function(xhr) {
+                    if (self.orphan_scan_destroyed) return;
+
+                    self.orphan_cleanup_running = false;
+                    self.orphan_cleanup_status = "FAILURE";
+                    self.orphan_cleanup_error =
+                        (xhr.responseJSON && xhr.responseJSON.detail) ||
+                        "Could not start orphan files cleanup.";
+                    self.update();
+                });
+        };
+
+        self.pollOrphanCleanup = function() {
+            if (
+                self.orphan_scan_destroyed ||
+                !self.orphan_cleanup_running ||
+                !self.orphan_cleanup_task_id
+            ) {
+                return;
+            }
+
+            if (
+                Date.now() - self.orphan_cleanup_started_at >
+                7 * 24 * 60 * 60 * 1000
+            ) {
+                self.orphan_cleanup_running = false;
+                self.orphan_cleanup_error =
+                    "Cleanup status polling timed out after seven days.";
+                self.clearOrphanCleanupTimer();
+                self.update();
+                return;
+            }
+
+            CODALAB.api.get_orphan_files_cleanup_status(
+                self.orphan_cleanup_task_id
+            )
+                .done(function(data) {
+                    if (self.orphan_scan_destroyed) return;
+
+                    self.orphan_cleanup_status = data.status;
+
+                    if (data.status === "SUCCESS") {
+                        self.orphan_cleanup_running = false;
+                        self.orphan_cleanup_result = data.result;
+                        self.clearOrphanCleanupTimer();
+
+                        const gracePeriod = self.orphan_scan_result
+                            ? self.orphan_scan_result.grace_period_days
+                            : null;
+
+                        self.orphan_selected_objects = {};
+                        self.orphan_selected_count = 0;
+                        self.orphan_all_preview_selected = false;
+
+                        self.orphan_scan_result = null;
+
+                        self.update();
+
+                        if (data.result.failed > 0) {
+                            toastr.warning(
+                                data.result.deleted + " files deleted, " +
+                                data.result.failed + " failed."
+                            );
+                        } else {
+                            toastr.success(
+                                data.result.deleted + " orphaned files deleted."
+                            );
+                        }
+
+                        if (gracePeriod !== null && gracePeriod !== undefined) {
+                            self.startOrphanScan(null, {
+                                grace_period_days: gracePeriod,
+                                preserve_cleanup_result: true
+                            });
+                        }
+
+                    } else if (
+                        data.status === "FAILURE" ||
+                        data.status === "REVOKED"
+                    ) {
+                        self.orphan_cleanup_running = false;
+                        self.orphan_cleanup_error =
+                            data.error || "Orphan files cleanup failed.";
+                        self.clearOrphanCleanupTimer();
+                        self.update();
+
+                    } else {
+                        self.update();
+                        self.clearOrphanCleanupTimer();
+
+                        self.orphan_cleanup_poll_timer = setTimeout(
+                            function() {
+                                self.orphan_cleanup_poll_timer = null;
+                                self.pollOrphanCleanup();
+                            },
+                            2000
+                        );
+                    }
+                })
+                .fail(function() {
+                    if (self.orphan_scan_destroyed) return;
+
+                    self.orphan_cleanup_running = false;
+                    self.orphan_cleanup_error =
+                        "Could not retrieve cleanup status.";
+                    self.clearOrphanCleanupTimer();
+                    self.update();
+                });
+        };
+
         self.pretty_date = function (date_string) {
             if (!!date_string) {
                 return luxon.DateTime.fromISO(date_string).toLocaleString(luxon.DateTime.DATE_FULL)
             } else {
                 return ''
             }
-        }
-
-        // Orhpan related
-        self.showConfirmationModal = function() {
-            $(self.refs.confirmation_modal).modal('show');
-            self.delete_button_color = "red";
-            self.delete_button_loading = false;
-            self.delete_button_disabled = false;
-            self.delete_button_text = "Yes, delete all orphan files";
-            self.update();
-        }
-
-        self.checkOrphansDeletionStatus = function() {
-            CODALAB.api.check_orphans_deletion_status()
-                .done(function(data) {
-                    if (data.status) {
-                        if (data.status == "SUCCESS") {
-                            toastr.success("Orphan files deletion successful")
-                            self.delete_button_color = "green";
-                            self.delete_button_text = "Deletion Successful";
-                        }
-                        if (data.status == "FAILURE") {
-                            toastr.error("Orphan files deletion failed")
-                            self.delete_button_color = "red";
-                            self.delete_button_text = "Deletion Failed";
-                        }
-                        if (data.status == "REVOKED") {
-                            toastr.error("Orphan files deletion has been canceled")
-                            self.delete_button_color = "red";
-                            self.delete_button_text = "Deletion canceled";
-                        }
-                        if (data.status == "SUCCESS" || data.status == "FAILURE" || data.status == "REVOKED") {
-                            // Task is over
-                            self.stopCheckOrphansDeletionStatus();
-                            self.delete_orphans_button_modal_text = "Delete orphan files";
-                            self.delete_orphans_button_modal_loading = false;
-                            self.delete_orphans_button_modal_disabled = false;
-                            self.delete_button_loading = false;
-                            self.delete_button_disabled = true;
-                        } else {
-                            // Task is running
-                            self.delete_orphans_button_modal_text = "Orphan files deletion in progress...";
-                            self.delete_orphans_button_modal_disabled = true;
-                            self.delete_orphans_button_modal_loading = true;
-
-                            self.delete_button_text = "Orphan files deletion in progress...";
-                            self.delete_button_disabled = true;
-                            self.delete_button_loading = true;
-                        }
-                    } else {
-                        // No task running
-                        self.stopCheckOrphansDeletionStatus();
-
-                        self.delete_orphans_button_modal_text = "Delete orphan files";
-                        self.delete_orphans_button_modal_disabled = false;
-                        self.delete_orphans_button_modal_loading = false;
-
-                        self.delete_button_color = "red";
-                        self.delete_button_loading = false;
-                        self.delete_button_disabled = false;
-                        self.delete_button_text = "Yes, delete all orphan files";
-                    }
-                    
-                })
-                .fail(function(response) {
-                    toastr.error("Orphan files deletion's task status check failed")
-                    self.delete_orphans_button_modal_text = "Delete orphan files";
-                    self.delete_orphans_button_modal_loading = false;
-                    self.delete_orphans_button_modal_disabled = false;
-
-                    self.delete_button_text = "Yes, delete all orphan files";
-                    self.delete_button_color = "red";
-                    self.delete_button_loading = false;
-                    self.delete_button_disabled = false;
-
-                    self.stopCheckOrphansDeletionStatus();
-                })
-                .always(function() {
-                    self.update();
-                })
-        }
-
-        self.startCheckOrphansDeletionStatus = function () {
-            self.pollingInterval = setInterval(self.checkOrphansDeletionStatus, 2000);
-        }
-
-        self.stopCheckOrphansDeletionStatus = function() {
-            if (self.pollingInterval) {
-                clearInterval(self.pollingInterval);
-                self.pollingInterval = null;
-            }
-        }
-
-        self.deleteOrphanFiles = function() {
-            self.delete_button_loading = true
-            self.delete_button_disabled = true
-            self.delete_orphans_button_modal_loading = true;
-            self.delete_orphans_button_modal_disabled = true;
-            self.delete_button_text = "Orphan files deletion in progress...";
-            self.delete_orphans_button_modal_text = "Orphan files deletion in progress...";
-            self.update()
-            CODALAB.api.delete_orphan_files()
-                .done(function (data) {
-                    if (data && data.success && !self.pollingInterval) {
-                        self.startCheckOrphansDeletionStatus();
-                    }
-                })
-                .fail(function (response) {
-                    toastr.error("Orphan files deletion failed to start")
-                })
-                .always(function () {
-                    self.delete_button_loading = false
-                    self.update()
-                });
-        }
-
-        self.getOrphanFiles = function() {
-            CODALAB.api.get_orphan_files()
-                .done(function (data) {
-                    self.nb_orphan_files = data.data.length
-                    self.update({nb_orphan_files: self.nb_orphan_files});
-                })
-                .fail(function (response) {
-                    toastr.error("Get oprhan files failed, error occurred")
-                });
         }
 
     </script>
@@ -699,9 +1246,22 @@
             min-height: 450px;
         }
 
-        .delete-oprhans-container {
-            margin-bottom: 5px;
-            margin-left: auto;
+        .orphan-object-key {
+            overflow-wrap: anywhere;
+            word-break: break-word;
+            max-width: 450px;
+            font-family: monospace;
+        }
+        .orphan-cleanup-toolbar {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .orphan-cleanup-toolbar .ui.button {
+            margin: 0;
         }
     </style>
 </analytics>

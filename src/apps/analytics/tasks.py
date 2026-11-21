@@ -1,6 +1,9 @@
-import os
 import time
 import json
+from apps.analytics.orphan_files.scanner import scan_orphan_files
+from apps.analytics.orphan_files.reports import build_report
+from apps.analytics.orphan_files.cleanup import cleanup_orphan_files
+
 from celery_config import app
 from datetime import datetime, timezone, timedelta
 from django.db.models import (
@@ -585,74 +588,70 @@ def update_home_page_counters():
     )
 
 
-@app.task(queue="site-worker")
-def delete_orphan_files():
-    logger.info("Task delete_orphan_files started")
+@app.task(bind=True, queue="site-worker", soft_time_limit=7 * 24 * 60 * 60)
+def scan_orphan_files_task(self, grace_period_days=7):
+    """
+    Read-only scan of managed MinIO objects.
 
-    # Find most recent file
-    most_recent_log_file = get_most_recent_storage_inconsistency_log_file(logger)
-    if not most_recent_log_file:
-        logger.warning("No storage inconsistency log file found. Nothing will be removed")
-        raise Exception("No storage inconsistency log file found")
+    Returns a summary and a limited preview of detected files.
+    """
+    self.update_state(
+        state="PROGRESS",
+        meta={"message": "Scanning MinIO objects..."},
+    )
 
-    # Get the list of orphan files from the content of the most recent log file
-    log_folder = "/app/var/logs/"
-    orphan_files_path = get_files_path_from_orphan_log_file(os.path.join(log_folder, most_recent_log_file), logger)
+    result = scan_orphan_files(
+        grace_period_days=grace_period_days,
+    )
 
-    # Delete those files in batch (max 1000 element at once)
-    batch_size = 1000
-    for i in range(0, len(orphan_files_path), batch_size):
-        batch = orphan_files_path[i:i + batch_size]
-        objects_formatted = [{'Key': path} for path in batch]
-        BundleStorage.bucket.delete_objects(Delete={'Objects': objects_formatted})
+    report = build_report(result, grace_period_days)
 
-    logger.info("Delete oprhan files finished")
-
-
-def get_most_recent_storage_inconsistency_log_file(logger):
-    log_folder = "/app/var/logs/"
-    try:
-        log_files = [f for f in os.listdir(log_folder) if os.path.isfile(os.path.join(log_folder, f))]
-    except FileNotFoundError:
-        logger.error(f"Folder '{log_folder}' does not exist.")
-        return None
-
-    most_recent_log_file = None
-    most_recent_datetime = None
-    datetime_format = "%Y%m%d-%H%M%S"
-    for file in log_files:
-        try:
-            basename = os.path.basename(file)
-            datetime_str = basename[len("db_storage_inconsistency_"):-len(".log")]
-            file_datetime = datetime.strptime(datetime_str, datetime_format)
-            if most_recent_datetime is None or file_datetime > most_recent_datetime:
-                most_recent_datetime = file_datetime
-                most_recent_log_file = file
-        except ValueError:
-            logger.warning(f"Filename '{file}' does not match the expected format and will be ignored.")
-
-    return most_recent_log_file
+    return {
+        "summary": report["summary"],
+        "grace_period_days": grace_period_days,
+        "generated_at": report["generated_at"],
+        "orphaned_preview": report["orphaned"][:100],
+        "recent_unreferenced_preview": report[
+            "recent_unreferenced"
+        ][:100],
+        "missing_preview": report["missing"][:100],
+        "preview_limit": 100,
+    }
 
 
-def get_files_path_from_orphan_log_file(log_file_path, logger):
-    files_path = []
+@app.task(bind=True, queue="site-worker", soft_time_limit=7 * 24 * 60 * 60)
+def cleanup_orphan_files_task(
+    self,
+    grace_period_days=7,
+    mode="all",
+    selected_objects=None,
+):
+    """
+    Re-scan managed MinIO objects and simulate cleanup.
 
-    try:
-        with open(log_file_path) as log_file:
-            lines = log_file.readlines()
-            orphan_files_lines = []
-            for i, line in enumerate(lines):
-                if "Orphaned files" in line:
-                    orphan_files_lines = lines[i + 1:]
-                    break
+    Physical deletion remains disabled until concurrent
+    storage/database writes are safely coordinated.
+    """
+    if mode not in ("all", "selected"):
+        raise ValueError("Invalid cleanup mode.")
 
-            for orphan_files_line in orphan_files_lines:
-                files_path.append(orphan_files_line.split(maxsplit=1)[0])
-    except FileNotFoundError:
-        logger.error(f"File '{log_file_path}' does not exist.")
-    except PermissionError:
-        logger.error(f"Permission denied for reading the file '{log_file_path}'.")
-    except IOError as e:
-        logger.error(f"An I/O error occurred while accessing the file at {log_file_path}: {e}")
+    if mode == "selected" and not selected_objects:
+        raise ValueError("No objects selected.")
 
-    return files_path
+    self.update_state(
+        state="PROGRESS",
+        meta={"message": "Deleting orphaned objects..."},
+    )
+
+    result = cleanup_orphan_files(
+        grace_period_days=grace_period_days,
+        selected_objects=(
+            selected_objects if mode == "selected" else None
+        ),
+    )
+
+    return {
+        **result,
+        "grace_period_days": grace_period_days,
+        "completed_at": datetime.now(timezone.utc).isoformat(),
+    }

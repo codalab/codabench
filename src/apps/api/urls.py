@@ -69,9 +69,10 @@ urlpatterns = [
     path('analytics/storage_usage_history/', analytics.storage_usage_history, name='storage_usage_history'),
     path('analytics/competitions_usage/', analytics.competitions_usage, name='competitions_usage'),
     path('analytics/users_usage/', analytics.users_usage, name='users_usage'),
-    path('analytics/delete_orphan_files/', analytics.delete_orphan_files, name="delete_orphan_files"),
-    path('analytics/get_orphan_files/', analytics.get_orphan_files, name="get_orphan_files"),
-    path('analytics/check_orphans_deletion_status/', analytics.check_orphans_deletion_status, name="check_orphans_deletion_status"),
+    path('analytics/orphan-files/scan/', analytics.start_orphan_files_scan, name='start_orphan_files_scan'),
+    path('analytics/orphan-files/scan/<uuid:task_id>/', analytics.orphan_files_scan_status, name='orphan_files_scan_status'),
+    path("analytics/orphan-files/cleanup/", analytics.start_orphan_files_cleanup, name="start_orphan_files_cleanup"),
+    path("analytics/orphan-files/cleanup/<uuid:task_id>/", analytics.orphan_files_cleanup_status, name="orphan_files_cleanup_status"),
 
     # API Docs
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

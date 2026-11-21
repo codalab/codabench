@@ -12,7 +12,10 @@ from rest_framework_csv import renderers as r
 from competitions.models import Competition, Submission
 from analytics.models import StorageUsageHistory, CompetitionStorageDataPoint, UserStorageDataPoint
 from api.serializers.analytics import AnalyticsSerializer
-from apps.analytics.tasks import delete_orphan_files as delete_orphan_files_async_task
+from celery.result import AsyncResult
+from analytics.tasks import scan_orphan_files_task, cleanup_orphan_files_task
+from analytics.orphan_files.cleanup import is_allowed_object
+
 
 import os
 import datetime
@@ -22,7 +25,6 @@ logger = logging.getLogger(__name__)
 
 
 User = get_user_model()
-delete_orphan_files_task = None
 
 
 def merge_dicts(d1, d2):
@@ -262,43 +264,6 @@ def users_usage(request):
     return Response(response, status=status.HTTP_200_OK)
 
 
-@api_view(["GET"])
-def get_orphan_files(request):
-    """
-    Get the orphan files based on the last storage analytics
-    """
-
-    if not request.user.is_superuser:
-        raise PermissionDenied(detail="Admin only")
-
-    # Find most recent file
-    most_recent_log_file = get_most_recent_storage_inconsistency_log_file()
-    if not most_recent_log_file:
-        logger.warning("No storage inconsistency log file found.")
-        return Response({"message": "No storage inconsistency log file found."}, status=status.HTTP_404_NOT_FOUND)
-
-    # Get the list of orphan files from the content of the most recent log file
-    log_folder = "/app/logs/"
-    orphan_files_path = get_files_path_from_orphan_log_file(os.path.join(log_folder, most_recent_log_file))
-
-    return Response({"data": orphan_files_path}, status=status.HTTP_200_OK)
-
-
-@api_view(["DELETE"])
-def delete_orphan_files(request):
-    """
-    Start the deletion of orphan files task
-    """
-
-    if not request.user.is_superuser:
-        raise PermissionDenied(detail="Admin only")
-
-    global delete_orphan_files_task
-    delete_orphan_files_task = delete_orphan_files_async_task.delay()
-
-    return Response({"success": True, "message": "orphan files deletion started"}, status=status.HTTP_200_OK)
-
-
 def get_most_recent_storage_inconsistency_log_file():
     logger = logging.getLogger(__name__)
 
@@ -326,44 +291,217 @@ def get_most_recent_storage_inconsistency_log_file():
     return most_recent_log_file
 
 
-def get_files_path_from_orphan_log_file(log_file_path):
-    logger = logging.getLogger(__name__)
-
-    files_path = []
-
-    try:
-        with open(log_file_path) as log_file:
-            lines = log_file.readlines()
-            orphan_files_lines = []
-            for i, line in enumerate(lines):
-                if "Orphaned files" in line:
-                    orphan_files_lines = lines[i + 1:]
-                    break
-
-            for orphan_files_line in orphan_files_lines:
-                files_path.append(orphan_files_line.split(maxsplit=1)[0])
-    except FileNotFoundError:
-        logger.error(f"File '{log_file_path}' does not exist.")
-    except PermissionError:
-        logger.error(f"Permission denied for reading the file '{log_file_path}'.")
-    except IOError as e:
-        logger.error(f"An I/O error occurred while accessing the file at {log_file_path}: {e}")
-
-    return files_path
-
-
-@api_view(["GET"])
-def check_orphans_deletion_status(request):
+@api_view(["POST"])
+def start_orphan_files_scan(request):
     """
-    Get the orphan files deletion task status.
-    Return one of ["PENDING", "STARTED", "SUCCESS", "FAILURE", "RETRY", "REVOKED"]
+    Start a read-only MinIO orphan files scan.
+    Superusers only.
     """
-
     if not request.user.is_superuser:
         raise PermissionDenied(detail="Admin only")
 
-    state = None
-    if delete_orphan_files_task:
-        state = delete_orphan_files_task.state
+    grace_period_days = request.data.get("grace_period_days", 7)
 
-    return Response({"status": state}, status=status.HTTP_200_OK)
+    try:
+        grace_period_days = int(grace_period_days)
+    except (TypeError, ValueError):
+        return Response(
+            {"detail": "grace_period_days must be an integer"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if not 0 <= grace_period_days <= 3650:
+        return Response(
+            {"detail": "grace_period_days must be between 0 and 3650"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    task = scan_orphan_files_task.apply_async(
+        kwargs={"grace_period_days": grace_period_days},
+    )
+
+    return Response(
+        {
+            "task_id": task.id,
+            "status": task.state,
+        },
+        status=status.HTTP_202_ACCEPTED,
+    )
+
+
+@api_view(["GET"])
+def orphan_files_scan_status(request, task_id):
+    """
+    Return Celery scan state and result.
+    Superusers only.
+    """
+    if not request.user.is_superuser:
+        raise PermissionDenied(detail="Admin only")
+
+    task_id = str(task_id)
+    task = AsyncResult(task_id, app=scan_orphan_files_task.app)
+
+    response = {
+        "task_id": task_id,
+        "status": task.state,
+    }
+
+    if task.state == "SUCCESS":
+        response["result"] = task.result
+
+    elif task.state == "PROGRESS":
+        response["progress"] = task.info
+
+    elif task.state == "FAILURE":
+        logger.error("Orphan files scan failed: %s", task_id)
+        response["error"] = "The scan failed. Check worker logs."
+
+    return Response(response, status=status.HTTP_200_OK)
+
+
+@api_view(["POST"])
+def start_orphan_files_cleanup(request):
+    if not request.user.is_superuser:
+        raise PermissionDenied(detail="Admin only")
+
+    data = request.data
+
+    grace_period_days = data.get("grace_period_days", 7)
+    mode = data.get("mode", "all")
+    dry_run = data.get("dry_run", True)
+
+    if (
+        isinstance(grace_period_days, bool)
+        or not isinstance(grace_period_days, int)
+        or not 0 <= grace_period_days <= 3650
+    ):
+        return Response(
+            {"detail": "Invalid grace_period_days"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if mode not in ("all", "selected"):
+        return Response(
+            {"detail": "Invalid cleanup mode"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if not isinstance(dry_run, bool):
+        return Response(
+            {"detail": "dry_run must be a boolean"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if not dry_run:
+        return Response(
+            {
+                "detail": (
+                    "Physical deletion is not enabled yet. "
+                    "Run a dry-run first."
+                )
+            },
+            status=status.HTTP_409_CONFLICT,
+        )
+
+    selected_objects = None
+
+    if mode == "selected":
+        selected_objects = data.get("selected_objects")
+
+        if (
+            not isinstance(selected_objects, list)
+            or not 1 <= len(selected_objects) <= 100
+        ):
+            return Response(
+                {"detail": "Select between 1 and 100 objects"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        identities = set()
+
+        for item in selected_objects:
+            if not isinstance(item, dict):
+                return Response(
+                    {"detail": "Invalid selected object"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            bucket = item.get("bucket")
+            key = item.get("key")
+
+            if not is_allowed_object(bucket, key):
+                return Response(
+                    {"detail": "Object outside allowed prefixes"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            identities.add((bucket, key))
+
+        if len(identities) != len(selected_objects):
+            return Response(
+                {"detail": "Duplicate selected objects"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+    elif data.get("selected_objects") is not None:
+        return Response(
+            {"detail": "selected_objects is only valid in selected mode"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    task = cleanup_orphan_files_task.apply_async(
+        kwargs={
+            "grace_period_days": grace_period_days,
+            "mode": mode,
+            "selected_objects": selected_objects,
+            "dry_run": True,
+        }
+    )
+
+    return Response(
+        {
+            "task_id": task.id,
+            "status": task.state,
+            "mode": mode,
+            "dry_run": True,
+        },
+        status=status.HTTP_202_ACCEPTED,
+    )
+
+
+@api_view(["GET"])
+def orphan_files_cleanup_status(request, task_id):
+    if not request.user.is_superuser:
+        raise PermissionDenied(detail="Admin only")
+
+    task_id = str(task_id)
+
+    task = AsyncResult(
+        task_id,
+        app=cleanup_orphan_files_task.app,
+    )
+
+    response = {
+        "task_id": task_id,
+        "status": task.state,
+    }
+
+    if task.state == "SUCCESS":
+        response["result"] = task.result
+
+    elif task.state == "PROGRESS":
+        response["progress"] = task.info
+
+    elif task.state == "FAILURE":
+        logger.error(
+            "Orphan files cleanup failed: %s",
+            task_id,
+        )
+        response["error"] = (
+            "The cleanup failed. Check worker logs."
+        )
+
+    return Response(
+        response,
+        status=status.HTTP_200_OK,
+    )
