@@ -1,6 +1,9 @@
 FROM almalinux:10-minimal AS builder
 
-RUN microdnf update -y --nodocs && microdnf install -y tar gzip &&  microdnf clean all
+# Ask the AlmaLinux mirrorlist for HTTPS mirrors only. By default it returns
+# plain-http mirrors, so packages and repo metadata would travel unencrypted.
+RUN sed -i -E '/^mirrorlist=/{/\?/!s|$|?protocol=https|}' /etc/yum.repos.d/*.repo \
+    && microdnf update -y --nodocs && microdnf install -y tar gzip &&  microdnf clean all
 
 FROM scratch
 
