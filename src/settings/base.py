@@ -336,6 +336,9 @@ SPECTACULAR_SETTINGS = {
     # Use static schema serving for better performance
     'COMPONENT_SPLIT_REQUEST': True,
     'COMPONENT_NO_READ_ONLY_REQUIRED': True,
+    # Show the query parameters in the order the code declares them, not A to Z.
+    # Why: related parameters stay together, for example start_date before end_date.
+    'SORT_OPERATION_PARAMETERS': False,
 }
 
 # OAuth Toolkit

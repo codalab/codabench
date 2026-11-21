@@ -1,3 +1,5 @@
+import logging
+
 from drf_writable_nested import WritableNestedModelSerializer
 from rest_framework import serializers
 from api.mixins import DefaultUserCreateMixin
@@ -6,6 +8,8 @@ from competitions.models import PhaseTaskInstance, Phase
 from datasets.models import Data
 from tasks.models import Task, Solution
 from competitions.models import Competition, CompetitionCreationTaskStatus, CompetitionDump
+
+logger = logging.getLogger(__name__)
 
 
 class SolutionSerializer(WritableNestedModelSerializer):
@@ -29,7 +33,7 @@ class SolutionSerializer(WritableNestedModelSerializer):
         try:
             return instance.data.file_size
         except AttributeError:
-            print("This solution has no data associated with it...might be a test")
+            logger.info("This solution has no data associated with it...might be a test")
             return None
 
 

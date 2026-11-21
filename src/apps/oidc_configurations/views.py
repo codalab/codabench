@@ -1,10 +1,13 @@
 # oidc_configurations/views.py
 import base64
+import logging
 import requests
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Auth_Organization
 from django.contrib.auth import get_user_model, login
 import re
+
+logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
@@ -135,10 +138,10 @@ def get_access_token(organization, authorization_code):
         access_token = token_data.get('access_token')
         return access_token, None
     except requests.exceptions.RequestException as e:
-        print(f"Error during token request: {e}")
+        logger.error(f"Error during token request: {e}")
         return None, e
     except Exception as e:
-        print(f"Error parsing token response: {e}")
+        logger.error(f"Error parsing token response: {e}")
         return None, e
 
 

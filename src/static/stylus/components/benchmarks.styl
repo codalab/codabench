@@ -56,6 +56,8 @@
     border-radius 10px
     box-shadow 0 1px 2px rgba(0, 0, 0, 0.04)
     text-align left
+    // Why: the tags section reaches the card edges, and the corners must stay round
+    overflow hidden
     transition transform 150ms ease, box-shadow 150ms ease
 
     &:hover
@@ -106,7 +108,8 @@
     flex 1
     min-width 0
 
-.bc-tags
+// Featured and type, above the title
+.bc-labels
     display flex
     flex-wrap wrap
     gap 6px
@@ -152,70 +155,148 @@
     font-size 14px
     line-height 1.55
 
-/* Pills under the description */
+/* Under the description: the organizer on one line, the date, numbers and prize on the next */
 .bc-meta
     display flex
     flex-direction column
-    gap 6px
+    gap 8px
+    // Why: pushes the organizer, pills and tags to the bottom, so they line up across cards of one row
     margin-top auto
 
-.bc-meta-row
+// A long organizer name is cut with "..."
+.bc-organizer
+    display flex
+    align-items center
+    gap 8px
+    min-width 0
+
+// Round avatar: the profile photo, or the first letter of the name
+.bc-avatar
+    flex none
+    display flex
+    align-items center
+    justify-content center
+    width 22px
+    height 22px
+    overflow hidden
+    border-radius 50%
+    background-color $cb-blue-50
+    color $cb-blue-500
+    font-size 11px
+    font-weight 700
+
+    img
+        width 100%
+        height 100%
+        object-fit cover
+
+.bc-organizer-name
+    overflow hidden
+    text-overflow ellipsis
+    white-space nowrap
+    color $cb-blue-500
+    font-size 13px
+
+.bc-pills
     display flex
     flex-wrap wrap
     gap 6px
-
-// Organizer, date and prize stay on one line, a long organizer name is cut with "..."
-.bc-meta-row-first
-    flex-wrap nowrap
 
 .bc-pill
     display inline-flex
     align-items center
     gap 4px
-    max-width 100%
     padding 3px 9px
     border-radius 999px
     background-color #f1f4f7
     color $cb-navy-700
     font-size 12px
-    font-weight 500
     white-space nowrap
+    // Why: above the link that covers the card, so hovering a pill shows what it is.
+    // Clicking a pill does not open the competition, the space around it still does.
+    position relative
+    z-index 2
+    // Why: without it the browser shows the text cursor, now that the pill is above the link
+    cursor default
 
-    // Semantic icons have a fixed 1em box that sits off-center, reset it so flex can center them
-    .icon
-        display inline-flex
-        align-items center
-        justify-content center
-        width auto
-        height auto
-        margin 0
+    .bi
         font-size 11px
-        line-height 1
-
-.bc-organizer
-    overflow hidden
-    color #6b7785
-
-    .icon
-        color $cb-blue-500
-
-.bc-organizer-name
-    overflow hidden
-    text-overflow ellipsis
-    color $cb-blue-500
-    font-weight 600
-
-.bc-date
-    flex none
 
 // Prize stands out in amber (after .bc-pill so its colors win)
 .bc-prize
-    flex none
     background-color $cb-warning-bg
     color #a8691f
+    font-weight 500
 
-    .icon
+    .bi
         color $cb-warning
+
+/* Tags: a white section at the bottom of the card, edge to edge, under a line */
+.bc-tag-section
+    // Why: the card has 20px of padding, the negative margins reach its edges
+    margin 0 -20px -20px
+    padding 10px 20px
+    border-top 1px solid #e3e7ec
+    background-color #fff
+    // Why: above the link that covers the card, so hovering a tag or "+N more" shows its text.
+    // Clicking in this section does not open the competition.
+    position relative
+    z-index 2
+    // Why: without it the browser shows the text cursor over the tags
+    cursor default
+
+// One line. card_tags.js hides the tags that do not fit and shows "+N more".
+.bc-tag-row
+    display flex
+    align-items center
+    gap 6px
+    min-width 0
+    overflow hidden
+
+.bc-tag-icon
+    flex none
+    color #6b7785
+    font-size 12px
+
+// Square corners, so the tags do not look like the round pills above
+.bc-tag
+    flex none
+    padding 2px 8px
+    border-radius 4px
+    background-color #f1f4f7
+    color $cb-navy-700
+    font-size 12px
+    line-height 18px
+    white-space nowrap
+
+// A tag the visitor filters by, so they see why the card is in the list
+.bc-tag-match
+    background-color $cb-blue-50
+    color $cb-blue-500
+    font-weight 500
+
+// When only one tag is left and it is still too long, it is cut with "..."
+.bc-tag-alone
+    flex 0 1 auto
+    min-width 0
+    overflow hidden
+    text-overflow ellipsis
+
+.bc-tag-more
+    flex none
+    color #6b7785
+    font-size 12px
+    font-weight 500
+    white-space nowrap
+
+// Why: the display rules above would show them even with the hidden attribute
+.bc-tag[hidden],
+.bc-tag-more[hidden]
+    display none
+
+.bc-tag-empty
+    color #6b7785
+    font-size 12px
 
 /* Tablets: 2 per row, phones: 1 per row */
 @media only screen and (max-width 991px)

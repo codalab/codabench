@@ -284,7 +284,6 @@
                 const msg_signature = `${event_data.type}-${event_data.submission_id}-${JSON.stringify(event_data.data)}`;
                 // Skip if we've already processed this exact message
                 if (self.processed_messages.has(msg_signature)) {
-                    console.log("Skipping duplicate message:", msg_signature);
                     return;
                 }
                 
@@ -310,13 +309,9 @@
                 }
             })
             self.ws.addEventListener("open", function(event){
-                console.log("WebSocket connected");
                 // we're connected, so now try to pull logs (otherwise we may hit a race condition,
                 // maybe we don't have submissions yet?)
                 self.pull_logs()
-            })
-            self.ws.addEventListener("close", function(event) {
-                console.log("WebSocket disconnected, reconnecting...");
             })
             self.ws.addEventListener("error", function(event) {
                 console.error("WebSocket error:", event);

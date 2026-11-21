@@ -37,7 +37,7 @@
             </thead>
             <tbody>
             <tr each="{participants}">
-                <td><a href="/profiles/user/{username}" target="_BLANK">{username}</a></td>
+                <td><a href="/user/{username}/" target="_BLANK">{username}</a></td>
                 <td>{email}</td>
                 <td>{is_deleted ? "account deleted" : _.startCase(status)}</td>
                 <td class="right aligned">

@@ -220,9 +220,9 @@ class PublicCompetitionsTests(TestCase):
             "Authentication required for filtering by participating in or organizing."
         )
 
-    def test_filter_by_has_reward(self):
-        # Send a GET request to filter competitions that have a reward
-        response = self.client.get("/api/competitions/public/?has_reward=true")
+    def test_filter_by_has_a_prize(self):
+        # Send a GET request to filter competitions that have a prize (a reward)
+        response = self.client.get("/api/competitions/public/?has_a_prize=true")
 
         # Ensure the response is successful with 200 OK status
         self.assertEqual(response.status_code, 200)
@@ -256,7 +256,7 @@ class PublicCompetitionsTests(TestCase):
         self.competition2.tags.add(tag)
 
         # In OR mode: match competition with tag (competition2) OR reward (competition1, competition3)
-        response = self.client.get(f"/api/competitions/public/?tags={tag.id}&has_reward=true&filter_mode=or")
+        response = self.client.get(f"/api/competitions/public/?tags={tag.id}&has_a_prize=true&filter_mode=or")
         self.assertEqual(response.status_code, 200)
         returned_ids = [comp["id"] for comp in response.data["results"]]
         self.assertIn(self.competition1.id, returned_ids)
@@ -264,17 +264,36 @@ class PublicCompetitionsTests(TestCase):
         self.assertIn(self.competition3.id, returned_ids)
 
         # In AND mode: requires both tag AND reward (none match initially)
-        response = self.client.get(f"/api/competitions/public/?tags={tag.id}&has_reward=true&filter_mode=and")
+        response = self.client.get(f"/api/competitions/public/?tags={tag.id}&has_a_prize=true&filter_mode=and")
         self.assertEqual(response.status_code, 200)
         returned_ids = [comp["id"] for comp in response.data["results"]]
         self.assertEqual(len(returned_ids), 0)
 
         # Add tag to competition1 which has a reward: now competition1 matches both
         self.competition1.tags.add(tag)
-        response = self.client.get(f"/api/competitions/public/?tags={tag.id}&has_reward=true&filter_mode=and")
+        response = self.client.get(f"/api/competitions/public/?tags={tag.id}&has_a_prize=true&filter_mode=and")
         self.assertEqual(response.status_code, 200)
         returned_ids = [comp["id"] for comp in response.data["results"]]
         self.assertEqual(returned_ids, [self.competition1.id])
+
+    def test_tags_can_be_sent_repeated_or_with_commas(self):
+        """
+        Gives competition1 the tag NLP and competition3 the tag Vision, and asks the API for both tags
+        once as tags=1&tags=2 and once as tags=1,2.
+        Expects the same two competitions both times.
+        """
+        nlp = TagFactory(name="NLP")
+        vision = TagFactory(name="Vision")
+        self.competition1.tags.add(nlp)
+        self.competition3.tags.add(vision)
+
+        repeated = self.client.get(f"/api/competitions/public/?tags={nlp.id}&tags={vision.id}")
+        with_commas = self.client.get(f"/api/competitions/public/?tags={nlp.id},{vision.id}")
+
+        repeated_ids = sorted(comp["id"] for comp in repeated.data["results"])
+        comma_ids = sorted(comp["id"] for comp in with_commas.data["results"])
+        self.assertEqual(repeated_ids, sorted([self.competition1.id, self.competition3.id]))
+        self.assertEqual(comma_ids, repeated_ids)
 
     def test_no_tags_parameter_is_ignored(self):
         tag = TagFactory(name="vision-tag")
