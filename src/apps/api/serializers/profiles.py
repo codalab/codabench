@@ -43,7 +43,6 @@ class CollaboratorSerializer(ModelSerializer):
         model = User
         fields = (
             'id',
-            'name',
             'username',
         )
 
@@ -133,7 +132,6 @@ class UserSerializer(ModelSerializer):
         model = User
         fields = (
             'id',
-            'name',
             'username',
             'photo',
             'email',

@@ -49,15 +49,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     EMAIL_FIELD = 'email'
     REQUIRED_FIELDS = ['email']
 
-    # Github user attributes.
-    github_uid = models.CharField(max_length=30, unique=True, blank=True, null=True)
-    avatar_url = models.CharField(max_length=100, null=True, blank=True)
-    url = models.CharField(max_length=100, null=True, blank=True)
-    html_url = models.CharField(max_length=100, null=True, blank=True)
-    name = models.CharField(max_length=100, null=True, blank=True)
-    company = models.CharField(max_length=100, null=True, blank=True)
-    bio = models.CharField(max_length=300, null=True, blank=True)
-
     # Any User Attributes
     username = models.CharField(max_length=50, unique=True)
     slug = models.SlugField(max_length=50, default='', unique=True)
@@ -202,15 +193,6 @@ class User(AbstractBaseUser, PermissionsMixin):
             username=self.username,
             email=self.email
         )
-
-        # Github related
-        self.github_uid = None
-        self.avatar_url = None
-        self.url = None
-        self.html_url = None
-        self.name = None
-        self.company = None
-        self.bio = None
 
         # Any user attribute
         self.username = f"deleted_user_{self.id}"

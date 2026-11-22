@@ -83,7 +83,7 @@ def user_lookup(request):
     def _get_data(user):
         return {
             "id": user.id,
-            "name": f"{user.name or user.username} ({user.email})" if is_admin else user.username,
+            "name": f"{user.username} ({user.email})" if is_admin else user.username,
             "username": user.username,
         }
 
