@@ -3,39 +3,9 @@ from rest_framework.fields import DateTimeField
 from rest_framework.serializers import ModelSerializer, SerializerMethodField, CharField, IntegerField, Serializer
 
 from api.fields import NamedBase64ImageField
-from profiles.models import GithubUserInfo, Organization, Membership
+from profiles.models import Organization, Membership
 
 User = get_user_model()
-
-
-class GithubUserInfoSerializer(ModelSerializer):
-
-    class Meta:
-        model = GithubUserInfo
-        fields = [
-            'uid',
-            'login',
-            'avatar_url',
-            'gravatar_id',
-            'html_url',
-            'name',
-            'company',
-            'bio',
-            'location',
-            'created_at',
-            'updated_at',
-            'node_id',
-            'url',
-            'followers_url',
-            'following_url',
-            'gists_url',
-            'starred_url',
-            'subscriptions_url',
-            'organizations_url',
-            'repos_url',
-            'events_url',
-            'received_events_url'
-        ]
 
 
 class MyProfileSerializer(ModelSerializer):

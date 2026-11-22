@@ -173,7 +173,6 @@ class UserExpansion(UserAdmin):
                     "name",
                     "company",
                     "bio",
-                    "github_info",
                 ],
             },
         ),
