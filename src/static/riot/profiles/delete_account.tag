@@ -9,7 +9,7 @@
                 <div class="announcement-body">Deleting your account is permanent and cannot be undone. All your personal data, settings, and content will be permanently erased, and you will lose access to all services linked to your account. Please make sure to back up any important information before proceeding.</div>
             </div>
         </div>
-        <button type="button" class="settings-button settings-button-danger" onclick="{open_modal}">Permanently delete my account</button>
+        <button type="button" class="cb-button cb-button-danger" onclick="{open_modal}">Permanently delete my account</button>
     </div>
 
     <!-- Delete account modal. A click on the dark background closes it -->
@@ -53,8 +53,8 @@
                 </div>
 
                 <div class="delete-modal-buttons">
-                    <button type="button" class="settings-button settings-button-secondary" onclick="{close_modal}">Cancel</button>
-                    <button type="submit" class="settings-button settings-button-danger" disabled="{is_submit_disabled}">Delete my account</button>
+                    <button type="button" class="cb-button cb-button-secondary" onclick="{close_modal}">Cancel</button>
+                    <button type="submit" class="cb-button cb-button-danger" disabled="{is_submit_disabled}">Delete my account</button>
                 </div>
             </form>
         </div>

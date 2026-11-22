@@ -25,8 +25,8 @@
 
                 <div class="profile-actions">
                     <!-- Why the slug: the public page finds users by slug, which can differ from the username -->
-                    <a class="settings-button settings-button-secondary" href="/user/{selected_user.slug}/" target="_blank" rel="noopener">View public profile</a>
-                    <button type="button" class="settings-button" onclick="{start_editing}">Edit Profile</button>
+                    <a class="cb-button cb-button-secondary" href="/user/{selected_user.slug}/" target="_blank" rel="noopener">View public profile</a>
+                    <button type="button" class="cb-button cb-button-primary" onclick="{start_editing}">Edit Profile</button>
                 </div>
             </div>
 
@@ -47,7 +47,7 @@
 
             <!-- Shown when nothing is filled in -->
             <div if="{is_empty}" class="profile-details">
-                <button type="button" class="profile-add-button" onclick="{start_editing}">Complete your profile</button>
+                <button type="button" class="cb-button cb-button-link" onclick="{start_editing}">Complete your profile</button>
             </div>
         </div>
 
