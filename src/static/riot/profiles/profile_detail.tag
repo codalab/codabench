@@ -5,7 +5,7 @@
         <div if="{!editing}">
             <div class="profile-header">
                 <!-- First letter of the name when there is no photo -->
-                <div class="bc-logo profile-photo">
+                <div class="profile-photo">
                     <img if="{selected_user.photo}" src="{selected_user.photo}" alt="">
                     <span if="{!selected_user.photo}">{photo_letter}</span>
                 </div>

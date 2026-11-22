@@ -9,9 +9,9 @@
     {# One thin row per announcement. The level class sets the row color (critical, warning, info, plain) #}
     {% for a in platform_announcements %}
     <div class="platform-announcement platform-announcement-{{ a.level }}">
-        {# Plain announcements have no icon. Other levels get a matching Semantic UI icon #}
+        {# Plain announcements have no icon. Other levels get a matching Bootstrap icon #}
         {% if a.level != 'plain' %}
-            <i class="platform-announcement-icon {% if a.level == 'critical' %}exclamation circle{% elif a.level == 'warning' %}exclamation triangle{% else %}info circle{% endif %} icon"></i>
+            <i class="platform-announcement-icon bi {% if a.level == 'critical' %}bi-exclamation-circle-fill{% elif a.level == 'warning' %}bi-exclamation-triangle-fill{% else %}bi-info-circle-fill{% endif %}"></i>
         {% endif %}
         <div class="platform-announcement-content">
             {# Title and text sit on the same line. The text may contain HTML (links, paragraphs) written by admins #}

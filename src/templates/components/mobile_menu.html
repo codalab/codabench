@@ -7,16 +7,16 @@
     <!-- Top part: the links shown in the header on larger screens -->
     <div class="mobile-menu-top">
         <a class="mobile-menu-link" href="{% url "competitions:public" %}">
-            <i class="trophy icon"></i>
+            <i class="bi bi-trophy-fill"></i>
             Benchmarks/Competitions
         </a>
         <a class="mobile-menu-link" href="{% url "datasets:public" %}">
-            <i class="database icon"></i>
+            <i class="bi bi-database-fill"></i>
             Datasets
         </a>
         {% if user.is_authenticated %}
             <div class="mobile-menu-link mobile-menu-user">
-                <i class="user icon"></i>
+                <i class="bi bi-person-fill"></i>
                 {{ request.user.username }}
             </div>
         {% else %}

@@ -37,7 +37,7 @@ class PublicCompetitionsListTests(TestCase):
 
         content = self.client.get(reverse('competitions:public')).content.decode()
 
-        assert '<h1 class="hb-title">Public Benchmarks and Competitions</h1>' in content
+        assert '<h1 class="page-section-title">Public Benchmarks and Competitions</h1>' in content
 
     def test_page_uses_the_home_page_cards(self):
         """
@@ -48,7 +48,7 @@ class PublicCompetitionsListTests(TestCase):
 
         content = self.client.get(reverse('competitions:public')).content.decode()
 
-        assert 'class="bc-card"' in content
+        assert 'class="benchmark-card"' in content
         assert f'href="/competitions/{competition.id}/"' in content
 
     def test_page_does_not_show_the_organizer_email(self):
@@ -459,7 +459,7 @@ class PublicCompetitionsTagFilterTests(TestCase):
             ("Audio", False),
             ("NLP", False),
         ]
-        assert '<span class="bc-tag bc-tag-match" title="Conference">NeurIPS</span>' in response.content.decode()
+        assert '<span class="benchmark-card-tag benchmark-card-tag-match" title="Conference">NeurIPS</span>' in response.content.decode()
 
     def test_tag_dropdowns_list_the_categories_and_tick_the_selected_tags(self):
         """

@@ -2,7 +2,7 @@
     <form class="ui form" id="user-form">
         <!-- Photo: shows the current photo, or the new one as soon as it is chosen -->
         <div class="profile-edit-photo">
-            <div class="bc-logo profile-photo">
+            <div class="profile-photo">
                 <img if="{ photo }" src="{ photo }" alt="">
                 <span if="{ !photo }">{ parent.photo_letter }</span>
             </div>

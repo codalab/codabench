@@ -3,11 +3,11 @@
 
 <!-- Featured (hidden when nothing is featured) -->
 {% if featured_benchmarks %}
-<div class="hb-section">
-    <div class="hb-header">
-        <h2 class="hb-title">Featured Benchmarks</h2>
+<div class="page-section">
+    <div class="page-section-header">
+        <h2 class="page-section-title">Featured Benchmarks</h2>
     </div>
-    <div class="hb-grid">
+    <div class="card-grid">
         {% for benchmark in featured_benchmarks %}
             {% include "components/benchmark_card.html" with benchmark=benchmark featured=True %}
         {% endfor %}
@@ -16,35 +16,35 @@
 {% endif %}
 
 <!-- Popular -->
-<div class="hb-section">
-    <div class="hb-header">
-        <h2 class="hb-title">Popular Benchmarks</h2>
-        <a class="hb-view-all" href="/competitions/public/?ordering=popular">View all <i class="arrow right icon"></i></a>
+<div class="page-section">
+    <div class="page-section-header">
+        <h2 class="page-section-title">Popular Benchmarks</h2>
+        <a class="page-section-view-all" href="/competitions/public/?ordering=popular">View all <i class="bi bi-arrow-right"></i></a>
     </div>
     {% if popular_benchmarks %}
-        <div class="hb-grid">
+        <div class="card-grid">
             {% for benchmark in popular_benchmarks %}
                 {% include "components/benchmark_card.html" with benchmark=benchmark %}
             {% endfor %}
         </div>
     {% else %}
-        <p class="hb-empty">No benchmarks yet.</p>
+        <p class="page-section-empty">No benchmarks yet.</p>
     {% endif %}
 </div>
 
 <!-- Recent -->
-<div class="hb-section">
-    <div class="hb-header">
-        <h2 class="hb-title">Recent Benchmarks</h2>
-        <a class="hb-view-all" href="/competitions/public/?ordering=recent">View all <i class="arrow right icon"></i></a>
+<div class="page-section">
+    <div class="page-section-header">
+        <h2 class="page-section-title">Recent Benchmarks</h2>
+        <a class="page-section-view-all" href="/competitions/public/?ordering=recent">View all <i class="bi bi-arrow-right"></i></a>
     </div>
     {% if recent_benchmarks %}
-        <div class="hb-grid">
+        <div class="card-grid">
             {% for benchmark in recent_benchmarks %}
                 {% include "components/benchmark_card.html" with benchmark=benchmark %}
             {% endfor %}
         </div>
     {% else %}
-        <p class="hb-empty">No benchmarks yet.</p>
+        <p class="page-section-empty">No benchmarks yet.</p>
     {% endif %}
 </div>

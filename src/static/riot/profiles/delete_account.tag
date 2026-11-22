@@ -3,7 +3,7 @@
     <div id="delete-account">
         <!-- Same box as the critical announcements on the home page -->
         <div class="announcement announcement-critical settings-notice">
-            <i class="announcement-icon exclamation circle icon"></i>
+            <i class="announcement-icon bi bi-exclamation-circle-fill"></i>
             <div class="announcement-content">
                 <div class="announcement-title">Warning</div>
                 <div class="announcement-body">Deleting your account is permanent and cannot be undone. All your personal data, settings, and content will be permanently erased, and you will lose access to all services linked to your account. Please make sure to back up any important information before proceeding.</div>
@@ -21,7 +21,7 @@
             </div>
 
             <div class="announcement announcement-critical settings-notice">
-                <i class="announcement-icon exclamation circle icon"></i>
+                <i class="announcement-icon bi bi-exclamation-circle-fill"></i>
                 <div class="announcement-content">
                     <div class="announcement-title">This is extremely important.</div>
                     <div class="announcement-body">If you just want to change your username, contact us instead at <b>{contact_email}</b></div>

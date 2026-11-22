@@ -21,15 +21,14 @@
     .platform-announcement
         padding 8px 16px
 
-// Why: Semantic UI icons have their own height and alignment, so the glyph
-// sits off center. Make the icon one text line tall and center the glyph in it.
-.platform-announcement-icon.icon
+// Make the icon one text line tall and center it, so it lines up
+// with the first line of text when the text wraps.
+.platform-announcement-icon
     display flex
     align-items center
     justify-content center
     flex-shrink 0
     height 20px
-    margin 0
     font-size 1.1em
     line-height 1
 

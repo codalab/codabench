@@ -3,9 +3,9 @@
 {% block title %}Organizations - Codabench{% endblock %}
 
 {% block resources_content %}
-    <div class="hb-section">
-        <div class="hb-header">
-            <h1 class="hb-title">Organizations</h1>
+    <div class="page-section">
+        <div class="page-section-header">
+            <h1 class="page-section-title">Organizations</h1>
             <a class="cb-button cb-button-primary" href="{% url 'profiles:organization_create' %}">Create Organization</a>
         </div>
 
@@ -27,7 +27,7 @@
                                 <tr>
                                     <td>
                                         <div class="org-table-name">
-                                            <div class="bc-logo org-table-logo">
+                                            <div class="org-table-logo">
                                                 {% if organization.photo %}
                                                     <img src="{{ organization.photo.url }}" alt="">
                                                 {% else %}
@@ -44,7 +44,7 @@
                                         </div>
                                     </td>
                                     <td class="org-table-optional org-table-description">{{ organization.description|default:"" }}</td>
-                                    <td><span class="bc-type{% if membership.group == 'INVITED' %} org-table-invited{% endif %}">{{ membership.get_group_display }}</span></td>
+                                    <td><span class="org-table-role{% if membership.group == 'INVITED' %} org-table-invited{% endif %}">{{ membership.get_group_display }}</span></td>
                                     <td class="org-table-optional">{{ membership.member_count }}</td>
                                     <td class="org-table-optional org-table-date">
                                         {% if membership.group == 'OWNER' %}
@@ -62,7 +62,7 @@
                 </table>
             </div>
         {% else %}
-            <p class="hb-empty">You are not in any organization yet.</p>
+            <p class="page-section-empty">You are not in any organization yet.</p>
         {% endif %}
     </div>
 {% endblock %}

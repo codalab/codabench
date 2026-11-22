@@ -36,11 +36,28 @@ profile-edit
     flex-wrap wrap
     gap 8px
 
-// Why bc-logo too: it must come after the home page logo size to replace it
-.bc-logo.profile-photo
+// The profile photo, or the first letter of the name when there is no photo
+.profile-photo
+    flex none
+    display flex
+    align-items center
+    justify-content center
     width 120px
     height 120px
+    overflow hidden
+    border-radius 10px
+    border 1px solid rgba($cb-blue-500, 0.25)
+    background linear-gradient(135deg, $cb-blue-500, $cb-blue-400)
+    color #fff
     font-size 44px
+    font-weight 700
+
+    // Fill the whole square (edges of non-square photos are cropped)
+    img
+        width 100%
+        height 100%
+        object-fit cover
+        background-color #fff
 
 // The width makes the buttons wrap to their own line on small phones
 .profile-identity

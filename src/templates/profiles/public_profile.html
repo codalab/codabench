@@ -20,7 +20,7 @@
     <!-- Section 1: who the user is, with the social links. Always shown. -->
     <div class="public-profile-card">
         <div class="public-profile-header">
-            <div class="bc-logo public-profile-photo">
+            <div class="public-profile-photo">
                 {% if public_user.photo %}
                     <img src="{{ public_user.photo }}" alt="">
                 {% else %}
@@ -84,7 +84,7 @@
         <div class="public-profile-org-grid">
             {% for organization in organizations %}
                 <a class="public-profile-org-card" href="{{ organization.url }}">
-                    <span class="bc-logo public-profile-org-logo">
+                    <span class="public-profile-org-logo">
                         {% if organization.photo %}
                             <img src="{{ organization.photo }}" alt="">
                         {% else %}
@@ -102,7 +102,7 @@
     {% if competitions %}
     <div class="public-profile-section">
         <h2 class="public-profile-section-title">Competitions</h2>
-        <div class="hb-grid public-profile-competition-grid">
+        <div class="card-grid public-profile-competition-grid">
             {% for benchmark in competitions %}
                 {% include "components/benchmark_card.html" with benchmark=benchmark %}
             {% endfor %}

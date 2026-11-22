@@ -29,11 +29,28 @@
     align-items flex-start
     gap 24px
 
-// Why bc-logo too: it must come after the home page logo size to replace it
-.bc-logo.public-profile-photo
+// The profile photo, or the first letter of the name when there is no photo
+.public-profile-photo
+    flex none
+    display flex
+    align-items center
+    justify-content center
     width 120px
     height 120px
+    overflow hidden
+    border-radius 10px
+    border 1px solid rgba($cb-blue-500, 0.25)
+    background linear-gradient(135deg, $cb-blue-500, $cb-blue-400)
+    color #fff
     font-size 44px
+    font-weight 700
+
+    // Fill the whole square (edges of non-square photos are cropped)
+    img
+        width 100%
+        height 100%
+        object-fit cover
+        background-color #fff
 
 // The width makes the text wrap under the photo on small phones
 .public-profile-identity
@@ -130,11 +147,28 @@
         transform translateY(-3px)
         box-shadow 0 8px 20px rgba(27, 47, 64, 0.12)
 
-// Why bc-logo too: it must come after the home page logo size to replace it
-.bc-logo.public-profile-org-logo
+// The organization logo, or the first letter of its name when there is no logo
+.public-profile-org-logo
+    flex none
+    display flex
+    align-items center
+    justify-content center
     width 40px
     height 40px
+    overflow hidden
+    border-radius 10px
+    border 1px solid rgba($cb-blue-500, 0.25)
+    background linear-gradient(135deg, $cb-blue-500, $cb-blue-400)
+    color #fff
     font-size 16px
+    font-weight 700
+
+    // Fill the whole square (edges of non-square logos are cropped)
+    img
+        width 100%
+        height 100%
+        object-fit cover
+        background-color #fff
 
 // A long name is cut with "..."
 .public-profile-org-name
@@ -144,7 +178,7 @@
     text-overflow ellipsis
 
 // 2 competitions per row. Why: the profile is narrower than the home page, 3 cards would be too small.
-.hb-grid.public-profile-competition-grid
+.card-grid.public-profile-competition-grid
     grid-template-columns repeat(2, minmax(0, 1fr))
 
 /* Tablets: 2 organizations per row */
@@ -162,5 +196,5 @@
         gap 2px
 
     .public-profile-org-grid,
-    .hb-grid.public-profile-competition-grid
+    .card-grid.public-profile-competition-grid
         grid-template-columns minmax(0, 1fr)

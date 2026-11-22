@@ -7,7 +7,7 @@
 <div class="cb-pagination">
     <div class="cb-pagination-left">
         {% if page.has_previous %}
-            <a class="cb-pagination-button" href="?{% if page_query %}{{ page_query }}&amp;{% endif %}page={{ page.previous_page_number }}" aria-label="Previous page"><i class="arrow left icon"></i></a>
+            <a class="cb-pagination-button" href="?{% if page_query %}{{ page_query }}&amp;{% endif %}page={{ page.previous_page_number }}" aria-label="Previous page"><i class="bi bi-arrow-left"></i></a>
         {% endif %}
     </div>
 
@@ -15,7 +15,7 @@
 
     <div class="cb-pagination-right">
         {% if page.has_next %}
-            <a class="cb-pagination-button" href="?{% if page_query %}{{ page_query }}&amp;{% endif %}page={{ page.next_page_number }}" aria-label="Next page"><i class="arrow right icon"></i></a>
+            <a class="cb-pagination-button" href="?{% if page_query %}{{ page_query }}&amp;{% endif %}page={{ page.next_page_number }}" aria-label="Next page"><i class="bi bi-arrow-right"></i></a>
         {% endif %}
     </div>
 </div>
