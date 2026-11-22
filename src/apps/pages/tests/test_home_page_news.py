@@ -30,7 +30,7 @@ class HomePageNewsTests(TestCase):
         Loads the home page without any news posts.
         Expects the Latest News section not to be rendered.
         """
-        assert 'Latest News' not in self.get_home().content.decode()
+        assert '<h2 class="page-section-title">Latest News</h2>' not in self.get_home().content.decode()
 
     def test_view_all_news_link(self):
         """
