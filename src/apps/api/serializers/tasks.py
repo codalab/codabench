@@ -210,6 +210,7 @@ class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):
     value = serializers.CharField(source='task.key', required=False)
     key = serializers.CharField(source='task.key', required=False)
     created_when = serializers.DateTimeField(source='task.created_when', required=False)
+    content_updated_when = serializers.DateTimeField(source='task.content_updated_when', read_only=True)
     name = serializers.CharField(source='task.name', required=False)
     solutions = serializers.SerializerMethodField()
     public_datasets = serializers.SerializerMethodField()
@@ -225,6 +226,7 @@ class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):
             'value',
             'key',
             'created_when',
+            'content_updated_when',
             'name',
             'solutions',
             'public_datasets'
@@ -276,5 +278,5 @@ class PhaseTaskInstanceSmallSerializer(PhaseTaskInstanceSerializer):
     class Meta(PhaseTaskInstanceSerializer.Meta):
         fields = (
             'task', 'order_index', 'phase', 'id',
-            'value', 'key', 'created_when', 'name',
+            'value', 'key', 'created_when', 'content_updated_when', 'name',
         )

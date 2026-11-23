@@ -1,6 +1,7 @@
 from django.urls import reverse
 from rest_framework.test import APITestCase
 from datetime import timedelta
+from django.utils.timezone import now
 import factories
 
 
@@ -255,7 +256,35 @@ class LeaderboardOutdatedTaskTests(APITestCase):
 
     def test_submission_is_outdated_when_phase_task_replaced(self):
         self.phase.tasks.set([factories.TaskFactory()])
-        assert self.get_leaderboard_submission()['outdated_task'] is True
+        submission = self.get_leaderboard_submission()
+        assert submission['outdated_task'] is True
+        assert not submission.get('updated_task')
+
+    def update_task_scoring_program(self):
+        task = self.phase.tasks.get()
+        task.scoring_program = factories.DataFactory(type='scoring_program')
+        task.save()
+        return task
+
+    def test_submission_is_flagged_when_task_updated_after_it_ran(self):
+        self.submission.started_when = now() - timedelta(hours=1)
+        self.submission.save()
+        self.update_task_scoring_program()
+        submission = self.get_leaderboard_submission()
+        assert submission['updated_task'] is True
+        assert not submission.get('outdated_task')
+
+    def test_submission_that_ran_after_task_update_is_not_flagged(self):
+        task = self.update_task_scoring_program()
+        self.submission.started_when = task.content_updated_when + timedelta(minutes=1)
+        self.submission.save()
+        assert not self.get_leaderboard_submission().get('updated_task')
+
+    def test_renaming_task_does_not_flag_submission(self):
+        task = self.phase.tasks.get()
+        task.name = 'Renamed'
+        task.save()
+        assert not self.get_leaderboard_submission().get('updated_task')
 
 
 class LeaderboardMissingScoreOrderingTests(APITestCase):

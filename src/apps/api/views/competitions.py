@@ -40,6 +40,7 @@ from utils.data import make_url_sassy
 from api.permissions import IsOrganizerOrCollaborator
 from django.db import transaction
 from django.conf import settings
+from django.utils.dateparse import parse_datetime
 from django.utils.timezone import now
 
 
@@ -911,6 +912,11 @@ class PhaseViewSet(ModelViewSet):
 
         columns = list(query['columns'])
         current_task_ids = {task['id'] for task in query['tasks']}
+        task_content_updated_when = {
+            task['id']: parse_datetime(task['content_updated_when'])
+            for task in query['tasks']
+            if task['content_updated_when']
+        }
         submissions_keys = {}
         submission_detailed_results = {}
 
@@ -997,6 +1003,11 @@ class PhaseViewSet(ModelViewSet):
             # task deleted (None) or removed from the phase: its scores show as n/a
             if submission['task'] not in current_task_ids:
                 response['submissions'][submissions_keys[submission_key]]['outdated_task'] = True
+            # task programs or data changed after this submission ran: its scores come from the older version
+            elif submission['task'] in task_content_updated_when:
+                ran_when = parse_datetime(submission['started_when'] or submission['created_when'])
+                if ran_when < task_content_updated_when[submission['task']]:
+                    response['submissions'][submissions_keys[submission_key]]['updated_task'] = True
 
             for score in submission['scores']:
                 column_found = False

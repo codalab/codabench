@@ -75,6 +75,11 @@
                           data-position="right center" data-inverted="">
                         <i class="orange exclamation triangle icon"></i>
                     </span>
+                    <span if="{ submission.updated_task && !submission.outdated_task }"
+                          data-tooltip="Scored on an older version of the task: its programs or data were updated after this submission ran. A new submission, or a re-run by the organizers, is needed to be scored on the current version."
+                          data-position="right center" data-inverted="">
+                        <i class="yellow exclamation triangle icon"></i>
+                    </span>
                 </td>
                 <td if="{ has_group_queues }">
                     <span if="{ submission.queue_name }">{ submission.queue_name }</span>
