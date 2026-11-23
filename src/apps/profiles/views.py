@@ -52,6 +52,15 @@ class PublicProfileView(LoginRequiredMixin, DetailView):
     # and the header and menu use it. With the default name, user would mean the profile owner instead.
     context_object_name = 'profile_user'
 
+    def get_object(self, queryset=None):
+        if queryset is None:
+            queryset = self.get_queryset()
+        username = self.kwargs[self.slug_url_kwarg]
+        profile_user = queryset.filter(username=username).first() or queryset.filter(slug=username).first()
+        if profile_user is None:
+            raise Http404('No user found matching the query')
+        return profile_user
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         profile_user = self.object
