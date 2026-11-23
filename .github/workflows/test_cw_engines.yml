@@ -1,0 +1,129 @@
+name: Test compute worker container engines
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/test_cw_engines.yml
+      - packaging/container/Containerfile.compute_worker
+      - compute_worker/**
+      - src/settings/logs_loguru.py
+  push:
+    paths:
+      - .github/workflows/test_cw_engines.yml
+      - packaging/container/Containerfile.compute_worker
+      - compute_worker/**
+      - src/settings/logs_loguru.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  TEST_IMAGE: localhost/codabench-compute-worker:ci
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  build:
+    name: Build worker image
+    outputs:
+      image_id: ${{ steps.image.outputs.image_id }}
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build and export image
+        id: image
+        run: |
+          docker build --tag "$TEST_IMAGE" \
+            --file packaging/container/Containerfile.compute_worker .
+          docker save --output worker.tar "$TEST_IMAGE"
+          docker image inspect --format 'image_id={{.Id}}' "$TEST_IMAGE" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: compute-worker-image
+          path: worker.tar
+          compression-level: 0
+          retention-days: 1
+
+  docker:
+    name: Test Docker
+    needs: build
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    env:
+      CONTAINER_ENGINE_EXECUTABLE: docker
+      CONTAINER_SOCKET: unix:///var/run/docker.sock
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          name: compute-worker-image
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install test dependency and load image
+        run: |
+          python -m pip install 'docker>=7.1.0,<8'
+          docker load --input worker.tar
+      - name: Run shared tests
+        run: python -B -m unittest discover -s compute_worker/test -v
+
+  podman:
+    name: Test Podman
+    needs: build
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    env:
+      CONTAINER_ENGINE_EXECUTABLE: podman
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          name: compute-worker-image
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install Podman and test dependency
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes podman
+          python -m pip install 'docker>=7.1.0,<8'
+      - name: Load image and start rootless API socket
+        run: |
+          podman load --input worker.tar
+          podman tag "${{ needs.build.outputs.image_id }}" "$TEST_IMAGE"
+          podman image inspect "$TEST_IMAGE"
+          systemctl --user start podman.socket
+      - name: Run shared tests
+        run: |
+          export CONTAINER_SOCKET="unix://${XDG_RUNTIME_DIR}/podman/podman.sock"
+          python -B -m unittest discover -s compute_worker/test -v
+
+  apptainer:
+    name: Test Apptainer
+    needs: build
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    env:
+      CONTAINER_ENGINE_EXECUTABLE: apptainer
+      TEST_SIF: worker.sif
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          name: compute-worker-image
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install Apptainer and test dependency
+        run: |
+          sudo add-apt-repository --yes ppa:apptainer/ppa
+          sudo apt-get update
+          sudo apt-get install --yes apptainer
+          python -m pip install 'docker>=7.1.0,<8'
+      - name: Convert image to SIF
+        run: apptainer build worker.sif docker-archive://worker.tar
+      - name: Run adapter self-checks
+        run: python -B compute_worker/apptainer_backend.py
+      - name: Run shared tests
+        run: python -B -m unittest discover -s compute_worker/test -v
