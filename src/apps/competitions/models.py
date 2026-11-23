@@ -819,14 +819,20 @@ class Submission(models.Model):
             if self.has_children:
                 for sub in self.children.all():
                     sub.cancel(status=status)
-            celery_app = app
-            # If a custom queue is set, we need to fetch the appropriate celery app
-            # NOTE: We fetch the queue from submission and not from competition to be sure that we are using the correct queue
-            # Originally we were using queue from the competition (self.phase.competition.queue)
-            if self.queue:
-                celery_app = app_for_vhost(str(self.queue.vhost))
-            # We need to convert the UUID given by celery into a byte like object otherwise it won't work
-            celery_app.control.revoke(str(self.celery_task_id), terminate=True)
+            # No task id means the submission was never sent to a compute worker: nothing to revoke
+            if self.celery_task_id:
+                celery_app = app
+                # If a custom queue is set, we need to fetch the appropriate celery app
+                # NOTE: We fetch the queue from submission and not from competition to be sure that we are using the correct queue
+                # Originally we were using queue from the competition (self.phase.competition.queue)
+                if self.queue:
+                    celery_app = app_for_vhost(str(self.queue.vhost))
+                # Revoking can fail (e.g. broker unreachable for this queue), it must not prevent the cancellation
+                try:
+                    # We need to convert the UUID given by celery into a byte like object otherwise it won't work
+                    celery_app.control.revoke(str(self.celery_task_id), terminate=True)
+                except Exception:
+                    logger.exception(f"Could not revoke celery task of submission {self.pk}")
             self.status = status
             self.save()
             return True
