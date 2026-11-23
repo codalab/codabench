@@ -226,7 +226,6 @@ class User(AbstractBaseUser, PermissionsMixin):
 
         # Any user attribute
         self.username = f"deleted_user_{self.id}"
-        self.slug = f"deleted_slug_{self.id}"
         self.photo = None
         self.email = None
         self.display_name = None
