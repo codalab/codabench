@@ -1,54 +1,47 @@
-from collections import Counter
-import math
-import pickle
-import re
+import json
+
+import numpy as np
+import onnxruntime as ort
 
 from .base_classifier import BaseTagClassifier
 
-_TOKEN_RE = re.compile(r"(?u)\b\w\w+\b")
-
 
 class TfidfClassifier(BaseTagClassifier):
-    """Pure-Python (1, 2)-gram sublinear TF-IDF + logistic regression classifier."""
+    """Multi-label TF-IDF classifier running an ONNX pipeline via onnxruntime.
 
-    def __init__(self, category_model):
-        self.vocabulary = category_model["vocabulary"]
-        self.idf = category_model["idf"]
-        self.classifiers = category_model["classifiers"]
-        self.fallback_tag = category_model.get("fallback_tag") or None
+    Expects an ONNX model exported from a scikit-learn text pipeline with:
+    - input[0]: string tensor of shape (batch, 1)
+    - output[1]: probability tensor of shape (batch, num_labels) (zipmap=False)
+    - metadata key "codabench_tagging": JSON {"labels": [...], "thresholds": [...], "fallback_tag": "..."}
+    """
+
+    def __init__(self, model_path):
+        opts = ort.SessionOptions()
+        opts.intra_op_num_threads = 1
+        opts.inter_op_num_threads = 1
+        self.session = ort.InferenceSession(model_path, sess_options=opts, providers=["CPUExecutionProvider"])
+
+        meta = json.loads(self.session.get_modelmeta().custom_metadata_map["codabench_tagging"])
+        self._labels = list(meta["labels"])
+        self.thresholds = list(meta["thresholds"])
+        self.fallback_tag = meta.get("fallback_tag") or None
+        
+        self.input_name = self.session.get_inputs()[0].name
+        self.prob_output_name = self.session.get_outputs()[1].name
 
     @property
     def labels(self):
-        return self.classifiers.keys()
-
-    @classmethod
-    def load_all(cls, path):
-        """Load all category classifiers from a pickled model bundle."""
-        with open(path, "rb") as f:
-            bundle = pickle.load(f)
-        return {cat_name: cls(cat_model) for cat_name, cat_model in bundle.items()}
-
-    def _vectorize(self, text):
-        # Compute L2-normalized sublinear TF-IDF vector over unigrams and bigrams
-        tokens = _TOKEN_RE.findall(text.lower())
-        ngrams = tokens + [f"{a} {b}" for a, b in zip(tokens, tokens[1:])]
-        counts = Counter(ng for ng in ngrams if ng in self.vocabulary)
-        sparse = {
-            self.vocabulary[ng]: (1.0 + math.log(tf)) * self.idf[self.vocabulary[ng]]
-            for ng, tf in counts.items()
-        }
-        norm = math.hypot(*sparse.values())
-        return {i: v / norm for i, v in sparse.items()} if norm else {}
+        return self._labels
 
     def predict(self, text):
         fallback = [self.fallback_tag] if self.fallback_tag else []
-        sparse = self._vectorize(text or "")
-        if not sparse:
+        if not text or not text.strip():
             return fallback
 
-        predicted = []
-        for tag_name, clf in self.classifiers.items():
-            logit = sum(clf["weights"].get(i, 0.0) * v for i, v in sparse.items()) + clf["intercept"]
-            if 1.0 / (1.0 + math.exp(-max(-50.0, min(50.0, logit)))) >= clf["threshold"]:
-                predicted.append(tag_name)
+        probs = self.session.run([self.prob_output_name], {self.input_name: np.array([[text.lower()]])})[0][0]
+        predicted = [
+            tag
+            for tag, prob, threshold in zip(self._labels, probs, self.thresholds)
+            if prob >= threshold
+        ]
         return predicted or fallback

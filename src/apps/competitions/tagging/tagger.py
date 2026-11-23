@@ -8,7 +8,7 @@ from .regex_classifier import RegexClassifier
 from .tfidf_classifier import TfidfClassifier
 from .utils import build_competition_text
 
-TFIDF_MODEL_PATH = os.path.join(os.path.dirname(__file__), "models", "tfidf_model.pkl")
+MODELS_DIR = os.path.join(os.path.dirname(__file__), "models")
 
 CONFERENCE = {
     "NeurIPS": [r"\bneurips\b", r"\bnips\b"],
@@ -29,10 +29,9 @@ CONFERENCE = {
 @lru_cache(maxsize=1)
 def get_classifiers():
     """Map each tag category to its classifier."""
-    tfidf = TfidfClassifier.load_all(TFIDF_MODEL_PATH)
     return {
-        "Machine Learning Domain": tfidf["Machine Learning Domain"],
-        "Fields of Application": tfidf["Fields of Application"],
+        "Machine Learning Domain": TfidfClassifier(os.path.join(MODELS_DIR, "tfidf", "ml_domain.onnx")),
+        "Fields of Application": TfidfClassifier(os.path.join(MODELS_DIR, "tfidf", "field.onnx")),
         "Conference": RegexClassifier(CONFERENCE),
     }
 
@@ -56,10 +55,10 @@ def suggest_tags_for_competition(competition=None, title="", description="", pag
         covered = {name.lower() for name in classifier.labels} if classifier else set()
         fallback = classifier.fallback_tag.lower() if classifier and classifier.fallback_tag else None
 
-        uncovered = [tag.name for tag in db_tags if tag.name.lower() not in covered and tag.name.lower() != fallback]
-        custom = {name.lower() for name in RegexClassifier(uncovered).predict(text)}
+        uncovered_tags = [tag.name for tag in db_tags if tag.name.lower() not in covered and tag.name.lower() != fallback]
+        uncovered_pred = {name.lower() for name in RegexClassifier(uncovered_tags).predict(text)}
 
-        chosen = (predicted - {fallback}) | custom or (predicted & {fallback})
-        matched_ids.extend(tag.id for tag in db_tags if tag.name.lower() in chosen)
+        chosen_tags = (predicted - {fallback}) | uncovered_pred or (predicted & {fallback})
+        matched_ids.extend(tag.id for tag in db_tags if tag.name.lower() in chosen_tags)
 
     return matched_ids
