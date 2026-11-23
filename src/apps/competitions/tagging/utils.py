@@ -1,6 +1,6 @@
 from django.utils.html import strip_tags
 
-ALLOWED_PAGE_TITLES = ("overview", "description", "tasks", "competition", "evaluation", "participation")
+ALLOWED_PAGE_TITLES = ("overview", "description", "tasks", "competition", "participation")
 MAX_TEXT_LENGTH = 4000
 
 
