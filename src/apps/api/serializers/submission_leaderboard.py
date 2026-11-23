@@ -65,5 +65,5 @@ class SubmissionLeaderBoardSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'parent', 'owner', 'leaderboard_id', 'fact_sheet_answers',
             'task', 'scores', 'display_name', 'slug_url', 'organization',
-            'detailed_result', 'created_when', 'queue_name', 'queue_id',
+            'detailed_result', 'created_when', 'started_when', 'queue_name', 'queue_id',
         )

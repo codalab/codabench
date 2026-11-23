@@ -286,3 +286,41 @@ class TestUpdateTaskPermissions(APITestCase):
         self.task.is_public = True
         self.task.save()
         assert self.list_tasks(self.stranger, public=True)[self.task.pk]['can_edit'] is False
+
+
+class TestTaskContentUpdatedWhen(APITestCase):
+    """content_updated_when only moves when a change affects how submissions are run"""
+    def setUp(self):
+        self.owner = UserFactory()
+        self.scoring_program = DataFactory(created_by=self.owner, type='scoring_program')
+        self.task = TaskFactory(created_by=self.owner, scoring_program=self.scoring_program)
+
+    def update_task(self, **data):
+        self.client.force_login(self.owner)
+        resp = self.client.put(
+            reverse('task-detail', kwargs={'pk': self.task.pk}),
+            {'name': self.task.name, 'is_public': False, 'scoring_program': self.scoring_program.key, **data},
+            format='json',
+        )
+        assert resp.status_code == status.HTTP_200_OK
+        self.task.refresh_from_db()
+
+    def test_new_task_has_no_content_update(self):
+        assert self.task.content_updated_when is None
+
+    def test_renaming_task_does_not_set_content_updated_when(self):
+        self.update_task(name='Renamed', description='New description')
+        assert self.task.name == 'Renamed'
+        assert self.task.content_updated_when is None
+
+    def test_changing_scoring_program_sets_content_updated_when(self):
+        new_program = DataFactory(created_by=self.owner, type='scoring_program')
+        self.update_task(scoring_program=new_program.key)
+        assert self.task.scoring_program == new_program
+        assert self.task.content_updated_when is not None
+
+    def test_changing_ingestion_mode_sets_content_updated_when(self):
+        self.task.ingestion_only_during_scoring = True
+        self.task.save(update_fields=['ingestion_only_during_scoring'])
+        self.task.refresh_from_db()
+        assert self.task.content_updated_when is not None

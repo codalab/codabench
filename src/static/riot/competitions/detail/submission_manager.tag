@@ -164,6 +164,16 @@
                     <sup if="{ pending_info(submission) }" data-tooltip="{ pending_info(submission).message }" data-inverted="">
                         <i class="question circle icon" style="color: { pending_info(submission).color };"></i>
                     </sup>
+                    <sup if="{ is_outdated_task(submission) }"
+                        data-tooltip="Ran on a task that is no longer in this phase. Make a new submission to be scored on the current task."
+                        data-position="left center" data-inverted="">
+                        <i class="orange exclamation triangle icon"></i>
+                    </sup>
+                    <sup if="{ is_updated_task(submission) }"
+                        data-tooltip="Ran on an older version of the task: its programs or data were updated afterwards. A new submission, or a re-run by the organizers, is needed to be scored on the current version."
+                        data-position="left center" data-inverted="">
+                        <i class="yellow exclamation triangle icon"></i>
+                    </sup>
                 </td>
                 <td>{get_score(submission)}</td>
                 <td if="{ has_hidden_scores() }">
@@ -309,6 +319,16 @@
                                     { child.status }
                                     <sup if="{ pending_info(child) }" data-tooltip="{ pending_info(child).message }" data-inverted="">
                                         <i class="question circle icon" style="color: { pending_info(child).color };"></i>
+                                    </sup>
+                                    <sup if="{ is_outdated_task(child) }"
+                                        data-tooltip="Ran on a task that is no longer in this phase. Make a new submission to be scored on the current task."
+                                        data-position="left center" data-inverted="">
+                                        <i class="orange exclamation triangle icon"></i>
+                                    </sup>
+                                    <sup if="{ is_updated_task(child) }"
+                                        data-tooltip="Ran on an older version of the task: its programs or data were updated afterwards. A new submission, or a re-run by the organizers, is needed to be scored on the current version."
+                                        data-position="left center" data-inverted="">
+                                        <i class="yellow exclamation triangle icon"></i>
                                     </sup>
                                 </td>
                                 <td>{ get_score(child) }</td>
@@ -654,6 +674,38 @@
             let children = self.get_children(submission)
             let task_ids = _.uniq(_.map(children, child => _.get(child, 'task.id')).filter(id => id != null))
             return task_ids.length > 1
+        }
+
+        // Finished runs of a submission (itself, or its children) with the phase tasks, or null
+        self.get_finished_runs = function (submission) {
+            let phase = self.get_submission_phase(submission) || self.selected_phase
+            if (submission.status !== 'Finished' || !phase) {
+                return null
+            }
+            let runs = submission.has_children ? self.get_children(submission) : [submission]
+            return {runs: runs, phase_tasks: _.get(phase, 'tasks', [])}
+        }
+
+        // ran (or a child ran) on a task that was deleted or removed from the phase: scores show as n/a
+        self.is_outdated_task = function (submission) {
+            let finished = self.get_finished_runs(submission)
+            if (!finished) return false
+            let phase_task_ids = _.map(finished.phase_tasks, 'id')
+            return _.some(finished.runs, run => !_.includes(phase_task_ids, _.get(run, 'task.id')))
+        }
+
+        // ran (or a child ran) before the programs or data of its task were updated
+        // not shown when the task was also replaced: the outdated task marker already covers it
+        self.is_updated_task = function (submission) {
+            if (self.is_outdated_task(submission)) return false
+            let finished = self.get_finished_runs(submission)
+            if (!finished) return false
+            let updated_when = _.fromPairs(_.map(finished.phase_tasks, task => [task.id, task.content_updated_when]))
+            return _.some(finished.runs, run => {
+                let task_updated_when = updated_when[_.get(run, 'task.id')]
+                let ran_when = run.started_when || run.created_when
+                return !!task_updated_when && !!ran_when && Date.parse(ran_when) < Date.parse(task_updated_when)
+            })
         }
 
         self.toggle_expand = function (submission, event) {

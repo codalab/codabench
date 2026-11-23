@@ -1,6 +1,7 @@
 from django.urls import reverse
 from rest_framework.test import APITestCase
 from datetime import timedelta
+from django.utils.timezone import now
 import factories
 
 
@@ -232,6 +233,58 @@ class HiddenColumnScoreTests(APITestCase):
             self.client.force_login(user)
             rows = self.get_phase_leaderboard().json()['submissions']
             assert [row['id'] for row in rows] == [self.submission.id, later.id]
+
+
+class LeaderboardOutdatedTaskTests(APITestCase):
+    def setUp(self):
+        self.creator = factories.UserFactory(username='creator', password='creator')
+        self.comp = factories.CompetitionFactory(created_by=self.creator)
+        self.leaderboard = factories.LeaderboardFactory(primary_index=0)
+        self.phase = factories.PhaseFactory(competition=self.comp, leaderboard=self.leaderboard)
+        factories.ColumnFactory(leaderboard=self.leaderboard, index=0, key='accuracy')
+        self.submission = factories.SubmissionFactory(phase=self.phase, leaderboard=self.leaderboard, task=self.phase.tasks.get())
+
+    def get_leaderboard_submission(self):
+        self.client.force_login(self.creator)
+        resp = self.client.get(reverse('phases-get-leaderboard', kwargs={'pk': self.phase.pk}))
+        assert resp.status_code == 200
+        [submission] = resp.json()['submissions']
+        return submission
+
+    def test_submission_on_current_task_is_not_outdated(self):
+        assert not self.get_leaderboard_submission().get('outdated_task')
+
+    def test_submission_is_outdated_when_phase_task_replaced(self):
+        self.phase.tasks.set([factories.TaskFactory()])
+        submission = self.get_leaderboard_submission()
+        assert submission['outdated_task'] is True
+        assert not submission.get('updated_task')
+
+    def update_task_scoring_program(self):
+        task = self.phase.tasks.get()
+        task.scoring_program = factories.DataFactory(type='scoring_program')
+        task.save()
+        return task
+
+    def test_submission_is_flagged_when_task_updated_after_it_ran(self):
+        self.submission.started_when = now() - timedelta(hours=1)
+        self.submission.save()
+        self.update_task_scoring_program()
+        submission = self.get_leaderboard_submission()
+        assert submission['updated_task'] is True
+        assert not submission.get('outdated_task')
+
+    def test_submission_that_ran_after_task_update_is_not_flagged(self):
+        task = self.update_task_scoring_program()
+        self.submission.started_when = task.content_updated_when + timedelta(minutes=1)
+        self.submission.save()
+        assert not self.get_leaderboard_submission().get('updated_task')
+
+    def test_renaming_task_does_not_flag_submission(self):
+        task = self.phase.tasks.get()
+        task.name = 'Renamed'
+        task.save()
+        assert not self.get_leaderboard_submission().get('updated_task')
 
 
 class LeaderboardMissingScoreOrderingTests(APITestCase):
