@@ -23,12 +23,9 @@ services:
 
   django:
     container_name: django
-    build: 
-      context: .
-      dockerfile: packaging/container/Containerfile
-    image: django_site-worker
+    image: codalab/codabench-service:latest
     # NOTE: We use watchmedo to reload gunicorn nicely, Uvicorn + Gunicorn reloads don't work well
-    command: ["python manage.py migrate --no-input && python manage.py collectstatic --no-input && cd /app/src && watchmedo auto-restart -p '*.py' --recursive -- python3 ./gunicorn_run.py"]
+    command: ["python manage.py migrate --no-input && python manage.py collectstatic --no-input && cd /app/src && python3 ./gunicorn_run.py"]
     environment:
       - DATABASE_URL=postgres://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
     env_file: .env
@@ -102,9 +99,7 @@ services:
   #----------------------------------------------------------------------------------------------------
   builder:
     container_name: builder
-    build:
-      context: .
-      dockerfile: packaging/container/Containerfile.builder
+    image: codalab/codabench-builder:latest
     volumes:
       - .:/app:delegated
     restart: unless-stopped
@@ -149,11 +144,7 @@ services:
   #----------------------------------------------------------------------------------------------------
   rabbit:
     container_name: rabbit
-    build:
-      context: .
-      dockerfile: packaging/container/Containerfile.rabbitmq
-      args:
-        - WORKER_CONNECTION_TIMEOUT=${WORKER_CONNECTION_TIMEOUT}
+    image: codalab/codabench-rabbit:latest
     # setting hostname here makes data persist properly between
     # containers being destroyed..!
     hostname: rabbit
@@ -215,7 +206,7 @@ services:
     command: ["celery -A celery_config worker -B -Q site-worker -l info -n site-worker@%n --concurrency=2"]
     working_dir: /app/src
     container_name: site_worker
-    image: django_site-worker
+    image: codalab/codabench-service:latest
     pull_policy: never
     depends_on:
       - rabbit
@@ -241,9 +232,7 @@ services:
     command: ["celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@%n"]
     working_dir: /app
     container_name: compute_worker
-    build:
-      context: .
-      dockerfile: packaging/container/Containerfile.compute_worker
+    image: codalab/codabench-compute-worker:latest
     depends_on:
       - django
       - rabbit

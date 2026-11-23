@@ -1,0 +1,267 @@
+services:
+  #----------------------------------------------------------------------------------------------------
+  #   Web Services
+  #----------------------------------------------------------------------------------------------------
+  caddy:
+    image: caddy:2.11.1
+    env_file: .env
+    environment:
+      - ACME_AGREE=true
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./src/staticfiles:/var/www/django/static
+      - ./caddy_data:/data
+      - ./caddy_config:/config
+      - ./var/log/caddy:/var/log/
+      - ./maintenance_mode/:/srv
+    restart: unless-stopped
+    ports:
+      - 80:80
+      - 443:443
+    depends_on:
+      - django
+
+  django:
+    container_name: django
+    build: 
+      context: .
+      dockerfile: packaging/container/Containerfile.develop
+    image: django_site-worker
+    # NOTE: We use watchmedo to reload gunicorn nicely, Uvicorn + Gunicorn reloads don't work well
+    command: ["python manage.py migrate --no-input && python manage.py collectstatic --no-input && cd /app/src && watchmedo auto-restart -p '*.py' --recursive -- python3 ./gunicorn_run.py"]
+    environment:
+      - DATABASE_URL=postgres://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
+    env_file: .env
+    volumes:
+      - .:/app:delegated
+      - /tmp/codalab-v2/django:/codalab_tmp
+      - ./backups:/app/backups
+      - ./var/logs:/app/logs
+    restart: unless-stopped
+    ports:
+      - 8000:8000
+    depends_on:
+      - db
+      - rabbit
+      - minio
+    stdin_open: true
+    tty: true
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    logging:
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+
+  #----------------------------------------------------------------------------------------------------
+  # Minio local storage helper
+  #----------------------------------------------------------------------------------------------------
+  minio:
+    image: codalab/minio:RELEASE.2025-04-22T22-12-26Z
+    command: server /export
+    volumes:
+      - ./var/minio:/export
+    restart: unless-stopped
+    ports:
+      - $MINIO_PORT:9000
+    env_file: .env
+    healthcheck:
+      test: ["CMD", "curl", "-I", "http://minio:9000/minio/health/live"]
+      interval: 5s
+      retries: 5
+  createbuckets:
+    image: codalab/mc:RELEASE.2025-07-21T05-28-08Z
+    depends_on:
+      minio:
+        condition: service_healthy
+    env_file: .env
+    # volumes:
+    #   This volume is shared with `minio`, so `z` to share it
+    #   - ./var/minio:/export
+    entrypoint: >
+      /bin/sh -c "
+      set -x;
+      if [ -n \"$MINIO_ACCESS_KEY\" ] && [ -n \"$MINIO_SECRET_KEY\" ] && [ -n \"$MINIO_PORT\" ]; then
+        until /usr/bin/mc alias set minio_docker http://minio:$MINIO_PORT $MINIO_ACCESS_KEY $MINIO_SECRET_KEY && break; do
+          echo '...waiting...' && sleep 5;
+        done;
+        /usr/bin/mc mb minio_docker/$AWS_STORAGE_BUCKET_NAME || echo 'Bucket $AWS_STORAGE_BUCKET_NAME already exists.';
+        /usr/bin/mc mb minio_docker/$AWS_STORAGE_PRIVATE_BUCKET_NAME || echo 'Bucket $AWS_STORAGE_PRIVATE_BUCKET_NAME already exists.';
+        /usr/bin/mc anonymous set download minio_docker/$AWS_STORAGE_BUCKET_NAME;
+      else
+        echo 'MINIO_ACCESS_KEY, MINIO_SECRET_KEY, or MINIO_PORT are not defined. Skipping buckets creation.';
+      fi;
+      exit 0;
+      "
+
+  #----------------------------------------------------------------------------------------------------
+  #   Local development helper, rebuilds RiotJS/Stylus on change
+  #----------------------------------------------------------------------------------------------------
+  builder:
+    container_name: builder
+    build:
+      context: .
+      dockerfile: packaging/container/Containerfile.builder
+    volumes:
+      - .:/app:delegated
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+
+  #----------------------------------------------------------------------------------------------------
+  #   Database Service
+  #
+  # Since Postgres 18, PGDATA is supposed to point towards /var/lib/postgresql/*MAJORVERSION*/docker
+  # Make sure to change the path when upgrading
+  #----------------------------------------------------------------------------------------------------
+  db:
+    image: postgres:18-alpine
+    container_name: db
+    env_file: .env
+    environment:
+      - PGDATA=/var/lib/postgresql/18/docker
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    command: ["postgres", "-c", "log_statement=all", "-c", "log_destination=stderr", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+    ports:
+      - 5432:5432
+    volumes:
+      - ./var/postgres:/var/lib/postgresql/18/:delegated
+      - ./backups:/app/backups
+      - ./my-postgres.conf:/etc/postgresql/postgresql.conf
+    restart: unless-stopped
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    logging:
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+  #----------------------------------------------------------------------------------------------------
+  #   Rabbitmq & Flower monitoring tool
+  #----------------------------------------------------------------------------------------------------
+  rabbit:
+    container_name: rabbit
+    build:
+      context: .
+      dockerfile: packaging/container/Containerfile.rabbitmq
+      args:
+        - WORKER_CONNECTION_TIMEOUT=${WORKER_CONNECTION_TIMEOUT}
+    # setting hostname here makes data persist properly between
+    # containers being destroyed..!
+    hostname: rabbit
+    env_file: .env
+    ports:
+      - ${RABBITMQ_MANAGEMENT_PORT:-15672}:15672
+      - ${RABBITMQ_PORT}:5672
+    volumes:
+      - ./var/rabbit:/var/lib/rabbitmq
+    restart: unless-stopped
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    logging:
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+  flower:
+    container_name: flower
+    image: mher/flower
+    env_file: .env
+    environment:
+      - CELERY_BROKER_URL=pyamqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@${RABBITMQ_HOST}:${RABBITMQ_PORT}//
+    restart: unless-stopped
+    ports:
+      - ${FLOWER_PUBLIC_PORT:-5555}:5555
+    depends_on:
+      - rabbit
+    logging:
+        options:
+            max-size: "20m"
+            max-file: "5"
+
+  #----------------------------------------------------------------------------------------------------
+  #   Redis
+  #----------------------------------------------------------------------------------------------------
+  redis:
+    container_name: redis
+    image: redis
+    ports:
+      - 6379:6379
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+  #----------------------------------------------------------------------------------------------------
+  #   Celery Service
+  #----------------------------------------------------------------------------------------------------
+  site_worker:
+    # This auto-reloads
+    command: ["celery -A celery_config worker -B -Q site-worker -l info -n site-worker@%n --concurrency=2"]
+    working_dir: /app/src
+    container_name: site_worker
+    image: django_site-worker
+    pull_policy: never
+    depends_on:
+      - rabbit
+      - db
+    env_file: .env
+    volumes:
+      - .:/app
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: "20m"
+        max-file: "5"
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    deploy:
+      resources:
+        limits:
+          memory: 15GB
+
+  compute_worker:
+    command: ["watchmedo auto-restart -p '*.py' --recursive -- celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@%n"]
+    working_dir: /app
+    container_name: compute_worker
+    build:
+      context: .
+      dockerfile: packaging/container/Containerfile.compute_worker
+    depends_on:
+      - django
+      - rabbit
+    volumes:
+      - ./compute_worker:/app
+      - ${HOST_DIRECTORY:-/tmp/codabench}:/codabench
+      # Actual connection back to docker parent to run things
+      - /var/run/docker.sock:/var/run/docker.sock
+    hostname: local_worker
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - BROKER_URL=pyamqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@${RABBITMQ_HOST}:${RABBITMQ_PORT}//
+      # Make the worker leave behind the submission so we can examine it
+      - COMPUTE_WORKER_NO_CLEANUP=Truew
+    tty: true
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    logging:
+      options:
+        max-size: "20m"
+        max-file: "5"
+
