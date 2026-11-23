@@ -36,11 +36,34 @@ def keep_one_benchmark_per_organizer(benchmarks, order_by):
     return Competition.objects.filter(id__in=first_per_organizer).order_by(order_by)
 
 
+def fill_up_with_other_benchmarks(picked, benchmarks, order_by, limit):
+    """
+    Add more benchmarks to the picked ones until there are `limit` of them,
+    or until no benchmarks are left. The added ones may repeat an organizer.
+    Example: when all benchmarks come from one organizer, only 1 is picked,
+    so 2 more of that organizer's benchmarks are added to fill the row of 3.
+
+    :param picked: List of benchmarks already picked.
+    :param benchmarks: Competition queryset to take the extra benchmarks from.
+    :param order_by: Field that decides which benchmarks are added first.
+    :param limit: Amount of benchmarks the row should have.
+    :rtype: list
+    """
+    missing = limit - len(picked)
+    if missing <= 0:
+        return picked
+    extra = (benchmarks.exclude(id__in=[competition.id for competition in picked])
+             .order_by(order_by)
+             .prefetch_related('tags__category')[:missing])
+    return picked + list(extra)
+
+
 def get_popular_benchmarks(limit=3, pool_size=8):
     """
     Return random benchmarks picked from the published benchmarks with the most participants.
     Featured benchmarks are left out (they have their own section).
-    Each organizer appears at most once, with their most popular benchmark.
+    Each organizer appears at most once, with their most popular benchmark,
+    unless there are not enough organizers to fill the row.
 
     :param limit: Amount of benchmarks to return. Default is 3.
     :param pool_size: Amount of most popular benchmarks to pick from. Default is 8.
@@ -49,14 +72,18 @@ def get_popular_benchmarks(limit=3, pool_size=8):
     benchmarks = Competition.objects.filter(published=True, is_featured=False)
     pool = list(keep_one_benchmark_per_organizer(benchmarks=benchmarks, order_by='-participants_count')
                 .prefetch_related('tags__category')[:pool_size])
-    return random.sample(pool, min(limit, len(pool)))
+    picked = random.sample(pool, min(limit, len(pool)))
+    # When there are fewer organizers than spots, fill the row with their other benchmarks
+    return fill_up_with_other_benchmarks(picked=picked, benchmarks=benchmarks,
+                                         order_by='-participants_count', limit=limit)
 
 
 def get_recent_benchmarks(exclude_ids=None, limit=3, pool_size=8):
     """
     Return random benchmarks picked from the latest published benchmarks.
     Featured benchmarks and the given ids (the popular ones already shown) are left out.
-    Each organizer appears at most once, with their newest benchmark.
+    Each organizer appears at most once, with their newest benchmark,
+    unless there are not enough organizers to fill the row.
 
     :param exclude_ids: List of competition ids to exclude.
     :param limit: Amount of benchmarks to return. Default is 3.
@@ -67,4 +94,7 @@ def get_recent_benchmarks(exclude_ids=None, limit=3, pool_size=8):
                   .exclude(id__in=exclude_ids or []))
     pool = list(keep_one_benchmark_per_organizer(benchmarks=benchmarks, order_by='-created_when')
                 .prefetch_related('tags__category')[:pool_size])
-    return random.sample(pool, min(limit, len(pool)))
+    picked = random.sample(pool, min(limit, len(pool)))
+    # When there are fewer organizers than spots, fill the row with their other benchmarks
+    return fill_up_with_other_benchmarks(picked=picked, benchmarks=benchmarks,
+                                         order_by='-created_when', limit=limit)
