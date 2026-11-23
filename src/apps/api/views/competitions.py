@@ -387,19 +387,19 @@ class CompetitionViewSet(ModelViewSet):
     @action(detail=False, methods=('POST',))
     def auto_tags(self, request):
         comp_id = request.data.get('id')
-        title = request.data.get('title')
-        description = request.data.get('description')
+        title = request.data.get('title') or ''
+        description = request.data.get('description') or ''
         pages = request.data.get('pages')
 
-        title = title if isinstance(title, str) else ''
-        description = description if isinstance(description, str) else ''
-        if pages is not None and not isinstance(pages, list):
-            raise ValidationError("'pages' must be a list.")
+        if not isinstance(title, str) or not isinstance(description, str):
+            raise ValidationError("'title' and 'description' must be strings.")
+        if pages is not None and (not isinstance(pages, list) or not all(isinstance(p, dict) for p in pages)):
+            raise ValidationError("'pages' must be a list of objects.")
 
         comp = None
         if comp_id is not None:
             try:
-                comp = Competition.objects.prefetch_related('pages').filter(id=int(comp_id)).first()
+                comp = Competition.objects.select_related('created_by').filter(id=int(comp_id)).first()
             except (ValueError, TypeError):
                 raise ValidationError("Invalid competition ID.")
             if not comp or not comp.user_has_admin_permission(request.user):

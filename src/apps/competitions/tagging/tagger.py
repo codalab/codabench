@@ -1,83 +1,65 @@
-from django.utils.html import strip_tags
+from collections import defaultdict
+from functools import lru_cache
+import os
 
-from .regex_classifier import CONFERENCE, RegexClassifier
+from competitions.models import Tag
+
+from .regex_classifier import RegexClassifier
 from .tfidf_classifier import TfidfClassifier
+from .utils import build_competition_text
 
-ALLOWED_PAGE_TITLES = {
-    "overview",
-    "description",
-    "rules",
-    "evaluation",
-    "competition",
-    "participation",
+TFIDF_MODEL_PATH = os.path.join(os.path.dirname(__file__), "models", "tfidf_model.pkl")
+
+CONFERENCE = {
+    "NeurIPS": [r"\bneurips\b", r"\bnips\b"],
+    "CVPR": [r"\bcvpr\b"],
+    "ICML": [r"\bicml\b"],
+    "ICLR": [r"\biclr\b"],
+    "ICCV": [r"\biccv\b"],
+    "ECCV": [r"\beccv\b"],
+    "ACL": [r"\bacl\b"],
+    "MICCAI": [r"\bmiccai\b"],
+    "NAACL": [r"\bnaacl\b"],
+    "WSDM": [r"\bwsdm\b"],
+    "ECML PKDD": [r"\becml\b", r"\bpkdd\b"],
+    "SemEval": [r"\bsemeval\b"],
 }
 
-MAX_TEXT_LENGTH = 100_000
-_CLASSIFIERS_CACHE = None
 
-
-def get_default_classifiers():
-    global _CLASSIFIERS_CACHE
-    if _CLASSIFIERS_CACHE is None:
-        _CLASSIFIERS_CACHE = {
-            "Conference": RegexClassifier(CONFERENCE),
-            "Machine Learning Domain": TfidfClassifier.load("Machine Learning Domain"),
-            "Fields of Application": TfidfClassifier.load("Fields of Application"),
-        }
-    return _CLASSIFIERS_CACHE
-
-
-def build_competition_text(competition=None, title="", description="", pages=None):
-    if competition is not None:
-        title = title or (competition.title or "")
-        description = description or (competition.description or "")
-        if pages is None:
-            pages = list(competition.pages.all())
-
-    parts = []
-    if title:
-        parts.append(str(title))
-    if description:
-        parts.append(str(description))
-
-    if pages:
-        for page in pages:
-            if isinstance(page, dict):
-                page_title = str(page.get("title") or "").strip().lower()
-                page_content = page.get("content") or ""
-            else:
-                page_title = str(getattr(page, "title", "") or "").strip().lower()
-                page_content = getattr(page, "content", "") or ""
-            if page_title in ALLOWED_PAGE_TITLES and page_content:
-                parts.append(str(page_content))
-
-    raw_text = "\n".join(parts)[:MAX_TEXT_LENGTH]
-    return strip_tags(raw_text)
+@lru_cache(maxsize=1)
+def get_classifiers():
+    """Map each tag category to its classifier."""
+    tfidf = TfidfClassifier.load_all(TFIDF_MODEL_PATH)
+    return {
+        "Machine Learning Domain": tfidf["Machine Learning Domain"],
+        "Fields of Application": tfidf["Fields of Application"],
+        "Conference": RegexClassifier(CONFERENCE),
+    }
 
 
 def suggest_tags_for_competition(competition=None, title="", description="", pages=None):
-    text = build_competition_text(
-        competition=competition,
-        title=title,
-        description=description,
-        pages=pages,
-    )
+    """Return suggested Tag IDs matching the competition text across all DB categories."""
+    text = build_competition_text(competition=competition, title=title, description=description, pages=pages)
     if not text.strip():
         return []
 
-    classifiers = get_default_classifiers()
-    predicted_pairs = {
-        (category_name.lower(), tag_name.lower())
-        for category_name, classifier in classifiers.items()
-        for tag_name in classifier.predict(text)
-    }
-    if not predicted_pairs:
-        return []
+    tags_by_category = defaultdict(list)
+    for tag in Tag.objects.select_related("category").all():
+        tags_by_category[tag.category.name].append(tag)
 
-    from competitions.models import Tag
+    classifiers = get_classifiers()
+    matched_ids = []
 
-    return [
-        tag.id
-        for tag in Tag.objects.select_related("category").all()
-        if (tag.category.name.lower(), tag.name.lower()) in predicted_pairs
-    ]
+    for cat_name, db_tags in tags_by_category.items():
+        classifier = classifiers.get(cat_name)
+        predicted = {name.lower() for name in classifier.predict(text)} if classifier else set()
+        covered = {name.lower() for name in classifier.labels} if classifier else set()
+        fallback = classifier.fallback_tag.lower() if classifier and classifier.fallback_tag else None
+
+        uncovered = [tag.name for tag in db_tags if tag.name.lower() not in covered and tag.name.lower() != fallback]
+        custom = {name.lower() for name in RegexClassifier(uncovered).predict(text)}
+
+        chosen = (predicted - {fallback}) | custom or (predicted & {fallback})
+        matched_ids.extend(tag.id for tag in db_tags if tag.name.lower() in chosen)
+
+    return matched_ids
