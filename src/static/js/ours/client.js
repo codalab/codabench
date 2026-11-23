@@ -40,6 +40,9 @@ CODALAB.api = {
     get_tags: function () {
         return CODALAB.api.request('GET', URLS.API + "tags/")
     },
+    get_auto_tags: function (data) {
+        return CODALAB.api.request('POST', URLS.API + "competitions/auto_tags/", data)
+    },
     create_competition: function (data) {
         return CODALAB.api.request('POST', URLS.API + "competitions/", data)
     },

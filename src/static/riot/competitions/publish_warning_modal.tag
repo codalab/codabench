@@ -88,6 +88,7 @@
         self.on_confirm = null
 
         self.tags_by_category = []
+        self.tags_by_id = {}
         self.selected_tags = []
 
         self.contact_email = ''
@@ -154,7 +155,9 @@
             CODALAB.api.get_tags()
                 .done(function (tags) {
                     var categories = {}
+                    self.tags_by_id = {}
                     tags.forEach(function (tag) {
+                        self.tags_by_id[tag.id] = tag
                         if (!categories[tag.category_name]) {
                             categories[tag.category_name] = []
                         }
@@ -195,6 +198,22 @@
             self.on_confirm = on_confirm
             self.set_step_index(0)
             $(self.refs.modal).modal('show')
+
+            if (self.current_step.key === 'tags') {
+                CODALAB.api.get_auto_tags({
+                    id: competition.id,
+                    title: competition.title,
+                    description: competition.description,
+                    pages: competition.pages
+                }).done(function (data) {
+                    if (self.current_step.key === 'tags' && !self.selected_tags.length && data.tags) {
+                        self.selected_tags = data.tags
+                            .map(function (id) { return self.tags_by_id[id] })
+                            .filter(Boolean)
+                        self.update()
+                    }
+                })
+            }
         }
 
         self.is_selected = function (tag) {
@@ -225,6 +244,7 @@
         }
 
         self.close_modal = function () {
+            self.current_step = {}
             $(self.refs.modal).modal('hide')
         }
 
