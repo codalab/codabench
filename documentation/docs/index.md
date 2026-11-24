@@ -12,7 +12,7 @@ You may also create inverted benchmarks in which the roles of datasets and algor
 [Getting Started with Codabench](Organizers/Benchmark_Creation/Getting-started-with-Codabench.md)  
 [Basic Installation Guide](Developers_and_Administrators/Codabench-Installation.md)  
 [Compute Worker Setup](Organizers/Running_a_benchmark/Compute-Worker-Management---Setup.md)  
-[Administrative Procedures](Developers_and_Administrators/Administrator-procedures.md)  
+[Administrative Procedures](Developers_and_Administrators/Administrative_Procedures/index.md)  
 
 !!! tip "Use the top bar or the search functionality to navigate the docs!"
 

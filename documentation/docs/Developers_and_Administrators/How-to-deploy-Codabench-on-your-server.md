@@ -87,7 +87,7 @@ AWS_ACCESS_KEY_ID=testkey
 AWS_SECRET_ACCESS_KEY=testsecret
 ```
 
-!!! note "RabbitMQ credentials are only applied the first time RabbitMQ starts. To change them later, see [Change RabbitMQ username or password](Administrator-procedures.md#change-rabbitmq-username-or-password)."
+!!! note "RabbitMQ credentials are only applied the first time RabbitMQ starts. To change them later, see [Change RabbitMQ username or password](Administrative_Procedures/RabbitMQ-Management.md#change-rabbitmq-username-or-password)."
 
 !!! note
     `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY` are the MinIO credentials, and `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` are the credentials Codabench uses to access the storage. If you use the local MinIO container, both pairs must have the same values. If you use an external storage provider (e.g. AWS S3), only `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` are used.
