@@ -1,5 +1,6 @@
 import json
 import uuid
+from django.db import transaction
 from django.utils.timezone import now
 from django.db.models import Q, Prefetch
 from django_filters.rest_framework import DjangoFilterBackend
@@ -701,31 +702,37 @@ def upload_submission_scores(request, submission_pk):
     if "scores" not in request.data:
         raise ValidationError("'scores' required.")
 
-    # Reject the upload if this submission already has scores, so a repeated upload does not add duplicate score rows
-    if submission.scores.filter(column__leaderboard=submission.phase.leaderboard).exists():
-        logger.warning(f"Rejected score upload for submission {submission_pk}: scores already uploaded")
-        return Response(
-            {"detail": "Scores have already been uploaded for this submission."},
-            status=status.HTTP_409_CONFLICT,
-        )
+    # Create all score rows and update the leaderboard in one transaction, so a crash halfway cannot leave
+    # partial scores behind that would make every retry of this upload get a 409.
+    with transaction.atomic():
+        # Lock the submission row so two concurrent uploads cannot both pass the duplicate check below
+        submission = Submission.objects.select_for_update().get(pk=submission.pk)
 
-    competition_columns = submission.phase.leaderboard.columns.values_list('key', flat=True)
+        # Reject the upload if this submission already has scores, so a repeated upload does not add duplicate score rows
+        if submission.scores.filter(column__leaderboard=submission.phase.leaderboard).exists():
+            logger.warning(f"Rejected score upload for submission {submission_pk}: scores already uploaded")
+            return Response(
+                {"detail": "Scores have already been uploaded for this submission."},
+                status=status.HTTP_409_CONFLICT,
+            )
 
-    for column_key, score in request.data.get("scores").items():
-        if column_key not in competition_columns:
-            continue
-        score = SubmissionScore.objects.create(
-            score=score,
-            column=Column.objects.get(leaderboard=submission.phase.leaderboard, key=column_key)
-        )
-        submission.scores.add(score)
-        if submission.parent:
-            submission.parent.scores.add(score)
-            submission.parent.calculate_scores()
-        else:
-            submission.calculate_scores()
+        competition_columns = submission.phase.leaderboard.columns.values_list('key', flat=True)
 
-    put_on_leaderboard_by_submission_rule(request, submission_pk, submission_rule)
+        for column_key, score in request.data.get("scores").items():
+            if column_key not in competition_columns:
+                continue
+            score = SubmissionScore.objects.create(
+                score=score,
+                column=Column.objects.get(leaderboard=submission.phase.leaderboard, key=column_key)
+            )
+            submission.scores.add(score)
+            if submission.parent:
+                submission.parent.scores.add(score)
+                submission.parent.calculate_scores()
+            else:
+                submission.calculate_scores()
+
+        put_on_leaderboard_by_submission_rule(request, submission_pk, submission_rule)
     return Response()
 
 

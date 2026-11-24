@@ -27,7 +27,11 @@ from urllib.request import urlretrieve
 from zipfile import ZipFile, BadZipFile
 from urllib3 import Retry
 
-from submission_update import patch_submission, should_retry_submission_status
+from submission_update import (
+    patch_submission,
+    request_with_retry,
+    should_retry_submission_status,
+)
 
 from rich.pretty import pprint
 from rich.progress import Progress
@@ -298,6 +302,13 @@ class ExecutionTimeLimitExceeded(Exception):
     pass
 
 
+def mask_secret(data):
+    """Return a copy of a request payload that is safe to log."""
+    if isinstance(data, dict) and "secret" in data:
+        return {**data, "secret": "********"}
+    return data
+
+
 # -----------------------------------------------
 # Local setups where public S3 URLs are not directly reachable from workers
 # -----------------------------------------------
@@ -362,8 +373,15 @@ def run_wrapper(run_args):
             run.push_scores()
         run.push_output()
 
-        if run.is_scoring and run.human_in_the_loop:
+        # Only mark the submission finished once its scores and output are
+        # uploaded, so a failed upload ends in FAILED instead of a FINISHED
+        # submission without scores.
+        if run.is_scoring:
             run._update_status(SubmissionStatus.FINISHED)
+        else:
+            # SCORING makes the API dispatch the scoring run, which reads the
+            # predictions, so only send it once they are uploaded.
+            run._update_status(SubmissionStatus.SCORING)
 
     except DockerImagePullException as e:
         msg = str(e).strip()
@@ -587,13 +605,21 @@ class Run:
         self.websocket_url = f"{websocket_scheme}://{websocket_host}/submission_input/{self.user_pk}/{self.submission_id}/{self.secret}/"
 
         # Nice requests adapter with generous retries/etc.
+        # PATCH is deliberately not in allowed_methods: submission PATCHes are
+        # not all idempotent (the SCORING status dispatches a scoring task, and
+        # some _update_submission payloads append to server-side fields), so a
+        # transport-level replay after an ambiguous 5xx could repeat those side
+        # effects. Connect errors are still retried for every method because
+        # the request never reached the server. Status updates that are safe
+        # to repeat are retried explicitly through status_requests_session and
+        # submission_update.patch_submission.
         self.requests_session = requests.Session()
         adapter = requests.adapters.HTTPAdapter(
             max_retries=Retry(
                 total=3,
                 backoff_factor=1,
                 status_forcelist=[500, 502, 503, 504],
-                allowed_methods=["PATCH", "GET", "PUT"],
+                allowed_methods=["GET", "PUT"],
             )
         )
         self.requests_session.mount("http://", adapter)
@@ -780,7 +806,7 @@ class Run:
         url = f"{self.submissions_api_url}/submissions/{self.submission_id}/"
         data["secret"] = self.secret
 
-        logger.info(f"Updating submission @ {url} with data = {data}")
+        logger.info(f"Updating submission @ {url} with data = {mask_secret(data)}")
 
         session = self.status_requests_session if retry else self.requests_session
         resp = patch_submission(
@@ -1690,11 +1716,9 @@ class Run:
                 # Raise so upstream marks failed immediately
                 raise SubmissionException("Child task failed or non-zero return code")
 
-            if not self.human_in_the_loop:
-                self._update_status(SubmissionStatus.FINISHED)
-
-        else:
-            self._update_status(SubmissionStatus.SCORING)
+            # FINISHED is sent by run_wrapper once scores and output are uploaded.
+        # For a prediction run, SCORING is sent by run_wrapper once the
+        # predictions are uploaded.
 
     def wait_for_human_validation(self):
         container_output_dir = self.output_dir
@@ -1807,10 +1831,34 @@ class Run:
             "secret": self.secret,
             "scores": scores,
         }
-        logger.info(f"Submitting these scores to {url}: {scores} with data = {data}")
-        resp = self.requests_session.post(url, json=data)
-        logger.info(resp)
-        logger.info(str(resp.content))
+        logger.info(f"Submitting these scores to {url}: {scores} with data = {mask_secret(data)}")
+        # Retry transient failures on the no-retry status session so the attempt
+        # bound is exact. A retry after a POST that timed out but succeeded gets
+        # 409 from the API (scores already exist), which counts as success.
+        try:
+            resp = request_with_retry(
+                self.status_requests_session,
+                "POST",
+                url,
+                json=data,
+                retry=True,
+                timeout=(10, 150),
+            )
+        except requests.RequestException as e:
+            raise SubmissionException(f"Failed to upload scores: {e}") from e
+
+        if resp.status_code == 409:
+            logger.warning(
+                f"Scores already uploaded for submission {self.submission_id}, "
+                "likely by an earlier attempt. Treating as success."
+            )
+            return
+        if not 200 <= resp.status_code < 300:
+            raise SubmissionException(
+                f"Failed to upload scores: status={resp.status_code}, "
+                f"response={resp.text[:500]}"
+            )
+        logger.info(f"Scores uploaded successfully for submission {self.submission_id}")
 
     def push_output(self):
         """Output is pushed at the end of both prediction and scoring steps."""
