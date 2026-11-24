@@ -78,19 +78,10 @@
         background #ffffff !important
         border-top none !important
 
-        .ui.button
-            margin 0 !important
-
         .actions-right
             display flex
             align-items center
             gap 8px
-
-            .ui.primary.button
-                background-color $cb-blue-500 !important
-
-                &:hover
-                    background-color $cb-blue-400 !important
 
     .step-panel
         flex 1
@@ -145,44 +136,12 @@
         gap 6px
         align-items center
 
-    .tag-pill
-        display inline-flex
-        align-items center
-        gap 5px
-        padding 5px 11px
-        font-size 13px
-        font-weight 500
-        line-height 1.25
-        color $cb-navy-700
-        background-color #f1f4f7
-        border 1px solid #e2e8f0
-        border-radius 6px
-        cursor pointer
-        transition all 0.15s ease-in-out
-        user-select none
-        outline none
+    .tag-pill i.delete.icon
+        font-size 11px
+        opacity 0.85
 
         &:hover
-            background-color #e5ebf1
-            border-color #cbd5e1
-            color $cb-navy-900
-
-        &.active
-            background-color #43637a
-            border-color #43637a
-            color #ffffff
-
-            &:hover
-                background-color #2d3f4d
-                border-color #2d3f4d
-
-        i.delete.icon
-            margin 0 0 0 2px
-            font-size 11px
-            opacity 0.85
-
-            &:hover
-                opacity 1
+            opacity 1
 
     /* Step: Organizer Contact Email */
     .step-email

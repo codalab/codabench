@@ -20,7 +20,7 @@
                 <div class="selected-tags-bar">
                     <div class="tag-pills-container" if="{ selected_tags.length > 0 }">
                         <button type="button"
-                                class="tag-pill active"
+                                class="cb-button cb-button-small cb-button-primary tag-pill"
                                 each="{ tag in selected_tags }"
                                 onclick="{ toggle_tag }">
                             { tag.name }
@@ -37,7 +37,7 @@
                         <h5 class="category-title">{ cat.name }</h5>
                         <div class="tag-pills-container">
                             <button type="button"
-                                    class="tag-pill { active: is_selected(tag) }"
+                                    class="cb-button cb-button-small { is_selected(tag) ? 'cb-button-primary' : 'cb-button-secondary' }"
                                     each="{ tag in cat.tags }"
                                     onclick="{ toggle_tag }">
                                 { tag.name }
@@ -66,15 +66,17 @@
         </div>
 
         <div class="actions">
-            <div class="ui button" onclick="{ go_back_or_cancel }">
+            <button type="button" class="cb-button cb-button-secondary" onclick="{ go_back_or_cancel }">
                 { step_index > 0 ? 'Back' : 'Cancel' }
-            </div>
+            </button>
 
             <div class="actions-right">
-                <div class="ui basic button" if="{ !is_last_step() }" onclick="{ handle_skip }">Skip</div>
-                <div class="ui primary button" onclick="{ handle_primary }">
+                <button type="button" class="cb-button cb-button-outline" if="{ !is_last_step() }" onclick="{ handle_skip }">
+                    Skip
+                </button>
+                <button type="button" class="cb-button cb-button-primary" onclick="{ handle_primary }">
                     { is_last_step() ? 'Publish' : 'Next' }
-                </div>
+                </button>
             </div>
         </div>
     </div>
