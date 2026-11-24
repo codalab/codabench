@@ -6,8 +6,8 @@ more information is better.
 ...
 
 
-# A brief description of the purpose of the changes contained in this PR.
-...
+# Description
+A brief description of the purpose of the changes contained in this PR.
 
 
 # Issues this PR resolves
