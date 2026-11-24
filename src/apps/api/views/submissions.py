@@ -705,6 +705,11 @@ def upload_submission_scores(request, submission_pk):
     # Create all score rows and update the leaderboard in one transaction, so a crash halfway cannot leave
     # partial scores behind that would make every retry of this upload get a 409.
     with transaction.atomic():
+        # Lock the parent row first (for a child of a multi-task submission), so sibling uploads run one after the
+        # other and each sees the scores of the ones before it when the leaderboard strategy checks whether every
+        # child has scores. Always lock the parent before the child to keep a single lock order.
+        if submission.parent_id is not None:
+            Submission.objects.select_for_update().get(pk=submission.parent_id)
         # Lock the submission row so two concurrent uploads cannot both pass the duplicate check below
         submission = Submission.objects.select_for_update().get(pk=submission.pk)
 

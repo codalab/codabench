@@ -127,6 +127,16 @@ class BestModeStrategyTests(TestCase):
 
         assert BestModeStrategy()._candidate_pks(second_child) == [second_child.pk, parent.pk]
 
+    def test_parent_is_candidate_when_sibling_has_scores_but_is_not_finished_yet(self):
+        """Two children finish at about the same time: the first has uploaded its scores but is not marked Finished yet.
+        The second child's upload must still make the parent a candidate, otherwise the parent never goes on the leaderboard"""
+        parent = self.make_submission(created_when=now(), scores={}, status=Submission.RUNNING, has_children=True)
+        first_child = self.make_submission(created_when=now(), scores={self.accuracy: 0.8}, status=Submission.SCORING, parent=parent)
+        second_child = self.make_submission(created_when=now(), scores={self.accuracy: 0.9}, status=Submission.SCORING, parent=parent)
+
+        assert BestModeStrategy()._candidate_pks(second_child) == [second_child.pk, parent.pk]
+        assert BestModeStrategy()._candidate_pks(first_child) == [first_child.pk, parent.pk]
+
 
 class ForceLastStrategyTests(APITestCase):
     def setUp(self):

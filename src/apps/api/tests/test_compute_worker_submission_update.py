@@ -362,7 +362,8 @@ def statuses_sent(run):
     return [step[1] for step in call_sequence(run) if isinstance(step, tuple)]
 
 
-def test_scoring_run_sends_finished_after_scores_and_output_are_uploaded():
+def test_scoring_run_sends_finished_after_output_and_scores_are_uploaded():
+    """The scores go last: uploading them puts the submission on the leaderboard."""
     cw = load_compute_worker()
     run = make_mock_run(is_scoring=True)
 
@@ -374,8 +375,8 @@ def test_scoring_run_sends_finished_after_scores_and_output_are_uploaded():
         "validate_hitl_configuration",
         "prepare",
         "start",
-        "push_scores",
         "push_output",
+        "push_scores",
         finished,
     ]
     assert statuses_sent(run) == [cw.SubmissionStatus.FINISHED]
@@ -393,13 +394,13 @@ def test_hitl_scoring_run_sends_finished_after_validation_and_uploads():
         "start",
         ("_update_status", cw.SubmissionStatus.AWAITING_VALIDATION),
         "wait_for_human_validation",
-        "push_scores",
         "push_output",
+        "push_scores",
         ("_update_status", cw.SubmissionStatus.FINISHED),
     ]
 
 
-def test_hitl_sends_pending_detailed_results_after_approval_before_scores():
+def test_hitl_sends_pending_detailed_results_after_approval_before_uploads():
     cw = load_compute_worker()
     run = make_mock_run(is_scoring=True, human_in_the_loop=True)
     run.pending_detailed_results = "/tmp/detailed_results.html"
@@ -410,7 +411,8 @@ def test_hitl_sends_pending_detailed_results_after_approval_before_scores():
     run.send_detailed_results.assert_awaited_once_with("/tmp/detailed_results.html")
     sequence = call_sequence(run)
     assert sequence.index("wait_for_human_validation") < sequence.index("send_detailed_results")
-    assert sequence.index("send_detailed_results") < sequence.index("push_scores")
+    assert sequence.index("send_detailed_results") < sequence.index("push_output")
+    assert sequence.index("push_output") < sequence.index("push_scores")
     assert statuses_sent(run) == [
         cw.SubmissionStatus.AWAITING_VALIDATION,
         cw.SubmissionStatus.FINISHED,
@@ -460,10 +462,11 @@ def test_failed_score_upload_marks_submission_failed_never_finished():
         run_wrapper_with(cw, run)
 
     assert statuses_sent(run) == [cw.SubmissionStatus.FAILED]
-    run.push_output.assert_not_called()
+    run.push_output.assert_called_once()
 
 
-def test_failed_output_upload_marks_scoring_run_failed_never_finished():
+def test_failed_output_upload_marks_scoring_run_failed_and_never_uploads_scores():
+    """A Failed submission must not end up ranked, so the scores are not uploaded."""
     cw = load_compute_worker()
     run = make_mock_run(is_scoring=True, push_output=requests.ConnectionError("down"))
 
@@ -471,6 +474,7 @@ def test_failed_output_upload_marks_scoring_run_failed_never_finished():
         run_wrapper_with(cw, run)
 
     assert statuses_sent(run) == [cw.SubmissionStatus.FAILED]
+    run.push_scores.assert_not_called()
 
 
 def test_prediction_run_sends_scoring_after_predictions_are_uploaded():
@@ -500,6 +504,25 @@ def test_failed_prediction_upload_never_sends_scoring():
     assert statuses_sent(run) == [cw.SubmissionStatus.FAILED]
 
 
+def test_lost_scoring_update_marks_prediction_run_failed():
+    cw = load_compute_worker()
+    run = make_mock_run(is_scoring=False)
+
+    def update_status(status, extra_information=None):
+        if status == cw.SubmissionStatus.SCORING:
+            raise cw.SubmissionException("Failure updating submission data.")
+
+    run._update_status.side_effect = update_status
+
+    with pytest.raises(cw.SubmissionException):
+        run_wrapper_with(cw, run)
+
+    assert statuses_sent(run) == [
+        cw.SubmissionStatus.SCORING,
+        cw.SubmissionStatus.FAILED,
+    ]
+
+
 def test_run_start_does_not_send_finished_or_scoring():
     """Run.start() itself runs containers, so check its source: the status
     transitions that trigger server-side effects now belong to run_wrapper."""
@@ -518,6 +541,39 @@ def test_run_start_does_not_send_finished_or_scoring():
     }
     assert "FINISHED" not in sent
     assert "SCORING" not in sent
+
+
+# ---------------------------------------------------------------------------
+# Run._update_status
+# ---------------------------------------------------------------------------
+def make_status_run(cw, *, requests_outcomes=(), status_outcomes=()):
+    run = cw.Run.__new__(cw.Run)
+    run.submissions_api_url = "https://example.test/api"
+    run.submission_id = 42
+    run.secret = "00000000-0000-0000-0000-000000000000"
+    run.requests_session = FakeSession(requests_outcomes)
+    run.status_requests_session = FakeSession(status_outcomes)
+    return run
+
+
+def test_scoring_update_error_is_raised_and_not_retried():
+    cw = load_compute_worker()
+    run = make_status_run(cw, requests_outcomes=[FakeResponse(502), FakeResponse(200)])
+
+    with pytest.raises(cw.SubmissionException):
+        run._update_status(cw.SubmissionStatus.SCORING)
+
+    assert len(run.requests_session.calls) == 1
+    assert run.status_requests_session.calls == []
+
+
+def test_non_terminal_status_update_client_error_is_still_ignored():
+    cw = load_compute_worker()
+    run = make_status_run(cw, status_outcomes=[FakeResponse(400), FakeResponse(200)])
+
+    run._update_status(cw.SubmissionStatus.PREPARING)
+
+    assert len(run.status_requests_session.calls) == 1
 
 
 # ---------------------------------------------------------------------------

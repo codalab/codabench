@@ -370,13 +370,14 @@ def run_wrapper(run_args):
                         )
                     )
 
-            run.push_scores()
         run.push_output()
 
-        # Only mark the submission finished once its scores and output are
+        # Only mark the submission finished once its output and scores are
         # uploaded, so a failed upload ends in FAILED instead of a FINISHED
-        # submission without scores.
+        # submission without scores. The scores go last: uploading them puts
+        # the submission on the leaderboard, so nothing else may fail after.
         if run.is_scoring:
+            run.push_scores()
             run._update_status(SubmissionStatus.FINISHED)
         else:
             # SCORING makes the API dispatch the scoring run, which reads the
@@ -837,9 +838,16 @@ class Run:
                 retry=should_retry_submission_status(status),
             )
         except Exception as e:
-            # Re-raise only for terminal statuses so Celery marks the task as failed.
             logger.exception(f"Failed to update submission status to {status}: {e}")
-            if status in ("Finished", "Failed"):
+            # Re-raise for terminal statuses so Celery marks the task as failed,
+            # and for SCORING: it is not retried, and a lost SCORING would
+            # otherwise leave the submission in Running forever. run_wrapper
+            # then marks it Failed.
+            if status in (
+                SubmissionStatus.FINISHED,
+                SubmissionStatus.FAILED,
+                SubmissionStatus.SCORING,
+            ):
                 raise
 
     def _get_container_image(self, image_name):
