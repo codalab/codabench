@@ -8,12 +8,12 @@ services:
     environment:
       - ACME_AGREE=true
     volumes:
-      - ../Caddyfile:/etc/caddy/Caddyfile
-      - ../src/staticfiles:/var/www/django/static
-      - ../caddy_data:/data
-      - ../caddy_config:/config
-      - ../var/log/caddy:/var/log/
-      - ../maintenance_mode/:/srv
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./src/staticfiles:/var/www/django/static
+      - ./caddy_data:/data
+      - ./caddy_config:/config
+      - ./var/log/caddy:/var/log/
+      - ./maintenance_mode/:/srv
     restart: unless-stopped
     ports:
       - 80:80
@@ -24,19 +24,19 @@ services:
   django:
     container_name: django
     build: 
-      context: ../
-      dockerfile: ../packaging/container/Containerfile.develop
+      context: .
+      dockerfile: packaging/container/Containerfile
     image: django_site-worker
     # NOTE: We use watchmedo to reload gunicorn nicely, Uvicorn + Gunicorn reloads don't work well
     command: ["python manage.py migrate --no-input && python manage.py collectstatic --no-input && cd /app/src && watchmedo auto-restart -p '*.py' --recursive -- python3 ./gunicorn_run.py"]
     environment:
       - DATABASE_URL=postgres://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
-    env_file: ../.env
+    env_file: .env
     volumes:
       - .:/app:delegated
-      - /tmp/codabench/django:/codalab_tmp
-      - ../backups:/app/backups
-      - ../var/logs:/app/logs
+      - /tmp/codalab-v2/django:/codalab_tmp
+      - ./backups:/app/backups
+      - ./var/logs:/app/logs
     restart: unless-stopped
     ports:
       - 8000:8000
@@ -63,11 +63,11 @@ services:
     image: codalab/minio:RELEASE.2025-04-22T22-12-26Z
     command: server /export
     volumes:
-      - ../var/minio:/export
+      - ./var/minio:/export
     restart: unless-stopped
     ports:
       - $MINIO_PORT:9000
-    env_file: ../.env
+    env_file: .env
     healthcheck:
       test: ["CMD", "curl", "-I", "http://minio:9000/minio/health/live"]
       interval: 5s
@@ -77,7 +77,7 @@ services:
     depends_on:
       minio:
         condition: service_healthy
-    env_file: ../.env
+    env_file: .env
     # volumes:
     #   This volume is shared with `minio`, so `z` to share it
     #   - ./var/minio:/export
@@ -103,10 +103,10 @@ services:
   builder:
     container_name: builder
     build:
-      context: ../
-      dockerfile: ../packaging/container/Containerfile.builder
+      context: .
+      dockerfile: packaging/container/Containerfile.builder
     volumes:
-      - ../:/app:delegated
+      - .:/app:delegated
     restart: unless-stopped
     logging:
       options:
@@ -123,7 +123,7 @@ services:
   db:
     image: postgres:18-alpine
     container_name: db
-    env_file: ../.env
+    env_file: .env
     environment:
       - PGDATA=/var/lib/postgresql/18/docker
       - POSTGRES_PASSWORD=${DB_PASSWORD}
@@ -131,9 +131,9 @@ services:
     ports:
       - 5432:5432
     volumes:
-      - ../var/postgres:/var/lib/postgresql/18/:delegated
-      - ../backups:/app/backups
-      - ../my-postgres.conf:/etc/postgresql/postgresql.conf
+      - ./var/postgres:/var/lib/postgresql/18/:delegated
+      - ./backups:/app/backups
+      - ./my-postgres.conf:/etc/postgresql/postgresql.conf
     restart: unless-stopped
     ulimits:
       nofile:
@@ -150,19 +150,23 @@ services:
   rabbit:
     container_name: rabbit
     build:
-      context: ../
-      dockerfile: ../packaging/container/Containerfile.rabbitmq
+      context: .
+      dockerfile: packaging/container/Containerfile.rabbitmq
       args:
         - WORKER_CONNECTION_TIMEOUT=${WORKER_CONNECTION_TIMEOUT}
     # setting hostname here makes data persist properly between
     # containers being destroyed..!
     hostname: rabbit
-    env_file: ../.env
+    env_file: .env
+    environment:
+      - http_proxy=${RABBITMQ_HTTP_PROXY}
+      - https_proxy=${RABBITMQ_HTTPS_PROXY}
+      - no_proxy=${RABBITMQ_NO_PROXY}
     ports:
       - ${RABBITMQ_MANAGEMENT_PORT:-15672}:15672
       - ${RABBITMQ_PORT}:5672
     volumes:
-      - ../var/rabbit:/var/lib/rabbitmq
+      - ./var/rabbit:/var/lib/rabbitmq
     restart: unless-stopped
     ulimits:
       nofile:
@@ -176,7 +180,7 @@ services:
   flower:
     container_name: flower
     image: mher/flower
-    env_file: ../.env
+    env_file: .env
     environment:
       - CELERY_BROKER_URL=pyamqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@${RABBITMQ_HOST}:${RABBITMQ_PORT}//
     restart: unless-stopped
@@ -216,9 +220,9 @@ services:
     depends_on:
       - rabbit
       - db
-    env_file: ../.env
+    env_file: .env
     volumes:
-      - ../.:/app
+      - .:/app
     restart: unless-stopped
     logging:
       options:
@@ -234,17 +238,17 @@ services:
           memory: 15GB
 
   compute_worker:
-    command: ["watchmedo auto-restart -p '*.py' --recursive -- celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@%n"]
+    command: ["celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@%n"]
     working_dir: /app
     container_name: compute_worker
     build:
-      context: ../.
-      dockerfile: ../packaging/container/Containerfile.compute_worker
+      context: .
+      dockerfile: packaging/container/Containerfile.compute_worker
     depends_on:
       - django
       - rabbit
     volumes:
-      - ../compute_worker:/app
+      - ./compute_worker:/app
       - ${HOST_DIRECTORY:-/tmp/codabench}:/codabench
       # Actual connection back to docker parent to run things
       - /var/run/docker.sock:/var/run/docker.sock
@@ -254,7 +258,7 @@ services:
     environment:
       - BROKER_URL=pyamqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@${RABBITMQ_HOST}:${RABBITMQ_PORT}//
       # Make the worker leave behind the submission so we can examine it
-      - COMPUTE_WORKER_NO_CLEANUP=Truew
+      - COMPUTE_WORKER_NO_CLEANUP=True
     tty: true
     ulimits:
       nofile:
@@ -264,4 +268,3 @@ services:
       options:
         max-size: "20m"
         max-file: "5"
-
