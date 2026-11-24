@@ -49,18 +49,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     EMAIL_FIELD = 'email'
     REQUIRED_FIELDS = ['email']
 
-    # Github user attributes.
-    github_uid = models.CharField(max_length=30, unique=True, blank=True, null=True)
-    avatar_url = models.CharField(max_length=100, null=True, blank=True)
-    url = models.CharField(max_length=100, null=True, blank=True)
-    html_url = models.CharField(max_length=100, null=True, blank=True)
-    name = models.CharField(max_length=100, null=True, blank=True)
-    company = models.CharField(max_length=100, null=True, blank=True)
-    bio = models.CharField(max_length=300, null=True, blank=True)
-
-    github_info = models.OneToOneField('GithubUserInfo', related_name='user', null=True, blank=True,
-                                       on_delete=models.CASCADE)
-
     # Any User Attributes
     username = models.CharField(max_length=50, unique=True)
     slug = models.SlugField(max_length=50, default='', unique=True)
@@ -112,10 +100,11 @@ class User(AbstractBaseUser, PermissionsMixin):
         super().save(*args, **kwargs)
 
     def get_short_name(self):
-        return self.name
+        return self.username
 
     def get_full_name(self):
-        return self.name
+        """Return the first and last name, for example "Alice Smith". Empty when neither is filled in."""
+        return f"{self.first_name or ''} {self.last_name or ''}".strip()
 
     def __str__(self):
         return self.username
@@ -206,24 +195,6 @@ class User(AbstractBaseUser, PermissionsMixin):
             email=self.email
         )
 
-        # Github related
-        self.github_uid = None
-        self.avatar_url = None
-        self.url = None
-        self.html_url = None
-        self.name = None
-        self.company = None
-        self.bio = None
-        if self.github_info:
-            self.github_info.login = None
-            self.github_info.avatar_url = None
-            self.github_info.gravatar_id = None
-            self.github_info.html_url = None
-            self.github_info.name = None
-            self.github_info.company = None
-            self.github_info.bio = None
-            self.github_info.location = None
-
         # Any user attribute
         self.username = f"deleted_user_{self.id}"
         self.photo = None
@@ -254,36 +225,6 @@ class User(AbstractBaseUser, PermissionsMixin):
         self.is_deleted = False
         self.deleted_at = None
         self.save()
-
-
-class GithubUserInfo(models.Model):
-    # Required Info
-    uid = models.CharField(max_length=30, unique=True)
-
-    # Misc/Avatar/Profile
-    login = models.CharField(max_length=100, null=True, blank=True)  # username
-    avatar_url = models.URLField(max_length=100, null=True, blank=True)
-    gravatar_id = models.CharField(max_length=100, null=True, blank=True)
-    html_url = models.URLField(max_length=100, null=True, blank=True)  # Profile URL
-    name = models.CharField(max_length=100, null=True, blank=True)
-    company = models.CharField(max_length=100, null=True, blank=True)
-    bio = models.TextField(max_length=2000, null=True, blank=True)
-    location = models.CharField(max_length=120, null=True, blank=True)
-    created_at = models.DateTimeField(null=True, blank=True)
-    updated_at = models.DateTimeField(null=True, blank=True)
-
-    # API Info
-    node_id = models.CharField(unique=True, max_length=50, default='')
-    url = models.URLField(max_length=100, null=True, blank=True)  # Base API URL
-    followers_url = models.URLField(max_length=100, null=True, blank=True)
-    following_url = models.URLField(max_length=100, null=True, blank=True)
-    gists_url = models.URLField(max_length=100, null=True, blank=True)
-    starred_url = models.URLField(max_length=100, null=True, blank=True)
-    subscriptions_url = models.URLField(max_length=100, null=True, blank=True)
-    organizations_url = models.URLField(max_length=100, null=True, blank=True)
-    repos_url = models.URLField(max_length=100, null=True, blank=True)
-    events_url = models.URLField(max_length=100, null=True, blank=True)
-    received_events_url = models.URLField(max_length=100, null=True, blank=True)
 
 
 class Organization(models.Model):

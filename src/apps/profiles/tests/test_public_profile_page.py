@@ -44,14 +44,6 @@ PRIVATE_FIELDS = {
     'rabbitmq_password',
     'is_created_using_oidc',
     'oidc_organization',
-    'github_uid',
-    'github_info',
-    'avatar_url',
-    'url',
-    'html_url',
-    'name',
-    'company',
-    'bio',
 }
 
 

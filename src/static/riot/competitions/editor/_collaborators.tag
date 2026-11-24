@@ -14,10 +14,10 @@
                         <td class="right aligned">Creator</td>
                     </tr>
                     <tr each="{collab, index in collabs}">
-                        <td>{collab.name || collab.username}</td>
+                        <td>{collab.username}</td>
                         <td class="right aligned">
                             <a class="icon-button"
-                               onclick="{ remove_collaborator.bind(this, index, (collab.name || collab.username)) }">
+                               onclick="{ remove_collaborator.bind(this, index, collab.username) }">
                                 <i class="red trash alternate outline icon"></i>
                             </a>
                         </td>
