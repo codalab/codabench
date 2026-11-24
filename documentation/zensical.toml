@@ -53,7 +53,15 @@ nav = [
     ]},
     {"Self-Hosters" = [
         {"How to Deploy a Server" = "Developers_and_Administrators/How-to-deploy-Codabench-on-your-server.md"},
-        {"Administrative Procedures" = "Developers_and_Administrators/Administrator-procedures.md"},
+        {"Administrative Procedures" = [
+            "Developers_and_Administrators/Administrative_Procedures/index.md",
+            {"Django Admin Interface" = "Developers_and_Administrators/Administrative_Procedures/Django-Admin.md"},
+            {"RabbitMQ Management" = "Developers_and_Administrators/Administrative_Procedures/RabbitMQ-Management.md"},
+            {"Flower Management" = "Developers_and_Administrators/Administrative_Procedures/Flower-Management.md"},
+            {"Storage Analytics & Statistics" = "Developers_and_Administrators/Administrative_Procedures/Analytics-and-Statistics.md"},
+            {"User Quota Management" = "Developers_and_Administrators/Administrative_Procedures/User-Quota-Management.md"},
+            {"Tag Management" = "Developers_and_Administrators/Administrative_Procedures/Tag-Management.md"}
+        ]},
         {"Platform Architecture" = "Developers_and_Administrators/Platform-Architecture.md"},
         {"External Competitions" = "Developers_and_Administrators/External-Competitions.md"},
         {"Backups - Automating Creation and Restoring" = "Developers_and_Administrators/Creating-and-Restoring-from-Backup.md"},
