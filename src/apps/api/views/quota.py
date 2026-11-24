@@ -26,20 +26,23 @@ def _unused_datasets(user):
     Returns the user's unused datasets and programs: the ones "Delete unused datasets/programs" deletes.
     The unused datasets counter uses it too, so the counter shows what the button deletes.
 
-    Submissions, bundles, public data, starting kits and solutions are left out.
+    Submissions, bundles, public data and starting kits are left out.
+    Solutions used by a task are left out too.
+    Why: Solution.data is CASCADE, so deleting the dataset would delete the solution of the task.
+    Solutions not used by any task are unused, so they are deleted.
     """
     return Data.objects.filter(
         Q(created_by=user) &
         ~Q(type=Data.SUBMISSION) &
         ~Q(type=Data.COMPETITION_BUNDLE) &
         ~Q(type=Data.PUBLIC_DATA) &
-        ~Q(type=Data.STARTING_KIT) &
-        ~Q(type=Data.SOLUTION)
+        ~Q(type=Data.STARTING_KIT)
     ).exclude(
         Q(task_ingestion_programs__isnull=False) |
         Q(task_input_datas__isnull=False) |
         Q(task_reference_datas__isnull=False) |
-        Q(task_scoring_programs__isnull=False)
+        Q(task_scoring_programs__isnull=False) |
+        (Q(type=Data.SOLUTION) & Q(solution__tasks__isnull=False))
     )
 
 
@@ -47,11 +50,16 @@ def _unused_submissions(user):
     """
     Returns the user's unused submission zips: the ones "Delete unused submissions" deletes.
     The unused submissions counter uses it too, so the counter shows what the button deletes.
+
+    A zip is unused when no submission points to it.
+    Why the submission check: zips created before Data.competition existed have no competition,
+    even when a submission still uses them. Without the check, their files would be deleted.
     """
     return Data.objects.filter(
         Q(created_by=user) &
         Q(type=Data.SUBMISSION) &
-        Q(competition__isnull=True)
+        Q(competition__isnull=True) &
+        Q(submission__isnull=True)
     )
 
 
