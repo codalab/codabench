@@ -21,7 +21,15 @@ def make_benchmark(participants_count=1, created_when=None, **kwargs):
 
 
 def first_items(pool, count):
-    """Replacement for random.sample that keeps the pool order, to check which pool was used."""
+    """
+    Stand-in for random.sample that returns the first `count` items of the pool, in order,
+    instead of a random choice. This makes the result predictable, so a test can check the exact list.
+    Example: first_items([a, b, c, d], 3) always returns [a, b, c].
+
+    Tests use it to replace random.sample inside pages.home_page:
+        with mock.patch('pages.home_page.random.sample', side_effect=first_items):
+            result = get_popular_benchmarks()
+    """
     return pool[:count]
 
 
@@ -104,6 +112,84 @@ class PopularBenchmarksTests(TestCase):
 
         assert get_popular_benchmarks() == [normal]
 
+    def test_keeps_one_benchmark_per_organizer(self):
+        """
+        Creates 3 benchmarks by Alice (100, 90 and 80 participants) and one each by two
+        other organizers (10 and 5), and makes the random pick keep the pool order.
+        Expects only Alice's most popular benchmark, followed by the two others.
+        """
+        alice = UserFactory()
+        alice_most_popular = make_benchmark(participants_count=100, published=True, created_by=alice)
+        make_benchmark(participants_count=90, published=True, created_by=alice)
+        make_benchmark(participants_count=80, published=True, created_by=alice)
+        other_ten = make_benchmark(participants_count=10, published=True)
+        other_five = make_benchmark(participants_count=5, published=True)
+
+        with mock.patch('pages.home_page.random.sample', side_effect=first_items):
+            result = get_popular_benchmarks()
+
+        assert result == [alice_most_popular, other_ten, other_five]
+
+    def test_organizer_with_many_benchmarks_does_not_shrink_pool(self):
+        """
+        Creates 7 benchmarks by Alice with the most participants (100 to 94) and one each
+        by 8 other organizers (10 to 3), then asks for 8 benchmarks.
+        Expects 8 benchmarks from 8 different organizers, with Alice's most popular one among them.
+        """
+        alice = UserFactory()
+        alice_most_popular = make_benchmark(participants_count=100, published=True, created_by=alice)
+        for count in range(99, 93, -1):
+            make_benchmark(participants_count=count, published=True, created_by=alice)
+        for count in range(10, 2, -1):
+            make_benchmark(participants_count=count, published=True)
+
+        result = get_popular_benchmarks(limit=8)
+
+        assert len(result) == 8
+        assert len({benchmark.created_by_id for benchmark in result}) == 8
+        assert alice_most_popular in result
+
+    def test_fills_row_when_all_benchmarks_are_from_one_organizer(self):
+        """
+        Creates 4 benchmarks, all by Alice (100, 90, 80 and 70 participants).
+        Expects her most popular benchmark followed by her next two most popular ones.
+        """
+        alice = UserFactory()
+        alice_100 = make_benchmark(participants_count=100, published=True, created_by=alice)
+        alice_90 = make_benchmark(participants_count=90, published=True, created_by=alice)
+        alice_80 = make_benchmark(participants_count=80, published=True, created_by=alice)
+        make_benchmark(participants_count=70, published=True, created_by=alice)
+
+        assert get_popular_benchmarks() == [alice_100, alice_90, alice_80]
+
+    def test_fills_row_with_next_most_popular_when_two_organizers(self):
+        """
+        Creates 3 benchmarks by Alice (100, 90 and 80 participants) and 1 by Bob (50),
+        and makes the random pick keep the pool order.
+        Expects Alice's most popular, then Bob's, then Alice's second most popular to fill the row.
+        """
+        alice = UserFactory()
+        alice_100 = make_benchmark(participants_count=100, published=True, created_by=alice)
+        alice_90 = make_benchmark(participants_count=90, published=True, created_by=alice)
+        make_benchmark(participants_count=80, published=True, created_by=alice)
+        bob_50 = make_benchmark(participants_count=50, published=True, created_by=UserFactory())
+
+        with mock.patch('pages.home_page.random.sample', side_effect=first_items):
+            result = get_popular_benchmarks()
+
+        assert result == [alice_100, bob_50, alice_90]
+
+    def test_returns_fewer_when_not_enough_benchmarks(self):
+        """
+        Creates only 2 benchmarks, both by Alice.
+        Expects both to be returned and nothing else.
+        """
+        alice = UserFactory()
+        alice_100 = make_benchmark(participants_count=100, published=True, created_by=alice)
+        alice_90 = make_benchmark(participants_count=90, published=True, created_by=alice)
+
+        assert get_popular_benchmarks() == [alice_100, alice_90]
+
 
 class RecentBenchmarksTests(TestCase):
 
@@ -150,6 +236,91 @@ class RecentBenchmarksTests(TestCase):
         excluded = make_benchmark(published=True)
 
         assert get_recent_benchmarks(exclude_ids=[excluded.id]) == [normal]
+
+    def test_keeps_one_benchmark_per_organizer(self):
+        """
+        Creates 3 benchmarks by Alice (today, 1 and 2 days ago) and one each by two other
+        organizers (10 and 20 days ago), and makes the random pick keep the pool order.
+        Expects only Alice's newest benchmark, followed by the two others.
+        """
+        current = now()
+        alice = UserFactory()
+        alice_newest = make_benchmark(published=True, created_by=alice, created_when=current)
+        make_benchmark(published=True, created_by=alice, created_when=current - timedelta(days=1))
+        make_benchmark(published=True, created_by=alice, created_when=current - timedelta(days=2))
+        other_ten_days = make_benchmark(published=True, created_when=current - timedelta(days=10))
+        other_twenty_days = make_benchmark(published=True, created_when=current - timedelta(days=20))
+
+        with mock.patch('pages.home_page.random.sample', side_effect=first_items):
+            result = get_recent_benchmarks()
+
+        assert result == [alice_newest, other_ten_days, other_twenty_days]
+
+    def test_organizer_with_many_benchmarks_does_not_shrink_pool(self):
+        """
+        Creates the 7 newest benchmarks by Alice (today to 6 days ago) and one each by
+        8 other organizers (10 to 17 days ago), then asks for 8 benchmarks.
+        Expects 8 benchmarks from 8 different organizers, with Alice's newest one among them.
+        """
+        current = now()
+        alice = UserFactory()
+        alice_newest = make_benchmark(published=True, created_by=alice, created_when=current)
+        for days in range(1, 7):
+            make_benchmark(published=True, created_by=alice, created_when=current - timedelta(days=days))
+        for days in range(10, 18):
+            make_benchmark(published=True, created_when=current - timedelta(days=days))
+
+        result = get_recent_benchmarks(limit=8)
+
+        assert len(result) == 8
+        assert len({benchmark.created_by_id for benchmark in result}) == 8
+        assert alice_newest in result
+
+    def test_fills_row_when_all_benchmarks_are_from_one_organizer(self):
+        """
+        Creates 4 benchmarks, all by Alice (today, 1, 2 and 3 days ago).
+        Expects her newest benchmark followed by her next two newest ones.
+        """
+        current = now()
+        alice = UserFactory()
+        alice_today = make_benchmark(published=True, created_by=alice, created_when=current)
+        alice_one_day = make_benchmark(published=True, created_by=alice, created_when=current - timedelta(days=1))
+        alice_two_days = make_benchmark(published=True, created_by=alice, created_when=current - timedelta(days=2))
+        make_benchmark(published=True, created_by=alice, created_when=current - timedelta(days=3))
+
+        assert get_recent_benchmarks() == [alice_today, alice_one_day, alice_two_days]
+
+    def test_fills_row_with_next_newest_when_two_organizers(self):
+        """
+        Creates 3 benchmarks by Alice (today, 1 and 2 days ago) and 1 by Bob (10 days ago),
+        and makes the random pick keep the pool order.
+        Expects Alice's newest, then Bob's, then Alice's second newest to fill the row.
+        """
+        current = now()
+        alice = UserFactory()
+        alice_today = make_benchmark(published=True, created_by=alice, created_when=current)
+        alice_one_day = make_benchmark(published=True, created_by=alice, created_when=current - timedelta(days=1))
+        make_benchmark(published=True, created_by=alice, created_when=current - timedelta(days=2))
+        bob_ten_days = make_benchmark(published=True, created_by=UserFactory(),
+                                      created_when=current - timedelta(days=10))
+
+        with mock.patch('pages.home_page.random.sample', side_effect=first_items):
+            result = get_recent_benchmarks()
+
+        assert result == [alice_today, bob_ten_days, alice_one_day]
+
+    def test_fill_leaves_out_excluded_ids(self):
+        """
+        Creates 5 benchmarks by Alice (today to 4 days ago) and excludes the 2 newest
+        (as if shown in Popular). Expects the other 3, newest first, none of them excluded.
+        """
+        current = now()
+        alice = UserFactory()
+        benchmarks = [make_benchmark(published=True, created_by=alice, created_when=current - timedelta(days=days))
+                      for days in range(5)]
+        excluded_ids = [benchmarks[0].id, benchmarks[1].id]
+
+        assert get_recent_benchmarks(exclude_ids=excluded_ids) == benchmarks[2:]
 
 
 class HomePageBenchmarkSectionsTests(TestCase):
@@ -201,6 +372,23 @@ class HomePageBenchmarkSectionsTests(TestCase):
         assert len(recent_ids) == 3
         assert not popular_ids & recent_ids
         assert not featured_ids & (popular_ids | recent_ids)
+
+    def test_one_organizer_fills_both_rows_without_repeats(self):
+        """
+        Creates 6 published benchmarks, all by one organizer, and loads the home page.
+        Expects 3 cards in Popular and 3 in Recent, with no benchmark in both.
+        """
+        organizer = UserFactory()
+        for _ in range(6):
+            make_benchmark(published=True, created_by=organizer)
+
+        context = self.get_home().context
+        popular_ids = {benchmark["id"] for benchmark in context["popular_benchmarks"]}
+        recent_ids = {benchmark["id"] for benchmark in context["recent_benchmarks"]}
+
+        assert len(popular_ids) == 3
+        assert len(recent_ids) == 3
+        assert not popular_ids & recent_ids
 
     def test_card_shows_benchmark_values(self):
         """
