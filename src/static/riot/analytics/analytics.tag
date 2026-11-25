@@ -188,7 +188,12 @@
                     type="button"
                     class="ui primary button {loading: orphan_scan_running, disabled: orphan_scan_running || orphan_cleanup_running}"
                     onclick={startOrphanScan}
-                    disabled={orphan_scan_running || orphan_cleanup_running}>
+                    disabled={
+                        orphan_jobs_loading ||
+                        orphan_jobs_error ||
+                        orphan_scan_running ||
+                        orphan_cleanup_running
+                    }>
                     <i class="search icon"></i>
                     Start scan
                 </button>
@@ -400,6 +405,8 @@
         self.orphan_scan_poll_timer = null;
         self.orphan_scan_destroyed = false;
         self.orphan_scan_started_at = null;
+        self.orphan_jobs_loading = true;
+        self.orphan_jobs_error = null;
         
         /****** Orphan files cleanup *****/
         self.orphan_selected_objects = {};
@@ -552,6 +559,7 @@
             self.update_analytics(self.start_date, null, self.time_unit);
             self.time_range_shortcut("month");
             self.update_chart_resolution("day");
+            self.restoreOrphanJobs();
         })
 
         self.on("unmount", function() {
@@ -873,11 +881,12 @@
 
             if (
                 self.orphan_scan_started_at &&
-                Date.now() - self.orphan_scan_started_at > 7 * 24 * 60 * 60 * 1000
+                Date.now() - self.orphan_scan_started_at >
+                    7 * 24 * 60 * 60 * 1000
             ) {
-                self.orphan_scan_running = false;
                 self.orphan_scan_error =
                     "Scan status polling timed out after seven days.";
+
                 self.clearOrphanScanTimer();
                 self.update();
                 return;
@@ -887,6 +896,7 @@
                 .done(function(data) {
                     if (self.orphan_scan_destroyed) return;
 
+                    self.orphan_scan_error = null;
                     self.orphan_scan_status = data.status;
 
                     if (data.status === "SUCCESS") {
@@ -902,6 +912,7 @@
                         self.orphan_scan_running = false;
                         self.orphan_scan_error =
                             data.error || "Orphan files scan failed.";
+
                         self.clearOrphanScanTimer();
                         self.update();
 
@@ -910,14 +921,28 @@
                         self.scheduleOrphanScanPoll();
                     }
                 })
-                .fail(function() {
+                .fail(function(xhr) {
                     if (self.orphan_scan_destroyed) return;
 
-                    self.orphan_scan_running = false;
-                    self.orphan_scan_error =
-                        "Could not retrieve orphan files scan status.";
                     self.clearOrphanScanTimer();
+
+                    if (xhr.status === 401 || xhr.status === 403) {
+                        self.orphan_scan_error =
+                            "Access denied. Reload the page after signing in.";
+
+                        self.update();
+                        return;
+                    }
+
+                    self.orphan_scan_error =
+                        "Connection lost. Retrying scan status...";
+
                     self.update();
+
+                    self.orphan_scan_poll_timer = setTimeout(function() {
+                        self.orphan_scan_poll_timer = null;
+                        self.pollOrphanScan();
+                    }, 10000);
                 });
         };
 
@@ -931,7 +956,7 @@
             self.orphan_scan_poll_timer = setTimeout(function() {
                 self.orphan_scan_poll_timer = null;
                 self.pollOrphanScan();
-            }, 2000);
+            }, 10000);
         };
 
         self.orphanObjectId = function(bucket, key) {
@@ -992,6 +1017,82 @@
             });
 
             self.refreshOrphanSelection();
+        };
+
+        self.restoreOrphanJobs = function() {
+            self.orphan_jobs_loading = true;
+            self.update();
+
+            CODALAB.api.get_current_orphan_files_job()
+                .done(function(data) {
+                    if (self.orphan_scan_destroyed) return;
+
+                    const job = data.active_job;
+
+                    self.orphan_scan_result = (
+                        data.last_scan &&
+                        data.last_scan.status === "SUCCESS"
+                    ) ? data.last_scan.result : null;
+
+                    self.orphan_cleanup_result = (
+                        data.last_cleanup &&
+                        data.last_cleanup.status === "SUCCESS"
+                    ) ? data.last_cleanup.result : null;
+
+                    self.orphan_scan_running = false;
+                    self.orphan_cleanup_running = false;
+
+                    if (job) {
+                        const startedAt = Date.parse(
+                            job.started_at || job.created_at
+                        );
+
+                        self.orphan_grace_period = job.grace_period_days;
+                        self.orphan_grace_unit = "days";
+
+                        if (job.job_type === "scan") {
+                            self.orphan_scan_task_id = job.task_id;
+                            self.orphan_scan_status = job.status;
+                            self.orphan_scan_started_at = startedAt;
+                            self.orphan_scan_running = true;
+                            self.orphan_scan_result = null;
+                        }
+
+                        if (job.job_type === "cleanup") {
+                            self.orphan_cleanup_task_id = job.task_id;
+                            self.orphan_cleanup_status = job.status;
+                            self.orphan_cleanup_started_at = startedAt;
+                            self.orphan_cleanup_running = true;
+                        }
+
+                        $('.top.menu.analytics .item', self.root)
+                            .tab('change tab', 'storage');
+
+                        $('.storage .tabular.menu .item', self.root)
+                            .tab('change tab', 'orphan-files');
+                    }
+
+                    self.orphan_jobs_loading = false;
+                    self.orphan_jobs_error = null;
+                    self.update();
+
+                    if (self.orphan_scan_running) {
+                        self.pollOrphanScan();
+                    }
+
+                    if (self.orphan_cleanup_running) {
+                        self.pollOrphanCleanup();
+                    }
+                })
+                .fail(function() {
+                    if (self.orphan_scan_destroyed) return;
+
+                    self.orphan_jobs_loading = false;
+                    self.orphan_jobs_error =
+                        "Could not retrieve orphan files jobs.";
+
+                    self.update();
+                });
         };
 
         self.clearOrphanCleanupTimer = function() {
@@ -1115,6 +1216,7 @@
                 .done(function(data) {
                     if (self.orphan_scan_destroyed) return;
 
+                    self.orphan_cleanup_error = null;
                     self.orphan_cleanup_status = data.status;
 
                     if (data.status === "SUCCESS") {

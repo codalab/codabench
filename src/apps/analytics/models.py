@@ -52,3 +52,42 @@ class AdminStorageDataPoint(models.Model):
     )  # stores bytes
     at_date = models.DateTimeField()
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class OrphanFilesJob(models.Model):
+    class JobType(models.TextChoices):
+        SCAN = "scan", "Scan"
+        CLEANUP = "cleanup", "Cleanup"
+
+    class Status(models.TextChoices):
+        PENDING = "PENDING", "Pending"
+        STARTED = "STARTED", "Started"
+        PROGRESS = "PROGRESS", "In progress"
+        SUCCESS = "SUCCESS", "Success"
+        FAILURE = "FAILURE", "Failure"
+        REVOKED = "REVOKED", "Revoked"
+
+    task_id = models.UUIDField(unique=True)
+
+    job_type = models.CharField(
+        max_length=16,
+        choices=JobType.choices,
+    )
+
+    status = models.CharField(
+        max_length=16,
+        choices=Status.choices,
+        default=Status.PENDING,
+    )
+
+    grace_period_days = models.PositiveIntegerField(default=7)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    result = models.JSONField(null=True, blank=True)
+    error = models.TextField(blank=True, default="")
+
+    class Meta:
+        ordering = ["-created_at"]

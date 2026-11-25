@@ -99,20 +99,17 @@ def same_s3_timestamp(list_timestamp, head_timestamp):
 def cleanup_orphan_files(
     grace_period_days=7,
     selected_objects=None,
-    dry_run=True,
 ):
     with orphan_cleanup_lock():
         return _cleanup_orphan_files(
             grace_period_days=grace_period_days,
             selected_objects=selected_objects,
-            dry_run=dry_run,
         )
 
 
 def _cleanup_orphan_files(
     grace_period_days=7,
     selected_objects=None,
-    dry_run=True,
 ):
     """
     Re-scan and clean eligible objects.
