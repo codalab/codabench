@@ -5,7 +5,7 @@ from datetime import timedelta
 
 from django.utils import timezone
 from .references import collect_file_references
-from .storage import get_allowed_prefixes_by_bucket, iter_managed_objects, StorageObject
+from .storage import get_scan_prefixes_by_bucket, iter_managed_objects, StorageObject
 
 
 @dataclass
@@ -24,9 +24,16 @@ class ScanResult:
     scanned_size: int = 0
 
 
-def scan_orphan_files(grace_period_days=7, page_size=1000, heartbeat=None):
+def scan_orphan_files(
+    grace_period_days=7,
+    page_size=1000,
+    heartbeat=None,
+    prefix=None,
+):
     """
-    Compare PostgreSQL FileField references with MinIO objects.
+    Compare PostgreSQL FileField references with S3 objects.
+
+    Optionally restrict the scan to a managed storage prefix.
 
     Read-only scan:
       - No database modifications
@@ -39,27 +46,37 @@ def scan_orphan_files(grace_period_days=7, page_size=1000, heartbeat=None):
     if grace_period_days < 0:
         raise ValueError("grace_period_days must be >= 0")
 
-    references = collect_file_references()
-    allowed_prefixes = get_allowed_prefixes_by_bucket()
+    allowed_prefixes = get_scan_prefixes_by_bucket(prefix)
+
+    references = collect_file_references(
+        prefix=prefix,
+    )
 
     remaining = {
         bucket: {
             key
             for key in keys
             if any(
-                key.startswith(prefix)
-                for prefix in allowed_prefixes.get(bucket, ())
+                key.startswith(allowed_prefix)
+                for allowed_prefix in allowed_prefixes.get(
+                    bucket, ()
+                )
             )
         }
         for bucket, keys in references.items()
         if bucket in allowed_prefixes
     }
 
-    cutoff = timezone.now() - timedelta(days=grace_period_days)
+    cutoff = timezone.now() - timedelta(
+        days=grace_period_days
+    )
 
     result = ScanResult()
 
-    for obj in iter_managed_objects(page_size=page_size):
+    for obj in iter_managed_objects(
+        page_size=page_size,
+        prefix=prefix,
+    ):
 
         if heartbeat is not None:
             heartbeat()
@@ -69,9 +86,13 @@ def scan_orphan_files(grace_period_days=7, page_size=1000, heartbeat=None):
 
         bucket_references = remaining.get(obj.bucket)
 
-        if bucket_references is not None and obj.key in bucket_references:
+        if (
+            bucket_references is not None
+            and obj.key in bucket_references
+        ):
             result.referenced_count += 1
             result.referenced_size += obj.size
+
             bucket_references.remove(obj.key)
             continue
 

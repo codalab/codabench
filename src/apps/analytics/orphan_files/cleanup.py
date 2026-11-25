@@ -6,7 +6,7 @@ from django.apps import apps
 from django.utils import timezone
 
 from .references import FILE_FIELDS
-from .storage import get_allowed_prefixes_by_bucket, get_storage_backends
+from .storage import get_allowed_prefixes_by_bucket, get_scan_prefixes_by_bucket, get_storage_backends
 from datetime import timezone as datetime_timezone
 from contextlib import contextmanager
 from django.db import connection
@@ -101,6 +101,27 @@ def same_s3_timestamp(list_timestamp, head_timestamp):
     return list_timestamp == head_timestamp
 
 
+def filter_candidates_by_prefix(candidates, prefix):
+    """
+    Restrict persisted candidates to an allowed storage prefix.
+    """
+    prefixes_by_bucket = get_scan_prefixes_by_bucket(prefix)
+
+    if prefix is None:
+        return candidates
+
+    scope = Q(pk__in=[])
+
+    for bucket, prefixes in prefixes_by_bucket.items():
+        for allowed_prefix in prefixes:
+            scope |= Q(
+                bucket=bucket,
+                key__startswith=allowed_prefix,
+            )
+
+    return candidates.filter(scope)
+
+
 def cleanup_orphan_files(
     scan_job,
     cleanup_job,
@@ -139,14 +160,32 @@ def _cleanup_orphan_files(
     if cleanup_job.source_scan_id != scan_job.pk:
         raise ValueError("Cleanup source scan mismatch")
 
-    if mode not in ("all", "selected"):
+    if mode not in ("all", "selected", "prefix"):
         raise ValueError("Invalid cleanup mode")
+
+    prefix = cleanup_job.prefix
+
+    # A targeted scan cannot be used outside its original scope.
+    if scan_job.prefix is not None and prefix != scan_job.prefix:
+        raise ValueError("Cleanup prefix outside source scan scope")
+
+    if mode == "prefix" and prefix is None:
+        raise ValueError("Missing cleanup prefix")
+
+    # For all/selected modes, the cleanup inherits the scan scope.
+    if mode != "prefix" and prefix != scan_job.prefix:
+        raise ValueError("Invalid cleanup prefix")
 
     candidates = scan_job.candidates.filter(
         status__in=[
             OrphanFileCandidate.Status.PENDING,
             OrphanFileCandidate.Status.FAILED,
         ]
+    )
+
+    candidates = filter_candidates_by_prefix(
+        candidates,
+        prefix,
     )
 
     if mode == "selected":
@@ -161,6 +200,7 @@ def _cleanup_orphan_files(
         selection = Q()
 
         for item in selected_objects:
+
             if not isinstance(item, dict):
                 raise ValueError("Invalid selected object")
 
@@ -171,7 +211,11 @@ def _cleanup_orphan_files(
                 raise ValueError("Object outside allowed prefixes")
 
             identities.add((bucket, key))
-            selection |= Q(bucket=bucket, key=key)
+
+            selection |= Q(
+                bucket=bucket,
+                key=key,
+            )
 
         if len(identities) != len(selected_objects):
             raise ValueError("Duplicate selected objects")
@@ -182,7 +226,7 @@ def _cleanup_orphan_files(
             raise ValueError("Some selected candidates are not eligible")
 
     elif selected_objects is not None:
-        raise ValueError("Invalid selection for all mode")
+        raise ValueError("Invalid selection for cleanup mode")
 
     result = CleanupResult(mode=mode)
     result.candidates = candidates.count()

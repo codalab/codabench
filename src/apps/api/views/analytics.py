@@ -18,7 +18,8 @@ from competitions.models import Competition, Submission
 from analytics.models import OrphanFileCandidate, OrphanFilesJob, StorageUsageHistory, CompetitionStorageDataPoint, UserStorageDataPoint
 from api.serializers.analytics import AnalyticsSerializer
 from analytics.tasks import scan_orphan_files_task, cleanup_orphan_files_task
-from analytics.orphan_files.cleanup import is_allowed_object
+from analytics.orphan_files.cleanup import is_allowed_object, filter_candidates_by_prefix
+from analytics.orphan_files.storage import get_allowed_prefixes
 
 import os
 import datetime
@@ -315,7 +316,7 @@ def get_active_orphan_job():
 def get_latest_orphan_scan():
     return OrphanFilesJob.objects.filter(
         job_type=OrphanFilesJob.JobType.SCAN,
-    ).first()
+    ).order_by("-created_at", "-pk").first()
 
 
 def serialize_orphan_job(job, include_result=True):
@@ -326,6 +327,7 @@ def serialize_orphan_job(job, include_result=True):
         "task_id": str(job.task_id),
         "job_type": job.job_type,
         "status": job.status,
+        "prefix": job.prefix,
         "grace_period_days": job.grace_period_days,
         "created_at": job.created_at,
         "started_at": job.started_at,
@@ -397,18 +399,26 @@ def dispatch_orphan_job(job, task, kwargs):
 @api_view(["GET"])
 def current_orphan_files_job(request):
     """
-    Restore the current orphan files interface state.
+    Return the active orphan files job, the latest eligible
+    scan metadata and the available storage prefixes.
+
+    Scan results are loaded separately on demand.
     """
     if not request.user.is_superuser:
         raise PermissionDenied(detail="Admin only")
 
     active_job = get_active_orphan_job()
-
     last_scan = get_latest_orphan_scan()
+
+    if (
+        last_scan is not None
+        and last_scan.status != OrphanFilesJob.Status.SUCCESS
+    ):
+        last_scan = None
 
     last_cleanup = OrphanFilesJob.objects.filter(
         job_type=OrphanFilesJob.JobType.CLEANUP,
-    ).first()
+    ).order_by("-created_at", "-pk").first()
 
     return Response(
         {
@@ -416,8 +426,15 @@ def current_orphan_files_job(request):
                 active_job,
                 include_result=False,
             ),
-            "last_scan": serialize_orphan_job(last_scan),
-            "last_cleanup": serialize_orphan_job(last_cleanup),
+            "last_scan": serialize_orphan_job(
+                last_scan,
+                include_result=False,
+            ),
+            "last_cleanup": serialize_orphan_job(
+                last_cleanup,
+                include_result=False,
+            ),
+            "allowed_prefixes": get_allowed_prefixes(),
         },
         status=status.HTTP_200_OK,
     )
@@ -427,6 +444,8 @@ def current_orphan_files_job(request):
 def start_orphan_files_scan(request):
     """
     Create a persistent scan job before dispatching Celery.
+
+    Optionally restrict the scan to a managed storage prefix.
     """
     if not request.user.is_superuser:
         raise PermissionDenied(detail="Admin only")
@@ -434,6 +453,8 @@ def start_orphan_files_scan(request):
     grace_period_days = request.data.get(
         "grace_period_days", 7
     )
+
+    prefix = request.data.get("prefix")
 
     if (
         isinstance(grace_period_days, bool)
@@ -450,6 +471,15 @@ def start_orphan_files_scan(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
+    if prefix is not None and (
+        not isinstance(prefix, str)
+        or prefix not in get_allowed_prefixes()
+    ):
+        return Response(
+            {"detail": "Invalid storage prefix"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
     try:
         with transaction.atomic():
 
@@ -461,6 +491,7 @@ def start_orphan_files_scan(request):
                 job_type=OrphanFilesJob.JobType.SCAN,
                 status=OrphanFilesJob.Status.PENDING,
                 grace_period_days=grace_period_days,
+                prefix=prefix,
             )
 
             dispatch_orphan_job(
@@ -507,16 +538,43 @@ def orphan_files_scan_status(request, task_id):
 def start_orphan_files_cleanup(request):
     """
     Create a cleanup job associated with a successful scan.
+
+    Supported cleanup modes:
+      - all: all remaining candidates from the source scan
+      - selected: explicitly selected candidates
+      - prefix: remaining candidates matching a managed prefix
     """
     if not request.user.is_superuser:
         raise PermissionDenied(detail="Admin only")
 
     data = request.data
     mode = data.get("mode", "all")
+    requested_prefix = data.get("prefix")
 
-    if mode not in ("all", "selected"):
+    if mode not in ("all", "selected", "prefix"):
         return Response(
             {"detail": "Invalid cleanup mode"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if mode == "prefix":
+
+        if (
+            not isinstance(requested_prefix, str)
+            or requested_prefix not in get_allowed_prefixes()
+        ):
+            return Response(
+                {"detail": "Invalid or missing cleanup prefix"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+    elif requested_prefix is not None:
+        return Response(
+            {
+                "detail": (
+                    "prefix is only valid in prefix mode"
+                )
+            },
             status=status.HTTP_400_BAD_REQUEST,
         )
 
@@ -532,6 +590,7 @@ def start_orphan_files_cleanup(request):
     selected_objects = None
 
     if mode == "selected":
+
         selected_objects = data.get("selected_objects")
 
         if (
@@ -601,21 +660,53 @@ def start_orphan_files_cleanup(request):
 
             latest_scan = get_latest_orphan_scan()
 
-            if latest_scan.pk != scan.pk:
+            if latest_scan is None or latest_scan.pk != scan.pk:
                 return Response(
                     {"detail": "A newer scan exists. Reload the page."},
                     status=status.HTTP_409_CONFLICT,
                 )
 
+            # Determine the effective cleanup scope.
+            if mode == "prefix":
+
+                if (
+                    scan.prefix is not None
+                    and requested_prefix != scan.prefix
+                ):
+                    return Response(
+                        {
+                            "detail": (
+                                "Cleanup prefix outside "
+                                "source scan scope"
+                            )
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                cleanup_prefix = requested_prefix
+
+            else:
+                # All and selected modes inherit the source scan scope.
+                cleanup_prefix = scan.prefix
+
             candidates = scan.candidates.filter(
                 status__in=ELIGIBLE_CANDIDATE_STATUSES,
             )
 
+            candidates = filter_candidates_by_prefix(
+                candidates,
+                cleanup_prefix,
+            )
+
             if mode == "selected":
+
                 selection = Q()
 
                 for bucket, key in identities:
-                    selection |= Q(bucket=bucket, key=key)
+                    selection |= Q(
+                        bucket=bucket,
+                        key=key,
+                    )
 
                 candidates = candidates.filter(selection)
 
@@ -632,7 +723,12 @@ def start_orphan_files_cleanup(request):
 
             elif not candidates.exists():
                 return Response(
-                    {"detail": "No remaining orphan files"},
+                    {
+                        "detail": (
+                            "No remaining orphan files "
+                            "in the requested scope"
+                        )
+                    },
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
@@ -641,6 +737,7 @@ def start_orphan_files_cleanup(request):
                 job_type=OrphanFilesJob.JobType.CLEANUP,
                 status=OrphanFilesJob.Status.PENDING,
                 grace_period_days=scan.grace_period_days,
+                prefix=cleanup_prefix,
                 source_scan=scan,
             )
 

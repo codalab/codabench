@@ -670,6 +670,7 @@ def scan_orphan_files_task(self):
         scan_result = scan_orphan_files(
             grace_period_days=grace_period_days,
             heartbeat=heartbeat,
+            prefix=job.prefix,
         )
 
         # Update heartbeat after the storage scan.
@@ -696,6 +697,7 @@ def scan_orphan_files_task(self):
         # All orphan candidates are stored separately.
         result = {
             "summary": report["summary"],
+            "prefix": job.prefix,
             "grace_period_days": grace_period_days,
             "generated_at": report["generated_at"],
             "orphaned_preview": report["orphaned"][:100],
@@ -817,6 +819,7 @@ def cleanup_orphan_files_task(
 
         result = {
             **result,
+            "prefix": job.prefix,
             "grace_period_days": job.grace_period_days,
             "completed_at": now.isoformat(),
         }

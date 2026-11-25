@@ -81,6 +81,7 @@ class OrphanFilesJob(models.Model):
     )
 
     grace_period_days = models.PositiveIntegerField(default=7)
+    prefix = models.CharField(max_length=255, null=True, blank=True, default=None)
     source_scan = models.ForeignKey("self", on_delete=models.PROTECT, null=True, blank=True, related_name="cleanup_jobs")
 
     heartbeat_at = models.DateTimeField(

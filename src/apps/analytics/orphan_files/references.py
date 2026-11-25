@@ -18,14 +18,15 @@ FILE_FIELDS = (
 )
 
 
-def iter_file_references(chunk_size=2000):
+def iter_file_references(chunk_size=2000, prefix=None):
     """
     Yield (bucket_name, object_key) for every non-empty
     FileField/ImageField stored in the database.
 
-    Uses the storage configured on each model field.
+    Optionally restrict references to a storage prefix.
     """
     for app_label, model_name, field_name in FILE_FIELDS:
+
         model = apps.get_model(app_label, model_name)
         field = model._meta.get_field(field_name)
 
@@ -35,7 +36,16 @@ def iter_file_references(chunk_size=2000):
             model.objects
             .exclude(**{f"{field_name}__isnull": True})
             .exclude(**{field_name: ""})
-            .values_list(field_name, flat=True)
+        )
+
+        if prefix is not None:
+            queryset = queryset.filter(
+                **{f"{field_name}__startswith": prefix}
+            )
+
+        queryset = queryset.values_list(
+            field_name,
+            flat=True,
         )
 
         for key in queryset.iterator(chunk_size=chunk_size):
@@ -43,19 +53,18 @@ def iter_file_references(chunk_size=2000):
                 yield bucket_name, key
 
 
-def collect_file_references(chunk_size=2000):
+def collect_file_references(chunk_size=2000, prefix=None):
     """
     Return references grouped by bucket.
 
-    Example:
-        {
-            "private": {"dataset/...", "scoring_result/..."},
-            "public": {"logos/...", "profile_photos/..."},
-        }
+    Optionally restrict references to a storage prefix.
     """
     references = defaultdict(set)
 
-    for bucket_name, key in iter_file_references(chunk_size):
+    for bucket_name, key in iter_file_references(
+        chunk_size=chunk_size,
+        prefix=prefix,
+    ):
         references[bucket_name].add(key)
 
     return dict(references)

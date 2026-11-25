@@ -40,6 +40,41 @@ def get_allowed_prefixes_by_bucket():
     }
 
 
+def get_allowed_prefixes():
+    """
+    Return all managed application prefixes.
+    """
+    return sorted({
+        prefix
+        for prefixes in ALLOWED_PREFIXES.values()
+        for prefix in prefixes
+    })
+
+
+def get_scan_prefixes_by_bucket(prefix=None):
+    """
+    Return managed prefixes restricted to the requested scope.
+
+    None means all managed prefixes.
+    """
+    allowed_prefixes = get_allowed_prefixes_by_bucket()
+
+    if prefix is None:
+        return allowed_prefixes
+
+    if (
+        not isinstance(prefix, str)
+        or prefix not in get_allowed_prefixes()
+    ):
+        raise ValueError("Invalid storage prefix")
+
+    return {
+        bucket: (prefix,)
+        for bucket, prefixes in allowed_prefixes.items()
+        if prefix in prefixes
+    }
+
+
 @dataclass(frozen=True)
 class StorageObject:
     bucket: str
@@ -101,13 +136,18 @@ def iter_storage_objects(bucket_name, prefixes, page_size=1000):
                 )
 
 
-def iter_managed_objects(page_size=1000):
+def iter_managed_objects(page_size=1000, prefix=None):
     """
     Iterate over objects in managed application prefixes.
+
+    If a prefix is provided, only scan that prefix.
     """
     backends = get_storage_backends()
 
-    for bucket_name, prefixes in get_allowed_prefixes_by_bucket().items():
+    prefixes_by_bucket = get_scan_prefixes_by_bucket(prefix)
+
+    for bucket_name, prefixes in prefixes_by_bucket.items():
+
         if bucket_name not in backends:
             raise ValueError(
                 f"No storage backend found for bucket: {bucket_name}"

@@ -389,8 +389,11 @@ CODALAB.api = {
     get_users_usage: (filters) => {
         return CODALAB.api.request('GET', `${URLS.API}analytics/users_usage/`, filters);
     },
-    start_orphan_files_scan: (grace_period_days = 7) => {
-        return CODALAB.api.request('POST', `${URLS.API}analytics/orphan-files/scan/`, {grace_period_days: grace_period_days});
+    start_orphan_files_scan: (grace_period_days = 7, prefix = null) => {
+        return CODALAB.api.request('POST', `${URLS.API}analytics/orphan-files/scan/`, {
+            grace_period_days: grace_period_days,
+            prefix: prefix
+        });
     },
     get_orphan_files_scan_status: (task_id) => {
         return CODALAB.api.request('GET', `${URLS.API}analytics/orphan-files/scan/${task_id}/`);
