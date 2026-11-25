@@ -368,7 +368,6 @@ def start_orphan_files_cleanup(request):
 
     grace_period_days = data.get("grace_period_days", 7)
     mode = data.get("mode", "all")
-    dry_run = data.get("dry_run", True)
 
     if (
         isinstance(grace_period_days, bool)
@@ -386,21 +385,9 @@ def start_orphan_files_cleanup(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    if not isinstance(dry_run, bool):
+    if not isinstance(bool):
         return Response(
-            {"detail": "dry_run must be a boolean"},
             status=status.HTTP_400_BAD_REQUEST,
-        )
-
-    if not dry_run:
-        return Response(
-            {
-                "detail": (
-                    "Physical deletion is not enabled yet. "
-                    "Run a dry-run first."
-                )
-            },
-            status=status.HTTP_409_CONFLICT,
         )
 
     selected_objects = None
@@ -454,7 +441,6 @@ def start_orphan_files_cleanup(request):
             "grace_period_days": grace_period_days,
             "mode": mode,
             "selected_objects": selected_objects,
-            "dry_run": True,
         }
     )
 
@@ -463,7 +449,6 @@ def start_orphan_files_cleanup(request):
             "task_id": task.id,
             "status": task.state,
             "mode": mode,
-            "dry_run": True,
         },
         status=status.HTTP_202_ACCEPTED,
     )
