@@ -81,7 +81,7 @@ class OrphanFilesJob(models.Model):
     )
 
     grace_period_days = models.PositiveIntegerField(default=7)
-    source_scan = models.ForeignKey("self", on_delete=models.PROTECT, null=True, blank=True,related_name="cleanup_jobs")
+    source_scan = models.ForeignKey("self", on_delete=models.PROTECT, null=True, blank=True, related_name="cleanup_jobs")
 
     heartbeat_at = models.DateTimeField(
         null=True,
@@ -149,6 +149,9 @@ class OrphanFileCandidate(models.Model):
     )
 
     class Meta:
+
+        verbose_name = "Ophan File"
+
         constraints = [
             models.UniqueConstraint(
                 fields=["scan", "bucket", "key"],

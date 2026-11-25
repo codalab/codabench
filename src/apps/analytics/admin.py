@@ -58,7 +58,17 @@ class OrphanFilesJobAdmin(admin.ModelAdmin):
         return False
 
     def has_delete_permission(self, request, obj=None):
-        return False
+        if not request.user.is_superuser:
+            return False
+
+        if obj is not None:
+            return obj.status not in (
+                OrphanFilesJob.Status.PENDING,
+                OrphanFilesJob.Status.STARTED,
+                OrphanFilesJob.Status.PROGRESS,
+            )
+
+        return True
 
     @admin.display(description="Candidates")
     def view_candidates(self, obj):
@@ -135,4 +145,16 @@ class OrphanFileCandidateAdmin(admin.ModelAdmin):
         return False
 
     def has_delete_permission(self, request, obj=None):
-        return False
+        if not request.user.is_superuser:
+            return False
+
+        if obj is not None:
+            return not OrphanFilesJob.objects.filter(
+                status__in=[
+                    OrphanFilesJob.Status.PENDING,
+                    OrphanFilesJob.Status.STARTED,
+                    OrphanFilesJob.Status.PROGRESS,
+                ]
+            ).exists()
+
+        return True
