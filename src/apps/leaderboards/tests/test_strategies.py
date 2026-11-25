@@ -19,14 +19,15 @@ class BestModeStrategyTests(TestCase):
         self.phase = PhaseFactory(leaderboard=self.leaderboard)
         self.owner = UserFactory()
 
-    def make_submission(self, created_when, scores):
-        """Create a finished submission that is not on the leaderboard, with a score for each given column"""
+    def make_submission(self, created_when, scores, status=Submission.FINISHED, **kwargs):
+        """Create a submission that is not on the leaderboard (finished by default), with a score for each given column"""
         submission = SubmissionFactory(
             owner=self.owner,
             phase=self.phase,
             leaderboard=None,
-            status=Submission.FINISHED,
+            status=status,
             created_when=created_when,
+            **kwargs,
         )
         for column, score in scores.items():
             SubmissionScoreFactory(column=column, score=score, submissions=submission)
@@ -80,6 +81,61 @@ class BestModeStrategyTests(TestCase):
 
         assert older.leaderboard == self.leaderboard
         assert newer.leaderboard is None
+
+    def test_first_submission_still_scoring_is_put_on_leaderboard(self):
+        """The compute worker uploads scores before marking the submission Finished; a first submission must still go on the leaderboard"""
+        scoring = self.make_submission(created_when=now(), scores={self.accuracy: 0.8, self.time: 10}, status=Submission.SCORING)
+
+        self.put_on_leaderboard(submission=scoring)
+
+        assert scoring.leaderboard == self.leaderboard
+
+    def test_better_submission_still_scoring_replaces_finished_one(self):
+        """A newer submission whose scores are being uploaded (not Finished yet) with a better score replaces the finished one"""
+        older = self.make_submission(created_when=now() - timedelta(hours=1), scores={self.accuracy: 0.8, self.time: 10})
+        newer = self.make_submission(created_when=now(), scores={self.accuracy: 0.92, self.time: 10}, status=Submission.SCORING)
+
+        self.put_on_leaderboard(submission=newer)
+        older.refresh_from_db()
+
+        assert newer.leaderboard == self.leaderboard
+        assert older.leaderboard is None
+
+    def test_other_unfinished_submissions_are_not_candidates(self):
+        """Only the submission being scored is a candidate before it is Finished; another failed submission with a better score is not"""
+        failed = self.make_submission(created_when=now() - timedelta(hours=1), scores={self.accuracy: 0.99, self.time: 10}, status=Submission.FAILED)
+        scoring = self.make_submission(created_when=now(), scores={self.accuracy: 0.8, self.time: 10}, status=Submission.SCORING)
+
+        self.put_on_leaderboard(submission=scoring)
+        failed.refresh_from_db()
+
+        assert scoring.leaderboard == self.leaderboard
+        assert failed.leaderboard is None
+
+    def test_parent_is_candidate_only_when_last_child_is_scored(self):
+        """A multi-task parent is a candidate only once every other child is done, as it is Finished as soon as the last child is"""
+        parent = self.make_submission(created_when=now(), scores={}, status=Submission.RUNNING, has_children=True)
+        first_child = self.make_submission(created_when=now(), scores={}, status=Submission.SCORING, parent=parent)
+        second_child = self.make_submission(created_when=now(), scores={}, status=Submission.RUNNING, parent=parent)
+
+        assert BestModeStrategy()._candidate_pks(first_child) == [first_child.pk]
+
+        first_child.status = Submission.FINISHED
+        first_child.save()
+        second_child.status = Submission.SCORING
+        second_child.save()
+
+        assert BestModeStrategy()._candidate_pks(second_child) == [second_child.pk, parent.pk]
+
+    def test_parent_is_candidate_when_sibling_has_scores_but_is_not_finished_yet(self):
+        """Two children finish at about the same time: the first has uploaded its scores but is not marked Finished yet.
+        The second child's upload must still make the parent a candidate, otherwise the parent never goes on the leaderboard"""
+        parent = self.make_submission(created_when=now(), scores={}, status=Submission.RUNNING, has_children=True)
+        first_child = self.make_submission(created_when=now(), scores={self.accuracy: 0.8}, status=Submission.SCORING, parent=parent)
+        second_child = self.make_submission(created_when=now(), scores={self.accuracy: 0.9}, status=Submission.SCORING, parent=parent)
+
+        assert BestModeStrategy()._candidate_pks(second_child) == [second_child.pk, parent.pk]
+        assert BestModeStrategy()._candidate_pks(first_child) == [first_child.pk, parent.pk]
 
 
 class ForceLastStrategyTests(APITestCase):
