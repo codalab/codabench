@@ -1,11 +1,17 @@
 # Administrative Procedures
 
-## Maintenance Mode
+## Maintenance mode
 You can turn on maintenance mode by creating a `maintenance.on` file in the `maintenance_mode` folder. This will change the front page of the website, showing a customizable page (the `maintenance.html` file in the same folder).
 
 Simply remove the `maintenance_mode/maintenance.on` file to end maintenance mode.
 
----
+```bash
+touch maintenance_mode/maintenance.on  ## entering maintenance mode
+rm maintenance_mode/maintenance.on  ## exiting maintenance mode
+```
+
+## Restart one service at a time
+
 During testing, if you want to update or restart some services (e.g : Django), you should follow the following steps:
 
 ```bash
@@ -29,14 +35,30 @@ u.is_superuser = True
 u.save()
 ```
 
-## Migration
+## Django migration
+
+Migrations are how Django keeps the database structure (tables, columns...) in sync with the models defined in the code. When a model changes (e.g. a new field is added), the database must be updated accordingly.
 
 ```bash
 docker compose exec django ./manage.py makemigrations
+```
+
+- `makemigrations` looks at the changes made to the models and **writes** migration files (Python scripts in each app's `migrations/` folder) describing these changes. It does not touch the database.
+
+    !!! note
+        There is usually no need to run `makemigrations` on a production server: migration files come from the repository, and generating new ones locally may conflict with those shipped in future updates.
+
+    It is mainly used by developers, and the generated files should be committed with the code.
+
+```bash
 docker compose exec django ./manage.py migrate
 ```
 
+- `migrate` **applies** the pending migration files to the database, actually modifying its structure. This is what needs to be run on a server after pulling new code.
+
 ## Collect static files
+
+This copies all static files (CSS, JavaScript, images...) from the apps into a single folder served by the web server. Run it after any change to the front-end files.
 
 ```bash
 docker compose exec django ./manage.py collectstatic --noinput
