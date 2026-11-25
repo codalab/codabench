@@ -1,8 +1,8 @@
 import time
 import json
-from apps.analytics.orphan_files.scanner import scan_orphan_files
-from apps.analytics.orphan_files.reports import build_report
-from apps.analytics.orphan_files.cleanup import cleanup_orphan_files
+from analytics.orphan_files.scanner import scan_orphan_files
+from analytics.orphan_files.reports import build_report
+from analytics.orphan_files.cleanup import cleanup_orphan_files
 
 from celery_config import app
 from datetime import datetime, timezone, timedelta
@@ -29,6 +29,12 @@ from analytics.models import (
 )
 from competitions.models import Competition
 from profiles.models import User
+from django.db import transaction
+from django.utils import timezone as django_timezone
+
+from analytics.models import OrphanFilesJob
+
+from analytics.orphan_files.persistence import save_scan_candidates
 
 from utils.data import pretty_bytes
 
@@ -588,70 +594,256 @@ def update_home_page_counters():
     )
 
 
-@app.task(bind=True, queue="site-worker", soft_time_limit=7 * 24 * 60 * 60)
-def scan_orphan_files_task(self, grace_period_days=7):
+@app.task(bind=True, queue="site-worker", soft_time_limit=7 * 24 * 60 * 60, time_limit=7 * 24 * 60 * 60 + 300)
+def scan_orphan_files_task(self):
     """
-    Read-only scan of managed MinIO objects.
+    Scan managed S3 objects and persist orphan candidates
+    and scan results in PostgreSQL.
 
-    Returns a summary and a limited preview of detected files.
+    PostgreSQL is the source of truth for job status,
+    scan results and orphan file candidates.
     """
-    self.update_state(
-        state="PROGRESS",
-        meta={"message": "Scanning MinIO objects..."},
+    job = OrphanFilesJob.objects.get(
+        task_id=self.request.id,
+        job_type=OrphanFilesJob.JobType.SCAN,
     )
 
-    result = scan_orphan_files(
-        grace_period_days=grace_period_days,
+    now = django_timezone.now()
+
+    # Atomically claim the job to prevent duplicate execution.
+    claimed = OrphanFilesJob.objects.filter(
+        pk=job.pk,
+        status=OrphanFilesJob.Status.PENDING,
+    ).update(
+        status=OrphanFilesJob.Status.STARTED,
+        started_at=now,
+        heartbeat_at=now,
+        error="",
     )
 
-    report = build_report(result, grace_period_days)
+    if not claimed:
+        job.refresh_from_db()
+        return job.result
 
-    return {
-        "summary": report["summary"],
-        "grace_period_days": grace_period_days,
-        "generated_at": report["generated_at"],
-        "orphaned_preview": report["orphaned"][:100],
-        "recent_unreferenced_preview": report[
-            "recent_unreferenced"
-        ][:100],
-        "missing_preview": report["missing"][:100],
-        "preview_limit": 100,
-    }
+    try:
+        grace_period_days = job.grace_period_days
+
+        # Mark the job as running.
+        now = django_timezone.now()
+
+        OrphanFilesJob.objects.filter(
+            pk=job.pk,
+        ).update(
+            status=OrphanFilesJob.Status.PROGRESS,
+            heartbeat_at=now,
+        )
+
+        self.update_state(
+            state="PROGRESS",
+            meta={
+                "message": "Scanning MinIO objects...",
+            },
+        )
+
+        # Update the persistent heartbeat every 30 seconds
+        # while the scanner is processing storage objects.
+        last_heartbeat = now
+
+        def heartbeat():
+            nonlocal last_heartbeat
+
+            now = django_timezone.now()
+
+            if (
+                now - last_heartbeat
+            ).total_seconds() >= 30:
+
+                OrphanFilesJob.objects.filter(
+                    pk=job.pk,
+                ).update(
+                    heartbeat_at=now,
+                )
+
+                last_heartbeat = now
+
+        # Scan managed storage objects.
+        scan_result = scan_orphan_files(
+            grace_period_days=grace_period_days,
+            heartbeat=heartbeat,
+        )
+
+        # Update heartbeat after the storage scan.
+        OrphanFilesJob.objects.filter(
+            pk=job.pk,
+        ).update(
+            heartbeat_at=django_timezone.now(),
+        )
+
+        self.update_state(
+            state="PROGRESS",
+            meta={
+                "message": "Building orphan files report...",
+            },
+        )
+
+        # Build the scan report.
+        report = build_report(
+            scan_result,
+            grace_period_days,
+        )
+
+        # Keep only summary and limited previews in the job.
+        # All orphan candidates are stored separately.
+        result = {
+            "summary": report["summary"],
+            "grace_period_days": grace_period_days,
+            "generated_at": report["generated_at"],
+            "orphaned_preview": report["orphaned"][:100],
+            "recent_unreferenced_preview": (
+                report["recent_unreferenced"][:100]
+            ),
+            "missing_preview": report["missing"][:100],
+            "preview_limit": 100,
+        }
+
+        OrphanFilesJob.objects.filter(
+            pk=job.pk,
+        ).update(
+            heartbeat_at=django_timezone.now(),
+        )
+
+        self.update_state(
+            state="PROGRESS",
+            meta={
+                "message": "Saving orphan files candidates...",
+            },
+        )
+
+        # Persist candidates and final scan result atomically.
+        with transaction.atomic():
+
+            save_scan_candidates(
+                scan_job=job,
+                orphaned_objects=scan_result.orphaned,
+            )
+
+            now = django_timezone.now()
+
+            OrphanFilesJob.objects.filter(
+                pk=job.pk,
+            ).update(
+                status=OrphanFilesJob.Status.SUCCESS,
+                result=result,
+                completed_at=now,
+                heartbeat_at=now,
+                error="",
+            )
+
+        return result
+
+    except Exception as exc:
+
+        now = django_timezone.now()
+
+        OrphanFilesJob.objects.filter(
+            pk=job.pk,
+        ).update(
+            status=OrphanFilesJob.Status.FAILURE,
+            error=str(exc),
+            completed_at=now,
+            heartbeat_at=now,
+        )
+
+        raise
 
 
 @app.task(bind=True, queue="site-worker", soft_time_limit=7 * 24 * 60 * 60)
 def cleanup_orphan_files_task(
     self,
-    grace_period_days=7,
     mode="all",
     selected_objects=None,
 ):
     """
-    Re-scan managed MinIO objects and simulate cleanup.
-
-    Physical deletion remains disabled until concurrent
-    storage/database writes are safely coordinated.
+    Process persisted orphan files candidates.
     """
-    if mode not in ("all", "selected"):
-        raise ValueError("Invalid cleanup mode.")
-
-    if mode == "selected" and not selected_objects:
-        raise ValueError("No objects selected.")
-
-    self.update_state(
-        state="PROGRESS",
-        meta={"message": "Deleting orphaned objects..."},
+    job = OrphanFilesJob.objects.select_related(
+        "source_scan",
+    ).get(
+        task_id=self.request.id,
+        job_type=OrphanFilesJob.JobType.CLEANUP,
     )
 
-    result = cleanup_orphan_files(
-        grace_period_days=grace_period_days,
-        selected_objects=(
-            selected_objects if mode == "selected" else None
-        ),
+    now = django_timezone.now()
+
+    claimed = OrphanFilesJob.objects.filter(
+        pk=job.pk,
+        status=OrphanFilesJob.Status.PENDING,
+    ).update(
+        status=OrphanFilesJob.Status.STARTED,
+        started_at=now,
+        heartbeat_at=now,
+        error="",
     )
 
-    return {
-        **result,
-        "grace_period_days": grace_period_days,
-        "completed_at": datetime.now(timezone.utc).isoformat(),
-    }
+    if not claimed:
+        return job.result
+
+    try:
+        if job.source_scan is None:
+            raise ValueError("Missing source scan")
+
+        OrphanFilesJob.objects.filter(
+            pk=job.pk,
+        ).update(
+            status=OrphanFilesJob.Status.PROGRESS,
+            heartbeat_at=django_timezone.now(),
+        )
+
+        self.update_state(
+            state="PROGRESS",
+            meta={
+                "message": "Processing orphan files candidates..."
+            },
+        )
+
+        result = cleanup_orphan_files(
+            scan_job=job.source_scan,
+            cleanup_job=job,
+            mode=mode,
+            selected_objects=selected_objects,
+        )
+
+        now = django_timezone.now()
+
+        result = {
+            **result,
+            "grace_period_days": job.grace_period_days,
+            "completed_at": now.isoformat(),
+        }
+
+        OrphanFilesJob.objects.filter(
+            pk=job.pk,
+        ).update(
+            status=OrphanFilesJob.Status.SUCCESS,
+            result=result,
+            completed_at=now,
+            heartbeat_at=now,
+            error="",
+        )
+
+        return result
+
+    except Exception as exc:
+
+        now = django_timezone.now()
+
+        OrphanFilesJob.objects.filter(
+            pk=job.pk,
+        ).update(
+            status=OrphanFilesJob.Status.FAILURE,
+            error=str(exc),
+            completed_at=now,
+            heartbeat_at=now,
+        )
+
+        raise

@@ -149,6 +149,14 @@
 
         <div class="ui bottom attached tab segment" data-tab="orphan-files">
             <h3>Orphan files scanner</h3>
+            <div if={orphan_jobs_loading} class="ui info message">
+                <i class="spinner loading icon"></i>
+                Retrieving orphan files jobs...
+            </div>
+
+            <div if={orphan_jobs_error} class="ui negative message">
+                {orphan_jobs_error}
+            </div>
 
             <p>
                 Scan managed storage objects and identify files without
@@ -328,8 +336,13 @@
                             type="button"
                             class="ui orange button {loading: orphan_cleanup_running}"
                             onclick={startSelectedOrphanCleanup}
-                            disabled={orphan_cleanup_running || orphan_scan_running || orphan_selected_count === 0}
-                        >
+                            disabled={
+                                orphan_jobs_loading ||
+                                orphan_jobs_error ||
+                                orphan_cleanup_running ||
+                                orphan_scan_running ||
+                                orphan_selected_count === 0
+                            }>
                             <i class="check square outline icon"></i>
                             Delete selected ({orphan_selected_count})
                         </button>
@@ -338,8 +351,12 @@
                             type="button"
                             class="ui red button {loading: orphan_cleanup_running}"
                             onclick={startAllOrphanCleanup}
-                            disabled={orphan_cleanup_running || orphan_scan_running}
-                        >
+                            disabled={
+                                orphan_jobs_loading ||
+                                orphan_jobs_error ||
+                                orphan_cleanup_running ||
+                                orphan_scan_running
+                            }>
                             <i class="trash icon"></i>
                             Delete all orphaned ({orphan_scan_result.summary.orphaned_count})
                         </button>
@@ -404,7 +421,6 @@
         self.orphan_scan_task_id = null;
         self.orphan_scan_poll_timer = null;
         self.orphan_scan_destroyed = false;
-        self.orphan_scan_started_at = null;
         self.orphan_jobs_loading = true;
         self.orphan_jobs_error = null;
         
@@ -419,7 +435,6 @@
         self.orphan_cleanup_result = null;
         self.orphan_cleanup_task_id = null;
         self.orphan_cleanup_poll_timer = null;
-        self.orphan_cleanup_started_at = null;
 
         self.isDataReloadNeeded = {
             "overview": true,
@@ -782,40 +797,38 @@
             }
         };
 
-        self.startOrphanScan = function(event, options) {
+        self.startOrphanScan = function(event) {
             if (event) {
                 event.preventDefault();
             }
 
-            options = options || {};
-
-            if (self.orphan_scan_running || self.orphan_cleanup_running) {
+            if (
+                self.orphan_jobs_loading ||
+                self.orphan_jobs_error ||
+                self.orphan_scan_running ||
+                self.orphan_cleanup_running
+            ) {
                 return;
             }
 
-            let gracePeriod;
+            const graceValue = Number(self.orphan_grace_period);
 
-            if (options.grace_period_days !== undefined) {
-                gracePeriod = Number(options.grace_period_days);
-            } else {
-                const graceValue = Number(self.orphan_grace_period);
-                const multipliers = {
-                    days: 1,
-                    months: 30,
-                    years: 365
-                };
+            const multipliers = {
+                days: 1,
+                months: 30,
+                years: 365
+            };
 
-                const multiplier = multipliers[self.orphan_grace_unit];
-                gracePeriod = graceValue * multiplier;
+            const multiplier = multipliers[self.orphan_grace_unit];
+            const gracePeriod = graceValue * multiplier;
 
-                if (
-                    self.orphan_grace_period === "" ||
-                    !Number.isInteger(graceValue) ||
-                    !multiplier
-                ) {
-                    toastr.error("Invalid grace period.");
-                    return;
-                }
+            if (
+                self.orphan_grace_period === "" ||
+                !Number.isInteger(graceValue) ||
+                !multiplier
+            ) {
+                toastr.error("Invalid grace period.");
+                return;
             }
 
             if (
@@ -829,7 +842,6 @@
 
             self.clearOrphanScanTimer();
 
-            self.orphan_scan_started_at = Date.now();
             self.orphan_scan_running = true;
             self.orphan_scan_status = "PENDING";
             self.orphan_scan_error = null;
@@ -840,10 +852,8 @@
             self.orphan_selected_count = 0;
             self.orphan_all_preview_selected = false;
 
-            if (!options.preserve_cleanup_result) {
-                self.orphan_cleanup_result = null;
-                self.orphan_cleanup_error = null;
-            }
+            self.orphan_cleanup_result = null;
+            self.orphan_cleanup_error = null;
 
             self.update();
 
@@ -876,19 +886,6 @@
                 !self.orphan_scan_running ||
                 !self.orphan_scan_task_id
             ) {
-                return;
-            }
-
-            if (
-                self.orphan_scan_started_at &&
-                Date.now() - self.orphan_scan_started_at >
-                    7 * 24 * 60 * 60 * 1000
-            ) {
-                self.orphan_scan_error =
-                    "Scan status polling timed out after seven days.";
-
-                self.clearOrphanScanTimer();
-                self.update();
                 return;
             }
 
@@ -939,10 +936,7 @@
 
                     self.update();
 
-                    self.orphan_scan_poll_timer = setTimeout(function() {
-                        self.orphan_scan_poll_timer = null;
-                        self.pollOrphanScan();
-                    }, 10000);
+                    self.scheduleOrphanScanPoll();
                 });
         };
 
@@ -1034,6 +1028,18 @@
                         data.last_scan.status === "SUCCESS"
                     ) ? data.last_scan.result : null;
 
+                    self.orphan_scan_task_id = self.orphan_scan_result
+                        ? data.last_scan.task_id
+                        : null;
+
+                    if (self.orphan_scan_result) {
+                        self.orphan_grace_period =
+                            data.last_scan.grace_period_days;
+
+                        self.orphan_grace_unit = "days";
+                        self.orphan_scan_status = "SUCCESS";
+                    }
+
                     self.orphan_cleanup_result = (
                         data.last_cleanup &&
                         data.last_cleanup.status === "SUCCESS"
@@ -1043,17 +1049,12 @@
                     self.orphan_cleanup_running = false;
 
                     if (job) {
-                        const startedAt = Date.parse(
-                            job.started_at || job.created_at
-                        );
-
                         self.orphan_grace_period = job.grace_period_days;
                         self.orphan_grace_unit = "days";
 
                         if (job.job_type === "scan") {
                             self.orphan_scan_task_id = job.task_id;
                             self.orphan_scan_status = job.status;
-                            self.orphan_scan_started_at = startedAt;
                             self.orphan_scan_running = true;
                             self.orphan_scan_result = null;
                         }
@@ -1061,7 +1062,6 @@
                         if (job.job_type === "cleanup") {
                             self.orphan_cleanup_task_id = job.task_id;
                             self.orphan_cleanup_status = job.status;
-                            self.orphan_cleanup_started_at = startedAt;
                             self.orphan_cleanup_running = true;
                         }
 
@@ -1123,9 +1123,12 @@
 
         self.startOrphanCleanup = function(mode, selectedObjects) {
             if (
+                self.orphan_jobs_loading ||
+                self.orphan_jobs_error ||
                 self.orphan_cleanup_running ||
                 self.orphan_scan_running ||
-                !self.orphan_scan_result
+                !self.orphan_scan_result ||
+                !self.orphan_scan_task_id
             ) {
                 return;
             }
@@ -1145,22 +1148,16 @@
                 return;
             }
 
-            // Reuse the grace period of the completed scan,
-            // not potentially edited form values.
-            const gracePeriod = self.orphan_scan_result.grace_period_days;
-
             self.clearOrphanCleanupTimer();
-
             self.orphan_cleanup_running = true;
             self.orphan_cleanup_status = "PENDING";
             self.orphan_cleanup_error = null;
             self.orphan_cleanup_result = null;
             self.orphan_cleanup_task_id = null;
-            self.orphan_cleanup_started_at = Date.now();
             self.update();
 
             const payload = {
-                grace_period_days: gracePeriod,
+                scan_task_id: self.orphan_scan_task_id,
                 mode: mode,
             };
 
@@ -1198,18 +1195,6 @@
                 return;
             }
 
-            if (
-                Date.now() - self.orphan_cleanup_started_at >
-                7 * 24 * 60 * 60 * 1000
-            ) {
-                self.orphan_cleanup_running = false;
-                self.orphan_cleanup_error =
-                    "Cleanup status polling timed out after seven days.";
-                self.clearOrphanCleanupTimer();
-                self.update();
-                return;
-            }
-
             CODALAB.api.get_orphan_files_cleanup_status(
                 self.orphan_cleanup_task_id
             )
@@ -1224,15 +1209,9 @@
                         self.orphan_cleanup_result = data.result;
                         self.clearOrphanCleanupTimer();
 
-                        const gracePeriod = self.orphan_scan_result
-                            ? self.orphan_scan_result.grace_period_days
-                            : null;
-
                         self.orphan_selected_objects = {};
                         self.orphan_selected_count = 0;
                         self.orphan_all_preview_selected = false;
-
-                        self.orphan_scan_result = null;
 
                         self.update();
 
@@ -1247,12 +1226,7 @@
                             );
                         }
 
-                        if (gracePeriod !== null && gracePeriod !== undefined) {
-                            self.startOrphanScan(null, {
-                                grace_period_days: gracePeriod,
-                                preserve_cleanup_result: true
-                            });
-                        }
+                        self.restoreOrphanJobs();
 
                     } else if (
                         data.status === "FAILURE" ||
@@ -1261,6 +1235,7 @@
                         self.orphan_cleanup_running = false;
                         self.orphan_cleanup_error =
                             data.error || "Orphan files cleanup failed.";
+
                         self.clearOrphanCleanupTimer();
                         self.update();
 
@@ -1273,18 +1248,32 @@
                                 self.orphan_cleanup_poll_timer = null;
                                 self.pollOrphanCleanup();
                             },
-                            2000
+                            10000
                         );
                     }
                 })
-                .fail(function() {
+                .fail(function(xhr) {
                     if (self.orphan_scan_destroyed) return;
 
-                    self.orphan_cleanup_running = false;
-                    self.orphan_cleanup_error =
-                        "Could not retrieve cleanup status.";
                     self.clearOrphanCleanupTimer();
+
+                    if (xhr.status === 401 || xhr.status === 403) {
+                        self.orphan_cleanup_error =
+                            "Access denied. Reload the page after signing in.";
+
+                        self.update();
+                        return;
+                    }
+
+                    self.orphan_cleanup_error =
+                        "Connection lost. Retrying cleanup status...";
+
                     self.update();
+
+                    self.orphan_cleanup_poll_timer = setTimeout(function() {
+                        self.orphan_cleanup_poll_timer = null;
+                        self.pollOrphanCleanup();
+                    }, 10000);
                 });
         };
 

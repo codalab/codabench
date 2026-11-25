@@ -81,6 +81,12 @@ class OrphanFilesJob(models.Model):
     )
 
     grace_period_days = models.PositiveIntegerField(default=7)
+    source_scan = models.ForeignKey("self", on_delete=models.PROTECT, null=True, blank=True,related_name="cleanup_jobs")
+
+    heartbeat_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     started_at = models.DateTimeField(null=True, blank=True)
@@ -91,3 +97,68 @@ class OrphanFilesJob(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+
+        constraints = [
+            models.UniqueConstraint(
+                models.Value(1),
+                condition=models.Q(status__in=[
+                    "PENDING",
+                    "STARTED",
+                    "PROGRESS",
+                ]),
+                name="unique_active_orphan_files_job",
+            ),
+        ]
+
+
+class OrphanFileCandidate(models.Model):
+
+    class Status(models.TextChoices):
+        PENDING = "PENDING", "Pending"
+        DELETED = "DELETED", "Deleted"
+        SKIPPED = "SKIPPED", "Skipped"
+        FAILED = "FAILED", "Failed"
+
+    scan = models.ForeignKey(
+        OrphanFilesJob,
+        on_delete=models.CASCADE,
+        related_name="candidates",
+    )
+
+    bucket = models.CharField(max_length=255)
+    key = models.TextField()
+
+    size = models.PositiveBigIntegerField()
+    last_modified = models.DateTimeField()
+    etag = models.CharField(max_length=255, blank=True)
+
+    status = models.CharField(
+        max_length=16,
+        choices=Status.choices,
+        default=Status.PENDING,
+    )
+
+    processed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    error = models.TextField(
+        blank=True,
+        default="",
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["scan", "bucket", "key"],
+                name="unique_orphan_file_per_scan",
+            ),
+        ]
+
+        indexes = [
+            models.Index(fields=["scan", "status"]),
+        ]
+
+    def __str__(self):
+        return f"{self.bucket}/{self.key}"

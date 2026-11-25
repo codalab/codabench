@@ -1,6 +1,11 @@
-from django.db.models import Count, F
+from django.db import IntegrityError, transaction
+from uuid import UUID, uuid4
+from django.shortcuts import get_object_or_404
+
+from django.db.models import Q, Count, F
 from django.contrib.auth import get_user_model
 from django.http import Http404
+from analytics.orphan_files.persistence import get_current_scan_result
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.views import APIView
@@ -10,12 +15,10 @@ from rest_framework.filters import BaseFilterBackend
 from rest_framework.decorators import api_view
 from rest_framework_csv import renderers as r
 from competitions.models import Competition, Submission
-from analytics.models import StorageUsageHistory, CompetitionStorageDataPoint, UserStorageDataPoint
+from analytics.models import OrphanFileCandidate, OrphanFilesJob, StorageUsageHistory, CompetitionStorageDataPoint, UserStorageDataPoint
 from api.serializers.analytics import AnalyticsSerializer
-from celery.result import AsyncResult
 from analytics.tasks import scan_orphan_files_task, cleanup_orphan_files_task
 from analytics.orphan_files.cleanup import is_allowed_object
-
 
 import os
 import datetime
@@ -291,83 +294,146 @@ def get_most_recent_storage_inconsistency_log_file():
     return most_recent_log_file
 
 
-@api_view(["POST"])
-def start_orphan_files_scan(request):
-    """
-    Start a read-only MinIO orphan files scan.
-    Superusers only.
-    """
-    if not request.user.is_superuser:
-        raise PermissionDenied(detail="Admin only")
+ACTIVE_ORPHAN_JOB_STATUSES = (
+    OrphanFilesJob.Status.PENDING,
+    OrphanFilesJob.Status.STARTED,
+    OrphanFilesJob.Status.PROGRESS,
+)
 
-    grace_period_days = request.data.get("grace_period_days", 7)
+ELIGIBLE_CANDIDATE_STATUSES = (
+    OrphanFileCandidate.Status.PENDING,
+    OrphanFileCandidate.Status.FAILED,
+)
 
-    try:
-        grace_period_days = int(grace_period_days)
-    except (TypeError, ValueError):
-        return Response(
-            {"detail": "grace_period_days must be an integer"},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
 
-    if not 0 <= grace_period_days <= 3650:
-        return Response(
-            {"detail": "grace_period_days must be between 0 and 3650"},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+def get_active_orphan_job():
+    return OrphanFilesJob.objects.filter(
+        status__in=ACTIVE_ORPHAN_JOB_STATUSES,
+    ).first()
 
-    task = scan_orphan_files_task.apply_async(
-        kwargs={"grace_period_days": grace_period_days},
-    )
 
+def get_latest_orphan_scan():
+    return OrphanFilesJob.objects.filter(
+        job_type=OrphanFilesJob.JobType.SCAN,
+    ).first()
+
+
+def serialize_orphan_job(job, include_result=True):
+    if job is None:
+        return None
+
+    response = {
+        "task_id": str(job.task_id),
+        "job_type": job.job_type,
+        "status": job.status,
+        "grace_period_days": job.grace_period_days,
+        "created_at": job.created_at,
+        "started_at": job.started_at,
+        "completed_at": job.completed_at,
+        "heartbeat_at": job.heartbeat_at,
+        "error": job.error,
+        "source_scan_task_id": (
+            str(job.source_scan.task_id)
+            if job.source_scan_id
+            else None
+        ),
+    }
+
+    if include_result:
+        if (
+            job.job_type == OrphanFilesJob.JobType.SCAN
+            and job.status == OrphanFilesJob.Status.SUCCESS
+        ):
+            response["result"] = get_current_scan_result(job)
+        else:
+            response["result"] = job.result
+
+    return response
+
+
+def orphan_job_conflict_response():
     return Response(
         {
-            "task_id": task.id,
-            "status": task.state,
+            "detail": "An orphan files job is already running.",
+            "active_job": serialize_orphan_job(
+                get_active_orphan_job(),
+                include_result=False,
+            ),
         },
-        status=status.HTTP_202_ACCEPTED,
+        status=status.HTTP_409_CONFLICT,
     )
+
+
+def dispatch_orphan_job(job, task, kwargs):
+    """
+    Dispatch the Celery task using the persistent job UUID.
+    """
+
+    def publish():
+        try:
+            task.apply_async(
+                task_id=str(job.task_id),
+                kwargs=kwargs,
+            )
+
+        except Exception:
+            logger.exception(
+                "Could not confirm dispatch of orphan job %s",
+                job.task_id,
+            )
+
+            # Keep the job active because a broker error
+            # does not prove that publication failed.
+            OrphanFilesJob.objects.filter(
+                pk=job.pk,
+                status=OrphanFilesJob.Status.PENDING,
+            ).update(
+                error="Task dispatch could not be confirmed.",
+            )
+
+    transaction.on_commit(publish)
 
 
 @api_view(["GET"])
-def orphan_files_scan_status(request, task_id):
+def current_orphan_files_job(request):
     """
-    Return Celery scan state and result.
-    Superusers only.
+    Restore the current orphan files interface state.
     """
     if not request.user.is_superuser:
         raise PermissionDenied(detail="Admin only")
 
-    task_id = str(task_id)
-    task = AsyncResult(task_id, app=scan_orphan_files_task.app)
+    active_job = get_active_orphan_job()
 
-    response = {
-        "task_id": task_id,
-        "status": task.state,
-    }
+    last_scan = get_latest_orphan_scan()
 
-    if task.state == "SUCCESS":
-        response["result"] = task.result
+    last_cleanup = OrphanFilesJob.objects.filter(
+        job_type=OrphanFilesJob.JobType.CLEANUP,
+    ).first()
 
-    elif task.state == "PROGRESS":
-        response["progress"] = task.info
-
-    elif task.state == "FAILURE":
-        logger.error("Orphan files scan failed: %s", task_id)
-        response["error"] = "The scan failed. Check worker logs."
-
-    return Response(response, status=status.HTTP_200_OK)
+    return Response(
+        {
+            "active_job": serialize_orphan_job(
+                active_job,
+                include_result=False,
+            ),
+            "last_scan": serialize_orphan_job(last_scan),
+            "last_cleanup": serialize_orphan_job(last_cleanup),
+        },
+        status=status.HTTP_200_OK,
+    )
 
 
 @api_view(["POST"])
-def start_orphan_files_cleanup(request):
+def start_orphan_files_scan(request):
+    """
+    Create a persistent scan job before dispatching Celery.
+    """
     if not request.user.is_superuser:
         raise PermissionDenied(detail="Admin only")
 
-    data = request.data
-
-    grace_period_days = data.get("grace_period_days", 7)
-    mode = data.get("mode", "all")
+    grace_period_days = request.data.get(
+        "grace_period_days", 7
+    )
 
     if (
         isinstance(grace_period_days, bool)
@@ -375,9 +441,78 @@ def start_orphan_files_cleanup(request):
         or not 0 <= grace_period_days <= 3650
     ):
         return Response(
-            {"detail": "Invalid grace_period_days"},
+            {
+                "detail": (
+                    "grace_period_days must be an integer "
+                    "between 0 and 3650"
+                )
+            },
             status=status.HTTP_400_BAD_REQUEST,
         )
+
+    try:
+        with transaction.atomic():
+
+            if get_active_orphan_job():
+                return orphan_job_conflict_response()
+
+            job = OrphanFilesJob.objects.create(
+                task_id=uuid4(),
+                job_type=OrphanFilesJob.JobType.SCAN,
+                status=OrphanFilesJob.Status.PENDING,
+                grace_period_days=grace_period_days,
+            )
+
+            dispatch_orphan_job(
+                job=job,
+                task=scan_orphan_files_task,
+                kwargs={},
+            )
+
+    except IntegrityError:
+        if get_active_orphan_job():
+            return orphan_job_conflict_response()
+        raise
+
+    return Response(
+        serialize_orphan_job(
+            job,
+            include_result=False,
+        ),
+        status=status.HTTP_202_ACCEPTED,
+    )
+
+
+@api_view(["GET"])
+def orphan_files_scan_status(request, task_id):
+    """
+    Return the persistent scan status.
+    """
+    if not request.user.is_superuser:
+        raise PermissionDenied(detail="Admin only")
+
+    job = get_object_or_404(
+        OrphanFilesJob,
+        task_id=task_id,
+        job_type=OrphanFilesJob.JobType.SCAN,
+    )
+
+    return Response(
+        serialize_orphan_job(job),
+        status=status.HTTP_200_OK,
+    )
+
+
+@api_view(["POST"])
+def start_orphan_files_cleanup(request):
+    """
+    Create a cleanup job associated with a successful scan.
+    """
+    if not request.user.is_superuser:
+        raise PermissionDenied(detail="Admin only")
+
+    data = request.data
+    mode = data.get("mode", "all")
 
     if mode not in ("all", "selected"):
         return Response(
@@ -385,8 +520,12 @@ def start_orphan_files_cleanup(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    if not isinstance(bool):
+    try:
+        scan_task_id = UUID(str(data.get("scan_task_id")))
+
+    except (TypeError, ValueError):
         return Response(
+            {"detail": "Invalid or missing scan_task_id"},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
@@ -407,6 +546,7 @@ def start_orphan_files_cleanup(request):
         identities = set()
 
         for item in selected_objects:
+
             if not isinstance(item, dict):
                 return Response(
                     {"detail": "Invalid selected object"},
@@ -432,61 +572,116 @@ def start_orphan_files_cleanup(request):
 
     elif data.get("selected_objects") is not None:
         return Response(
-            {"detail": "selected_objects is only valid in selected mode"},
+            {
+                "detail": (
+                    "selected_objects is only valid "
+                    "in selected mode"
+                )
+            },
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    task = cleanup_orphan_files_task.apply_async(
-        kwargs={
-            "grace_period_days": grace_period_days,
-            "mode": mode,
-            "selected_objects": selected_objects,
-        }
-    )
+    try:
+        with transaction.atomic():
+
+            if get_active_orphan_job():
+                return orphan_job_conflict_response()
+
+            scan = get_object_or_404(
+                OrphanFilesJob.objects.select_for_update(),
+                task_id=scan_task_id,
+                job_type=OrphanFilesJob.JobType.SCAN,
+            )
+
+            if scan.status != OrphanFilesJob.Status.SUCCESS:
+                return Response(
+                    {"detail": "The source scan is not successful"},
+                    status=status.HTTP_409_CONFLICT,
+                )
+
+            latest_scan = get_latest_orphan_scan()
+
+            if latest_scan.pk != scan.pk:
+                return Response(
+                    {"detail": "A newer scan exists. Reload the page."},
+                    status=status.HTTP_409_CONFLICT,
+                )
+
+            candidates = scan.candidates.filter(
+                status__in=ELIGIBLE_CANDIDATE_STATUSES,
+            )
+
+            if mode == "selected":
+                selection = Q()
+
+                for bucket, key in identities:
+                    selection |= Q(bucket=bucket, key=key)
+
+                candidates = candidates.filter(selection)
+
+                if candidates.count() != len(identities):
+                    return Response(
+                        {
+                            "detail": (
+                                "Some selected objects are no longer "
+                                "eligible for cleanup"
+                            )
+                        },
+                        status=status.HTTP_409_CONFLICT,
+                    )
+
+            elif not candidates.exists():
+                return Response(
+                    {"detail": "No remaining orphan files"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            job = OrphanFilesJob.objects.create(
+                task_id=uuid4(),
+                job_type=OrphanFilesJob.JobType.CLEANUP,
+                status=OrphanFilesJob.Status.PENDING,
+                grace_period_days=scan.grace_period_days,
+                source_scan=scan,
+            )
+
+            dispatch_orphan_job(
+                job=job,
+                task=cleanup_orphan_files_task,
+                kwargs={
+                    "mode": mode,
+                    "selected_objects": selected_objects,
+                },
+            )
+
+    except IntegrityError:
+        if get_active_orphan_job():
+            return orphan_job_conflict_response()
+        raise
 
     return Response(
-        {
-            "task_id": task.id,
-            "status": task.state,
-            "mode": mode,
-        },
+        serialize_orphan_job(
+            job,
+            include_result=False,
+        ),
         status=status.HTTP_202_ACCEPTED,
     )
 
 
 @api_view(["GET"])
 def orphan_files_cleanup_status(request, task_id):
+    """
+    Return the persistent cleanup status.
+    """
     if not request.user.is_superuser:
         raise PermissionDenied(detail="Admin only")
 
-    task_id = str(task_id)
-
-    task = AsyncResult(
-        task_id,
-        app=cleanup_orphan_files_task.app,
+    job = get_object_or_404(
+        OrphanFilesJob,
+        task_id=task_id,
+        job_type=OrphanFilesJob.JobType.CLEANUP,
     )
 
-    response = {
-        "task_id": task_id,
-        "status": task.state,
-    }
-
-    if task.state == "SUCCESS":
-        response["result"] = task.result
-
-    elif task.state == "PROGRESS":
-        response["progress"] = task.info
-
-    elif task.state == "FAILURE":
-        logger.error(
-            "Orphan files cleanup failed: %s",
-            task_id,
-        )
-        response["error"] = (
-            "The cleanup failed. Check worker logs."
-        )
-
     return Response(
-        response,
+        serialize_orphan_job(job),
         status=status.HTTP_200_OK,
     )

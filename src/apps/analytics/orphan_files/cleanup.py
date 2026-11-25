@@ -5,12 +5,14 @@ from datetime import timedelta
 from django.apps import apps
 from django.utils import timezone
 
-from .references import FILE_FIELDS, collect_file_references
-from .scanner import scan_orphan_files
-from .storage import ALLOWED_PREFIXES, get_storage_backends
+from .references import FILE_FIELDS
+from .storage import get_allowed_prefixes_by_bucket, get_storage_backends
 from datetime import timezone as datetime_timezone
 from contextlib import contextmanager
 from django.db import connection
+from django.db.models import Q
+
+from analytics.models import OrphanFilesJob, OrphanFileCandidate
 
 MAX_GRACE_DAYS = 3650
 MAX_SELECTED_OBJECTS = 100
@@ -37,12 +39,15 @@ class CleanupResult:
 
 
 def is_allowed_object(bucket, key):
+    allowed_prefixes = get_allowed_prefixes_by_bucket()
+
     return (
-        bucket in ALLOWED_PREFIXES
+        isinstance(bucket, str)
+        and bucket in allowed_prefixes
         and isinstance(key, str)
         and any(
             key.startswith(prefix)
-            for prefix in ALLOWED_PREFIXES[bucket]
+            for prefix in allowed_prefixes[bucket]
         )
         and not key.endswith("/")
     )
@@ -97,48 +102,63 @@ def same_s3_timestamp(list_timestamp, head_timestamp):
 
 
 def cleanup_orphan_files(
-    grace_period_days=7,
+    scan_job,
+    cleanup_job,
+    mode="all",
     selected_objects=None,
 ):
     with orphan_cleanup_lock():
         return _cleanup_orphan_files(
-            grace_period_days=grace_period_days,
+            scan_job=scan_job,
+            cleanup_job=cleanup_job,
+            mode=mode,
             selected_objects=selected_objects,
         )
 
 
 def _cleanup_orphan_files(
-    grace_period_days=7,
+    scan_job,
+    cleanup_job,
+    mode="all",
     selected_objects=None,
 ):
     """
-    Re-scan and clean eligible objects.
+    Delete eligible candidates from a persisted scan.
 
-    selected_objects:
-        None -> all eligible orphans
-        list -> only the specified objects
+    No full S3 listing is performed.
 
-    IMPORTANT:
-        Actual deletion requires write activity affecting
-        managed objects/references to be paused externally.
-
-        S3 HEAD + DELETE is not atomic on an unversioned bucket.
+    Managed storage and reference writes must be paused
+    externally during physical deletion.
     """
-    if (
-        isinstance(grace_period_days, bool)
-        or not isinstance(grace_period_days, int)
-        or not 0 <= grace_period_days <= MAX_GRACE_DAYS
-    ):
-        raise ValueError("Invalid grace period")
+    if scan_job.job_type != OrphanFilesJob.JobType.SCAN:
+        raise ValueError("Invalid source scan")
 
-    if selected_objects is not None:
-        if not isinstance(selected_objects, list):
-            raise ValueError("selected_objects must be a list")
+    if scan_job.status != OrphanFilesJob.Status.SUCCESS:
+        raise ValueError("Source scan is not successful")
 
-        if not 1 <= len(selected_objects) <= MAX_SELECTED_OBJECTS:
-            raise ValueError("Invalid selected objects count")
+    if cleanup_job.source_scan_id != scan_job.pk:
+        raise ValueError("Cleanup source scan mismatch")
 
-        normalized = set()
+    if mode not in ("all", "selected"):
+        raise ValueError("Invalid cleanup mode")
+
+    candidates = scan_job.candidates.filter(
+        status__in=[
+            OrphanFileCandidate.Status.PENDING,
+            OrphanFileCandidate.Status.FAILED,
+        ]
+    )
+
+    if mode == "selected":
+
+        if (
+            not isinstance(selected_objects, list)
+            or not 1 <= len(selected_objects) <= MAX_SELECTED_OBJECTS
+        ):
+            raise ValueError("Invalid selected objects")
+
+        identities = set()
+        selection = Q()
 
         for item in selected_objects:
             if not isinstance(item, dict):
@@ -150,105 +170,162 @@ def _cleanup_orphan_files(
             if not is_allowed_object(bucket, key):
                 raise ValueError("Object outside allowed prefixes")
 
-            normalized.add((bucket, key))
+            identities.add((bucket, key))
+            selection |= Q(bucket=bucket, key=key)
 
-        if len(normalized) != len(selected_objects):
+        if len(identities) != len(selected_objects):
             raise ValueError("Duplicate selected objects")
 
-        mode = "selected"
-    else:
-        normalized = None
-        mode = "all"
+        candidates = candidates.filter(selection)
+
+        if candidates.count() != len(identities):
+            raise ValueError("Some selected candidates are not eligible")
+
+    elif selected_objects is not None:
+        raise ValueError("Invalid selection for all mode")
 
     result = CleanupResult(mode=mode)
-
-    # Rebuild the candidate list instead of trusting the
-    # earlier API preview.
-    scan = scan_orphan_files(
-        grace_period_days=grace_period_days
-    )
+    result.candidates = candidates.count()
 
     backends = get_storage_backends()
+
+    clients = {
+        bucket: storage.connection.meta.client
+        for bucket, storage in backends.items()
+    }
+
     cutoff = timezone.now() - timedelta(
-        days=grace_period_days
+        days=scan_job.grace_period_days
     )
 
-    # Snapshot used only as an additional filter.
-    references = collect_file_references()
+    last_heartbeat = timezone.now()
+    last_pk = 0
 
-    for obj in scan.orphaned:
-        identity = (obj.bucket, obj.key)
+    while True:
 
-        if normalized is not None and identity not in normalized:
-            continue
+        batch = list(
+            candidates.filter(pk__gt=last_pk)
+            .order_by("pk")[:500]
+        )
 
-        result.candidates += 1
+        if not batch:
+            break
 
-        if not is_allowed_object(obj.bucket, obj.key):
-            result.skipped += 1
-            continue
+        for candidate in batch:
 
-        if obj.key in references.get(obj.bucket, set()):
-            result.skipped += 1
-            continue
+            last_pk = candidate.pk
 
-        storage = backends.get(obj.bucket)
+            now = timezone.now()
 
-        if storage is None:
-            result.skipped += 1
-            continue
-
-        client = storage.connection.meta.client
-
-        try:
-            current = get_current_object(
-                client, obj.bucket, obj.key
-            )
-
-            if current is None:
-                result.skipped += 1
-                continue
-
-            current_etag = current.get("ETag", "").strip('"')
-
-            if not obj.etag or not current_etag or obj.etag != current_etag:
-                result.skipped += 1
-                continue
-
-            # Do not delete objects modified since scanning.
             if (
-                not same_s3_timestamp(
-                    obj.last_modified,
-                    current["LastModified"],
+                now - last_heartbeat
+            ).total_seconds() >= 30:
+
+                OrphanFilesJob.objects.filter(
+                    pk=cleanup_job.pk,
+                ).update(
+                    heartbeat_at=now,
+                    result=result.as_dict(),
                 )
-                or current["ContentLength"] != obj.size
-                or current["LastModified"] > cutoff
-            ):
-                result.skipped += 1
-                continue
 
-            if is_still_referenced(obj.bucket, obj.key):
-                result.skipped += 1
-                continue
+                last_heartbeat = now
 
-            # The caller must ensure managed-object writes
-            # are paused during real cleanup.
-            client.delete_object(
-                Bucket=obj.bucket,
-                Key=obj.key,
+            candidate_status = (
+                OrphanFileCandidate.Status.SKIPPED
+            )
+            error = ""
+
+            try:
+                if not is_allowed_object(
+                    candidate.bucket,
+                    candidate.key,
+                ):
+                    error = "Object outside allowed prefixes"
+
+                elif candidate.bucket not in clients:
+                    raise RuntimeError("Storage backend unavailable")
+
+                else:
+                    client = clients[candidate.bucket]
+
+                    current = get_current_object(
+                        client,
+                        candidate.bucket,
+                        candidate.key,
+                    )
+
+                    if current is None:
+                        error = "Object no longer exists"
+
+                    elif (
+                        not candidate.etag
+                        or current.get("ETag", "").strip('"')
+                        != candidate.etag
+                    ):
+                        error = "Object ETag has changed"
+
+                    elif not same_s3_timestamp(
+                        candidate.last_modified,
+                        current["LastModified"],
+                    ):
+                        error = "Object modification date has changed"
+
+                    elif current["ContentLength"] != candidate.size:
+                        error = "Object size has changed"
+
+                    elif current["LastModified"] > cutoff:
+                        error = "Object is inside the grace period"
+
+                    elif is_still_referenced(
+                        candidate.bucket,
+                        candidate.key,
+                    ):
+                        error = "Object is referenced in PostgreSQL"
+
+                    else:
+                        client.delete_object(
+                            Bucket=candidate.bucket,
+                            Key=candidate.key,
+                        )
+
+                        candidate_status = (
+                            OrphanFileCandidate.Status.DELETED
+                        )
+
+            except Exception as exc:
+
+                candidate_status = (
+                    OrphanFileCandidate.Status.FAILED
+                )
+                error = str(exc)
+
+            candidate.status = candidate_status
+            candidate.error = error
+            candidate.processed_at = timezone.now()
+
+            candidate.save(
+                update_fields=[
+                    "status",
+                    "error",
+                    "processed_at",
+                ],
             )
 
-            result.deleted += 1
+            if candidate_status == OrphanFileCandidate.Status.DELETED:
+                result.deleted += 1
 
-        except Exception as exc:
-            result.failed += 1
+            elif candidate_status == OrphanFileCandidate.Status.SKIPPED:
+                result.skipped += 1
 
-            if len(result.errors) < 100:
-                result.errors.append({
-                    "bucket": obj.bucket,
-                    "key": obj.key,
-                    "error": str(exc),
-                })
+            else:
+                result.failed += 1
+
+                if len(result.errors) < 100:
+                    result.errors.append({
+                        "bucket": candidate.bucket,
+                        "key": candidate.key,
+                        "error": error,
+                    })
 
     return result.as_dict()
 

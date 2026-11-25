@@ -4,7 +4,7 @@ from datetime import datetime
 from django.conf import settings
 from django.apps import apps
 
-from apps.analytics.orphan_files.references import FILE_FIELDS
+from analytics.orphan_files.references import FILE_FIELDS
 
 ALLOWED_PREFIXES = {
     "private": (
@@ -20,6 +20,24 @@ ALLOWED_PREFIXES = {
         "organization_photos/",
     ),
 }
+
+
+def get_allowed_prefixes_by_bucket():
+    mapping = {}
+
+    bucket_mapping = {
+        "private": settings.AWS_STORAGE_PRIVATE_BUCKET_NAME,
+        "public": settings.AWS_STORAGE_BUCKET_NAME,
+    }
+
+    for logical_name, prefixes in ALLOWED_PREFIXES.items():
+        bucket_name = bucket_mapping[logical_name]
+        mapping.setdefault(bucket_name, []).extend(prefixes)
+
+    return {
+        bucket: tuple(prefixes)
+        for bucket, prefixes in mapping.items()
+    }
 
 
 @dataclass(frozen=True)
@@ -86,24 +104,13 @@ def iter_storage_objects(bucket_name, prefixes, page_size=1000):
 def iter_managed_objects(page_size=1000):
     """
     Iterate over objects in managed application prefixes.
-
-    Resolve logical bucket names to actual configured S3 buckets.
-    Unknown buckets are not scanned.
     """
     backends = get_storage_backends()
 
-    bucket_mapping = {
-        "private": settings.AWS_STORAGE_PRIVATE_BUCKET_NAME,
-        "public": settings.AWS_STORAGE_BUCKET_NAME,
-    }
-
-    for logical_name, prefixes in ALLOWED_PREFIXES.items():
-        bucket_name = bucket_mapping[logical_name]
-
+    for bucket_name, prefixes in get_allowed_prefixes_by_bucket().items():
         if bucket_name not in backends:
             raise ValueError(
-                f"No storage backend found for {logical_name} "
-                f"bucket: {bucket_name}"
+                f"No storage backend found for bucket: {bucket_name}"
             )
 
         yield from iter_storage_objects(

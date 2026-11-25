@@ -401,6 +401,9 @@ CODALAB.api = {
     get_orphan_files_cleanup_status: (task_id) => {
         return CODALAB.api.request('GET',`${URLS.API}analytics/orphan-files/cleanup/${task_id}/`);
     },
+    get_current_orphan_files_job: () => {
+        return CODALAB.api.request('GET', `${URLS.API}analytics/orphan-files/current/`);
+    },
     /*---------------------------------------------------------------------
          User Quota and Cleanup
     ---------------------------------------------------------------------*/

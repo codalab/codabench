@@ -4,9 +4,8 @@ from dataclasses import dataclass, field
 from datetime import timedelta
 
 from django.utils import timezone
-from .storage import ALLOWED_PREFIXES
 from .references import collect_file_references
-from .storage import iter_managed_objects, StorageObject
+from .storage import get_allowed_prefixes_by_bucket, iter_managed_objects, StorageObject
 
 
 @dataclass
@@ -25,7 +24,7 @@ class ScanResult:
     scanned_size: int = 0
 
 
-def scan_orphan_files(grace_period_days=7, page_size=1000):
+def scan_orphan_files(grace_period_days=7, page_size=1000, heartbeat=None):
     """
     Compare PostgreSQL FileField references with MinIO objects.
 
@@ -41,6 +40,7 @@ def scan_orphan_files(grace_period_days=7, page_size=1000):
         raise ValueError("grace_period_days must be >= 0")
 
     references = collect_file_references()
+    allowed_prefixes = get_allowed_prefixes_by_bucket()
 
     remaining = {
         bucket: {
@@ -48,11 +48,11 @@ def scan_orphan_files(grace_period_days=7, page_size=1000):
             for key in keys
             if any(
                 key.startswith(prefix)
-                for prefix in ALLOWED_PREFIXES.get(bucket, ())
+                for prefix in allowed_prefixes.get(bucket, ())
             )
         }
         for bucket, keys in references.items()
-        if bucket in ALLOWED_PREFIXES
+        if bucket in allowed_prefixes
     }
 
     cutoff = timezone.now() - timedelta(days=grace_period_days)
@@ -60,6 +60,10 @@ def scan_orphan_files(grace_period_days=7, page_size=1000):
     result = ScanResult()
 
     for obj in iter_managed_objects(page_size=page_size):
+
+        if heartbeat is not None:
+            heartbeat()
+
         result.scanned_count += 1
         result.scanned_size += obj.size
 
