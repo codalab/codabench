@@ -94,7 +94,7 @@ To manually confirm your account:
 1. Find the confirmation link in the Django logs using `docker compose logs -f django`
 2. Replace `example.com` by `localhost` on the URL and open it in your browser.
 
-Another way is to go inside the Django container and use commands like in [administrative procedures](Administrator-procedures.md).
+Another way is to go inside the Django container and use commands like in [administrative procedures](Administrative_Procedures/index.md).
 
 ### Troubleshooting storage endpoint URL
 

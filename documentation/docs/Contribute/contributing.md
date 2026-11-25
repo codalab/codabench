@@ -12,7 +12,7 @@
 ### Using your local instance
 
 - Create your own competition and play with it. You can look at the output logs of each different docker container.
-- Set yourself as an [admin](../Developers_and_Administrators/Administrator-procedures.md#give-superuser-privileges-to-a-user) of your platform and visit the Django Admin menu.
+- Set yourself as an [admin](../Developers_and_Administrators/Administrative_Procedures/index.md#give-superuser-privileges-to-a-user) of your platform and visit the Django Admin menu.
 
 ## Setting up an autonomous Compute Worker on a machine
 
