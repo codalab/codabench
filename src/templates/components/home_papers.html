@@ -1,0 +1,16 @@
+{# Hall of Papers preview on the home page: 3 latest papers + "View all" link. #}
+{# Expects `latest_papers` in the context. #}
+
+{% if latest_papers %}
+<div class="hb-section">
+    <div class="hb-header">
+        <h2 class="hb-title">Cited by</h2>
+        <a class="hb-view-all" href="{% url 'papers:list' %}">View all <i class="arrow right icon"></i></a>
+    </div>
+    <div class="hb-grid">
+        {% for paper in latest_papers %}
+            {% include "components/paper.html" with paper=paper %}
+        {% endfor %}
+    </div>
+</div>
+{% endif %}

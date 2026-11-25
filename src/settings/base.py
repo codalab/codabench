@@ -80,6 +80,7 @@ OUR_APPS = (
     'announcements',
     'oidc_configurations',
     'external_competitions',
+    'papers',
 )
 INSTALLED_APPS = THIRD_PARTY_APPS + OUR_APPS
 
@@ -277,7 +278,12 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'profiles.tasks.clean_non_activated_users',
         'schedule': timedelta(days=1),  # Run every 24 hours
     },
+    'sync_citing_papers': {
+        'task': 'papers.tasks.sync_citing_papers',
+        'schedule': timedelta(days=1),  # Run every 24 hours
+    },
 }
+HALL_OF_PAPERS_DOI = os.environ.get('HALL_OF_PAPERS_DOI', '10.1016/j.patter.2022.100543')
 CELERY_TIMEZONE = 'UTC'
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 

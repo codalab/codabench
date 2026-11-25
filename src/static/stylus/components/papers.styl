@@ -1,0 +1,137 @@
+/* --------------------------------------------------------------------------------------
+ Hall of Papers (templates/components/paper.html, templates/papers/list.html)
+ Reuses grid/layout/toolbar classes from benchmarks.styl, public_competitions.styl and buttons.styl.
+ */
+
+.paper-card
+    display flex
+    gap 16px
+    min-width 0
+    height 100%
+    min-height 260px
+    padding 20px
+    background-color #fff
+    border 1px solid #e3e7ec
+    border-radius 10px
+    box-shadow 0 1px 2px rgba(0, 0, 0, 0.04)
+    text-align left
+    transition transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease
+
+    &:hover
+        border-color $cb-blue-500
+        transform translateY(-3px)
+        box-shadow 0 8px 20px rgba(27, 47, 64, 0.12)
+
+.paper-card-thumb
+    flex 0 0 140px
+
+    a
+        display block
+
+    img
+        display block
+        width 140px
+        height 196px
+        object-fit cover
+        object-position top center
+        border 1px solid #e3e7ec
+        border-radius 6px
+        background-color #f8fafc
+
+.paper-card-placeholder
+    display flex
+    align-items center
+    justify-content center
+    width 140px
+    height 196px
+    border 1px solid #e3e7ec
+    border-radius 6px
+    background-color $cb-blue-50
+    color $cb-blue-500
+
+    .bi
+        display flex
+        align-items center
+        justify-content center
+        font-size 38px
+        line-height 1
+        opacity 0.8
+
+.paper-card-body
+    display flex
+    flex-direction column
+    flex 1
+    min-width 0
+
+#page_content .paper-card-title
+    display -webkit-box
+    -webkit-box-orient vertical
+    -webkit-line-clamp 4
+    line-clamp 4
+    overflow hidden
+    overflow-wrap anywhere
+    margin 0 0 6px
+    color $cb-navy-900
+    font-size 16px
+    font-weight 700
+    line-height 1.35
+
+    a
+        color inherit
+
+    a:hover
+        color $cb-blue-500
+
+.paper-card-authors
+    margin 0 0 6px
+    color #4a4a4a
+    font-size 14px
+    line-height 1.45
+    overflow-wrap anywhere
+
+.paper-card-venue
+    display -webkit-box
+    -webkit-box-orient vertical
+    -webkit-line-clamp 2
+    line-clamp 2
+    overflow hidden
+    overflow-wrap anywhere
+    margin 0 0 10px
+    color #6b7785
+    font-size 12px
+    font-style italic
+    line-height 1.35
+
+.paper-card-footer
+    display flex
+    flex-direction column
+    gap 8px
+    margin-top auto
+    padding-top 6px
+
+.paper-card-actions
+    display flex
+    flex-wrap wrap
+    justify-content flex-end
+    gap 8px
+
+// Filter inputs inside the /papers/ filter panel
+.papers-min-citations
+    display flex
+    align-items center
+    gap 8px
+
+    input[type="number"]
+        width 100px
+        height 34px
+        padding 0 10px
+        border 1px solid #e3e7ec
+        border-radius 6px
+        color $cb-navy-900
+        font-family inherit
+        font-size 13px
+
+        &:focus
+            outline none
+            border-color $cb-blue-500
+
