@@ -1631,6 +1631,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#model-cache" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Model Cache
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3113,6 +3124,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#model-cache" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Model Cache
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3461,6 +3483,8 @@ Make sure to use the username of the user running the podman container.</p>
 <p class="admonition-title">Do not put reference data in <code>$HOST_DIRECTORY/data</code></p>
 <p><code>/app/data</code> is also mounted during ingestion, where participant code runs, so anything in it can be read by submissions. Use <code>$HOST_DIRECTORY/reference</code> for anything participants must not see.</p>
 </div>
+<h3 id="model-cache">Model Cache<a class="headerlink" href="#model-cache" title="Permanent link">&para;</a></h3>
+<p>If you are working with models, you can store them on the compute worker directly. This model has to be put in <code>$HOST_DIRECTORY/model_cache</code> and is only available during ingestion. They are available read-only at <code>/app/model_cache</code> during ingestion (not during scoring).</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>Make sure to make the owner of the folder(s) and file(s) the same as the one launching the compute worker.<br />
