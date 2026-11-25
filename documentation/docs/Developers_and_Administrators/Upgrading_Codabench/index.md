@@ -65,3 +65,5 @@ Manual interventions needed depending on which version you are upgrading from:
 - [Add `DEFAULT_FROM_EMAIL` in your `.env` file](Add-DEFAULT_FROM_EMAIL-in-your-.env-file.md) (version < 1.26.0)
 - [RabbitMQ feature flags](RabbitMQ-feature-flags.md) (version < 1.28.0, recommended)
 - [Users queue limit](Users-queue-limit.md) (version < 1.31.0)
+- [Default tags](Default-tags.md) (version < 1.37.0)
+- [Lowercase emails](Lowercase-emails.md) and [upgrade compute workers](#upgrade-compute-workers) (version < 1.38.0)
