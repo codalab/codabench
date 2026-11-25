@@ -150,7 +150,7 @@ class OrphanFileCandidate(models.Model):
 
     class Meta:
 
-        verbose_name = "Ophan File"
+        verbose_name = "Orphan File"
 
         constraints = [
             models.UniqueConstraint(
