@@ -25,7 +25,7 @@ class TfidfClassifier(BaseTagClassifier):
         self._labels = list(meta["labels"])
         self.thresholds = list(meta["thresholds"])
         self.fallback_tag = meta.get("fallback_tag") or None
-        
+
         self.input_name = self.session.get_inputs()[0].name
         self.prob_output_name = self.session.get_outputs()[1].name
 
