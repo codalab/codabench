@@ -70,6 +70,23 @@ class SyncCitingPapersTests(TestCase):
         self._sync_with(mock.Mock(return_value=[dict(data[0])]), skip_thumbnails=False)
         mock_thumb.assert_called_once_with('https://example.org/paper.pdf')
 
+    @mock.patch('papers.tasks.generate_pdf_thumbnail')
+    def test_thumbnail_failure_does_not_abort_sync(self, mock_thumb):
+        """An unexpected exception while generating one thumbnail must not stop later papers."""
+        mock_thumb.side_effect = [OSError('cannot encode WebP'), None]
+        data = [
+            _paper_data(1, pdf_url='https://example.org/1.pdf'),
+            _paper_data(2, pdf_url='https://example.org/2.pdf'),
+        ]
+
+        with self.assertLogs('papers.tasks', level='ERROR'):
+            stats = self._sync_with(mock.Mock(return_value=data), skip_thumbnails=False)
+
+        self.assertEqual(Paper.objects.count(), 2)
+        self.assertEqual(stats['created'], 2)
+        self.assertEqual(stats['thumbnails'], 0)
+        self.assertEqual(mock_thumb.call_count, 2)
+
     def test_data_error_skips_bad_paper_and_continues(self):
         """A single paper exceeding a column max_length is skipped without aborting the sync."""
         max_len = Paper._meta.get_field('url').max_length

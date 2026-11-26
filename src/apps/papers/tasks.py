@@ -58,10 +58,15 @@ def sync_citing_papers(source='openalex', skip_thumbnails=False):
 
         # Generated once per paper and saved in Django's default storage
         if not skip_thumbnails and not paper.thumbnail and paper.pdf_url:
-            thumb = generate_pdf_thumbnail(paper.pdf_url)
-            if thumb is not None:
-                paper.thumbnail.save(f"{paper.id}.webp", thumb, save=True)
-                thumb_count += 1
+            # Thumbnails are best-effort: an unexpected failure (odd PDF, PIL/WebP
+            # encoding, storage backend) must not abort the sync of remaining papers
+            try:
+                thumb = generate_pdf_thumbnail(paper.pdf_url)
+                if thumb is not None:
+                    paper.thumbnail.save(f"{paper.id}.webp", thumb, save=True)
+                    thumb_count += 1
+            except Exception:
+                logger.exception(f"Failed to generate thumbnail for paper {doi} ({paper.pdf_url})")
 
     logger.info(
         f"Hall of Papers sync finished: {len(fetched)} fetched "
