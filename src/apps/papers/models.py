@@ -1,5 +1,5 @@
 from django.db import models, transaction
-from django.db.models.signals import post_delete
+from django.db.models.signals import post_delete, pre_save
 from django.dispatch import receiver
 from django.utils.timezone import now
 
@@ -42,4 +42,16 @@ def delete_paper_thumbnail(sender, instance, **kwargs):
     if instance.thumbnail:
         storage = instance.thumbnail.storage
         name = instance.thumbnail.name
+        transaction.on_commit(lambda: storage.delete(name))
+
+
+@receiver(pre_save, sender=Paper)
+def delete_replaced_paper_thumbnail(sender, instance, update_fields=None, **kwargs):
+    # Clean up the old thumbnail from storage if it was cleared or replaced
+    if not instance.pk or (update_fields is not None and 'thumbnail' not in update_fields):
+        return
+    old = Paper.objects.filter(pk=instance.pk).only('thumbnail').first()
+    if old and old.thumbnail and old.thumbnail != instance.thumbnail:
+        storage = old.thumbnail.storage
+        name = old.thumbnail.name
         transaction.on_commit(lambda: storage.delete(name))

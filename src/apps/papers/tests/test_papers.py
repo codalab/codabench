@@ -83,3 +83,11 @@ class HallOfPapersViewTests(TestCase):
             with self.captureOnCommitCallbacks(execute=True):
                 paper.delete()
         mock_delete.assert_called_once_with('paper_thumbnails/test.webp')
+
+    def test_clearing_or_replacing_thumbnail_removes_old_file(self):
+        paper = PaperFactory(thumbnail='paper_thumbnails/old.webp')
+        with mock.patch.object(paper.thumbnail.storage, 'delete') as mock_delete:
+            with self.captureOnCommitCallbacks(execute=True):
+                paper.thumbnail = ''
+                paper.save()
+        mock_delete.assert_called_once_with('paper_thumbnails/old.webp')
