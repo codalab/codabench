@@ -23,6 +23,7 @@ urlpatterns = [
     path('tasks/', include('tasks.urls', namespace='tasks')),
     path('queues/', include('queues.urls', namespace="queues")),
     path('forums/', include('forums.urls', namespace="forums")),
+    path('papers/', include('papers.urls', namespace="papers")),
 
     # Third party
     path('api/', include('api.urls')),

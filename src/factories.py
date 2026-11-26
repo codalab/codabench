@@ -1,3 +1,4 @@
+import datetime
 import random
 
 import factory
@@ -11,6 +12,7 @@ from competitions.models import Competition, Phase, Submission, CompetitionParti
 from datasets.models import Data
 from external_competitions.models import ExternalPlatform, ExternalCompetition
 from leaderboards.models import Leaderboard, Column, SubmissionScore
+from papers.models import Paper
 from profiles.models import User, Organization
 from tasks.models import Task, Solution
 from queues.models import Queue
@@ -281,3 +283,17 @@ class ExternalCompetitionFactory(DjangoModelFactory):
     platform = factory.SubFactory(ExternalPlatformFactory)
     name = factory.Sequence(lambda n: f'External Competition {n}')
     competition_url = factory.Sequence(lambda n: f'https://example.org/competitions/{n}/')
+
+
+class PaperFactory(DjangoModelFactory):
+    class Meta:
+        model = Paper
+
+    doi = factory.Sequence(lambda n: f'10.1000/paper.{n}')
+    title = factory.Sequence(lambda n: f'Paper {n}')
+    authors = 'Alice Smith, Bob Jones'
+    venue = 'NeurIPS'
+    publication_date = factory.LazyFunction(lambda: datetime.date(2025, 1, 1))
+    citation_count = 0
+    url = factory.Sequence(lambda n: f'https://example.org/papers/{n}')
+    pdf_url = ''

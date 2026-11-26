@@ -80,6 +80,7 @@ OUR_APPS = (
     'announcements',
     'oidc_configurations',
     'external_competitions',
+    'papers',
 )
 INSTALLED_APPS = THIRD_PARTY_APPS + OUR_APPS
 
@@ -275,6 +276,10 @@ CELERY_BEAT_SCHEDULE = {
     },
     'clean_non_activated_users': {
         'task': 'profiles.tasks.clean_non_activated_users',
+        'schedule': timedelta(days=1),  # Run every 24 hours
+    },
+    'sync_citing_papers': {
+        'task': 'papers.tasks.sync_citing_papers',
         'schedule': timedelta(days=1),  # Run every 24 hours
     },
 }
