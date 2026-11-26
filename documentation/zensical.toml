@@ -82,7 +82,9 @@ nav = [
             {"Postgres 18 upgrade (version < 1.24.0)" = "Developers_and_Administrators/Upgrading_Codabench/Postgres-18.md"},
             {"Add DEFAULT_FROM_EMAIL in your .env file (version < 1.26.0)" = "Developers_and_Administrators/Upgrading_Codabench/Add-DEFAULT_FROM_EMAIL-in-your-.env-file.md"},
             {"RabbitMQ feature flags (version < 1.28.0, recommended)" = "Developers_and_Administrators/Upgrading_Codabench/RabbitMQ-feature-flags.md"},
-            {"Users queue limit (version < 1.31.0)" = "Developers_and_Administrators/Upgrading_Codabench/Users-queue-limit.md"}
+            {"Users queue limit (version < 1.31.0)" = "Developers_and_Administrators/Upgrading_Codabench/Users-queue-limit.md"},
+            {"Default tags (version < 1.37.0)" = "Developers_and_Administrators/Upgrading_Codabench/Default-tags.md"},
+            {"Lowercase emails and compute workers (version < 1.38.0)" = "Developers_and_Administrators/Upgrading_Codabench/Lowercase-emails.md"}
         ]}
         ]},
         {"Newsletters Archive" = [
