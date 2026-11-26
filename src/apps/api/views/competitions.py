@@ -32,6 +32,7 @@ from competitions.emails import send_participation_requested_emails, send_partic
 from competitions.models import Tag, Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant, Submission, PhaseTaskInstance
 from competitions.public_competitions import DEFAULT_FILTER_MODE, DEFAULT_ORDERING, FILTER_MODE_AND, FILTER_MODE_OR, \
     ORDERINGS, get_public_competitions, read_tag_ids, read_date
+from competitions.tagging import suggest_tags_for_competition
 from datasets.models import Data
 from competitions.tasks import batch_send_email, manual_migration, create_competition_dump
 from leaderboards.models import Leaderboard, Column
@@ -220,7 +221,7 @@ class CompetitionViewSet(ModelViewSet):
     def get_permissions(self):
         if self.action in ['update', 'partial_update', 'destroy']:
             self.permission_classes = [IsOrganizerOrCollaborator]
-        elif self.action in ['create']:
+        elif self.action in ['create', 'auto_tags']:
             self.permission_classes = [IsAuthenticated]
         elif self.action in ['retrieve', 'list']:
             self.permission_classes = [AllowAny]
@@ -382,6 +383,35 @@ class CompetitionViewSet(ModelViewSet):
         competition.published = not competition.published
         competition.save()
         return Response({"published": competition.published})
+
+    @action(detail=False, methods=('POST',))
+    def auto_tags(self, request):
+        comp_id = request.data.get('id')
+        title = request.data.get('title') or ''
+        description = request.data.get('description') or ''
+        pages = request.data.get('pages')
+
+        if not isinstance(title, str) or not isinstance(description, str):
+            raise ValidationError("'title' and 'description' must be strings.")
+        if pages is not None and (not isinstance(pages, list) or not all(isinstance(p, dict) for p in pages)):
+            raise ValidationError("'pages' must be a list of objects.")
+
+        comp = None
+        if comp_id is not None:
+            try:
+                comp = Competition.objects.select_related('created_by').filter(id=int(comp_id)).first()
+            except (ValueError, TypeError):
+                raise ValidationError("Invalid competition ID.")
+            if not comp or not comp.user_has_admin_permission(request.user):
+                raise PermissionDenied("You don't have permission to access this competition")
+
+        tag_ids = suggest_tags_for_competition(
+            competition=comp,
+            title=title,
+            description=description,
+            pages=pages,
+        )
+        return Response({'tags': tag_ids})
 
     @action(detail=True, methods=('POST',))
     def register(self, request, pk):
