@@ -7,6 +7,14 @@ Compute workers need to be upgraded (#2669): see [Upgrade compute workers](index
 !!! warning
     Upgrade the main instance as well. Running an upgraded worker with an instance that is not up to date can cause bugs.
 
+## Manually fetch the papers citing Codabench
+
+To populate manually the Hall of Papers (#2782). Anyway, a daily task does it.
+
+```bash
+docker compose exec django python manage.py shell -c "from papers.tasks import sync_citing_papers; sync_citing_papers()"
+```
+
 ## Convert existing email addresses to lowercase
 
 A 500 error happened at signup when a user entered an email already registered, but with different capital letters (for example `John@example.com` instead of `john@example.com`). Signup now converts emails to lowercase (#2611). After the upgrade, convert the existing emails to lowercase as well.
