@@ -1,4 +1,5 @@
 import datetime
+from unittest import mock
 
 from django.test import TestCase
 from django.urls import reverse
@@ -75,3 +76,10 @@ class HallOfPapersViewTests(TestCase):
         self.assertEqual(self.p2.authors_summary, 'Bob Martin, Carol White +1 author')
         many = PaperFactory(authors='A, B, C, D, E')
         self.assertEqual(many.authors_summary, 'A, B +3 authors')
+
+    def test_deleting_paper_removes_thumbnail_from_storage(self):
+        paper = PaperFactory(thumbnail='paper_thumbnails/test.webp')
+        with mock.patch.object(paper.thumbnail.storage, 'delete') as mock_delete:
+            with self.captureOnCommitCallbacks(execute=True):
+                paper.delete()
+        mock_delete.assert_called_once_with('paper_thumbnails/test.webp')

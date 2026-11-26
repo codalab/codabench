@@ -283,7 +283,6 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': timedelta(days=1),  # Run every 24 hours
     },
 }
-HALL_OF_PAPERS_DOI = os.environ.get('HALL_OF_PAPERS_DOI', '10.1016/j.patter.2022.100543')
 CELERY_TIMEZONE = 'UTC'
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 

@@ -1,7 +1,6 @@
 # Named tasks.py on purpose so Celery's autodiscover_tasks() registers @app.task
 import logging
 
-from django.conf import settings
 from django.db import DataError, transaction
 
 from celery_config import app
@@ -12,10 +11,12 @@ from papers.models import Paper
 
 logger = logging.getLogger(__name__)
 
+CODABENCH_PAPER_DOI = '10.1016/j.patter.2022.100543'
+
 
 @app.task(queue="site-worker")
 def sync_citing_papers(source='openalex', skip_thumbnails=False):
-    doi = getattr(settings, 'HALL_OF_PAPERS_DOI', '10.1016/j.patter.2022.100543')
+    doi = CODABENCH_PAPER_DOI
     fetcher = FETCHERS.get(source)
     if fetcher is None:
         raise ValueError(f"No fetcher implemented for paper source '{source}'")

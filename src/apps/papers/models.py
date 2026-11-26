@@ -1,4 +1,6 @@
-from django.db import models
+from django.db import models, transaction
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 from django.utils.timezone import now
 
 from utils.data import PathWrapper
@@ -32,3 +34,12 @@ class Paper(models.Model):
         extra = len(names) - 2
         label = 'author' if extra == 1 else 'authors'
         return f"{', '.join(names[:2])} +{extra} {label}"
+
+
+@receiver(post_delete, sender=Paper)
+def delete_paper_thumbnail(sender, instance, **kwargs):
+    # Remove the thumbnail from storage once the deletion commits so no orphan file is left behind
+    if instance.thumbnail:
+        storage = instance.thumbnail.storage
+        name = instance.thumbnail.name
+        transaction.on_commit(lambda: storage.delete(name))

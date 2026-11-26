@@ -72,7 +72,8 @@ class SyncCitingPapersTests(TestCase):
 
     def test_data_error_skips_bad_paper_and_continues(self):
         """A single paper exceeding a column max_length is skipped without aborting the sync."""
-        bad = _paper_data(1, url='https://example.org/' + 'a' * 600)
+        max_len = Paper._meta.get_field('url').max_length
+        bad = _paper_data(1, url='https://example.org/' + 'a' * max_len)
         good = _paper_data(2)
 
         stats = self._sync_with(mock.Mock(return_value=[bad, good]))
