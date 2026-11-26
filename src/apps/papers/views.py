@@ -31,7 +31,7 @@ def _build_query(params, **overrides):
 
 class HallOfPapersView(TemplateView):
     template_name = 'papers/list.html'
-    papers_per_page = 12
+    papers_per_page = 21
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
