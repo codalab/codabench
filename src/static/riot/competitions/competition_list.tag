@@ -92,6 +92,7 @@
             </div>
         </div>
     </div>
+    <publish-warning-modal ref="publish_warning_modal"></publish-warning-modal>
     <script>
         var self = this
 
@@ -160,16 +161,43 @@
             }
         }
 
-        self.toggle_competition_publish = function (competition) {
-            CODALAB.api.toggle_competition_publish(competition.id)
+        self.execute_toggle_publish = function (competition_id) {
+            CODALAB.api.toggle_competition_publish(competition_id)
                 .done(function (data) {
                     var published_state = data.published ? "published" : "unpublished"
                     toastr.success(`Competition has been ${published_state} successfully`)
                     self.get_organizing_competitions()
                 })
+                .fail(function () {
+                    toastr.error("Could not update competition publication status")
+                })
         }
 
+        self.toggle_competition_publish = function (competition) {
+            if (competition.published) {
+                return self.execute_toggle_publish(competition.id)
+            }
 
+            self.refs.publish_warning_modal.open(competition, function (updated_fields) {
+                if (Object.keys(updated_fields).length === 0) {
+                    return self.execute_toggle_publish(competition.id)
+                }
+                CODALAB.api.get_competition(competition.id)
+                    .done(function (full_comp) {
+                        var payload = Object.assign({ whitelist_emails: full_comp.whitelist_emails }, updated_fields)
+                        CODALAB.api.update_competition(payload, competition.id)
+                            .done(function () {
+                                self.execute_toggle_publish(competition.id)
+                            })
+                            .fail(function () {
+                                toastr.error("Could not update competition details")
+                            })
+                    })
+                    .fail(function () {
+                        toastr.error("Could not load competition details")
+                    })
+            })
+        }
     </script>
     <style type="text/stylus">
         .table.participation

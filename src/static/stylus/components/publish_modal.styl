@@ -1,0 +1,178 @@
+/* --------------------------------------------------------------------------------------
+ Publication Warning Modal
+ -------------------------------------------------------------------------------------- */
+
+.ui.modal.publish-warning-modal
+    border-radius 10px !important
+    overflow hidden
+
+    > .header
+        display flex !important
+        align-items center
+        justify-content space-between
+        padding 1.25rem 1.5rem 0.25rem 1.5rem !important
+        font-size 18px !important
+        font-weight 700 !important
+        color $cb-navy-900 !important
+        background #ffffff !important
+        border-bottom none !important
+
+        .header-title-group
+            display flex
+            align-items center
+            gap 10px
+
+        .step-badge
+            font-size 13px
+            font-weight 600
+            padding 3px 10px
+            border-radius 999px
+            background $cb-blue-50
+            color $cb-blue-500
+
+        .modal-close-btn
+            display inline-flex
+            align-items center
+            justify-content center
+            width 30px
+            height 30px
+            padding 0
+            border none
+            border-radius 6px
+            background transparent
+            color #6b7785
+            cursor pointer
+            transition all 0.15s ease
+            outline none
+
+            i.close.icon
+                margin 0
+                font-size 15px
+                line-height 1
+
+            &:hover
+                background #f1f4f7
+                color $cb-navy-900
+
+    > .content
+        padding 0.75rem 1.5rem 1rem 1.5rem !important
+        height 340px
+        overflow hidden
+        background #ffffff !important
+        display flex
+        flex-direction column
+
+    .step-description
+        font-size 15px
+        font-weight 500
+        line-height 1.5
+        color $cb-navy-800
+        margin 0 0 14px 0
+        flex-shrink 0
+
+    > .actions
+        display flex !important
+        align-items center
+        justify-content space-between
+        padding 0.5rem 1.5rem 1.25rem 1.5rem !important
+        background #ffffff !important
+        border-top none !important
+
+        .actions-right
+            display flex
+            align-items center
+            gap 8px
+
+    .step-panel
+        flex 1
+        min-height 0
+
+    /* Step: Tags */
+    .step-tags
+        display flex
+        flex-direction column
+        overflow hidden
+
+    .selected-tags-bar
+        background #f8fafc
+        border 1px solid #e2e8f0
+        border-radius 8px
+        padding 10px 12px
+        margin-bottom 14px
+        min-height 46px
+        max-height 88px
+        overflow-y auto
+        flex-shrink 0
+
+    .no-tags-placeholder
+        display block
+        color #6b7785
+        font-style italic
+        font-size 13.5px
+        line-height 24px
+
+    .tag-categories-scroll
+        flex 1
+        overflow-y auto
+        padding-right 6px
+
+    .tag-category-group
+        margin-bottom 14px
+
+        &:last-child
+            margin-bottom 0
+
+    .category-title
+        font-size 14px
+        font-weight 700
+        color $cb-navy-900
+        margin 0 0 8px 0
+        padding-bottom 5px
+        border-bottom 1px solid #edf2f7
+
+    .tag-pills-container
+        display flex
+        flex-wrap wrap
+        gap 6px
+        align-items center
+
+    .tag-pill i.delete.icon
+        font-size 11px
+        opacity 0.85
+
+        &:hover
+            opacity 1
+
+    /* Step: Organizer Contact Email */
+    .step-email
+        padding-top 6px
+
+        .field
+            label
+                font-size 14px
+                font-weight 600
+                color $cb-navy-900
+                margin-bottom 8px
+
+            input[type="email"]
+                font-size 14px
+                padding 10px 12px
+                border 1px solid #cbd5e1
+                border-radius 6px
+                color $cb-navy-900
+
+                &:focus
+                    border-color $cb-blue-500
+                    box-shadow 0 0 0 3px rgba($cb-blue-500, 0.15)
+
+            &.error input[type="email"]
+                border-color $cb-danger
+                background #ffffff
+
+        .field-error-text
+            color $cb-danger
+            font-size 13px
+            margin-top 6px
+            display flex
+            align-items center
+            gap 5px

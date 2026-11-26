@@ -64,7 +64,7 @@
                     </a>
                 </div>
                 <div class="ui active tab" data-tab="competition_details">
-                    <competition-details errors="{ errors.details }"></competition-details>
+                    <competition-details ref="competition_details" errors="{ errors.details }"></competition-details>
                 </div>
                 <div class="ui tab" data-tab="participation">
                     <competition-participation errors="{ errors.participation}"></competition-participation>
@@ -103,6 +103,8 @@
             </div>
         </div>
     </div>
+
+    <publish-warning-modal ref="publish_warning_modal"></publish-warning-modal>
 
     <script>
         var self = this
@@ -180,6 +182,28 @@
         }
 
         self.save = function () {
+            if (!self.refs.publish.checked || self.competition.published) {
+                return self.do_save()
+            }
+
+            self.refs.publish_warning_modal.open(self.competition, function (updated_fields) {
+                if (Object.keys(updated_fields).length > 0) {
+                    var details = self.refs.competition_details
+                    if (updated_fields.tags) {
+                        details.selected_tag_ids = updated_fields.tags
+                        details.update_selected_tags_cache()
+                    }
+                    if (updated_fields.contact_email) {
+                        details.refs.contact_email.value = updated_fields.contact_email
+                    }
+                    details.form_updated()
+                    details.update()
+                }
+                self.do_save()
+            })
+        }
+
+        self.do_save = function () {
             self.competition["queue"] = parseInt(self.competition["queue"])
             if (typeof(self.competition["queue"]) === "NaN" ) {
                 self.competition["queue"] = null
