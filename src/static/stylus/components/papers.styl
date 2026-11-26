@@ -4,11 +4,12 @@
  */
 
 .paper-card
+    position relative
     display flex
-    gap 16px
+    flex-direction column
+    gap 14px
     min-width 0
     height 100%
-    min-height 260px
     padding 20px
     background-color #fff
     border 1px solid #e3e7ec
@@ -22,11 +23,14 @@
         transform translateY(-3px)
         box-shadow 0 8px 20px rgba(27, 47, 64, 0.12)
 
+.paper-card-main
+    display flex
+    gap 16px
+    flex 1
+    min-width 0
+
 .paper-card-thumb
     flex 0 0 140px
-
-    a
-        display block
 
     img
         display block
@@ -66,8 +70,8 @@
 #page_content .paper-card-title
     display -webkit-box
     -webkit-box-orient vertical
-    -webkit-line-clamp 4
-    line-clamp 4
+    -webkit-line-clamp 7
+    line-clamp 7
     overflow hidden
     overflow-wrap anywhere
     margin 0 0 6px
@@ -75,12 +79,6 @@
     font-size 16px
     font-weight 700
     line-height 1.35
-
-    a
-        color inherit
-
-    a:hover
-        color $cb-blue-500
 
 .paper-card-authors
     margin 0 0 6px
@@ -104,16 +102,20 @@
 
 .paper-card-footer
     display flex
-    flex-direction column
-    gap 8px
+    align-items center
+    justify-content space-between
+    flex-wrap wrap
+    gap 10px
     margin-top auto
-    padding-top 6px
 
 .paper-card-actions
+    position relative
+    z-index 2
     display flex
     flex-wrap wrap
     justify-content flex-end
     gap 8px
+    margin-left auto
 
 // Filter inputs inside the /papers/ filter panel
 .papers-min-citations

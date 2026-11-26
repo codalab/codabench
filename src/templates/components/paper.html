@@ -2,61 +2,53 @@
 {# Single paper card, used on both the home page and Hall of Papers page. Expects `paper` (Paper instance). #}
 
 <article class="paper-card">
-    <div class="paper-card-thumb">
-        {% if paper.url %}<a href="{{ paper.url }}" target="_blank" rel="noopener noreferrer" tabindex="-1">{% endif %}
-        {% if paper.thumbnail %}
-            <img src="{{ paper.thumbnail.url }}" alt="" loading="lazy">
-        {% else %}
-            <div class="paper-card-placeholder" aria-hidden="true">
-                <i class="bi bi-file-earmark-text"></i>
-            </div>
-        {% endif %}
-        {% if paper.url %}</a>{% endif %}
-    </div>
+    {% if paper.url %}
+        <!-- Makes the whole card clickable -->
+        <a class="bc-stretched" href="{{ paper.url }}" target="_blank" rel="noopener noreferrer" aria-label="{{ paper.title }}"></a>
+    {% endif %}
 
-    <div class="paper-card-body">
-        <h3 class="paper-card-title">
-            {% if paper.url %}
-                <a href="{{ paper.url }}" target="_blank" rel="noopener noreferrer">{{ paper.title }}</a>
+    <div class="paper-card-main">
+        <div class="paper-card-thumb">
+            {% if paper.thumbnail %}
+                <img src="{{ paper.thumbnail.url }}" alt="" loading="lazy">
             {% else %}
-                {{ paper.title }}
-            {% endif %}
-        </h3>
-
-        {% if paper.authors %}
-            <p class="paper-card-authors" title="{{ paper.authors }}">{{ paper.authors_summary }}</p>
-        {% endif %}
-
-        {% if paper.venue %}
-            <p class="paper-card-venue">{{ paper.venue }}</p>
-        {% endif %}
-
-        <div class="paper-card-footer">
-            <div class="bc-pills">
-                {% if paper.publication_date %}
-                    <span class="bc-pill" title="Publication date">
-                        <i class="bi bi-calendar-event" aria-hidden="true"></i>{{ paper.publication_date|date:"M d, Y" }}
-                    </span>
-                {% endif %}
-                <span class="bc-pill" title="Citations">
-                    <i class="bi bi-quote" aria-hidden="true"></i>{{ paper.citation_count|intcomma }}
-                </span>
-            </div>
-
-            {% if paper.url or paper.pdf_url %}
-                <div class="paper-card-actions">
-                    {% if paper.pdf_url %}
-                        <a class="cb-button cb-button-small cb-button-secondary" href="{{ paper.pdf_url }}" target="_blank" rel="noopener noreferrer">
-                            <i class="file pdf outline icon"></i>PDF
-                        </a>
-                    {% endif %}
-                    {% if paper.url %}
-                        <a class="cb-button cb-button-small cb-button-outline" href="{{ paper.url }}" target="_blank" rel="noopener noreferrer">
-                            Paper <i class="external alternate icon"></i>
-                        </a>
-                    {% endif %}
+                <div class="paper-card-placeholder" aria-hidden="true">
+                    <i class="bi bi-file-earmark-text"></i>
                 </div>
             {% endif %}
         </div>
+
+        <div class="paper-card-body">
+            <h3 class="paper-card-title">{{ paper.title }}</h3>
+
+            {% if paper.authors %}
+                <p class="paper-card-authors" title="{{ paper.authors }}">{{ paper.authors_summary }}</p>
+            {% endif %}
+
+            {% if paper.venue %}
+                <p class="paper-card-venue">{{ paper.venue }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="paper-card-footer">
+        <div class="bc-pills">
+            {% if paper.publication_date %}
+                <span class="bc-pill" title="Publication date">
+                    <i class="bi bi-calendar-event" aria-hidden="true"></i>{{ paper.publication_date|date:"M d, Y" }}
+                </span>
+            {% endif %}
+            <span class="bc-pill" title="Citations">
+                <i class="bi bi-quote" aria-hidden="true"></i>{{ paper.citation_count|intcomma }}
+            </span>
+        </div>
+
+        {% if paper.pdf_url %}
+            <div class="paper-card-actions">
+                <a class="cb-button cb-button-small cb-button-secondary" href="{{ paper.pdf_url }}" target="_blank" rel="noopener noreferrer">
+                    <i class="file pdf outline icon"></i>PDF
+                </a>
+            </div>
+        {% endif %}
     </div>
 </article>

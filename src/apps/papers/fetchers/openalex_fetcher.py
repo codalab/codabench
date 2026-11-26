@@ -33,7 +33,7 @@ def parse_openalex_work(work):
     title = (work.get('display_name') or '').strip()
     doi_url = (work.get('doi') or '').strip()
     doi = doi_url.removeprefix('https://doi.org/').strip().lower()
-    # DOI is our unique key across sources; skip works that don't have one
+    # DOI is our unique key across sources, so we skip works that don't have one
     if not title or not doi:
         return None
 
