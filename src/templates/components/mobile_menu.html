@@ -14,6 +14,10 @@
             <i class="database icon"></i>
             Datasets
         </a>
+        <a class="mobile-menu-link" href="{% url "papers:list" %}">
+            <i class="file alternate outline icon"></i>
+            Papers
+        </a>
         {% if user.is_authenticated %}
             <div class="mobile-menu-link mobile-menu-user">
                 <i class="user icon"></i>
