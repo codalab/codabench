@@ -5,6 +5,7 @@ from django.db.models import Q
 
 from competitions.models import Submission
 from announcements.models import Announcement, NewsPost
+from papers.models import Paper
 from pages.home_page import get_featured_benchmarks, get_popular_benchmarks, get_recent_benchmarks
 from pages.serializers import HomePageAnnouncementSerializer, HomePageNewsPostSerializer, HomePageBenchmarkSerializer
 
@@ -28,6 +29,9 @@ class HomeView(TemplateView):
         # Only the latest posts are shown on the home page, the rest are on the news page
         news_posts = NewsPost.objects.all().order_by('-id')[:3]
         context['news_posts'] = HomePageNewsPostSerializer(news_posts, many=True).data
+
+        # Only the 3 latest citing papers are shown on the home page
+        context['latest_papers'] = Paper.objects.filter(is_visible=True)[:3]
 
         # Recent leaves out the popular benchmarks so none is shown twice
         popular = get_popular_benchmarks()

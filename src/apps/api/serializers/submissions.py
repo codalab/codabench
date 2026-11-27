@@ -40,6 +40,7 @@ class SubmissionSerializer(serializers.ModelSerializer):
             'filename',
             'description',
             'created_when',
+            'started_when',
             'is_public',
             'is_specific_task_re_run',
             'status',
@@ -65,6 +66,7 @@ class SubmissionSerializer(serializers.ModelSerializer):
             'pk',
             'phase',
             'scores',
+            'started_when',
             'is_specific_task_re_run',
             'leaderboard',
             'on_leaderboard',
@@ -77,8 +79,19 @@ class SubmissionSerializer(serializers.ModelSerializer):
         return "Deleted File"
 
     def get_scores(self, instance):
-        scores = [score for score in instance.scores.all() if not score.column.hidden]
+        # Hidden columns are private to the competition admins
+        scores = instance.scores.all()
+        if not self.shows_hidden_scores(instance.phase.competition):
+            scores = [score for score in scores if not score.column.hidden]
         return SubmissionScoreSerializer(scores, many=True, context=self.context).data
+
+    def shows_hidden_scores(self, competition):
+        # Cached per competition: a list view serializes many submissions of the same one
+        cache = self.__dict__.setdefault('_shows_hidden_scores', {})
+        if competition.id not in cache:
+            request = self.context.get('request')
+            cache[competition.id] = request is not None and competition.user_has_admin_permission(request.user)
+        return cache[competition.id]
 
     def get_auto_run(self, instance):
         # returns this submission's competition auto_run_submissions Flag
@@ -153,7 +166,7 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
         selected_groups = validated_data.pop('selected_groups', None)
         sub = super().create(validated_data)
 
-        # Save the group(s) selected by the user, usefull for when Auto-Run Submission is unchecked
+        # Save the group(s) selected by the user, useful for when Auto-Run Submission is unchecked
         if sub.phase.competition.auto_run_submissions:
             group_ids = [g.id for g in selected_groups] if selected_groups is not None else None
             sub.start(tasks=tasks, group_ids=group_ids)

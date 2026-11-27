@@ -1,13 +1,17 @@
 import json
+import logging
 import django
 
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.db.models import Count, Q
+from django.db import IntegrityError
+
 from django.core.mail import EmailMultiAlternatives
 from django.http import Http404
 from django.shortcuts import render, redirect
+from django.urls import reverse
 from django.contrib.auth import views as auth_views
 from django.contrib.auth import forms as auth_forms
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -16,17 +20,20 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.views.generic import DetailView, TemplateView
 
-from api.serializers.profiles import UserSerializer, PublicUserSerializer, OrganizationDetailSerializer, \
-    OrganizationEditSerializer, UserNotificationSerializer
+from api.serializers.profiles import MyProfileSerializer, PublicUserSerializer, PublicOrganizationSerializer, \
+    OrganizationDetailSerializer, OrganizationEditSerializer, UserNotificationSerializer
 from .forms import SignUpForm, LoginForm, ActivationForm
 from .models import User, DeletedUser, Organization, Membership
 from oidc_configurations.models import Auth_Organization
 from .tokens import account_activation_token, account_deletion_token
 from competitions.models import Competition
+from pages.serializers import HomePageBenchmarkSerializer
 from datasets.models import Data
 from tasks.models import Task
 from forums.models import Post
 from utils.email import codalab_send_mail, get_link_context
+
+logger = logging.getLogger(__name__)
 
 
 class LoginView(auth_views.LoginView):
@@ -39,28 +46,80 @@ class LogoutView(auth_views.LogoutView):
     pass
 
 
-class UserDetailView(LoginRequiredMixin, DetailView):
-    queryset = User.objects.all()
-    template_name = 'profiles/user_profile.html'
+class PublicProfileView(LoginRequiredMixin, DetailView):
+    """The public profile of any user, at /user/<username>/. Read-only."""
+    # Deleted, inactive and banned users have no public profile, their page is a 404
+    queryset = User.objects.filter(is_deleted=False, is_active=True, is_banned=False)
+    template_name = 'profiles/public_profile.html'
+    # The url gives the username, for example /user/jane/. Django looks for pk or slug by default, so we tell it the name.
     slug_url_kwarg = 'username'
-    query_pk_and_slug = True
+    # The user whose profile is shown is called profile_user in the template.
+    # Why: Django would call it user by default. In templates, user already means the logged-in user,
+    # and the header and menu use it. With the default name, user would mean the profile owner instead.
+    context_object_name = 'profile_user'
+
+    def get_object(self, queryset=None):
+        if queryset is None:
+            queryset = self.get_queryset()
+        username = self.kwargs[self.slug_url_kwarg]
+        profile_user = queryset.filter(username=username).first() or queryset.filter(slug=username).first()
+        if profile_user is None:
+            raise Http404('No user found matching the query')
+        return profile_user
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        user = self.get_object()
+        profile_user = self.object
 
-        # Only the owner can edit, and only they get the private fields. Superusers use Django admin.
-        # Why: all data sent here can be read in the page source, even if the page hides it.
-        can_edit = self.request.user == user
-        context["can_edit"] = can_edit
-        if can_edit:
-            user_data = UserSerializer(user).data
-            # The profile page does not show organizations, so they are not sent
-            user_data.pop("organizations")
-        else:
-            user_data = PublicUserSerializer(user).data
+        # Everyone gets only the public fields, the owner too. The owner edits on the my profile page.
+        # Why the serializer: it lists the fields that are allowed, so a new private field is never shown by mistake.
+        public_user = PublicUserSerializer(profile_user).data
+        context["public_user"] = public_user
+        # The owner sees a note that this is how others see the profile
+        context["is_owner"] = self.request.user == profile_user
 
-        context["serialized_user"] = json.dumps(user_data)
+        # Heading: the full name, otherwise the display name, otherwise the username
+        full_name = " ".join(name for name in [public_user["first_name"], public_user["last_name"]] if name)
+        context["profile_name"] = full_name or public_user["display_name"] or public_user["username"]
+        # The display name goes in brackets after the full name, for example: Jane Doe (jdoe)
+        # Why the check: without a full name the heading is already the display name.
+        display_name = public_user["display_name"]
+        context["display_name"] = display_name if full_name and display_name != full_name else ""
+        # The username goes below the heading, unless it is already the heading
+        context["show_username"] = context["profile_name"] != public_user["username"]
+
+        # Organizations the user is in, sorted by name. Why the groups: pending invites are left out.
+        organizations = (
+            Organization.objects
+            .filter(membership__user=profile_user, membership__group__in=Membership.ALL_GROUP)
+            .distinct()
+            .order_by("name")
+        )
+        context["organizations"] = PublicOrganizationSerializer(organizations, many=True).data
+
+        # Published competitions the user created or co-organizes, newest first
+        competitions = (
+            Competition.objects
+            .filter(Q(created_by=profile_user) | Q(collaborators=profile_user), published=True)
+            .distinct()
+            .select_related("created_by")
+            .prefetch_related("tags__category")
+            .order_by("-created_when")
+        )
+
+        # Why this serializer: the cards are the same as on the home page
+        context["competitions"] = HomePageBenchmarkSerializer(competitions, many=True).data
+        return context
+
+
+class MyProfileView(LoginRequiredMixin, TemplateView):
+    """The profile of the logged-in user, at /profile/. The user can edit it here."""
+    template_name = 'profiles/my_profile.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Why MyProfileSerializer: it has only what the page shows. Saving goes through UserSerializer.
+        context["serialized_user"] = json.dumps(MyProfileSerializer(self.request.user).data)
         return context
 
 
@@ -70,15 +129,15 @@ def activate(request, uidb64, token):
         user = User.objects.get(pk=uid)
     except User.DoesNotExist:
         user = None
-        messages.error(request, f"User not found. Please sign up again.")
+        messages.error(request, "User not found. Please sign up again.")
         return redirect('accounts:signup')
     if user is not None and account_activation_token.check_token(user, token):
         user.is_active = True
         user.save()
-        messages.success(request, f'Your account is fully setup! Please login.')
+        messages.success(request, 'Your account is fully setup! Please login.')
         return redirect('accounts:login')
     else:
-        messages.error(request, f"Activation link is invalid or expired. Please double check your link.")
+        messages.error(request, "Activation link is invalid or expired. Please double check your link.")
         return redirect('accounts:resend_activation')
     return redirect('pages:home')
 
@@ -90,15 +149,26 @@ def activateEmail(request, user, to_email):
         'token': account_activation_token.make_token(user),
         **get_link_context(request),
     }
-    codalab_send_mail(
-        context_data=context,
-        subject='Activate your user account.',
-        html_file='profiles/emails/template_activate_account.html',
-        text_file='profiles/emails/template_activate_account.txt',
-        to_email=[to_email]
-    )
-    messages.success(request, f'Dear {user.username}, please go to your email {to_email} inbox and click on \
-        the activation link to confirm and complete the registration. *Note: Check your spam folder.')
+    try:
+        codalab_send_mail(
+            context_data=context,
+            subject='Activate your user account.',
+            html_file='profiles/emails/template_activate_account.html',
+            text_file='profiles/emails/template_activate_account.txt',
+            to_email=[to_email]
+        )
+
+    except Exception:
+        # Show a message instead of an error page, the account is already saved when signing up
+        logger.exception(f"Failed to send activation email to {to_email}")
+        resend_activation_url = request.build_absolute_uri(reverse('accounts:resend_activation'))
+        messages.error(request, f'We could not send the activation email to {to_email}. \
+            Please request a new activation link at {resend_activation_url}. If the problem continues, \
+            contact the platform administrator at {settings.CONTACT_EMAIL}.')
+        return
+    else:
+        messages.success(request, f'Dear {user.username}, please go to your email {to_email} inbox and click on \
+            the activation link to confirm and complete the registration. *Note: Check your spam folder.')
 
 
 def send_delete_account_confirmation_mail(request, user):
@@ -110,7 +180,7 @@ def send_delete_account_confirmation_mail(request, user):
     }
     codalab_send_mail(
         context_data=context,
-        subject=f'Confirm Your Account Deletion Request',
+        subject='Confirm Your Account Deletion Request',
         html_file="profiles/emails/template_delete_account.html",
         text_file="profiles/emails/template_delete_account.txt",
         to_email=[user.email]
@@ -157,7 +227,7 @@ def send_user_deletion_notice_to_admin(user):
 def send_user_deletion_confirmed(email):
     codalab_send_mail(
         context_data={},
-        subject=f'Codabench: your account has been successfully removed',
+        subject='Codabench: your account has been successfully removed',
         html_file="profiles/emails/template_delete_account_confirmed.html",
         text_file="profiles/emails/template_delete_account_confirmed.txt",
         to_email=[email]
@@ -170,7 +240,7 @@ def delete(request, uidb64, token):
         user = User.objects.get(pk=uid)
     except User.DoesNotExist:
         user = None
-        messages.error(request, f"User not found.")
+        messages.error(request, "User not found.")
         return redirect('settings:delete_account')
     if user is not None and account_deletion_token.check_token(user, token):
         # Soft delete the user
@@ -178,10 +248,10 @@ def delete(request, uidb64, token):
         # Why here and not a redirect to the logout page: that page only accepts POST, so a redirect gives a 405.
         # The message comes after logout, because logout clears the session.
         logout(request)
-        messages.success(request, f'Your account has been removed!')
+        messages.success(request, 'Your account has been removed!')
         return redirect('pages:home')
     else:
-        messages.error(request, f"Confirmation link is invalid or expired.")
+        messages.error(request, "Confirmation link is invalid or expired.")
         return redirect('pages:home')
 
 
@@ -197,8 +267,9 @@ def sign_up(request):
         form = SignUpForm(request.POST)
         if form.is_valid():
             # Check if the email is in the DeletedUser table
+            # DeletedUser keeps the email as it was at deletion time, so compare case-insensitively
             email = form.cleaned_data.get('email').lower()
-            if DeletedUser.objects.filter(email=email).exists():
+            if DeletedUser.objects.filter(email__iexact=email).exists():
                 messages.error(request, "This email has been previously deleted and cannot be used.")
                 context['form'] = form
             else:
@@ -207,15 +278,21 @@ def sign_up(request):
                 user = form.save(commit=False)  # Get the user instance without saving
                 user.email = email  # Ensure email is stored in lowercase
                 user.is_active = False  # Set user as inactive
-                user.save()  # Save user instance with updated email
+                try:
+                    user.save()  # Save user instance with updated email
+                except IntegrityError:
+                    # The form checks for existing accounts, but a second request (e.g. a double submit)
+                    # can create the same username or email between that check and this save
+                    messages.error(request, "An account with this username or email already exists.")
+                    context['form'] = form
+                else:
+                    # Authenticate and send activation email
+                    username = form.cleaned_data.get('username')
+                    raw_password = form.cleaned_data.get('password1')
+                    user = authenticate(username=username, password=raw_password)
+                    activateEmail(request, user, email)
 
-                # Authenticate and send activation email
-                username = form.cleaned_data.get('username')
-                raw_password = form.cleaned_data.get('password1')
-                user = authenticate(username=username, password=raw_password)
-                activateEmail(request, user, email)
-
-                return redirect('pages:home')
+                    return redirect('pages:home')
         else:
             context['form'] = form
 
@@ -274,7 +351,9 @@ def log_in(request):
                 # Authenticate user with credentials
                 user = authenticate(username=username, password=password)
                 if user is not None:
-                    if user.is_active:
+                    if user.is_banned:
+                        messages.error(request, "You are banned from using Codabench")
+                    elif user.is_active:
                         login(request, user)
 
                         # if next is none redirect to home
@@ -311,6 +390,13 @@ class CustomPasswordResetForm(auth_forms.PasswordResetForm):
         to see the email in the logs.
         Source: https://github.com/django/django/blob/8b1ff0da4b162e87edebd94e61f2cd153e9e159d/django/contrib/auth/forms.py#L287
     """
+    def get_users(self, email):
+        """
+        Override of PasswordResetForm.get_users to also exclude banned users from receiving a reset email.
+        The users returned by super().get_users() are already active, match the email and have a usable password.
+        """
+        return (user for user in super().get_users(email) if not user.is_banned)
+
     def send_mail(
         self,
         subject_template_name,
@@ -329,7 +415,7 @@ class CustomPasswordResetForm(auth_forms.PasswordResetForm):
         body = render_to_string(email_template_name, context)
 
         email_message = EmailMultiAlternatives(subject, body, from_email, [to_email])
-        print(email_message.message())
+
         if html_email_template_name is not None:
             html_email = render_to_string(html_email_template_name, context)
             email_message.attach_alternative(html_email, "text/html")
@@ -370,6 +456,17 @@ class CustomPasswordResetConfirmView(auth_views.PasswordResetConfirmView):
     # token_generator = '' # This will default to default_token_generator, it’s an instance of django.contrib.auth.tokens.PasswordResetTokenGenerator.
     # post_reset_login = '' # Defaults to False.
     success_url = django.urls.reverse_lazy("accounts:password_reset_complete")
+
+    def get_user(self, uidb64):
+        """
+        Override of PasswordResetConfirmView.get_user so a reset link of a banned user is treated as invalid,
+        e.g. a link that was emailed before the user was banned. Returning None leaves Django's validlink False,
+        so the template shows the invalid link error instead of the form.
+        """
+        user = super().get_user(uidb64)
+        if user is not None and user.is_banned:
+            return None
+        return user
 
 
 class NotificationSettingsView(LoginRequiredMixin, TemplateView):
@@ -452,9 +549,5 @@ class ChangePasswordSettingsView(LoginRequiredMixin, TemplateView):
 
 
 class DeleteAccountSettingsView(LoginRequiredMixin, TemplateView):
+    # The page only needs the username, and the template reads it from the logged-in user
     template_name = 'profiles/delete_account.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['serialized_user'] = json.dumps(UserSerializer(self.request.user).data)
-        return context

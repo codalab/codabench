@@ -25,7 +25,7 @@ class Command(BaseCommand):
         resp = put_blob(upload_url, backup_path)
 
         if resp.status_code == 200:
-            print(f"Success!")
+            print("Success!")
         else:
             print(f"FAILED TO SEND! Result ({resp.status_code}):\n{resp.content}")
 

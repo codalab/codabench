@@ -1,92 +1,222 @@
 Compute workers are simply machines that are able to accept/send celery messages on the port used by the broker URL you wish to connect to that have a compute worker image, or other software to receive submissions. This means that you can add computing power to your competitions or benchmarks if needed! Any computer, from your own physical machines to virtual machines on cloud computing services can be used for this purpose. You can add multiple workers to a queue to process several submissions simultaneously.
 
-!!! note "To use Podman, go to the [Podman documentation](Compute-worker-installation-with-Podman.md)."
+You can find these images [here](https://hub.docker.com/r/codalab/codabench-compute-worker/tags)
 
-**To use Docker, follow these instructions below:**
+## Requirements
+=== "Docker"
+    ### Docker
+    Steps:
 
-Steps:
-
- - Have a machine (_either physical or virtual, 100 GB storage recommended_)
- - Install Docker
- - Pull Compute Worker Image
- - Run the compute worker via Docker
-
-
-## Install Docker
-Either:
-
-a) Install docker via the installation script: https://docs.docker.com/install/linux/docker-ce/ubuntu/#install-using-the-convenience-script
-
-```bash
-curl https://get.docker.com | sudo sh
-sudo usermod -aG docker $USER
-```
-
-b) Install manually, following the steps at: https://docs.docker.com/install/
-
-## Pull Compute Worker Image
-On the compute worker machine, run the following command in a shell:
-```bash
-docker pull codalab/codabench-compute-worker
-```
-
-That will pull the latest image for the v2 worker. For specific versions, see the docker hub page at:
-https://hub.docker.com/r/codalab/codabench-compute-worker/tags
+    - Have a machine (_either physical or virtual, 100 GB storage recommended_)
+    - Install Docker
+    - Pull Compute Worker Image
+    - Run the compute worker via Docker
 
 
-## Start CPU worker
+    Either:
+
+    a) Install docker via the installation script: https://docs.docker.com/install/linux/docker-ce/ubuntu/#install-using-the-convenience-script
+
+    ```bash
+    curl https://get.docker.com | sudo sh
+    sudo usermod -aG docker $USER
+    ```
+
+    b) Install manually, following the steps at: https://docs.docker.com/install/
+
+    Create a `docker-compose.yml` file and paste the following content in it:
+
+    ```yaml title="docker-compose.yml"
+    # Codabench Worker
+    services:
+        worker:
+            image: codalab/codabench-compute-worker:latest
+            container_name: compute_worker
+            volumes:
+                - /codabench:/codabench
+                - /var/run/docker.sock:/var/run/docker.sock
+            env_file:
+                - .env
+            restart: unless-stopped
+            hostname: ${HOSTNAME}
+            logging:
+                options:
+                    max-size: 50m
+                    max-file: 3
+
+    ```
+
+=== "Podman"
+    ### Podman
+    We need to install Podman on the Host. For this example, we use a Debian based OS.
+
+    `sudo apt install podman `
+
+    After installing Podman, you will need to launch the service associated with it with 
+
+    ```bash
+    systemctl --user enable --now podman
+    ```
+
+    Then, configure where Podman will download the images: Podman will use Dockerhub by adding this line into `/etc/containers/registries.conf`:
+
+    ```ini
+    unqualified-search-registries = ["docker.io"]
+    ```
+
+    You will also need to create the `codabench` folder defined in the `.env` file, as well as change its permissions to the user that is running the compute worker.
+
+    ```bash title="In your terminal"
+    sudo mkdir /codabench
+    sudo mkdir /codabench/data
+    sudo chown -R $(id -u):$(id -g) /codabench
+    ```
+
+    You should also run the following command if you don't want the container to be shutdown when you log out of the user:
+
+    ```bash
+    sudo loginctl enable-linger *username*
+    ```
+    Make sure to use the username of the user running the podman container.
+
+    Create a `run_podman.sh` file with the following content:
+
+    ```bash title="run_podman.sh"
+    podman run -d \
+    --volume /run/user/$(id -u)/podman/podman.sock:/run/user/1000/podman/podman.sock:U \
+    --env-file .env \
+    --name compute_worker \
+    --security-opt="label=disable" \
+    --userns host \
+    --restart unless-stopped \
+    --log-opt max-size=50m \
+    --log-opt max-file=3 \
+    --hostname ${HOSTNAME} \
+    --cap-drop all \
+    --volume /codabench:/codabench:U,z \
+    codalab/codabench-compute-worker:latest
+    ```
+
+    Then run the command :
+
+    ```bash
+    chmod +x run_podman.sh
+    ```
+
+    !!! warning
+        **To launch a Podman compatible GPU worker, you will need to have podman version 5.4.2 minimum**
+
+!!! note 
+    `hostname` allows you to set the hostname of the compute worker container, which will then be shown in the [server status](Server-status-page.md) page on Codabench (available to both you and the participants of your competition). This can be set to anything you want, by setting the `HOSTNAME` environment variable on the machine hosting the Compute Worker or changing `${HOSTNAME}` to something else
+
+## CPU Worker configuration
 You will get your Broker URL from the instance. More information about Queues [here](Queue-Management.md)
 
-
 Make a file `.env` and put this in it:
-```ini title=".env"
-#######################################################################
-#                       Connection URL                                #
-#######################################################################
-BROKER_URL=pyamqp://<login>:<password>@www.codabench.org:5672/
-# If SSL isn't enabled, then comment or remove the following line
-BROKER_USE_SSL=True
 
-#######################################################################
-#                       Temporary Storage                             #
-#######################################################################
-HOST_DIRECTORY=/codabench
+=== "Docker"
+
+    ```ini title=".env"
+    #######################################################################
+    #                       Connection URL                                #
+    #######################################################################
+    BROKER_URL=pyamqp://<login>:<password>@www.codabench.org:5672/
+    # If SSL isn't enabled, then comment or remove the following line
+    BROKER_USE_SSL=True
+
+    #######################################################################
+    #                       Temporary Storage                             #
+    #######################################################################
+    HOST_DIRECTORY=/codabench
 
 
-#######################################################################
-#                       Runtime                                       #
-#######################################################################
-CONTAINER_ENGINE_EXECUTABLE=docker
-#USE_GPU=True
-#GPU_DEVICE=nvidia.com/gpu=all
-#HUMAN_IN_THE_LOOP=False
+    #######################################################################
+    #                       Runtime                                       #
+    #######################################################################
+    CONTAINER_ENGINE_EXECUTABLE=docker
+    #USE_GPU=True
+    #GPU_DEVICE=nvidia.com/gpu=all
+    #HUMAN_IN_THE_LOOP=False
 
-# If set to False, the compute worker will never pull for the 
-# competition image, the image will need to be downloaded
-# manually on the host before running submissions. True by default
-#COMPETITION_ALLOW_IMAGE_PULL=True
+    # If set to False, the compute worker will never pull for the 
+    # competition image, the image will need to be downloaded
+    # manually on the host before running submissions. True by default
+    #COMPETITION_ALLOW_IMAGE_PULL=True
 
-# This option removes the ability of the compute worker to send logs to
-# codabench, instead writing them locally on disk. Combine with
-# COMPUTE_WORKER_NO_CLEANUP=true to stop the worker's cleanup to keep
-# all the logs locally only
-#COMPUTE_WORKER_DISABLE_LOG_UPLOAD=False
+    # This option removes the ability of the compute worker to send logs to
+    # codabench, instead writing them locally on disk. Combine with
+    # COMPUTE_WORKER_NO_CLEANUP=true to stop the worker's cleanup to keep
+    # all the logs locally only
+    #COMPUTE_WORKER_DISABLE_LOG_UPLOAD=False
 
-# Stop the predictions from being sent to Codabench.
-# This option requires only having one compute worker for ingestion
-# and scoring.
-#COMPUTE_WORKER_DISABLE_PREDICTION_UPLOAD=False
+    # Stop the predictions from being sent to Codabench.
+    # This option requires only having one compute worker for ingestion
+    # and scoring.
+    #COMPUTE_WORKER_DISABLE_PREDICTION_UPLOAD=False
 
-#COMPUTE_WORKER_NO_CLEANUP=False
+    #COMPUTE_WORKER_NO_CLEANUP=False
 
-#######################################################################
-#                       Network                                       #
-#######################################################################
-#COMPETITION_CONTAINER_NETWORK_DISABLED=False
+    #######################################################################
+    #                       Network                                       #
+    #######################################################################
+    #COMPETITION_CONTAINER_NETWORK_DISABLED=False
 
-#COMPETITION_CONTAINER_HTTP_PROXY=http://example_proxy:123
-#COMPETITION_CONTAINER_HTTPS_PROXY=https://example_proxy:1233
-```
+    #COMPETITION_CONTAINER_HTTP_PROXY=http://example_proxy:123
+    #COMPETITION_CONTAINER_HTTPS_PROXY=https://example_proxy:1233
+    ```
+
+=== "Podman"
+
+    ```ini title=".env"
+    #######################################################################
+    #                       Connection URL                                #
+    #######################################################################
+    BROKER_URL=pyamqp://<login>:<password>@www.codabench.org:5672/
+    # If SSL isn't enabled, then comment or remove the following line
+    BROKER_USE_SSL=True
+
+    #######################################################################
+    #                       Temporary Storage                             #
+    #######################################################################
+    HOST_DIRECTORY=/codabench
+
+
+    #######################################################################
+    #                       Runtime                                       #
+    #######################################################################
+    CONTAINER_ENGINE_EXECUTABLE=podman
+    #USE_GPU=True
+    #GPU_DEVICE=nvidia.com/gpu=all
+    #HUMAN_IN_THE_LOOP=False
+
+    # If set to False, the compute worker will never pull for the
+    # competition image, the image will need to be downloaded
+    # manually on the host before running submissions. True by default
+    #COMPETITION_ALLOW_IMAGE_PULL=True
+
+    # This option removes the ability of the compute worker to send logs to
+    # codabench, instead writing them locally on disk. Combine with
+    # COMPUTE_WORKER_NO_CLEANUP=true to stop the worker's cleanup to keep
+    # all the logs locally only
+    #COMPUTE_WORKER_DISABLE_LOG_UPLOAD=False
+
+    # Stop the predictions from being sent to Codabench.
+    # This option requires only having one compute worker for ingestion
+    # and scoring.
+    #COMPUTE_WORKER_DISABLE_PREDICTION_UPLOAD=False
+
+    #COMPUTE_WORKER_NO_CLEANUP=False
+
+    #######################################################################
+    #                       Network                                       #
+    #######################################################################
+    #COMPETITION_CONTAINER_NETWORK_DISABLED=False
+
+    #COMPETITION_CONTAINER_HTTP_PROXY=http://example_proxy:123
+    #COMPETITION_CONTAINER_HTTPS_PROXY=https://example_proxy:1233
+    ```
+
+
 By default, the competition container created by the compute worker has access to internet. If you want to remove this access, you can uncomment `COMPETITION_CONTAINER_NETWORK_DISABLED` and set it to `True`
 
 If the VM hosting the compute worker is behind a proxy, and you want to allow the competition container to access internet, you will also need to set the proxy for the competition container to use, in which case you can use `COMPETITION_CONTAINER_HTTP_PROXY`
@@ -98,82 +228,53 @@ To control the scoring output before sending it to the instance, you can use the
 
     - `/codabench` -- this path needs to be volumed into `/codabench` on the worker, as you can see below. You can select another location if convenient.
 
-Create a `docker-compose.yml` file and paste the following content in it:
-```yaml title="docker-compose.yml"
-# Codabench Worker
-services:
-    worker:
-        image: codalab/codabench-compute-worker:latest
-        container_name: compute_worker
-        volumes:
-            - /codabench:/codabench
-            - /var/run/docker.sock:/var/run/docker.sock
-        env_file:
-            - .env
-        restart: unless-stopped
-        #hostname: ${HOSTNAME}
-        logging:
-            options:
-                max-size: 50m
-                max-file: 3
-
-```
-!!! note 
-    `hostname: ${HOSTNAME}` allows you to set the hostname of the compute worker container, which will then be shown in the [server status](Server-status-page.md) page on Codabench. This can be set to anything you want, by setting the `HOSTNAME` environment variable on the machine hosting the Compute Worker, then uncommenting the line in the `docker-compose.yml` before launching the compute worker.
-
-
-You can then launch the worker by running this command in the terminal where the `docker-compose.yml` file is located:
-```bash
-docker compose up -d
-```
-
-
-## Start GPU worker
-Make a `.env` file, as explained in CPU worker instructions.
+## GPU Worker configuration
+Make a `.env` file, as explained in CPU worker configuration instructions.
 
 !!! warning
-    Don't forget the `USE_GPU=true` in the `.env` if you want to use a GPU runner
+    Don't forget `USE_GPU=true` in the `.env`
 
 Then, install the NVIDIA toolkit:
 [Nvidia toolkit installation instructions](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/index.html)
 
-Once you install and configure the NVIDIA container toolkit, you can create a `docker-compose.yml` file with the following content:
-```yaml title="docker-compose.yml"
-# Codabench GPU worker (NVIDIA)
-services:
-    worker:
-        image: codalab/codabench-compute-worker:latest
-        container_name: compute_worker
-        volumes:
-            - /codabench:/codabench
-            - /var/run/docker.sock:/var/run/docker.sock
-        env_file:
-            - .env
-        restart: unless-stopped
-        #hostname: ${HOSTNAME}
-        logging:
-            options:
-                max-size: 50m
-                max-file: 3
-```
-!!! note 
-    `hostname: ${HOSTNAME}` allows you to set the hostname of the compute worker container, which will then be shown in the [server status](Server-status-page.md) page on Codabench. This can be set to anything you want, by setting the `HOSTNAME` environment variable on the machine hosting the Compute Worker, then uncommenting the line in the `docker-compose.yml` before launching the compute worker.
-
-You can then launch the worker by running this command in the terminal where the `docker-compose.yml` file is located:
+If you have multiple Nvidia GPUs, you can uncomment `#GPU_DEVICE=nvidia.com/gpu=all` and put the name of the GPU you want the compute worker to use. You can get the name by launching the following command :
 ```bash
-docker compose up -d
+nvidia-ctk cdi list
 ```
 
 !!! tip
     Make sure to add the necessary packages inside the competition image to allow the use of the connected GPU
 
+## Start the Worker
+=== "Docker"
+    You can then launch the worker by running this command in the terminal where the `docker-compose.yml` file is located:
+
+    ```bash
+    docker compose up -d
+    ```
+
+=== "Podman"
+    You can launch the worker by running this command in the terminal where the `run_podman.sh` file is located:
+
+    ```bash
+    ./run_podman.sh
+    ```
+
+
 ## Check logs
 
 Use the following command to check logs and ensure everything is working fine:
 
-```bash
-docker logs -f compute_worker
-```
+=== "Docker"
+
+    ```bash
+    docker logs -f compute_worker
+    ```
+=== "Podman"
+
+    ```bash
+    podman logs -f compute_worker
+    ```
 
 ## Cleaning up periodically
 
@@ -187,21 +288,17 @@ sudo crontab -e
 
 2. Add the following line:
 
-```bash
-@daily docker system prune -af
-```
+=== "Docker"
 
-## Keep track of the worker
+    ```bash
+    @daily docker system prune -af
+    ```
 
-It is recommended to store the docker container hostname to identify the worker. This way, it is easier to troubleshoot issues when having multiple workers in one queue. To get the hostname, simply run `docker ps` and look at the key `CONTAINER ID` at the beginning of the output:
+=== "Podman"
 
-```sh
-$ docker ps
-CONTAINER ID   IMAGE                                           COMMAND                  CREATED      STATUS      PORTS     NAMES
-1a2b3d4e5f67   codalab/codabench-compute-worker:latest   "/bin/sh -c 'celery …"   3 days ago   Up 3 days             compute_worker
-```
-
-For each submission made to your queue, you can know what worker computed the ingestion and the scoring jobs in the [server status page](Server-status-page.md).
+    ```bash
+    @daily podman system prune -af
+    ```
 
 ---
 
@@ -219,6 +316,9 @@ You can also add your reference data, used during the scoring phase, inside a fo
 !!! warning "Do not put reference data in `$HOST_DIRECTORY/data`"
     `/app/data` is also mounted during ingestion, where participant code runs, so anything in it can be read by submissions. Use `$HOST_DIRECTORY/reference` for anything participants must not see.
 
+### Model Cache
+If you are working with models, you can store them on the compute worker directly. This model has to be put in `$HOST_DIRECTORY/model_cache` and is only available during ingestion. They are available read-only at `/app/model_cache` during ingestion (not during scoring).
+
 !!! warning 
     Make sure to make the owner of the folder(s) and file(s) the same as the one launching the compute worker.  
        - `root` for Docker rootful  
@@ -232,36 +332,73 @@ You can also add your reference data, used during the scoring phase, inside a fo
 ## Building compute worker
 
 This is helpful only if you want to build the compute worker image. It is not needed if you simply want to set up compute workers to run submissions.
-
-To build the normal image:
-
-```bash
-docker build -t *account_name*/codabench-compute-worker:latest -f packaging/container/Containerfile.compute_worker .
+To build the image, you will first need to clone the Codabench repository:
+```sh
+git clone https://github.com/codalab/codabench.git
 ```
 
-To update the image
+Then, to build the default image:
 
-```bash
-docker push *account_name*/codabench-compute-worker:latest
-```
+=== "Docker"
 
-!!! note "If you have running compute workers, you'll need to pull again the image and to restart the workers to take into account the changes."
+    ```bash
+    cd codabench
+    docker build -t *account_name*/codabench-compute-worker:latest -f packaging/container/Containerfile.compute_worker .
+    ```
 
+=== "Podman"
 
-## Update docker image
+    ```bash
+    cd codabench
+    podman build -t *account_name*/codabench-compute-worker:latest -f packaging/container/Containerfile.compute_worker .
+    ```
+To update the image on your container registry:
+
+=== "Docker"
+
+    ```bash
+    docker push *repository_name*/*account_name*/codabench-compute-worker:latest
+    ```
+
+=== "Podman"
+
+    ```bash
+    podman push *repository_name*/*account_name*/codabench-compute-worker:latest
+    ```
+
+!!! note "If you have running compute workers, you'll need to update all your workers with the new image manually."
+
+## Update the compute worker image
 
 If the compute worker docker image was updated, you can reflect the changes using the following commands.
 
 Check no job is running:
 
-```sh
-docker ps
-```
+=== "Docker"
+
+    ```sh
+    docker ps
+    ```
+=== "Podman"
+
+    ```sh
+    podman ps
+    ```
 
 Update the worker:
 
-```sh
-docker compose down
-docker compose pull
-docker compose up -d
-```
+=== "Docker"
+
+    ```sh
+    docker compose down
+    docker compose pull
+    docker compose up -d
+    ```
+
+=== "Podman"
+
+    ```sh
+    podman stop compute_worker
+    podman pull codalab/codabench-compute-worker:latest
+    ./run_podman.sh
+    ```

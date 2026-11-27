@@ -25,6 +25,10 @@
                 <i class="small database icon"></i>
                 Datasets
             </a>
+            <a class="header-link" href="{% url "papers:list" %}">
+                <i class="small file alternate outline icon"></i>
+                Papers
+            </a>
             {% if user.is_authenticated %}
                 <!-- User menu, opened and closed in static/js/ours/init.js -->
                 <div selenium="user_dropdown" id="user_dropdown" class="user-menu">

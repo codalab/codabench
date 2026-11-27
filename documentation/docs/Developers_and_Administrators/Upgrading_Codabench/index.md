@@ -1,14 +1,13 @@
 ## Upgrade Codabench
 
-Run these commands for every upgrade. They put the site in maintenance mode, pull the new version, rebuild and restart the containers, apply the Django migrations and collect the static files:
+Run these commands for every upgrade. They put the site in maintenance mode, back up the database (optional, but recommended), pull the new version, rebuild and restart the containers, apply the Django migrations and collect the static files:
 
 ```sh
 cd codabench
 touch maintenance_mode/maintenance.on
+./bin/pg_dump.py  # Optional: back up the database
 git pull
 docker compose build && docker compose up -d
-docker compose exec django ./manage.py migrate
-docker compose exec django ./manage.py collectstatic --noinput
 rm maintenance_mode/maintenance.on
 ```
 
@@ -66,3 +65,5 @@ Manual interventions needed depending on which version you are upgrading from:
 - [Add `DEFAULT_FROM_EMAIL` in your `.env` file](Add-DEFAULT_FROM_EMAIL-in-your-.env-file.md) (version < 1.26.0)
 - [RabbitMQ feature flags](RabbitMQ-feature-flags.md) (version < 1.28.0, recommended)
 - [Users queue limit](Users-queue-limit.md) (version < 1.31.0)
+- [Default tags](Default-tags.md) (version < 1.37.0)
+- [Lowercase emails](Lowercase-emails.md) and [upgrade compute workers](#upgrade-compute-workers) (version < 1.38.0)

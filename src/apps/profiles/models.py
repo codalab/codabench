@@ -122,7 +122,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     @property
     def slug_url(self):
-        return reverse('profiles:user_profile', args=[self.slug])
+        return reverse('users:profile', args=[self.slug])
 
     def get_used_storage_space(self, binary=False):
         """
@@ -226,7 +226,6 @@ class User(AbstractBaseUser, PermissionsMixin):
 
         # Any user attribute
         self.username = f"deleted_user_{self.id}"
-        self.slug = f"deleted_slug_{self.id}"
         self.photo = None
         self.email = None
         self.display_name = None

@@ -34,11 +34,14 @@ CODALAB.api = {
     get_competitions: function (query) {
         return CODALAB.api.request('GET', URLS.API + "competitions/", query)
     },
-    get_public_competitions: function (query) {
-        return CODALAB.api.request('GET', URLS.API + "competitions/public/", query)
+    get_dashboard: function (query) {
+        return CODALAB.api.request('GET', URLS.API + "dashboard/", query)
     },
     get_tags: function () {
         return CODALAB.api.request('GET', URLS.API + "tags/")
+    },
+    get_auto_tags: function (data) {
+        return CODALAB.api.request('POST', URLS.API + "competitions/auto_tags/", data)
     },
     create_competition: function (data) {
         return CODALAB.api.request('POST', URLS.API + "competitions/", data)
@@ -422,8 +425,8 @@ CODALAB.api = {
     delete_unused_starting_kits: () => {
         return CODALAB.api.request('DELETE', `${URLS.API}delete_unused_starting_kits/`)
     },
-    delete_unused_competition_bundles: () => {
-        return CODALAB.api.request('DELETE', `${URLS.API}delete_unused_competition_bundles/`)
+    delete_unused_competition_bundles_and_dumps: () => {
+        return CODALAB.api.request('DELETE', `${URLS.API}delete_unused_competition_bundles_and_dumps/`)
     },
     /*---------------------------------------------------------------------
          User Account

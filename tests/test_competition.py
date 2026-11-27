@@ -21,7 +21,7 @@ def browser_context_args(browser_context_args):
 def test_competition_upload(page: Page):
     page.goto("/")
     page.get_by_role("link", name=" Benchmarks/Competitions").click()
-    page.get_by_role("link", name=" Upload").click()
+    page.get_by_role("link", name="Upload", exact=True).click()
     with page.expect_file_chooser() as fc_info:
         page.get_by_role("button", name="").click()
     file_chooser = fc_info.value
@@ -69,7 +69,7 @@ def test_manual_competition_creation(page: Page):
     task_creation(page)
     page.goto("/")
     page.get_by_role("link", name=" Benchmarks/Competitions").click()
-    page.get_by_role("link", name=" Create").click()
+    page.get_by_role("link", name="Create", exact=True).click()
     page.locator("competition-details input[type=text]").first.click()
     page.locator("competition-details input[type=text]").first.fill("Test Title")
     with page.expect_file_chooser() as fc_info:
@@ -129,7 +129,6 @@ def test_manual_competition_creation(page: Page):
     tasks_dropdown.locator(".visible.menu .item").filter(
         has_text=f"{titleNum}Playwright Task"
     ).click()
-    page.locator(".title > .dropdown").click()
     page.locator('input[name="execution_time_limit"]').click()
     page.locator('input[name="execution_time_limit"]').fill("100")
     page.locator('input[name="max_submissions_per_day"]').click()

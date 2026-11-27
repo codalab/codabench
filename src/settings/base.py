@@ -80,6 +80,7 @@ OUR_APPS = (
     'announcements',
     'oidc_configurations',
     'external_competitions',
+    'papers',
 )
 INSTALLED_APPS = THIRD_PARTY_APPS + OUR_APPS
 
@@ -277,6 +278,10 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'profiles.tasks.clean_non_activated_users',
         'schedule': timedelta(days=1),  # Run every 24 hours
     },
+    'sync_citing_papers': {
+        'task': 'papers.tasks.sync_citing_papers',
+        'schedule': timedelta(days=1),  # Run every 24 hours
+    },
 }
 CELERY_TIMEZONE = 'UTC'
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
@@ -336,6 +341,9 @@ SPECTACULAR_SETTINGS = {
     # Use static schema serving for better performance
     'COMPONENT_SPLIT_REQUEST': True,
     'COMPONENT_NO_READ_ONLY_REQUIRED': True,
+    # Show the query parameters in the order the code declares them, not A to Z.
+    # Why: related parameters stay together, for example start_date before end_date.
+    'SORT_OPERATION_PARAMETERS': False,
 }
 
 # OAuth Toolkit

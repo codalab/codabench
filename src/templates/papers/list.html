@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Hall of Papers - Codabench{% endblock %}
+
+{% block content %}
+    <div class="hb-section">
+        <div class="hb-header">
+            <h1 class="hb-title">Hall of Papers</h1>
+        </div>
+        <p class="citation-intro">
+            These papers cite our work:
+            <em>Codabench: Flexible, easy-to-use, and reproducible meta-benchmark platform</em>, Patterns, 2022.
+            <a href="https://doi.org/10.1016/j.patter.2022.100543" target="_blank" rel="noopener noreferrer">doi:10.1016/j.patter.2022.100543</a>.
+        </p>
+
+        {% if papers or filter_pills %}
+            <form class="public-competitions-filters" id="papers-filters-form" method="get" autocomplete="off">
+                <div class="public-competitions-toolbar">
+                    <div class="public-competitions-search">
+                        <i class="bi bi-search"></i>
+                        <input type="search" name="search" value="{{ filters.search }}" placeholder="Search by title, author, or venue" aria-label="Search by title, author, or venue">
+                    </div>
+
+                    <button type="button" class="cb-button cb-button-secondary public-competitions-tool-button" id="papers-filters-button" aria-expanded="false" aria-controls="papers-filters-panel">
+                        <i class="bi bi-funnel"></i>Filters
+                        {% if active_filter_count %}<span class="public-competitions-badge">{{ active_filter_count }}</span>{% endif %}
+                        <i class="bi bi-chevron-down public-competitions-chevron"></i>
+                    </button>
+
+                    <div class="public-competitions-sort">
+                        <button type="button" class="cb-button cb-button-secondary public-competitions-tool-button" id="papers-sort-button" aria-haspopup="true" aria-expanded="false" aria-controls="papers-sort-menu">
+                            <i class="bi bi-sort-down"></i>
+                            <span class="public-competitions-tool-label">Sort:</span>
+                            <span class="public-competitions-tool-value">{{ selected_sort_label }}</span>
+                            <i class="bi bi-chevron-down public-competitions-chevron"></i>
+                        </button>
+                        <div class="public-competitions-sort-menu" id="papers-sort-menu" hidden>
+                            {% for option in sort_options %}
+                                <a class="public-competitions-sort-option{% if option.is_selected %} public-competitions-sort-option-selected{% endif %}" href="?{{ option.query }}"{% if option.is_selected %} aria-current="true"{% endif %}>
+                                    {{ option.label }}<i class="bi bi-check-lg public-competitions-check"></i>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                {% if filters.ordering != default_ordering %}
+                    <input type="hidden" name="ordering" value="{{ filters.ordering }}">
+                {% endif %}
+
+                <div class="public-competitions-panel" id="papers-filters-panel" hidden>
+                    <div class="public-competitions-groups">
+                        <div class="public-competitions-group">
+                            <p class="public-competitions-group-title">Published</p>
+                            <div class="public-competitions-dates">
+                                <label><span>From</span><input type="date" name="start_date" value="{{ filters.start_date|date:'Y-m-d' }}" aria-label="Published from"></label>
+                                <label><span>To</span><input type="date" name="end_date" value="{{ filters.end_date|date:'Y-m-d' }}" aria-label="Published to"></label>
+                            </div>
+                        </div>
+
+                        <div class="public-competitions-group">
+                            <p class="public-competitions-group-title">Citations</p>
+                            <label class="papers-min-citations">
+                                <span>Minimum</span>
+                                <input type="number" name="min_citations" min="0" value="{{ filters.min_citations }}" placeholder="e.g. 5" aria-label="Minimum citations">
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+            {% if filter_pills %}
+                <div class="public-competitions-pills">
+                    {% for pill in filter_pills %}
+                        <span class="public-competitions-pill">
+                            {% if pill.prefix %}<span class="public-competitions-pill-prefix">{{ pill.prefix }}</span>{% endif %}
+                            {{ pill.label }}
+                            <a href="?{{ pill.query }}" aria-label="Remove {% if pill.prefix %}{{ pill.prefix }} {% endif %}{{ pill.label }}"><i class="bi bi-x-lg"></i></a>
+                        </span>
+                    {% endfor %}
+                    <a class="public-competitions-clear" href="{{ clear_filters_url }}">Clear all</a>
+                </div>
+            {% endif %}
+        {% endif %}
+
+        {% if papers %}
+            <div class="hb-grid">
+                {% for paper in papers %}
+                    {% include "components/paper.html" with paper=paper %}
+                {% endfor %}
+            </div>
+
+            {% include "components/pagination.html" %}
+        {% elif filter_pills %}
+            {% include "components/empty_state.html" with title="No papers match your search." description="Try changing your search or filters." button_text="Clear filters" button_url=clear_filters_url %}
+        {% else %}
+            {% include "components/empty_state.html" with title="No papers listed yet." description="Papers citing Codabench will appear here after synchronization." %}
+        {% endif %}
+    </div>
+
+    <div id="cite-codabench">
+        {% include "components/citation.html" %}
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        (function () {
+            var form = document.getElementById('papers-filters-form')
+            if (!form) {
+                return
+            }
+
+            window.addEventListener('pageshow', function (event) {
+                if (event.persisted) {
+                    form.reset()
+                    set_sort_open(false)
+                }
+            })
+
+            var filters_button = document.getElementById('papers-filters-button')
+            var filters_panel = document.getElementById('papers-filters-panel')
+            var panel_storage_key = 'papers-filters-open'
+
+            function set_panel_open(is_open) {
+                filters_panel.hidden = !is_open
+                filters_button.classList.toggle('public-competitions-tool-button-open', is_open)
+                filters_button.setAttribute('aria-expanded', is_open)
+                sessionStorage.setItem(panel_storage_key, is_open ? 'true' : 'false')
+            }
+
+            set_panel_open(sessionStorage.getItem(panel_storage_key) === 'true')
+            filters_button.addEventListener('click', function () {
+                set_panel_open(filters_panel.hidden)
+            })
+
+            var scroll_storage_key = 'papers-scroll'
+
+            function remember_scroll() {
+                sessionStorage.setItem(scroll_storage_key, window.scrollY)
+            }
+
+            var saved_scroll = sessionStorage.getItem(scroll_storage_key)
+            if (saved_scroll !== null) {
+                sessionStorage.removeItem(scroll_storage_key)
+                window.scrollTo(0, Number(saved_scroll))
+            }
+
+            document.querySelectorAll('.public-competitions-pill a, .public-competitions-clear, .public-competitions-sort-option').forEach(function (link) {
+                link.addEventListener('click', remember_scroll)
+            })
+
+            function send_form() {
+                var params = new URLSearchParams(new FormData(form))
+                ;['search', 'start_date', 'end_date', 'min_citations'].forEach(function (name) {
+                    if (params.get(name) === '') {
+                        params.delete(name)
+                    }
+                })
+                remember_scroll()
+                window.location.search = params.toString()
+            }
+
+            form.querySelectorAll('input[name="search"], .public-competitions-groups input[type="number"]').forEach(function (input) {
+                input.addEventListener('keydown', function (event) {
+                    if (event.key === 'Enter') {
+                        event.preventDefault()
+                        send_form()
+                    }
+                })
+            })
+
+            form.querySelectorAll('.public-competitions-groups input').forEach(function (input) {
+                input.addEventListener('change', send_form)
+            })
+
+            var sort_button = document.getElementById('papers-sort-button')
+            var sort_menu = document.getElementById('papers-sort-menu')
+
+            function set_sort_open(is_open) {
+                sort_menu.hidden = !is_open
+                sort_button.classList.toggle('public-competitions-tool-button-open', is_open)
+                sort_button.setAttribute('aria-expanded', is_open)
+            }
+
+            sort_button.addEventListener('click', function () {
+                set_sort_open(sort_menu.hidden)
+            })
+            document.addEventListener('click', function (event) {
+                if (!event.target.closest('.public-competitions-sort')) {
+                    set_sort_open(false)
+                }
+            })
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape') {
+                    set_sort_open(false)
+                }
+            })
+        })()
+    </script>
+{% endblock %}

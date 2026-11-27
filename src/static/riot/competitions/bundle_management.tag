@@ -48,7 +48,7 @@
             </tr>
             <tr if="{competition_bundles.length === 0}">
                 <td class="center aligned" colspan="6">
-                    <em>No Competition Bundles Yet!</em>
+                    <em>No Competition Bundles/Dumps Yet!</em>
                 </td>
             </tr>
         </tbody>
@@ -91,7 +91,7 @@
                 <tbody>
                     <tr>
                         <td>{selected_row.key}</td>
-                        <td><a href="/profiles/user/{selected_row.created_by}/" target=_blank>{selected_row.owner_display_name}</a></td>
+                        <td><a href="/user/{selected_row.created_by}/" target=_blank>{selected_row.owner_display_name}</a></td>
                         <td>{pretty_date(selected_row.created_when)}</td>
                     </tr>
                 </tbody>

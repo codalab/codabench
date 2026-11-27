@@ -35,7 +35,6 @@ nav = [
             {"Update programs or data" = "Organizers/Running_a_benchmark/Update-programs-or-data.md"}, 
             {"Queue Management" = "Organizers/Running_a_benchmark/Queue-Management.md"},
             {"Compute Worker Management & Setup" = "Organizers/Running_a_benchmark/Compute-Worker-Management---Setup.md"},
-            {"Compute Worker Management with Podman" = "Organizers/Running_a_benchmark/Compute-worker-installation-with-Podman.md"},
             {"Server Status" = "Organizers/Running_a_benchmark/Server-status-page.md"},
             {"Human in the loop" = "Organizers/Running_a_benchmark/Competition-HITL.md"}
         ]}
@@ -50,11 +49,20 @@ nav = [
         {"Running Tests" = "Developers_and_Administrators/Running-tests.md"},
         {"Validation and deployment of pull requests" = "Developers_and_Administrators/Validation-and-deployment-of-pull-requests.md"},
         {"Manual Validation" = "Developers_and_Administrators/Manual-validation.md"},
+        {"Building the Documentation" = "Developers_and_Administrators/Building-the-documentation.md"},
 
     ]},
     {"Self-Hosters" = [
         {"How to Deploy a Server" = "Developers_and_Administrators/How-to-deploy-Codabench-on-your-server.md"},
-        {"Administrative Procedures" = "Developers_and_Administrators/Administrator-procedures.md"},
+        {"Administrative Procedures" = [
+            "Developers_and_Administrators/Administrative_Procedures/index.md",
+            {"Django Admin Interface" = "Developers_and_Administrators/Administrative_Procedures/Django-Admin.md"},
+            {"RabbitMQ Management" = "Developers_and_Administrators/Administrative_Procedures/RabbitMQ-Management.md"},
+            {"Flower Management" = "Developers_and_Administrators/Administrative_Procedures/Flower-Management.md"},
+            {"Storage Analytics & Statistics" = "Developers_and_Administrators/Administrative_Procedures/Analytics-and-Statistics.md"},
+            {"User Quota Management" = "Developers_and_Administrators/Administrative_Procedures/User-Quota-Management.md"},
+            {"Tag Management" = "Developers_and_Administrators/Administrative_Procedures/Tag-Management.md"}
+        ]},
         {"Platform Architecture" = "Developers_and_Administrators/Platform-Architecture.md"},
         {"External Competitions" = "Developers_and_Administrators/External-Competitions.md"},
         {"Backups - Automating Creation and Restoring" = "Developers_and_Administrators/Creating-and-Restoring-from-Backup.md"},
@@ -74,7 +82,9 @@ nav = [
             {"Postgres 18 upgrade (version < 1.24.0)" = "Developers_and_Administrators/Upgrading_Codabench/Postgres-18.md"},
             {"Add DEFAULT_FROM_EMAIL in your .env file (version < 1.26.0)" = "Developers_and_Administrators/Upgrading_Codabench/Add-DEFAULT_FROM_EMAIL-in-your-.env-file.md"},
             {"RabbitMQ feature flags (version < 1.28.0, recommended)" = "Developers_and_Administrators/Upgrading_Codabench/RabbitMQ-feature-flags.md"},
-            {"Users queue limit (version < 1.31.0)" = "Developers_and_Administrators/Upgrading_Codabench/Users-queue-limit.md"}
+            {"Users queue limit (version < 1.31.0)" = "Developers_and_Administrators/Upgrading_Codabench/Users-queue-limit.md"},
+            {"Default tags (version < 1.37.0)" = "Developers_and_Administrators/Upgrading_Codabench/Default-tags.md"},
+            {"Lowercase emails and compute workers (version < 1.38.0)" = "Developers_and_Administrators/Upgrading_Codabench/Lowercase-emails.md"}
         ]}
         ]},
         {"Newsletters Archive" = [
@@ -102,6 +112,7 @@ features = [
     "navigation.instant",
     "navigation.instant.progress",
     "navigation.indexes",
+    "content.tabs.link",
 ]
 font = false
 # Palette toggle for automatic mode
@@ -143,6 +154,7 @@ custom_fences = [
 [project.markdown_extensions.tables]
 [project.markdown_extensions.pymdownx.tabbed]
 alternate_style = true
+combine_header_slug = true
 [project.markdown_extensions.pymdownx.tabbed.slugify]
 object = "pymdownx.slugs.slugify"
 kwds = { case = "lower" }

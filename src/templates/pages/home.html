@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block below_header %}
     {% include "components/supported_by_banner.html" %}
@@ -21,10 +22,18 @@
     <!-- Latest News -->
     {% include "components/home_news.html" %}
 
+    <!-- Hall of Papers -->
+    {% include "components/home_papers.html" %}
+
     <!-- Cite Codabench -->
     {% include "components/citation.html" %}
 
     <!-- Partners -->
     {% include "components/partners.html" %}
 
+{% endblock %}
+
+{% block extra_js %}
+    <!-- Fits the tags of the benchmark cards on one line -->
+    <script src="{% static "js/ours/card_tags.js" %}"></script>
 {% endblock %}

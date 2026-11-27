@@ -18,6 +18,7 @@ dependencies = [
     "channels==4.3.2",
     "channels-redis==4.3.0",
     "pillow==13",
+    "pypdfium2>=4.30.0,<5",
     "celery==5.6.3",
     "gunicorn==26.2.0",
     "urllib3==2.8.0",
@@ -67,6 +68,8 @@ dependencies = [
     "configobj==5.0.9",
     "redis-cli>=1.0.1",
     "uvicorn-worker>=0.4.0",
+    "numpy>=2.0.0,<3",
+    "onnxruntime>=1.20.0,<2",
 ]
 
 [tool.uv]

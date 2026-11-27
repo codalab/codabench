@@ -17,7 +17,7 @@
             </thead>
             <tbody>
             <tr each="{user in members}">
-                <td><a href="/profiles/user/{user.user.slug}/">{user.user.name}</a></td>
+                <td><a href="/user/{user.user.slug}/">{user.user.name}</a></td>
                 <td><a href="mailto:{user.user.email}">{user.user.email}</a></td>
                 <td>{user.date_joined}</td>
                 <td if="{user['group'] !== 'OWNER' && user['group'] !== 'INVITED'}">

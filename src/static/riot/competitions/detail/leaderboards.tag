@@ -20,6 +20,7 @@
                             <div style="padding-top: 8px; right: 0; left: auto;" class="menu">
                                 <a href="{URLS.COMPETITION_GET_CSV(competition_id, selected_leaderboard.id)}" target="new" class="item">This CSV</a>
                                 <a href="{URLS.COMPETITION_GET_JSON_BY_ID(competition_id, selected_leaderboard.id)}" target="new" class="item">This JSON</a>
+                                <a href="{URLS.COMPETITION_GET_CSV(competition_id, selected_leaderboard.id)}&all_submissions=true" target="new" class="item">All finished submissions (CSV)</a>
                             </div>
                         </div>
                     </div>
@@ -37,7 +38,12 @@
             <th>Date</th>
             <th>ID</th>
             <th if="{ has_group_queues }">Groups</th>
-            <th each="{ column in filtered_columns }" colspan="1">{column.title}</th>
+            <th each="{ column in filtered_columns }" colspan="1">
+                {column.title}
+                <span if="{ column.hidden }" data-tooltip="Hidden column, only competition admins see it" data-inverted="">
+                    <i class="eye slash outline icon"></i>
+                </span>
+            </th>
         </tr>
         </thead>
         <!--  Always show leaderboard  -->
@@ -62,7 +68,19 @@
                     data-sort-value="{ sort_date_value(submission.created_when) }">
                     { pretty_date(submission.created_when) }
                 </td>
-                <td>{submission.id}</td>
+                <td>
+                    {submission.id}
+                    <span if="{ submission.outdated_task }"
+                          data-tooltip="Scored on a task that is no longer in this phase, so its scores show as n/a. A new submission is needed to be scored on the current task."
+                          data-position="right center" data-inverted="">
+                        <i class="orange exclamation triangle icon"></i>
+                    </span>
+                    <span if="{ submission.updated_task && !submission.outdated_task }"
+                          data-tooltip="Scored on an older version of the task: its programs or data were updated after this submission ran. A new submission, or a re-run by the organizers, is needed to be scored on the current version."
+                          data-position="right center" data-inverted="">
+                        <i class="yellow exclamation triangle icon"></i>
+                    </span>
+                </td>
                 <td if="{ has_group_queues }">
                     <span if="{ submission.queue_name }">{ submission.queue_name }</span>
                     <span if="{ !submission.queue_name }" class="ui grey text">—</span>

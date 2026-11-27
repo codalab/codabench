@@ -120,9 +120,6 @@ function pretty_bytes(bytes, decimalPlaces = 1, suffix = "B", binary = false) {
  Form data helpers
  ----------------------------------------------------------------------------*/
 function get_form_fields(base_element) {
-    //return $(':input', self.root).not('button').not('[readonly]').each(function (i, field) {
-    //    console.log(field)
-    //})
     form_fields = $(':input', base_element).not('button').not('[readonly]')
     // Calendars come through as read-only and jQuery leaves them out
     calendars = $('.two.fields .ui.calendar.field input[type="text"]')
@@ -139,12 +136,8 @@ function get_form_fields(base_element) {
         
         if (isIdentical) {
             form_fields = form_fields.add(calendars)
-        } else {
-        //   console.log("The two sets are not identical.");
         }
-      } else {
-        // console.log("The two sets have different lengths and are not identical.");
-      }
+    }
 
     return form_fields
 }

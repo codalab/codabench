@@ -1,3 +1,5 @@
+import logging
+
 from drf_writable_nested import WritableNestedModelSerializer
 from rest_framework import serializers
 from api.mixins import DefaultUserCreateMixin
@@ -6,6 +8,8 @@ from competitions.models import PhaseTaskInstance, Phase
 from datasets.models import Data
 from tasks.models import Task, Solution
 from competitions.models import Competition, CompetitionCreationTaskStatus, CompetitionDump
+
+logger = logging.getLogger(__name__)
 
 
 class SolutionSerializer(WritableNestedModelSerializer):
@@ -29,7 +33,7 @@ class SolutionSerializer(WritableNestedModelSerializer):
         try:
             return instance.data.file_size
         except AttributeError:
-            print("This solution has no data associated with it...might be a test")
+            logger.info("This solution has no data associated with it...might be a test")
             return None
 
 
@@ -206,6 +210,7 @@ class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):
     value = serializers.CharField(source='task.key', required=False)
     key = serializers.CharField(source='task.key', required=False)
     created_when = serializers.DateTimeField(source='task.created_when', required=False)
+    content_updated_when = serializers.DateTimeField(source='task.content_updated_when', read_only=True)
     name = serializers.CharField(source='task.name', required=False)
     solutions = serializers.SerializerMethodField()
     public_datasets = serializers.SerializerMethodField()
@@ -221,6 +226,7 @@ class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):
             'value',
             'key',
             'created_when',
+            'content_updated_when',
             'name',
             'solutions',
             'public_datasets'
@@ -272,5 +278,5 @@ class PhaseTaskInstanceSmallSerializer(PhaseTaskInstanceSerializer):
     class Meta(PhaseTaskInstanceSerializer.Meta):
         fields = (
             'task', 'order_index', 'phase', 'id',
-            'value', 'key', 'created_when', 'name',
+            'value', 'key', 'created_when', 'content_updated_when', 'name',
         )

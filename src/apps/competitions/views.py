@@ -1,5 +1,6 @@
 import json
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.paginator import Paginator
 from django.http import Http404, JsonResponse, HttpResponseForbidden, HttpResponseBadRequest, HttpResponseRedirect
 from django.views.generic import TemplateView, DetailView
 from django.core.serializers.json import DjangoJSONEncoder
@@ -11,6 +12,10 @@ from django.shortcuts import get_object_or_404
 from profiles.models import CustomGroup, User
 
 from .models import Competition, CompetitionParticipant
+from .public_competitions import DEFAULT_ORDERING, DEFAULT_FILTER_MODE, get_public_competitions, read_filters, query_string_without, \
+    get_sort_options, get_filter_pills, get_tag_categories, get_filter_mode_options, put_matching_tags_first, \
+    count_active_filters
+from pages.serializers import HomePageBenchmarkSerializer
 from django.db import transaction
 from django.urls import reverse
 from django.contrib import messages
@@ -25,6 +30,45 @@ class CompetitionManagement(LoginRequiredMixin, TemplateView):
 
 class CompetitionPublic(TemplateView):
     template_name = 'competitions/public.html'
+    # Why: 12 fills 4 full rows of 3 cards
+    competitions_per_page = 12
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        params = self.request.GET
+
+        filters = read_filters(params=params, user=self.request.user)
+        competitions = get_public_competitions(user=self.request.user, **filters)
+
+        # get_page shows the first page for an invalid number and the last page for a number that is too high
+        paginator = Paginator(object_list=competitions, per_page=self.competitions_per_page)
+        page = paginator.get_page(params.get('page'))
+
+        cards = HomePageBenchmarkSerializer(page.object_list, many=True).data
+        context['competitions'] = put_matching_tags_first(competitions=cards, selected_tag_ids=filters['tag_ids'])
+        context['page'] = page
+        # Why: the page links keep the search, filters and sort
+        context['page_query'] = query_string_without(params, 'page')
+
+        # Current values for the search box, the checkboxes, the dates, the Match buttons and the sort menu
+        context['filters'] = filters
+        context['default_ordering'] = DEFAULT_ORDERING
+        context['filter_mode_options'] = get_filter_mode_options(filter_mode=filters['filter_mode'])
+        # Why: the page script leaves the default mode out of the URL
+        context['default_filter_mode'] = DEFAULT_FILTER_MODE
+        context['active_filter_count'] = count_active_filters(filters=filters)
+
+        # The tag dropdowns of the Filters panel
+        context['tag_categories'] = get_tag_categories(selected_tag_ids=filters['tag_ids'])
+
+        context['sort_options'] = get_sort_options(params=params, ordering=filters['ordering'])
+        context['selected_sort_label'] = next(option['label'] for option in context['sort_options'] if option['is_selected'])
+
+        context['filter_pills'] = get_filter_pills(params=params, filters=filters, tag_categories=context['tag_categories'])
+        # Clear all keeps the sort. Why: the sort is not a filter.
+        context['clear_filters_url'] = f"?ordering={filters['ordering']}" if filters['ordering'] != DEFAULT_ORDERING else "?"
+
+        return context
 
 
 class CompetitionCreateForm(LoginRequiredMixin, TemplateView):

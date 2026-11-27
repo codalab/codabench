@@ -152,7 +152,6 @@ class CreateThreadView(ForumBaseMixin, RedirectToThreadMixin, LoginRequiredMixin
 
         # Create the thread since the user is a participant
         self.thread = form.save(commit=False)
-        self.thread = form.save(commit=False)
         self.thread.forum = self.forum
         self.thread.started_by = self.request.user
         self.thread.last_post_date = datetime.datetime.now()

@@ -1,0 +1,444 @@
+/* --------------------------------------------------------------------------------------
+ Public competitions page (templates/competitions/public.html)
+ The page title, cards, pagination and empty state come from the shared components.
+ */
+
+// Create and Upload, next to the page title
+.public-competitions-actions
+    display flex
+    gap 8px
+
+/* External competitions banner */
+.public-competitions-external
+    display flex
+    justify-content space-between
+    align-items center
+    gap 12px
+    margin-bottom 16px
+    padding 12px 16px
+    background-color $cb-blue-50
+    border 1px solid rgba($cb-blue-500, 0.25)
+    border-radius 10px
+    color $cb-navy-700
+    font-size 14px
+
+/* Toolbar: search on the left, Filters and Sort on the right */
+.public-competitions-toolbar
+    display flex
+    flex-wrap wrap
+    align-items center
+    gap 10px
+    margin-bottom 12px
+
+.public-competitions-search
+    position relative
+    flex 1 1 280px
+
+    .bi
+        position absolute
+        top 50%
+        left 12px
+        transform translateY(-50%)
+        color #6b7785
+        font-size 14px
+
+    input
+        width 100%
+        height 40px
+        padding 0 12px 0 36px
+        border 1px solid #e3e7ec
+        border-radius 8px
+        background-color #fff
+        box-shadow 0 1px 2px rgba(0, 0, 0, 0.04)
+        color $cb-navy-900
+        font-family inherit
+        font-size 14px
+
+        &:focus
+            outline none
+            border-color $cb-blue-500
+            box-shadow 0 0 0 3px rgba($cb-blue-500, 0.15)
+
+// Filters and Sort buttons. The look comes from cb-button-secondary, this sets the height.
+.public-competitions-tool-button
+    height 40px
+    padding 0 14px
+    box-shadow 0 1px 2px rgba(0, 0, 0, 0.04)
+
+// While the panel or the menu is open
+.public-competitions-tool-button-open
+    border-color $cb-blue-500
+    background-color $cb-blue-50
+    color $cb-blue-500
+
+.public-competitions-chevron
+    font-size 11px
+    transition transform 150ms ease
+
+.public-competitions-tool-button-open .public-competitions-chevron
+    transform rotate(180deg)
+
+.public-competitions-tool-label
+    color #6b7785
+    font-weight 400
+
+.public-competitions-tool-value
+    color $cb-navy-900
+    font-weight 600
+
+// Number of active filters on the Filters button
+.public-competitions-badge
+    min-width 20px
+    height 20px
+    padding 0 6px
+    border-radius 999px
+    background-color $cb-blue-500
+    color #fff
+    font-size 11px
+    font-weight 700
+    line-height 20px
+    text-align center
+
+/* Sort menu */
+.public-competitions-sort
+    position relative
+
+.public-competitions-sort-menu
+    position absolute
+    top calc(100% + 6px)
+    right 0
+    z-index 20
+    min-width 220px
+    padding 6px
+    background-color #fff
+    border 1px solid #e3e7ec
+    border-radius 10px
+    box-shadow 0 8px 20px rgba($cb-navy-900, 0.12)
+
+    // Why: a display rule on the class would show the menu even with the hidden attribute
+    &[hidden]
+        display none
+
+.public-competitions-sort-option
+    display flex
+    align-items center
+    gap 10px
+    padding 9px 10px
+    border-radius 6px
+    color $cb-navy-700
+    font-size 14px
+
+    &:hover
+        background-color $cb-blue-50
+        color $cb-blue-500
+
+// Check mark next to the sort in use
+.public-competitions-check
+    margin-left auto
+    color $cb-blue-500
+    visibility hidden
+
+.public-competitions-sort-option-selected
+    color $cb-blue-500
+    font-weight 600
+
+    .public-competitions-check
+        visibility visible
+
+/* Filters panel, opens under the toolbar: the Match row, the filter groups, then the tags */
+.public-competitions-panel
+    margin-bottom 12px
+    padding 16px 18px
+    background-color #fff
+    border 1px solid #e3e7ec
+    border-radius 10px
+    box-shadow 0 1px 2px rgba(0, 0, 0, 0.04)
+
+// Match row: the title, the two joined buttons and the help line on one line, a line under it
+.public-competitions-match
+    display flex
+    flex-wrap wrap
+    align-items center
+    gap 8px 12px
+    margin-bottom 16px
+    padding-bottom 16px
+    border-bottom 1px solid #e3e7ec
+
+    .public-competitions-group-title
+        margin 0
+
+// Any filter and All filters, joined. Each is a radio button with its label styled as a button.
+.public-competitions-segmented
+    display inline-flex
+    overflow hidden
+    border 1px solid #e3e7ec
+    border-radius 8px
+
+    label
+        cursor pointer
+
+    label + label span
+        border-left 1px solid #e3e7ec
+
+    // Why not display none: the radio stays reachable with the keyboard
+    input
+        position absolute
+        opacity 0
+        pointer-events none
+
+    span
+        display block
+        padding 6px 12px
+        background-color #fff
+        color $cb-navy-700
+        font-size 13px
+        font-weight 500
+
+    input:checked + span
+        background-color $cb-blue-50
+        color $cb-blue-500
+        font-weight 600
+
+    input:focus-visible + span
+        outline 2px solid $cb-blue-500
+        outline-offset -2px
+
+.public-competitions-help
+    margin 0
+    color #6b7785
+    font-size 12px
+    line-height 1.4
+
+// Each group is one column, so a new filter only adds a group
+.public-competitions-groups
+    display grid
+    grid-template-columns repeat(auto-fill, minmax(200px, 1fr))
+    gap 16px 24px
+
+// Created: From and To date boxes
+.public-competitions-dates
+    display flex
+    flex-direction column
+    gap 6px
+
+    label
+        gap 0
+        padding 0
+        cursor default
+
+    span
+        flex none
+        width 40px
+        color #6b7785
+        font-size 13px
+
+    input
+        flex 1
+        min-width 0
+        height 32px
+        padding 0 8px
+        border 1px solid #e3e7ec
+        border-radius 6px
+        color $cb-navy-900
+        font-family inherit
+        font-size 13px
+
+        &:focus
+            outline none
+            border-color $cb-blue-500
+            box-shadow 0 0 0 3px rgba($cb-blue-500, 0.15)
+
+/* Tags: one dropdown for each category, under a line */
+.public-competitions-tags
+    margin-top 16px
+    padding-top 16px
+    border-top 1px solid #e3e7ec
+
+.public-competitions-dropdowns
+    display flex
+    flex-wrap wrap
+    gap 10px
+
+.public-competitions-dropdown
+    position relative
+
+.public-competitions-dropdown-button
+    height 36px
+    padding 0 12px
+    font-size 13px
+
+.public-competitions-dropdown-menu
+    position absolute
+    top calc(100% + 6px)
+    left 0
+    z-index 20
+    width 260px
+    padding 8px
+    background-color #fff
+    border 1px solid #e3e7ec
+    border-radius 10px
+    box-shadow 0 8px 20px rgba($cb-navy-900, 0.12)
+
+    // Why: the display rule of the list would show it even with the hidden attribute
+    &[hidden]
+        display none
+
+.public-competitions-tag-search
+    position relative
+    margin-bottom 6px
+
+    .bi
+        position absolute
+        top 50%
+        left 10px
+        transform translateY(-50%)
+        color #6b7785
+        font-size 12px
+
+    input
+        width 100%
+        height 32px
+        padding 0 10px 0 30px
+        border 1px solid #e3e7ec
+        border-radius 6px
+        color $cb-navy-900
+        font-family inherit
+        font-size 13px
+
+        &:focus
+            outline none
+            border-color $cb-blue-500
+            box-shadow 0 0 0 3px rgba($cb-blue-500, 0.15)
+
+// Scrolls when a category has many tags
+.public-competitions-dropdown-list
+    max-height 240px
+    overflow-y auto
+
+    label
+        display flex
+        align-items center
+        gap 8px
+        padding 6px 8px
+        border-radius 6px
+        color $cb-navy-700
+        font-size 14px
+        cursor pointer
+
+        &:hover
+            background-color $cb-blue-50
+
+        // Why: the display flex above would show a tag that Find a tag hides
+        &[hidden]
+            display none
+
+    input
+        width 15px
+        height 15px
+        margin 0
+        accent-color $cb-blue-500
+
+.public-competitions-no-tag
+    margin 6px 8px
+    color #6b7785
+    font-size 13px
+
+.public-competitions-group-title
+    margin 0 0 8px
+    color #6b7785
+    font-size 12px
+    font-weight 700
+    letter-spacing 0.05em
+    text-transform uppercase
+
+.public-competitions-group label
+    display flex
+    align-items center
+    gap 8px
+    padding 4px 0
+    color $cb-navy-700
+    font-size 14px
+    cursor pointer
+
+    // Why only checkboxes: the date boxes of Created are also inside a group label
+    input[type="checkbox"]
+        width 15px
+        height 15px
+        margin 0
+        accent-color $cb-blue-500
+
+/* Active search and filters, shown as pills under the toolbar */
+.public-competitions-pills
+    display flex
+    flex-wrap wrap
+    align-items center
+    gap 8px
+    margin-bottom 16px
+
+.public-competitions-pill
+    display inline-flex
+    align-items center
+    gap 6px
+    padding 4px 6px 4px 10px
+    border 1px solid rgba($cb-blue-500, 0.25)
+    border-radius 999px
+    background-color $cb-blue-50
+    color $cb-blue-500
+    font-size 13px
+    font-weight 500
+
+    a
+        display inline-flex
+        padding 2px
+        border-radius 999px
+        color $cb-blue-500
+
+        &:hover
+            background-color rgba($cb-blue-500, 0.15)
+
+    .bi
+        font-size 11px
+
+// What the pill is about, in front of its value. Example: Conference: in front of NeurIPS
+.public-competitions-pill-prefix
+    color #6b7785
+    font-weight 400
+
+.public-competitions-clear
+    color $cb-blue-500
+    font-size 13px
+    font-weight 500
+
+    &:hover
+        color $cb-blue-400
+        text-decoration underline
+
+/* Space between the toolbar or pills and the cards */
+.public-competitions-filters + .hb-grid,
+.public-competitions-pills + .hb-grid
+    margin-top 8px
+
+/* Phones: search on its own line, Filters and Sort share the next line */
+@media only screen and (max-width 625px)
+    .public-competitions-search
+        flex-basis 100%
+
+    .public-competitions-toolbar > .public-competitions-tool-button,
+    .public-competitions-sort
+        flex 1
+
+    .public-competitions-tool-button
+        justify-content center
+
+    .public-competitions-sort .public-competitions-tool-button
+        width 100%
+
+    .public-competitions-external
+        flex-direction column
+        align-items flex-start
+
+    // The tag dropdowns take the full width, one under the other
+    .public-competitions-dropdown,
+    .public-competitions-dropdown-button,
+    .public-competitions-dropdown-menu
+        width 100%

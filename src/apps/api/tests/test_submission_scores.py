@@ -1,3 +1,5 @@
+from unittest import mock
+
 import pytest
 from django.urls import reverse
 from rest_framework.test import APITestCase
@@ -5,7 +7,7 @@ from rest_framework.test import APITestCase
 from competitions.models import Submission
 from factories import SubmissionFactory, UserFactory, CompetitionFactory, PhaseFactory, LeaderboardFactory, \
     ColumnFactory, SubmissionScoreFactory, TaskFactory
-from leaderboards.models import Leaderboard
+from leaderboards.models import Leaderboard, SubmissionScore
 
 
 class SubmissionScoreChangeTests(APITestCase):
@@ -132,6 +134,19 @@ class UploadSubmissionScoresTests(APITestCase):
         self.submission.refresh_from_db()
         assert self.submission.leaderboard == self.leaderboard
 
+    def test_force_best_upload_succeeds_before_submission_is_finished(self):
+        """The compute worker uploads scores while the submission is still Scoring; with Force_Best it must still go on the leaderboard."""
+        self.leaderboard.submission_rule = Leaderboard.FORCE_BEST
+        self.leaderboard.save()
+        self.submission.status = Submission.SCORING
+        self.submission.save()
+
+        resp = self.upload_scores(submission=self.submission, scores={'final_score': 0.42, 'accuracy': 0.9})
+
+        assert resp.status_code == 200
+        self.submission.refresh_from_db()
+        assert self.submission.leaderboard == self.leaderboard
+
     def test_upload_with_wrong_secret_is_rejected(self):
         """An upload with a secret that does not match the submission returns 403 and creates no score rows."""
         resp = self.upload_scores(
@@ -188,3 +203,28 @@ class UploadSubmissionScoresTests(APITestCase):
         assert child_1.scores.count() == 1
         assert child_2.scores.count() == 1
         assert sorted(float(score.score) for score in parent.scores.all()) == [0.3, 0.42]
+
+    def test_crash_halfway_through_upload_leaves_no_scores_and_allows_retry(self):
+        """If the upload fails after the first score row is created, no score rows remain and a retry is not rejected with 409."""
+        scores = {'final_score': 0.42, 'accuracy': 0.9}
+        score_rows_before = SubmissionScore.objects.count()
+
+        with mock.patch.object(Submission, 'calculate_scores', side_effect=[None, RuntimeError('crash')]):
+            with pytest.raises(RuntimeError):
+                self.upload_scores(submission=self.submission, scores=scores)
+
+        assert self.submission.scores.count() == 0
+        assert SubmissionScore.objects.count() == score_rows_before
+
+        retry_resp = self.upload_scores(submission=self.submission, scores=scores)
+
+        assert retry_resp.status_code == 200
+        assert self.get_scores(submission=self.submission) == scores
+
+    def test_crash_while_updating_leaderboard_leaves_no_scores(self):
+        """If putting the submission on the leaderboard fails, the score rows created before it are rolled back."""
+        with mock.patch('api.views.submissions.put_on_leaderboard_by_submission_rule', side_effect=RuntimeError('crash')):
+            with pytest.raises(RuntimeError):
+                self.upload_scores(submission=self.submission, scores={'final_score': 0.42, 'accuracy': 0.9})
+
+        assert self.submission.scores.count() == 0

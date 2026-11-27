@@ -13,6 +13,7 @@ from rest_framework.urlpatterns import format_suffix_patterns
 from .views import (
     analytics,
     competitions,
+    dashboard,
     datasets,
     external_competitions,
     profiles,
@@ -46,6 +47,7 @@ urlpatterns = [
     path('can_make_submission/<phase_id>/', submissions.can_make_submission, name="can_make_submission"),
     path('user_lookup/', profiles.user_lookup),
     path('analytics/', analytics.AnalyticsView.as_view(), name='analytics_api'),
+    path('dashboard/', dashboard.DashboardCompetitionsView.as_view(), name='dashboard_api'),
 
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('api-token-auth/', obtain_auth_token),
@@ -58,7 +60,7 @@ urlpatterns = [
     path('delete_unused_submissions/', quota.delete_unused_submissions, name="delete_unused_submissions"),
     path('delete_failed_submissions/', quota.delete_failed_submissions, name="delete_failed_submissions"),
     path('delete_unused_starting_kits/', quota.delete_unused_starting_kits, name="delete_unused_starting_kits"),
-    path('delete_unused_competition_bundles/', quota.delete_unused_competition_bundles, name="delete_unused_competition_bundles"),
+    path('delete_unused_competition_bundles_and_dumps/', quota.delete_unused_competition_bundles_and_dumps, name="delete_unused_competition_bundles_and_dumps"),
 
     # User account
     path('delete_account/', profiles.delete_account, name="delete_account"),

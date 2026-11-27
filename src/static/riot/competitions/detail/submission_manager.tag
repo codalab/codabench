@@ -103,6 +103,9 @@
                 <th style="cursor:pointer;" onclick="{ sort_by.bind(this, 'score') }">
                     Score <i if="{ sort_column === 'score' }" class="icon { sort_direction === 'asc' ? 'caret up' : 'caret down' }"></i>
                 </th>
+                <th if="{ has_hidden_scores() }" data-tooltip="Hidden leaderboard columns, only competition admins see them" data-inverted="">
+                    Hidden scores <i class="eye slash outline icon"></i>
+                </th>
                 <th if="{ opts.competition.enable_detailed_results && opts.competition.show_detailed_results_in_submission_panel}">
                     Detailed Results
                 </th>
@@ -161,8 +164,21 @@
                     <sup if="{ pending_info(submission) }" data-tooltip="{ pending_info(submission).message }" data-inverted="">
                         <i class="question circle icon" style="color: { pending_info(submission).color };"></i>
                     </sup>
+                    <sup if="{ is_outdated_task(submission) }"
+                        data-tooltip="Ran on a task that is no longer in this phase. Make a new submission to be scored on the current task."
+                        data-position="left center" data-inverted="">
+                        <i class="orange exclamation triangle icon"></i>
+                    </sup>
+                    <sup if="{ is_updated_task(submission) }"
+                        data-tooltip="Ran on an older version of the task: its programs or data were updated afterwards. A new submission, or a re-run by the organizers, is needed to be scored on the current version."
+                        data-position="left center" data-inverted="">
+                        <i class="yellow exclamation triangle icon"></i>
+                    </sup>
                 </td>
                 <td>{get_score(submission)}</td>
+                <td if="{ has_hidden_scores() }">
+                    <div each="{ score in get_hidden_scores(submission) }">{ score.column_key }: { format_score(score) }</div>
+                </td>
                 <td
                     if="{ opts.competition.enable_detailed_results && opts.competition.show_detailed_results_in_submission_panel }">
                     <a if="{submission.status === 'Finished'}" href="detailed_results/{submission.id}" target="_blank"
@@ -287,6 +303,7 @@
                                 <th>Date</th>
                                 <th>Status</th>
                                 <th>Score</th>
+                                <th if="{ has_hidden_scores() }">Hidden scores</th>
                                 <th class="center aligned">Actions</th>
                             </tr>
                         </thead>
@@ -303,8 +320,21 @@
                                     <sup if="{ pending_info(child) }" data-tooltip="{ pending_info(child).message }" data-inverted="">
                                         <i class="question circle icon" style="color: { pending_info(child).color };"></i>
                                     </sup>
+                                    <sup if="{ is_outdated_task(child) }"
+                                        data-tooltip="Ran on a task that is no longer in this phase. Make a new submission to be scored on the current task."
+                                        data-position="left center" data-inverted="">
+                                        <i class="orange exclamation triangle icon"></i>
+                                    </sup>
+                                    <sup if="{ is_updated_task(child) }"
+                                        data-tooltip="Ran on an older version of the task: its programs or data were updated afterwards. A new submission, or a re-run by the organizers, is needed to be scored on the current version."
+                                        data-position="left center" data-inverted="">
+                                        <i class="yellow exclamation triangle icon"></i>
+                                    </sup>
                                 </td>
                                 <td>{ get_score(child) }</td>
+                                <td if="{ has_hidden_scores() }">
+                                    <div each="{ score in get_hidden_scores(child) }">{ score.column_key }: { format_score(score) }</div>
+                                </td>
 
                                 <td if="{ child.is_soft_deleted }">
                                     <virtual if="{ opts.admin }">
@@ -644,6 +674,38 @@
             let children = self.get_children(submission)
             let task_ids = _.uniq(_.map(children, child => _.get(child, 'task.id')).filter(id => id != null))
             return task_ids.length > 1
+        }
+
+        // Finished runs of a submission (itself, or its children) with the phase tasks, or null
+        self.get_finished_runs = function (submission) {
+            let phase = self.get_submission_phase(submission) || self.selected_phase
+            if (submission.status !== 'Finished' || !phase) {
+                return null
+            }
+            let runs = submission.has_children ? self.get_children(submission) : [submission]
+            return {runs: runs, phase_tasks: _.get(phase, 'tasks', [])}
+        }
+
+        // ran (or a child ran) on a task that was deleted or removed from the phase: scores show as n/a
+        self.is_outdated_task = function (submission) {
+            let finished = self.get_finished_runs(submission)
+            if (!finished) return false
+            let phase_task_ids = _.map(finished.phase_tasks, 'id')
+            return _.some(finished.runs, run => !_.includes(phase_task_ids, _.get(run, 'task.id')))
+        }
+
+        // ran (or a child ran) before the programs or data of its task were updated
+        // not shown when the task was also replaced: the outdated task marker already covers it
+        self.is_updated_task = function (submission) {
+            if (self.is_outdated_task(submission)) return false
+            let finished = self.get_finished_runs(submission)
+            if (!finished) return false
+            let updated_when = _.fromPairs(_.map(finished.phase_tasks, task => [task.id, task.content_updated_when]))
+            return _.some(finished.runs, run => {
+                let task_updated_when = updated_when[_.get(run, 'task.id')]
+                let ran_when = run.started_when || run.created_when
+                return !!task_updated_when && !!ran_when && Date.parse(ran_when) < Date.parse(task_updated_when)
+            })
         }
 
         self.toggle_expand = function (submission, event) {
@@ -1144,7 +1206,7 @@
         }
 
         self.delete_submission = function (submission) {
-            if (confirm(`Are you sure you want to delete submission: ${submission.filename}?`)) {
+            if (confirm(`Permanently delete submission '${submission.filename}'? This cannot be undone.`)) {
                 CODALAB.api.delete_submission(submission.id)
                     .done(function (response) {
                         toastr.success('Submission deleted')
@@ -1155,7 +1217,7 @@
         }
 
         self.soft_delete_submission = function (submission) {
-            if (confirm(`Are you sure you want to delete your submission: ${submission.filename}?`)) {
+            if (confirm(`Delete your submission '${submission.filename}'? Its results, logs, scores and submitted file will be deleted permanently. It will no longer appear in your submissions, but it still counts toward your submission limits. This cannot be undone.`)) {
                 CODALAB.api.soft_delete_submission(submission.id)
                     .done(function (response) {
                         toastr.success(response.message || 'Submission deleted successfully');
@@ -1173,7 +1235,7 @@
         }
 
         self.delete_selected_submissions = function () {
-            if (confirm(`Are you sure you want to delete the selected submissions?`)) {
+            if (confirm(`Permanently delete the ${self.checked_submissions.length} selected submissions? This cannot be undone.`)) {
                 CODALAB.api.delete_many_submissions(self.checked_submissions)
                     .done(function (response) {
                         toastr.success('Submissions deleted')
@@ -1198,15 +1260,28 @@
 
         self.get_score = function (submission) {
             try {
-                // Look for a primary score, fallback to the first score if not found
-                let score_obj = _.find(submission.scores, s => s.is_primary) || submission.scores[0]
+                // Look for a primary score, fallback to the first visible score if not found
+                let score_obj = _.find(submission.scores, s => s.is_primary) || _.find(submission.scores, s => !s.hidden)
                 if (score_obj) {
-                    return parseFloat(score_obj.score).toFixed(score_obj.precision || 0)
+                    return self.format_score(score_obj)
                 }
                 return ""
             } catch {
                 return ""
             }
+        }
+
+        self.format_score = function (score_obj) {
+            return parseFloat(score_obj.score).toFixed(score_obj.precision || 0)
+        }
+
+        // The API only sends hidden-column scores to competition admins
+        self.get_hidden_scores = function (submission) {
+            return _.filter(submission.scores, 'hidden')
+        }
+
+        self.has_hidden_scores = function () {
+            return _.some(self.submissions, submission => !_.isEmpty(self.get_hidden_scores(submission)))
         }
 
         self.toggle_submission_is_public = function (submission) {
@@ -1357,8 +1432,6 @@
                 return;
                 }
 
-                console.log("Files returned by server:", files);
-
                 const zip = new JSZip();
                 const total = files.length;
                 let completed = 0;
@@ -1450,7 +1523,8 @@
 
         self.submission_handling = function () {
             if (self.checked_submissions.length === 0) {
-                console.log("no submission is selected");
+                // No submission is selected, so there is nothing to do
+                return
             } else {
                 var submission_operation = self.refs.submission_handling_operation.value
                 switch (submission_operation) {
@@ -1475,8 +1549,6 @@
                     case "migrate":
                         self.migrate_selected_submissions()
                         break
-                    default:
-                        console.log("should never be in this state of default..")
                 }
             }
         }
