@@ -1,6 +1,9 @@
-import os
 import time
 import json
+from analytics.orphan_files.scanner import scan_orphan_files
+from analytics.orphan_files.reports import build_report
+from analytics.orphan_files.cleanup import cleanup_orphan_files
+
 from celery_config import app
 from datetime import datetime, timezone, timedelta
 from django.db.models import (
@@ -26,6 +29,12 @@ from analytics.models import (
 )
 from competitions.models import Competition
 from profiles.models import User
+from django.db import transaction
+from django.utils import timezone as django_timezone
+
+from analytics.models import OrphanFilesJob
+
+from analytics.orphan_files.persistence import save_scan_candidates
 
 from utils.data import pretty_bytes
 
@@ -585,74 +594,259 @@ def update_home_page_counters():
     )
 
 
-@app.task(queue="site-worker")
-def delete_orphan_files():
-    logger.info("Task delete_orphan_files started")
+@app.task(bind=True, queue="site-worker", soft_time_limit=7 * 24 * 60 * 60, time_limit=7 * 24 * 60 * 60 + 300)
+def scan_orphan_files_task(self):
+    """
+    Scan managed S3 objects and persist orphan candidates
+    and scan results in PostgreSQL.
 
-    # Find most recent file
-    most_recent_log_file = get_most_recent_storage_inconsistency_log_file(logger)
-    if not most_recent_log_file:
-        logger.warning("No storage inconsistency log file found. Nothing will be removed")
-        raise Exception("No storage inconsistency log file found")
+    PostgreSQL is the source of truth for job status,
+    scan results and orphan file candidates.
+    """
+    job = OrphanFilesJob.objects.get(
+        task_id=self.request.id,
+        job_type=OrphanFilesJob.JobType.SCAN,
+    )
 
-    # Get the list of orphan files from the content of the most recent log file
-    log_folder = "/app/var/logs/"
-    orphan_files_path = get_files_path_from_orphan_log_file(os.path.join(log_folder, most_recent_log_file), logger)
+    now = django_timezone.now()
 
-    # Delete those files in batch (max 1000 element at once)
-    batch_size = 1000
-    for i in range(0, len(orphan_files_path), batch_size):
-        batch = orphan_files_path[i:i + batch_size]
-        objects_formatted = [{'Key': path} for path in batch]
-        BundleStorage.bucket.delete_objects(Delete={'Objects': objects_formatted})
+    # Atomically claim the job to prevent duplicate execution.
+    claimed = OrphanFilesJob.objects.filter(
+        pk=job.pk,
+        status=OrphanFilesJob.Status.PENDING,
+    ).update(
+        status=OrphanFilesJob.Status.STARTED,
+        started_at=now,
+        heartbeat_at=now,
+        error="",
+    )
 
-    logger.info("Delete oprhan files finished")
-
-
-def get_most_recent_storage_inconsistency_log_file(logger):
-    log_folder = "/app/var/logs/"
-    try:
-        log_files = [f for f in os.listdir(log_folder) if os.path.isfile(os.path.join(log_folder, f))]
-    except FileNotFoundError:
-        logger.error(f"Folder '{log_folder}' does not exist.")
-        return None
-
-    most_recent_log_file = None
-    most_recent_datetime = None
-    datetime_format = "%Y%m%d-%H%M%S"
-    for file in log_files:
-        try:
-            basename = os.path.basename(file)
-            datetime_str = basename[len("db_storage_inconsistency_"):-len(".log")]
-            file_datetime = datetime.strptime(datetime_str, datetime_format)
-            if most_recent_datetime is None or file_datetime > most_recent_datetime:
-                most_recent_datetime = file_datetime
-                most_recent_log_file = file
-        except ValueError:
-            logger.warning(f"Filename '{file}' does not match the expected format and will be ignored.")
-
-    return most_recent_log_file
-
-
-def get_files_path_from_orphan_log_file(log_file_path, logger):
-    files_path = []
+    if not claimed:
+        job.refresh_from_db()
+        return job.result
 
     try:
-        with open(log_file_path) as log_file:
-            lines = log_file.readlines()
-            orphan_files_lines = []
-            for i, line in enumerate(lines):
-                if "Orphaned files" in line:
-                    orphan_files_lines = lines[i + 1:]
-                    break
+        grace_period_days = job.grace_period_days
 
-            for orphan_files_line in orphan_files_lines:
-                files_path.append(orphan_files_line.split(maxsplit=1)[0])
-    except FileNotFoundError:
-        logger.error(f"File '{log_file_path}' does not exist.")
-    except PermissionError:
-        logger.error(f"Permission denied for reading the file '{log_file_path}'.")
-    except IOError as e:
-        logger.error(f"An I/O error occurred while accessing the file at {log_file_path}: {e}")
+        # Mark the job as running.
+        now = django_timezone.now()
 
-    return files_path
+        OrphanFilesJob.objects.filter(
+            pk=job.pk,
+        ).update(
+            status=OrphanFilesJob.Status.PROGRESS,
+            heartbeat_at=now,
+        )
+
+        self.update_state(
+            state="PROGRESS",
+            meta={
+                "message": "Scanning MinIO objects...",
+            },
+        )
+
+        # Update the persistent heartbeat every 30 seconds
+        # while the scanner is processing storage objects.
+        last_heartbeat = now
+
+        def heartbeat():
+            nonlocal last_heartbeat
+
+            now = django_timezone.now()
+
+            if (
+                now - last_heartbeat
+            ).total_seconds() >= 30:
+
+                OrphanFilesJob.objects.filter(
+                    pk=job.pk,
+                ).update(
+                    heartbeat_at=now,
+                )
+
+                last_heartbeat = now
+
+        # Scan managed storage objects.
+        scan_result = scan_orphan_files(
+            grace_period_days=grace_period_days,
+            heartbeat=heartbeat,
+            prefix=job.prefix,
+        )
+
+        # Update heartbeat after the storage scan.
+        OrphanFilesJob.objects.filter(
+            pk=job.pk,
+        ).update(
+            heartbeat_at=django_timezone.now(),
+        )
+
+        self.update_state(
+            state="PROGRESS",
+            meta={
+                "message": "Building orphan files report...",
+            },
+        )
+
+        # Build the scan report.
+        report = build_report(
+            scan_result,
+            grace_period_days,
+        )
+
+        # Keep only summary and limited previews in the job.
+        # All orphan candidates are stored separately.
+        result = {
+            "summary": report["summary"],
+            "prefix": job.prefix,
+            "grace_period_days": grace_period_days,
+            "generated_at": report["generated_at"],
+            "orphaned_preview": report["orphaned"][:100],
+            "recent_unreferenced_preview": (
+                report["recent_unreferenced"][:100]
+            ),
+            "missing_preview": report["missing"][:100],
+            "preview_limit": 100,
+        }
+
+        OrphanFilesJob.objects.filter(
+            pk=job.pk,
+        ).update(
+            heartbeat_at=django_timezone.now(),
+        )
+
+        self.update_state(
+            state="PROGRESS",
+            meta={
+                "message": "Saving orphan files candidates...",
+            },
+        )
+
+        # Persist candidates and final scan result atomically.
+        with transaction.atomic():
+
+            save_scan_candidates(
+                scan_job=job,
+                orphaned_objects=scan_result.orphaned,
+            )
+
+            now = django_timezone.now()
+
+            OrphanFilesJob.objects.filter(
+                pk=job.pk,
+            ).update(
+                status=OrphanFilesJob.Status.SUCCESS,
+                result=result,
+                completed_at=now,
+                heartbeat_at=now,
+                error="",
+            )
+
+        return result
+
+    except Exception as exc:
+
+        now = django_timezone.now()
+
+        OrphanFilesJob.objects.filter(
+            pk=job.pk,
+        ).update(
+            status=OrphanFilesJob.Status.FAILURE,
+            error=str(exc),
+            completed_at=now,
+            heartbeat_at=now,
+        )
+
+        raise
+
+
+@app.task(bind=True, queue="site-worker", soft_time_limit=7 * 24 * 60 * 60)
+def cleanup_orphan_files_task(
+    self,
+    mode="all",
+    selected_objects=None,
+):
+    """
+    Process persisted orphan files candidates.
+    """
+    job = OrphanFilesJob.objects.select_related(
+        "source_scan",
+    ).get(
+        task_id=self.request.id,
+        job_type=OrphanFilesJob.JobType.CLEANUP,
+    )
+
+    now = django_timezone.now()
+
+    claimed = OrphanFilesJob.objects.filter(
+        pk=job.pk,
+        status=OrphanFilesJob.Status.PENDING,
+    ).update(
+        status=OrphanFilesJob.Status.STARTED,
+        started_at=now,
+        heartbeat_at=now,
+        error="",
+    )
+
+    if not claimed:
+        return job.result
+
+    try:
+        if job.source_scan is None:
+            raise ValueError("Missing source scan")
+
+        OrphanFilesJob.objects.filter(
+            pk=job.pk,
+        ).update(
+            status=OrphanFilesJob.Status.PROGRESS,
+            heartbeat_at=django_timezone.now(),
+        )
+
+        self.update_state(
+            state="PROGRESS",
+            meta={
+                "message": "Processing orphan files candidates..."
+            },
+        )
+
+        result = cleanup_orphan_files(
+            scan_job=job.source_scan,
+            cleanup_job=job,
+            mode=mode,
+            selected_objects=selected_objects,
+        )
+
+        now = django_timezone.now()
+
+        result = {
+            **result,
+            "prefix": job.prefix,
+            "grace_period_days": job.grace_period_days,
+            "completed_at": now.isoformat(),
+        }
+
+        OrphanFilesJob.objects.filter(
+            pk=job.pk,
+        ).update(
+            status=OrphanFilesJob.Status.SUCCESS,
+            result=result,
+            completed_at=now,
+            heartbeat_at=now,
+            error="",
+        )
+
+        return result
+
+    except Exception as exc:
+
+        now = django_timezone.now()
+
+        OrphanFilesJob.objects.filter(
+            pk=job.pk,
+        ).update(
+            status=OrphanFilesJob.Status.FAILURE,
+            error=str(exc),
+            completed_at=now,
+            heartbeat_at=now,
+        )
+
+        raise

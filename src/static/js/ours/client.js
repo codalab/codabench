@@ -392,14 +392,23 @@ CODALAB.api = {
     get_users_usage: (filters) => {
         return CODALAB.api.request('GET', `${URLS.API}analytics/users_usage/`, filters);
     },
-    delete_orphan_files: () => {
-        return CODALAB.api.request('DELETE', `${URLS.API}analytics/delete_orphan_files/`)
+    start_orphan_files_scan: (grace_period_days = 7, prefix = null) => {
+        return CODALAB.api.request('POST', `${URLS.API}analytics/orphan-files/scan/`, {
+            grace_period_days: grace_period_days,
+            prefix: prefix
+        });
     },
-    get_orphan_files: () => {
-        return CODALAB.api.request('GET', `${URLS.API}analytics/get_orphan_files/`)
+    get_orphan_files_scan_status: (task_id) => {
+        return CODALAB.api.request('GET', `${URLS.API}analytics/orphan-files/scan/${task_id}/`);
     },
-    check_orphans_deletion_status: () => {
-        return CODALAB.api.request('GET', `${URLS.API}analytics/check_orphans_deletion_status/`)
+    start_orphan_files_cleanup: (payload) => {
+        return CODALAB.api.request('POST', `${URLS.API}analytics/orphan-files/cleanup/`, payload);
+    },
+    get_orphan_files_cleanup_status: (task_id) => {
+        return CODALAB.api.request('GET',`${URLS.API}analytics/orphan-files/cleanup/${task_id}/`);
+    },
+    get_current_orphan_files_job: () => {
+        return CODALAB.api.request('GET', `${URLS.API}analytics/orphan-files/current/`);
     },
     /*---------------------------------------------------------------------
          User Quota and Cleanup

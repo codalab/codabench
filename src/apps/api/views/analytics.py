@@ -1,6 +1,11 @@
-from django.db.models import Count, F
+from django.db import IntegrityError, transaction
+from uuid import UUID, uuid4
+from django.shortcuts import get_object_or_404
+
+from django.db.models import Q, Count, F
 from django.contrib.auth import get_user_model
 from django.http import Http404
+from analytics.orphan_files.persistence import get_current_scan_result
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.views import APIView
@@ -10,9 +15,11 @@ from rest_framework.filters import BaseFilterBackend
 from rest_framework.decorators import api_view
 from rest_framework_csv import renderers as r
 from competitions.models import Competition, Submission
-from analytics.models import StorageUsageHistory, CompetitionStorageDataPoint, UserStorageDataPoint
+from analytics.models import OrphanFileCandidate, OrphanFilesJob, StorageUsageHistory, CompetitionStorageDataPoint, UserStorageDataPoint
 from api.serializers.analytics import AnalyticsSerializer
-from apps.analytics.tasks import delete_orphan_files as delete_orphan_files_async_task
+from analytics.tasks import scan_orphan_files_task, cleanup_orphan_files_task
+from analytics.orphan_files.cleanup import is_allowed_object, filter_candidates_by_prefix
+from analytics.orphan_files.storage import get_allowed_prefixes
 
 import os
 import datetime
@@ -22,7 +29,6 @@ logger = logging.getLogger(__name__)
 
 
 User = get_user_model()
-delete_orphan_files_task = None
 
 
 def merge_dicts(d1, d2):
@@ -262,43 +268,6 @@ def users_usage(request):
     return Response(response, status=status.HTTP_200_OK)
 
 
-@api_view(["GET"])
-def get_orphan_files(request):
-    """
-    Get the orphan files based on the last storage analytics
-    """
-
-    if not request.user.is_superuser:
-        raise PermissionDenied(detail="Admin only")
-
-    # Find most recent file
-    most_recent_log_file = get_most_recent_storage_inconsistency_log_file()
-    if not most_recent_log_file:
-        logger.warning("No storage inconsistency log file found.")
-        return Response({"message": "No storage inconsistency log file found."}, status=status.HTTP_404_NOT_FOUND)
-
-    # Get the list of orphan files from the content of the most recent log file
-    log_folder = "/app/logs/"
-    orphan_files_path = get_files_path_from_orphan_log_file(os.path.join(log_folder, most_recent_log_file))
-
-    return Response({"data": orphan_files_path}, status=status.HTTP_200_OK)
-
-
-@api_view(["DELETE"])
-def delete_orphan_files(request):
-    """
-    Start the deletion of orphan files task
-    """
-
-    if not request.user.is_superuser:
-        raise PermissionDenied(detail="Admin only")
-
-    global delete_orphan_files_task
-    delete_orphan_files_task = delete_orphan_files_async_task.delay()
-
-    return Response({"success": True, "message": "orphan files deletion started"}, status=status.HTTP_200_OK)
-
-
 def get_most_recent_storage_inconsistency_log_file():
     logger = logging.getLogger(__name__)
 
@@ -326,44 +295,490 @@ def get_most_recent_storage_inconsistency_log_file():
     return most_recent_log_file
 
 
-def get_files_path_from_orphan_log_file(log_file_path):
-    logger = logging.getLogger(__name__)
+ACTIVE_ORPHAN_JOB_STATUSES = (
+    OrphanFilesJob.Status.PENDING,
+    OrphanFilesJob.Status.STARTED,
+    OrphanFilesJob.Status.PROGRESS,
+)
 
-    files_path = []
+ELIGIBLE_CANDIDATE_STATUSES = (
+    OrphanFileCandidate.Status.PENDING,
+    OrphanFileCandidate.Status.FAILED,
+)
 
-    try:
-        with open(log_file_path) as log_file:
-            lines = log_file.readlines()
-            orphan_files_lines = []
-            for i, line in enumerate(lines):
-                if "Orphaned files" in line:
-                    orphan_files_lines = lines[i + 1:]
-                    break
 
-            for orphan_files_line in orphan_files_lines:
-                files_path.append(orphan_files_line.split(maxsplit=1)[0])
-    except FileNotFoundError:
-        logger.error(f"File '{log_file_path}' does not exist.")
-    except PermissionError:
-        logger.error(f"Permission denied for reading the file '{log_file_path}'.")
-    except IOError as e:
-        logger.error(f"An I/O error occurred while accessing the file at {log_file_path}: {e}")
+def get_active_orphan_job():
+    return OrphanFilesJob.objects.filter(
+        status__in=ACTIVE_ORPHAN_JOB_STATUSES,
+    ).first()
 
-    return files_path
+
+def get_latest_orphan_scan():
+    return OrphanFilesJob.objects.filter(
+        job_type=OrphanFilesJob.JobType.SCAN,
+    ).order_by("-created_at", "-pk").first()
+
+
+def serialize_orphan_job(job, include_result=True):
+    if job is None:
+        return None
+
+    response = {
+        "task_id": str(job.task_id),
+        "job_type": job.job_type,
+        "status": job.status,
+        "prefix": job.prefix,
+        "grace_period_days": job.grace_period_days,
+        "created_at": job.created_at,
+        "started_at": job.started_at,
+        "completed_at": job.completed_at,
+        "heartbeat_at": job.heartbeat_at,
+        "error": job.error,
+        "source_scan_task_id": (
+            str(job.source_scan.task_id)
+            if job.source_scan_id
+            else None
+        ),
+    }
+
+    if include_result:
+        if (
+            job.job_type == OrphanFilesJob.JobType.SCAN
+            and job.status == OrphanFilesJob.Status.SUCCESS
+        ):
+            response["result"] = get_current_scan_result(job)
+        else:
+            response["result"] = job.result
+
+    return response
+
+
+def orphan_job_conflict_response():
+    return Response(
+        {
+            "detail": "An orphan files job is already running.",
+            "active_job": serialize_orphan_job(
+                get_active_orphan_job(),
+                include_result=False,
+            ),
+        },
+        status=status.HTTP_409_CONFLICT,
+    )
+
+
+def dispatch_orphan_job(job, task, kwargs):
+    """
+    Dispatch the Celery task using the persistent job UUID.
+    """
+
+    def publish():
+        try:
+            task.apply_async(
+                task_id=str(job.task_id),
+                kwargs=kwargs,
+            )
+
+        except Exception:
+            logger.exception(
+                "Could not confirm dispatch of orphan job %s",
+                job.task_id,
+            )
+
+            # Keep the job active because a broker error
+            # does not prove that publication failed.
+            OrphanFilesJob.objects.filter(
+                pk=job.pk,
+                status=OrphanFilesJob.Status.PENDING,
+            ).update(
+                error="Task dispatch could not be confirmed.",
+            )
+
+    transaction.on_commit(publish)
 
 
 @api_view(["GET"])
-def check_orphans_deletion_status(request):
+def current_orphan_files_job(request):
     """
-    Get the orphan files deletion task status.
-    Return one of ["PENDING", "STARTED", "SUCCESS", "FAILURE", "RETRY", "REVOKED"]
-    """
+    Return the active orphan files job, the latest eligible
+    scan metadata and the available storage prefixes.
 
+    Scan results are loaded separately on demand.
+    """
     if not request.user.is_superuser:
         raise PermissionDenied(detail="Admin only")
 
-    state = None
-    if delete_orphan_files_task:
-        state = delete_orphan_files_task.state
+    active_job = get_active_orphan_job()
+    last_scan = get_latest_orphan_scan()
 
-    return Response({"status": state}, status=status.HTTP_200_OK)
+    if (
+        last_scan is not None
+        and last_scan.status != OrphanFilesJob.Status.SUCCESS
+    ):
+        last_scan = None
+
+    last_cleanup = OrphanFilesJob.objects.filter(
+        job_type=OrphanFilesJob.JobType.CLEANUP,
+    ).order_by("-created_at", "-pk").first()
+
+    return Response(
+        {
+            "active_job": serialize_orphan_job(
+                active_job,
+                include_result=False,
+            ),
+            "last_scan": serialize_orphan_job(
+                last_scan,
+                include_result=False,
+            ),
+            "last_cleanup": serialize_orphan_job(
+                last_cleanup,
+                include_result=False,
+            ),
+            "allowed_prefixes": get_allowed_prefixes(),
+        },
+        status=status.HTTP_200_OK,
+    )
+
+
+@api_view(["POST"])
+def start_orphan_files_scan(request):
+    """
+    Create a persistent scan job before dispatching Celery.
+
+    Optionally restrict the scan to a managed storage prefix.
+    """
+    if not request.user.is_superuser:
+        raise PermissionDenied(detail="Admin only")
+
+    grace_period_days = request.data.get(
+        "grace_period_days", 7
+    )
+
+    prefix = request.data.get("prefix")
+
+    if (
+        isinstance(grace_period_days, bool)
+        or not isinstance(grace_period_days, int)
+        or not 0 <= grace_period_days <= 3650
+    ):
+        return Response(
+            {
+                "detail": (
+                    "grace_period_days must be an integer "
+                    "between 0 and 3650"
+                )
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if prefix is not None and (
+        not isinstance(prefix, str)
+        or prefix not in get_allowed_prefixes()
+    ):
+        return Response(
+            {"detail": "Invalid storage prefix"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        with transaction.atomic():
+
+            if get_active_orphan_job():
+                return orphan_job_conflict_response()
+
+            job = OrphanFilesJob.objects.create(
+                task_id=uuid4(),
+                job_type=OrphanFilesJob.JobType.SCAN,
+                status=OrphanFilesJob.Status.PENDING,
+                grace_period_days=grace_period_days,
+                prefix=prefix,
+            )
+
+            dispatch_orphan_job(
+                job=job,
+                task=scan_orphan_files_task,
+                kwargs={},
+            )
+
+    except IntegrityError:
+        if get_active_orphan_job():
+            return orphan_job_conflict_response()
+        raise
+
+    return Response(
+        serialize_orphan_job(
+            job,
+            include_result=False,
+        ),
+        status=status.HTTP_202_ACCEPTED,
+    )
+
+
+@api_view(["GET"])
+def orphan_files_scan_status(request, task_id):
+    """
+    Return the persistent scan status.
+    """
+    if not request.user.is_superuser:
+        raise PermissionDenied(detail="Admin only")
+
+    job = get_object_or_404(
+        OrphanFilesJob,
+        task_id=task_id,
+        job_type=OrphanFilesJob.JobType.SCAN,
+    )
+
+    return Response(
+        serialize_orphan_job(job),
+        status=status.HTTP_200_OK,
+    )
+
+
+@api_view(["POST"])
+def start_orphan_files_cleanup(request):
+    """
+    Create a cleanup job associated with a successful scan.
+
+    Supported cleanup modes:
+      - all: all remaining candidates from the source scan
+      - selected: explicitly selected candidates
+      - prefix: remaining candidates matching a managed prefix
+    """
+    if not request.user.is_superuser:
+        raise PermissionDenied(detail="Admin only")
+
+    data = request.data
+    mode = data.get("mode", "all")
+    requested_prefix = data.get("prefix")
+
+    if mode not in ("all", "selected", "prefix"):
+        return Response(
+            {"detail": "Invalid cleanup mode"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if mode == "prefix":
+
+        if (
+            not isinstance(requested_prefix, str)
+            or requested_prefix not in get_allowed_prefixes()
+        ):
+            return Response(
+                {"detail": "Invalid or missing cleanup prefix"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+    elif requested_prefix is not None:
+        return Response(
+            {
+                "detail": (
+                    "prefix is only valid in prefix mode"
+                )
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        scan_task_id = UUID(str(data.get("scan_task_id")))
+
+    except (TypeError, ValueError):
+        return Response(
+            {"detail": "Invalid or missing scan_task_id"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    selected_objects = None
+
+    if mode == "selected":
+
+        selected_objects = data.get("selected_objects")
+
+        if (
+            not isinstance(selected_objects, list)
+            or not 1 <= len(selected_objects) <= 100
+        ):
+            return Response(
+                {"detail": "Select between 1 and 100 objects"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        identities = set()
+
+        for item in selected_objects:
+
+            if not isinstance(item, dict):
+                return Response(
+                    {"detail": "Invalid selected object"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            bucket = item.get("bucket")
+            key = item.get("key")
+
+            if not is_allowed_object(bucket, key):
+                return Response(
+                    {"detail": "Object outside allowed prefixes"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            identities.add((bucket, key))
+
+        if len(identities) != len(selected_objects):
+            return Response(
+                {"detail": "Duplicate selected objects"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+    elif data.get("selected_objects") is not None:
+        return Response(
+            {
+                "detail": (
+                    "selected_objects is only valid "
+                    "in selected mode"
+                )
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        with transaction.atomic():
+
+            if get_active_orphan_job():
+                return orphan_job_conflict_response()
+
+            scan = get_object_or_404(
+                OrphanFilesJob.objects.select_for_update(),
+                task_id=scan_task_id,
+                job_type=OrphanFilesJob.JobType.SCAN,
+            )
+
+            if scan.status != OrphanFilesJob.Status.SUCCESS:
+                return Response(
+                    {"detail": "The source scan is not successful"},
+                    status=status.HTTP_409_CONFLICT,
+                )
+
+            latest_scan = get_latest_orphan_scan()
+
+            if latest_scan is None or latest_scan.pk != scan.pk:
+                return Response(
+                    {"detail": "A newer scan exists. Reload the page."},
+                    status=status.HTTP_409_CONFLICT,
+                )
+
+            # Determine the effective cleanup scope.
+            if mode == "prefix":
+
+                if (
+                    scan.prefix is not None
+                    and requested_prefix != scan.prefix
+                ):
+                    return Response(
+                        {
+                            "detail": (
+                                "Cleanup prefix outside "
+                                "source scan scope"
+                            )
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                cleanup_prefix = requested_prefix
+
+            else:
+                # All and selected modes inherit the source scan scope.
+                cleanup_prefix = scan.prefix
+
+            candidates = scan.candidates.filter(
+                status__in=ELIGIBLE_CANDIDATE_STATUSES,
+            )
+
+            candidates = filter_candidates_by_prefix(
+                candidates,
+                cleanup_prefix,
+            )
+
+            if mode == "selected":
+
+                selection = Q()
+
+                for bucket, key in identities:
+                    selection |= Q(
+                        bucket=bucket,
+                        key=key,
+                    )
+
+                candidates = candidates.filter(selection)
+
+                if candidates.count() != len(identities):
+                    return Response(
+                        {
+                            "detail": (
+                                "Some selected objects are no longer "
+                                "eligible for cleanup"
+                            )
+                        },
+                        status=status.HTTP_409_CONFLICT,
+                    )
+
+            elif not candidates.exists():
+                return Response(
+                    {
+                        "detail": (
+                            "No remaining orphan files "
+                            "in the requested scope"
+                        )
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            job = OrphanFilesJob.objects.create(
+                task_id=uuid4(),
+                job_type=OrphanFilesJob.JobType.CLEANUP,
+                status=OrphanFilesJob.Status.PENDING,
+                grace_period_days=scan.grace_period_days,
+                prefix=cleanup_prefix,
+                source_scan=scan,
+            )
+
+            dispatch_orphan_job(
+                job=job,
+                task=cleanup_orphan_files_task,
+                kwargs={
+                    "mode": mode,
+                    "selected_objects": selected_objects,
+                },
+            )
+
+    except IntegrityError:
+        if get_active_orphan_job():
+            return orphan_job_conflict_response()
+        raise
+
+    return Response(
+        serialize_orphan_job(
+            job,
+            include_result=False,
+        ),
+        status=status.HTTP_202_ACCEPTED,
+    )
+
+
+@api_view(["GET"])
+def orphan_files_cleanup_status(request, task_id):
+    """
+    Return the persistent cleanup status.
+    """
+    if not request.user.is_superuser:
+        raise PermissionDenied(detail="Admin only")
+
+    job = get_object_or_404(
+        OrphanFilesJob,
+        task_id=task_id,
+        job_type=OrphanFilesJob.JobType.CLEANUP,
+    )
+
+    return Response(
+        serialize_orphan_job(job),
+        status=status.HTTP_200_OK,
+    )
