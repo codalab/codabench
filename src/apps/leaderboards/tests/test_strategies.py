@@ -33,6 +33,19 @@ class BestModeStrategyTests(TestCase):
             SubmissionScoreFactory(column=column, score=score, submissions=submission)
         return submission
 
+    def make_multi_task_submission(self, created_when, task_scores):
+        """Create a finished parent with one finished child per primary score in task_scores.
+        Each child's score row is also added to the parent, as upload_submission_scores does."""
+        parent = SubmissionFactory(owner=self.owner, phase=self.phase, leaderboard=None, status=Submission.FINISHED,
+                                   created_when=created_when, has_children=True)
+        children = []
+        for score in task_scores:
+            child = SubmissionFactory(owner=self.owner, phase=self.phase, leaderboard=None,
+                                      status=Submission.FINISHED, created_when=created_when, parent=parent)
+            SubmissionScoreFactory(column=self.accuracy, score=score, submissions=[child, parent])
+            children.append(child)
+        return parent, children
+
     def put_on_leaderboard(self, submission):
         """Run the best strategy as it runs after scores are uploaded, then reload the submission"""
         BestModeStrategy().put_on_leaderboard(request=None, submission_pk=submission.pk)
@@ -136,6 +149,60 @@ class BestModeStrategyTests(TestCase):
 
         assert BestModeStrategy()._candidate_pks(second_child) == [second_child.pk, parent.pk]
         assert BestModeStrategy()._candidate_pks(first_child) == [first_child.pk, parent.pk]
+
+    def test_multi_task_parent_is_ranked_on_mean_across_tasks(self):
+        """A newer multi-task submission has the best single task score (1.0) but a lower mean (0.55 against 0.9).
+        The older one must stay as best: neither the newer parent nor its best child may replace it"""
+        _, older_children = self.make_multi_task_submission(created_when=now() - timedelta(hours=1), task_scores=[0.9, 0.9])
+        _, newer_children = self.make_multi_task_submission(created_when=now(), task_scores=[1.0, 0.1])
+
+        self.put_on_leaderboard(submission=newer_children[-1])
+
+        for child in older_children + newer_children:
+            child.refresh_from_db()
+        assert all(child.leaderboard == self.leaderboard for child in older_children)
+        assert all(child.leaderboard is None for child in newer_children)
+
+    def test_multi_task_parent_with_better_mean_replaces_older(self):
+        """A newer multi-task submission has a better mean across tasks; all its children must go on the leaderboard"""
+        _, older_children = self.make_multi_task_submission(created_when=now() - timedelta(hours=1), task_scores=[0.5, 0.5])
+        _, newer_children = self.make_multi_task_submission(created_when=now(), task_scores=[0.8, 0.7])
+
+        self.put_on_leaderboard(submission=newer_children[-1])
+
+        for child in older_children + newer_children:
+            child.refresh_from_db()
+        assert all(child.leaderboard == self.leaderboard for child in newer_children)
+        assert all(child.leaderboard is None for child in older_children)
+
+    def test_child_scored_before_its_siblings_keeps_current_best(self):
+        """The first task of a new multi-task submission sends a high score while the other task is still running.
+        The current best must stay on the leaderboard and the child must not go on it alone"""
+        current_best = self.make_submission(created_when=now() - timedelta(hours=1), scores={self.accuracy: 0.6})
+        Submission.objects.filter(pk=current_best.pk).update(leaderboard=self.leaderboard)
+        parent = self.make_submission(created_when=now(), scores={}, status=Submission.RUNNING, has_children=True)
+        first_child = self.make_submission(created_when=now(), scores={}, status=Submission.SCORING, parent=parent)
+        self.make_submission(created_when=now(), scores={}, status=Submission.RUNNING, parent=parent)
+        SubmissionScoreFactory(column=self.accuracy, score=1.0, submissions=[first_child, parent])
+
+        self.put_on_leaderboard(submission=first_child)
+        current_best.refresh_from_db()
+
+        assert current_best.leaderboard == self.leaderboard
+        assert first_child.leaderboard is None
+
+    def test_duplicate_score_rows_are_not_added_up(self):
+        """An old submission has two copies of its 0.6 score row (from before repeated uploads were rejected).
+        It must rank on 0.6, not on 1.2, so the 0.9 submission is chosen as best"""
+        duplicated = self.make_submission(created_when=now() - timedelta(hours=1), scores={self.accuracy: 0.6})
+        SubmissionScoreFactory(column=self.accuracy, score=0.6, submissions=duplicated)
+        better = self.make_submission(created_when=now(), scores={self.accuracy: 0.9})
+
+        self.put_on_leaderboard(submission=better)
+        duplicated.refresh_from_db()
+
+        assert better.leaderboard == self.leaderboard
+        assert duplicated.leaderboard is None
 
 
 class ForceLastStrategyTests(APITestCase):

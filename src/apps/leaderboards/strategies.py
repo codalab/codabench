@@ -1,6 +1,6 @@
 import logging
 
-from django.db.models import F, Sum, Q
+from django.db.models import F, Avg, Q
 from rest_framework.generics import get_object_or_404
 
 from competitions.models import Submission
@@ -92,6 +92,11 @@ class BestModeStrategy(BaseModeStrategy):
         """fetch all submission, then choose best submission and put on leaderboard"""
         submission, phase, leaderboard = super().get_submission_and_phase_and_leaderboard(submission_pk=submission_pk)
 
+        # A child of a multi-task submission is not ranked on its own: wait until its parent is a candidate, so the
+        # current best stays on the leaderboard while the other tasks are still running
+        if submission.parent_id is not None and submission.parent_id not in self._candidate_pks(submission):
+            return
+
         Submission.objects.filter(phase=phase, owner=submission.owner).update(leaderboard=None)
         best_submission = self._choose_best_submission(leaderboard=leaderboard, owner=submission.owner, phase=phase,
                                                        scored_submission=submission)
@@ -105,18 +110,22 @@ class BestModeStrategy(BaseModeStrategy):
         primary_col = leaderboard.columns.get(index=leaderboard.primary_index)
         ordering = [self._null_last_order(name='primary_col', sorting=primary_col.sorting)]
 
+        # Only top-level submissions are ranked. A multi-task parent holds the score rows of all its children, so
+        # Avg ranks it on its mean across tasks; ranking its children too would let one task beat the whole submission.
+        # Avg also gives a single-row score unchanged, and the real score for old duplicate rows instead of a multiple.
         submissions = Submission.objects.filter(phase=phase,
                                                 owner=owner,
+                                                parent__isnull=True,
                                                 is_soft_deleted=False) \
             .filter(Q(status=Submission.FINISHED) | Q(pk__in=self._candidate_pks(scored_submission))) \
             .select_related('owner').prefetch_related('scores') \
-            .annotate(primary_col=Sum('scores__score', filter=Q(scores__column=primary_col)))
+            .annotate(primary_col=Avg('scores__score', filter=Q(scores__column=primary_col)))
 
         for column in leaderboard.columns.exclude(id=primary_col.id).order_by('index'):
             col_name = f'col{column.index}'
             ordering.append(self._null_last_order(name=col_name, sorting=column.sorting))
             kwargs = {
-                col_name: Sum('scores__score', filter=Q(scores__column__index=column.index))
+                col_name: Avg('scores__score', filter=Q(scores__column__index=column.index))
             }
             submissions = submissions.annotate(**kwargs)
 

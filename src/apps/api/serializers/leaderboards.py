@@ -1,4 +1,4 @@
-from django.db.models import Prefetch, Sum, Q, F
+from django.db.models import Prefetch, Avg, Q, F
 from drf_writable_nested import WritableNestedModelSerializer
 from rest_framework import serializers
 
@@ -134,7 +134,7 @@ class LeaderboardEntriesSerializer(serializers.ModelSerializer):
                 if primary_col.sorting == 'desc'
                 else F('primary_col').asc(nulls_last=True)
             ]
-            submissions = submissions_qs.annotate(primary_col=Sum('scores__score', filter=Q(scores__column=primary_col)))
+            submissions = submissions_qs.annotate(primary_col=Avg('scores__score', filter=Q(scores__column=primary_col)))
 
         for column in instance.columns.exclude(id=primary_col.id).order_by('index'):
             if column.computation == Column.AVERAGE_RANK:
@@ -146,7 +146,7 @@ class LeaderboardEntriesSerializer(serializers.ModelSerializer):
                 else F(col_name).asc(nulls_last=True)
             )
             submissions = submissions.annotate(**{
-                col_name: Sum('scores__score', filter=Q(scores__column__index=column.index))
+                col_name: Avg('scores__score', filter=Q(scores__column__index=column.index))
             })
 
         submissions = submissions.order_by(*ordering, 'created_when')
@@ -234,7 +234,7 @@ class LeaderboardPhaseSerializer(serializers.ModelSerializer):
                 if primary_col.sorting == 'desc'
                 else F('primary_col').asc(nulls_last=True)
             ]
-            submissions = submissions_qs.annotate(primary_col=Sum('scores__score', filter=Q(scores__column=primary_col)))
+            submissions = submissions_qs.annotate(primary_col=Avg('scores__score', filter=Q(scores__column=primary_col)))
 
         for column in all_columns:
             if column.hidden or column.id == primary_col.id or column.computation == Column.AVERAGE_RANK:
@@ -246,7 +246,7 @@ class LeaderboardPhaseSerializer(serializers.ModelSerializer):
                 else F(col_name).asc(nulls_last=True)
             )
             submissions = submissions.annotate(**{
-                col_name: Sum('scores__score', filter=Q(scores__column__index=column.index))
+                col_name: Avg('scores__score', filter=Q(scores__column__index=column.index))
             })
 
         submissions = submissions.order_by(*ordering, 'created_when')
