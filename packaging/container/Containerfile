@@ -17,7 +17,7 @@ ENV PATH=$PATH:/.venv/bin
 COPY pyproject.toml uv.lock ./
 
 # Install dependencies
-RUN uv sync --all-extras --frozen
+RUN uv sync --frozen
 
 WORKDIR /app
 ENTRYPOINT ["/bin/bash", "-c"]

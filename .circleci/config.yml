@@ -22,7 +22,7 @@ jobs:
       - run:
           name: "Docker: Build containers and collect static files"
           command: |
-            docker compose up -d
+            docker compose -f develop.yml up -d
 
       - run:
           name: "Lint: Check code style with flake8"
@@ -49,7 +49,7 @@ jobs:
       - run:
           name: "Docker: Build containers and collect static files"
           command: |
-            docker compose up -d
+            docker compose -f develop.yml up -d
 
       - run:
           name: "Get compute worker, site worker and django logs"
@@ -84,12 +84,6 @@ jobs:
           command: |
             mkdir -p var/minio/public
             mkdir -p var/minio/private
-      - run:
-            name: "Get compute worker, site worker and django logs"
-            command: |
-              mkdir dockerLogs
-              docker compose logs -f site_worker compute_worker django > dockerLogs/django_workers.log
-            background: true
 
       - run:
           name: "Setup: Prepare the playwright environment"
@@ -104,7 +98,7 @@ jobs:
       - run:
           name: "Docker: Build containers and collect static files"
           command: |
-            docker compose up -d
+            docker compose -f develop.yml up -d
           background: true
 
       - run:
@@ -115,6 +109,12 @@ jobs:
             docker pull codalab/codalab-legacy:py3
             docker pull vergilgxw/autotable:v2
 
+      - run:
+            name: "Get compute worker, site worker and django logs"
+            command: |
+              mkdir dockerLogs
+              docker compose logs -f site_worker compute_worker django > dockerLogs/django_workers.log
+            background: true
       # We give the name of the test files manually because we need test_auth.py to be run before the others for state.json file to be created
       - run:
           name: "Tests: Run end-to-end (E2E) tests"
