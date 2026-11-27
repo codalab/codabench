@@ -134,6 +134,26 @@ send_mail(
 
 If the email is not received, check the error raised in the shell and the `django` container logs.
 
+#### Using Amazon SES
+
+Amazon SES can be used through its SMTP interface, with the same settings as above:
+
+```ini title=".env"
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=email-smtp.eu-west-1.amazonaws.com
+EMAIL_HOST_USER=<SES SMTP username>
+EMAIL_HOST_PASSWORD=<SES SMTP password>
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+DEFAULT_FROM_EMAIL="Codabench <noreply@yourdomain.com>"
+SERVER_EMAIL=noreply@yourdomain.com
+```
+
+- `EMAIL_HOST` must match the AWS region where your SES identity is set up (`email-smtp.<region>.amazonaws.com`).
+- The SMTP username and password are **not** your AWS access keys. Create them in the SES console under *SMTP settings → Create SMTP credentials*. Do not reuse `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` from the storage settings.
+- The domain or address used in `DEFAULT_FROM_EMAIL` and `SERVER_EMAIL` must be verified in SES, in the same region.
+- New SES accounts start in the *sandbox*, where emails can only be sent to verified addresses. Request production access in the SES console before opening the platform to users.
+
 ## Open Access Permissions for following port number
 
 If you are deploying on a Linux server, which usually has a firewall, you need to open access permissions to the following port numbers
