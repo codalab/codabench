@@ -1260,19 +1260,19 @@ class Run:
         docker will create if necessary, but other container engines such as
         podman may not."""
         # Take our list of paths and smash 'em together
-        path = os.path.join(*paths)
+        container_path = os.path.join(*paths)
+
+        # Create if necessary. This must be done on the path inside the worker
+        # container (which is bind-mounted from HOST_DIRECTORY): the host path
+        # only exists inside the container when HOST_DIRECTORY == BASE_DIR (#2379)
+        os.makedirs(container_path, exist_ok=True)
 
         # pull front of path, which points to the location inside the container
-        path = path[len(Settings.BASE_DIR):]
+        relative_path = container_path[len(Settings.BASE_DIR):]
 
         # add host to front, so when we run commands in the container on the host they
         # can be seen properly
-        path = os.path.join(Settings.HOST_DIRECTORY, path)
-
-        # Create if necessary
-        os.makedirs(path, exist_ok=True)
-
-        return path
+        return os.path.join(Settings.HOST_DIRECTORY, relative_path)
 
     async def _run_program_directory(self, kind, program_dir):
         """
