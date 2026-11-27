@@ -578,7 +578,6 @@ AWS_DEFAULT_REGION = os.environ.get('AWS_DEFAULT_REGION')
 AWS_SES_REGION_NAME = os.environ.get('AWS_SES_REGION_NAME', AWS_DEFAULT_REGION)
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'Codabench <noreply@codabench.org>')
 SERVER_EMAIL = os.environ.get('SERVER_EMAIL', 'noreply@codabench.org')
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@codabench.org')
 
 CONTACT_EMAIL = os.environ.get('CONTACT_EMAIL', 'info@codabench.org')
 
