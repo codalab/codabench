@@ -2,6 +2,7 @@ import re
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from .models import User
+from .usernames import is_its_own_slug, is_taken
 
 
 class SignUpForm(UserCreationForm):
@@ -23,6 +24,18 @@ class SignUpForm(UserCreationForm):
             raise forms.ValidationError(
                 "Username must have at least 5 characters and at most 50 characters"
             )
+
+        # Check that the username is its own slug. Why: see profiles/usernames.py
+        # With the characters above, slugify only changes '-' or '_' at the start or the end, and '--'.
+        if not is_its_own_slug(data):
+            raise forms.ValidationError(
+                "Username must start and end with a letter or a number, and cannot contain two hyphens in a row."
+            )
+
+        # Check that no user has this username or this slug.
+        # Why here: the model checks the username, but not the slug, so a slug already used made the save fail.
+        if is_taken(data):
+            raise forms.ValidationError("A user with that username already exists.")
         return data
 
     def clean_email(self):

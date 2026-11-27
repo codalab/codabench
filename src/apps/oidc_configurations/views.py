@@ -5,7 +5,7 @@ import requests
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Auth_Organization
 from django.contrib.auth import get_user_model, login
-import re
+from profiles.usernames import generate_unique_username
 
 logger = logging.getLogger(__name__)
 
@@ -164,13 +164,8 @@ def get_user_info(organization, access_token):
 
 def register_and_authenticate_user(request, user_email, user_nickname, organization):
 
-    if not user_nickname:
-        username = re.sub(r'[^a-zA-Z0-9]', '', user_email.split('@')[0])
-    else:
-        username = user_nickname
-
-    # Ensure the username is unique
-    username = create_unique_username(username)
+    # A free username that is its own slug, made from the nickname, or else from the start of the email
+    username = generate_unique_username(user_nickname or user_email.split('@')[0])
 
     # Create a new user
     user = User.objects.create(
@@ -191,50 +186,9 @@ def register_and_authenticate_user(request, user_email, user_nickname, organizat
         return redirect('accounts:login')
 
 
-def create_unique_username(username):
-    # Normalize the username to remove unsupported characters and ensure it's route-safe.
-    username = normalize_username(username)
-
-    # Truncate the username to fit within the maximum length allowed by the User model.
-    max_username_length = User._meta.get_field("username").max_length
-    username = username[:max_username_length]
-
-    # Check if the username already exists
-    if User.objects.filter(username=username).exists():
-        # If the username already exists, modify it to make it unique
-        suffix = 1
-        new_username = with_suffix(username, suffix, max_username_length)
-        while User.objects.filter(username=new_username).exists():
-            suffix += 1
-            new_username = with_suffix(username, suffix, max_username_length)
-        return new_username
-    else:
-        # If the username doesn't exist, use it as is
-        return username
-
-
 def get_user_by_email(email):
     try:
         user = User.objects.get(email=email)
         return user
     except User.DoesNotExist:
         return None
-
-
-def normalize_username(username):
-    # Keep OIDC names readable while removing unsupported chars.
-    # Keep in sync with profile URL regex: [-a-zA-Z0-9_]+
-    cleaned = re.sub(r'[^a-zA-Z0-9_-]', '', username.strip())
-    if not cleaned:
-        raise ValueError("OIDC username contains no valid route-safe characters")
-
-    return cleaned
-
-
-def with_suffix(base_username, suffix, max_username_length):
-    suffix = f"_{suffix}"
-    limit = max_username_length - len(suffix)
-    if limit < 1:
-        raise ValueError("Unable to create unique username within max length")
-
-    return f"{base_username[:limit]}{suffix}"
