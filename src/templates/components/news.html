@@ -21,11 +21,11 @@
                 {% if post.text %}
                     {# Shows the full text in the card, only visible when the text is cut off #}
                     <button type="button" class="news-card-toggle" hidden>
-                        <span class="news-card-toggle-label">Read more</span> <i class="angle down icon"></i>
+                        <span class="news-card-toggle-label">Read more</span> <i class="bi bi-chevron-down"></i>
                     </button>
                 {% endif %}
                 {% if post.link %}
-                    <a class="news-card-link" href="{{ post.link }}" target="_blank">Open link <i class="external alternate icon"></i></a>
+                    <a class="news-card-link" href="{{ post.link }}" target="_blank">Open link <i class="bi bi-box-arrow-up-right"></i></a>
                 {% endif %}
             </div>
         {% endif %}
@@ -55,7 +55,7 @@
         var card = toggle.closest('.news-card')
         var expanded = card.classList.toggle('news-card-expanded')
         toggle.querySelector('.news-card-toggle-label').textContent = expanded ? 'Show less' : 'Read more'
-        toggle.querySelector('.icon').className = expanded ? 'angle up icon' : 'angle down icon'
+        toggle.querySelector('.bi').className = expanded ? 'bi bi-chevron-up' : 'bi bi-chevron-down'
     })
 
     window.addEventListener('load', updateNewsReadMore)

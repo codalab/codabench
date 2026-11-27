@@ -4,9 +4,9 @@
 {% block title %}Public Benchmarks and Competitions - Codabench{% endblock %}
 
 {% block content %}
-    <div class="hb-section">
-        <div class="hb-header">
-            <h1 class="hb-title">Public Benchmarks and Competitions</h1>
+    <div class="page-section">
+        <div class="page-section-header">
+            <h1 class="page-section-title">Public Benchmarks and Competitions</h1>
             {% if user.is_authenticated %}
                 <div class="public-competitions-actions">
                     <a class="cb-button cb-button-primary" href="{% url 'competitions:create' %}"><i class="bi bi-plus-lg" aria-hidden="true"></i>Create</a>
@@ -147,7 +147,7 @@
         {% endif %}
 
         {% if competitions %}
-            <div class="hb-grid">
+            <div class="card-grid">
                 {% for competition in competitions %}
                     {% include "components/benchmark_card.html" with benchmark=competition %}
                 {% endfor %}

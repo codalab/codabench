@@ -11,8 +11,8 @@
     // Example: 7 tags on a narrow card -> "Computer Vision  Multimodal  +5 more".
     // Hovering "+N more" lists the hidden tags.
     function fit_tag_row(row) {
-        var tags = Array.prototype.slice.call(row.querySelectorAll('.bc-tag'))
-        var more = row.querySelector('.bc-tag-more')
+        var tags = Array.prototype.slice.call(row.querySelectorAll('.benchmark-card-tag'))
+        var more = row.querySelector('.benchmark-card-tag-more')
         var shown = Math.min(tags.length, most_tags_on_card)
 
         function hide_from(index) {
@@ -21,7 +21,7 @@
             })
             // Why only when one is left: a tag that can shrink would hide the overflow,
             // and no tag would move to "+N more"
-            tags[0].classList.toggle('bc-tag-alone', index === 1)
+            tags[0].classList.toggle('benchmark-card-tag-alone', index === 1)
 
             var hidden_tags = tags.slice(index)
             more.hidden = hidden_tags.length === 0
@@ -47,7 +47,7 @@
     }
 
     function fit_all_tag_rows() {
-        document.querySelectorAll('.bc-tag-row').forEach(fit_tag_row)
+        document.querySelectorAll('.benchmark-card-tag-row').forEach(fit_tag_row)
     }
 
     fit_all_tag_rows()

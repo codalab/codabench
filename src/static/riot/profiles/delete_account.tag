@@ -3,13 +3,13 @@
     <div id="delete-account">
         <!-- Same box as the critical announcements on the home page -->
         <div class="announcement announcement-critical settings-notice">
-            <i class="announcement-icon exclamation circle icon"></i>
+            <i class="announcement-icon bi bi-exclamation-circle-fill"></i>
             <div class="announcement-content">
                 <div class="announcement-title">Warning</div>
                 <div class="announcement-body">Deleting your account is permanent and cannot be undone. All your personal data, settings, and content will be permanently erased, and you will lose access to all services linked to your account. Please make sure to back up any important information before proceeding.</div>
             </div>
         </div>
-        <button type="button" class="settings-button settings-button-danger" onclick="{open_modal}">Permanently delete my account</button>
+        <button type="button" class="cb-button cb-button-danger" onclick="{open_modal}">Permanently delete my account</button>
     </div>
 
     <!-- Delete account modal. A click on the dark background closes it -->
@@ -21,7 +21,7 @@
             </div>
 
             <div class="announcement announcement-critical settings-notice">
-                <i class="announcement-icon exclamation circle icon"></i>
+                <i class="announcement-icon bi bi-exclamation-circle-fill"></i>
                 <div class="announcement-content">
                     <div class="announcement-title">This is extremely important.</div>
                     <div class="announcement-body">If you just want to change your username, contact us instead at <b>{contact_email}</b></div>
@@ -53,8 +53,8 @@
                 </div>
 
                 <div class="delete-modal-buttons">
-                    <button type="button" class="settings-button settings-button-secondary" onclick="{close_modal}">Cancel</button>
-                    <button type="submit" class="settings-button settings-button-danger" disabled="{is_submit_disabled}">Delete my account</button>
+                    <button type="button" class="cb-button cb-button-secondary" onclick="{close_modal}">Cancel</button>
+                    <button type="submit" class="cb-button cb-button-danger" disabled="{is_submit_disabled}">Delete my account</button>
                 </div>
             </form>
         </div>

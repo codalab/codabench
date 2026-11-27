@@ -2,11 +2,11 @@
     <form class="ui form" id="user-form">
         <!-- Photo: shows the current photo, or the new one as soon as it is chosen -->
         <div class="profile-edit-photo">
-            <div class="bc-logo profile-photo">
+            <div class="profile-photo">
                 <img if="{ photo }" src="{ photo }" alt="">
                 <span if="{ !photo }">{ parent.photo_letter }</span>
             </div>
-            <button type="button" class="settings-button settings-button-secondary" onclick="{ choose_photo }">Change photo</button>
+            <button type="button" class="cb-button cb-button-secondary" onclick="{ choose_photo }">Change photo</button>
             <input type="file" ref="photo" accept="image/*">
         </div>
         <div class="two fields">
@@ -61,8 +61,8 @@
         </div>
         <div class="ui error message"></div>
         <div class="profile-form-buttons">
-            <button type="button" class="settings-button settings-button-secondary" onclick="{cancel}">Cancel</button>
-            <button type="button" class="settings-button" onclick="{save.bind(this)}" ref="submit_button">Save</button>
+            <button type="button" class="cb-button cb-button-secondary" onclick="{cancel}">Cancel</button>
+            <button type="button" class="cb-button cb-button-primary" onclick="{save.bind(this)}" ref="submit_button">Save</button>
         </div>
     </form>
 

@@ -31,7 +31,7 @@ class NewsPageTests(TestCase):
 
         assert [post['title'] for post in resp.context['news_posts']] == [f"Post {number}" for number in range(12, 0, -1)]
         assert 'Page 1 of 2' in content
-        assert 'class="cb-pagination-button" href="?page=2" aria-label="Next page"><i class="arrow right icon"></i></a>' in content
+        assert 'class="cb-pagination-button" href="?page=2" aria-label="Next page"><i class="bi bi-arrow-right"></i></a>' in content
         assert content.count('class="cb-pagination-button"') == 1
 
     def test_second_page_shows_oldest_post_and_previous_button(self):
@@ -47,7 +47,7 @@ class NewsPageTests(TestCase):
 
         assert [post['title'] for post in resp.context['news_posts']] == ["Post 0"]
         assert 'Page 2 of 2' in content
-        assert 'class="cb-pagination-button" href="?page=1" aria-label="Previous page"><i class="arrow left icon"></i></a>' in content
+        assert 'class="cb-pagination-button" href="?page=1" aria-label="Previous page"><i class="bi bi-arrow-left"></i></a>' in content
         assert content.count('class="cb-pagination-button"') == 1
 
     def test_no_pagination_when_posts_fit_on_one_page(self):
@@ -98,9 +98,9 @@ class NewsPageTests(TestCase):
 
         content = self.client.get(reverse('pages:news')).content.decode()
 
-        assert '<h2 class="news-section-title">News</h2>' in content
+        assert '<h2 class="page-section-title">News</h2>' in content
         assert 'class="news-card"' in content
-        assert 'news-view-all' not in content
+        assert 'page-section-view-all' not in content
 
     def test_empty_state_shown_without_posts(self):
         """
@@ -110,7 +110,7 @@ class NewsPageTests(TestCase):
         """
         content = self.client.get(reverse('pages:news')).content.decode()
 
-        assert '<h2 class="news-section-title">News</h2>' in content
+        assert '<h2 class="page-section-title">News</h2>' in content
         assert 'class="empty-state-image" src="/static/img/empty.png"' in content
         assert '<h2 class="empty-state-title">There\'s no news to share right now.</h2>' in content
         assert '<p class="empty-state-description">Check back soon for updates on Codabench.</p>' in content

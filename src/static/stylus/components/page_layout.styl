@@ -1,0 +1,54 @@
+/* --------------------------------------------------------------------------------------
+ Page layout, used on all redesigned pages.
+ A page section has a header row with the title and an optional View all link,
+ then the content, for example a card grid.
+ */
+.page-section
+    width 100%
+    margin 3em 0
+    text-align left
+
+.page-section-header
+    display flex
+    justify-content space-between
+    align-items baseline
+    flex-wrap wrap
+    gap 8px
+    margin-bottom 1em
+
+// Why #page_content: Semantic UI h1 and h2 rules win otherwise
+#page_content .page-section-title
+    margin 0
+    color $cb-navy-900
+    font-size 1.6em
+
+.page-section-view-all
+    color $cb-blue-500
+    font-weight 500
+
+    &:hover
+        color $cb-blue-400
+
+    .bi
+        margin 0 0 0 2px
+
+// Grey line shown when a section has nothing to list
+.page-section-empty
+    margin 0
+    color #6b7785
+    font-size 14px
+
+// Cards, 3 per row. minmax(0, 1fr) keeps columns equal even with long content
+.card-grid
+    display grid
+    grid-template-columns repeat(3, minmax(0, 1fr))
+    gap 20px
+
+/* Tablets: 2 cards per row, phones: 1 card per row */
+@media only screen and (max-width 991px)
+    .card-grid
+        grid-template-columns repeat(2, minmax(0, 1fr))
+
+@media only screen and (max-width 625px)
+    .card-grid
+        grid-template-columns minmax(0, 1fr)

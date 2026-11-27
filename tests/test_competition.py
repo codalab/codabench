@@ -20,7 +20,7 @@ def browser_context_args(browser_context_args):
 
 def test_competition_upload(page: Page):
     page.goto("/")
-    page.get_by_role("link", name=" Benchmarks/Competitions").click()
+    page.get_by_role("link", name="Benchmarks/Competitions").click()
     page.get_by_role("link", name="Upload", exact=True).click()
     with page.expect_file_chooser() as fc_info:
         page.get_by_role("button", name="").click()
@@ -68,7 +68,7 @@ def task_creation(page):
 def test_manual_competition_creation(page: Page):
     task_creation(page)
     page.goto("/")
-    page.get_by_role("link", name=" Benchmarks/Competitions").click()
+    page.get_by_role("link", name="Benchmarks/Competitions").click()
     page.get_by_role("link", name="Create", exact=True).click()
     page.locator("competition-details input[type=text]").first.click()
     page.locator("competition-details input[type=text]").first.fill("Test Title")

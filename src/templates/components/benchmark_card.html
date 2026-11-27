@@ -1,12 +1,12 @@
 {% load humanize %}
 {# One benchmark card. Expects `benchmark` (serialized by HomePageBenchmarkSerializer) and optional `featured`. #}
 
-<div class="bc-card{% if featured %} bc-featured{% endif %}">
+<div class="benchmark-card{% if featured %} benchmark-card-featured{% endif %}">
     <!-- Makes the whole card clickable -->
-    <a class="bc-stretched" href="/competitions/{{ benchmark.id }}/" target="_blank" aria-label="{{ benchmark.title }}"></a>
+    <a class="benchmark-card-stretched-link" href="/competitions/{{ benchmark.id }}/" target="_blank" aria-label="{{ benchmark.title }}"></a>
 
-    <div class="bc-top">
-        <div class="bc-logo">
+    <div class="benchmark-card-top">
+        <div class="benchmark-card-logo">
             {% if benchmark.logo_url %}
                 <img src="{{ benchmark.logo_url }}" alt="">
             {% else %}
@@ -14,57 +14,57 @@
                 <span>{{ benchmark.title|first|upper }}</span>
             {% endif %}
         </div>
-        <div class="bc-head">
-            <div class="bc-labels">
-                {% if featured %}<span class="bc-featured-pill">Featured</span>{% endif %}
-                <span class="bc-type">{{ benchmark.competition_type }}</span>
+        <div class="benchmark-card-head">
+            <div class="benchmark-card-labels">
+                {% if featured %}<span class="benchmark-card-featured-pill">Featured</span>{% endif %}
+                <span class="benchmark-card-type">{{ benchmark.competition_type }}</span>
             </div>
-            <h3 class="bc-title">{{ benchmark.title }}</h3>
+            <h3 class="benchmark-card-title">{{ benchmark.title }}</h3>
         </div>
     </div>
 
-    <p class="bc-desc">{{ benchmark.description|default:"" }}</p>
+    <p class="benchmark-card-description">{{ benchmark.description|default:"" }}</p>
 
-    <div class="bc-meta">
+    <div class="benchmark-card-meta">
         <!-- Organizer: profile photo, or the first letter of the name when there is no photo -->
         {% if benchmark.owner_display_name %}
-            <span class="bc-organizer" title="Organizer">
-                <span class="bc-avatar">
+            <span class="benchmark-card-organizer" title="Organizer">
+                <span class="benchmark-card-avatar">
                     {% if benchmark.owner_photo_url %}
                         <img src="{{ benchmark.owner_photo_url }}" alt="">
                     {% else %}
                         {{ benchmark.owner_display_name|first|upper }}
                     {% endif %}
                 </span>
-                <span class="bc-organizer-name">{{ benchmark.owner_display_name }}</span>
+                <span class="benchmark-card-organizer-name">{{ benchmark.owner_display_name }}</span>
             </span>
         {% endif %}
         <!-- Date, numbers and prize -->
-        <div class="bc-pills">
+        <div class="benchmark-card-pills">
             {% if benchmark.first_phase_start %}
-                <span class="bc-pill" title="Start date"><i class="bi bi-calendar-event" aria-hidden="true"></i>{{ benchmark.first_phase_start }}</span>
+                <span class="benchmark-card-pill" title="Start date"><i class="bi bi-calendar-event" aria-hidden="true"></i>{{ benchmark.first_phase_start }}</span>
             {% endif %}
-            <span class="bc-pill" title="Participants"><i class="bi bi-people-fill" aria-hidden="true"></i>{{ benchmark.participants_count|intcomma }}</span>
-            <span class="bc-pill" title="Submissions"><i class="bi bi-file-earmark-arrow-up-fill" aria-hidden="true"></i>{{ benchmark.submissions_count|intcomma }}</span>
+            <span class="benchmark-card-pill" title="Participants"><i class="bi bi-people-fill" aria-hidden="true"></i>{{ benchmark.participants_count|intcomma }}</span>
+            <span class="benchmark-card-pill" title="Submissions"><i class="bi bi-file-earmark-arrow-up-fill" aria-hidden="true"></i>{{ benchmark.submissions_count|intcomma }}</span>
             {% if benchmark.reward %}
-                <span class="bc-pill bc-prize" title="Has a prize"><i class="bi bi-trophy-fill" aria-hidden="true"></i>Prize</span>
+                <span class="benchmark-card-pill benchmark-card-prize" title="Has a prize"><i class="bi bi-trophy-fill" aria-hidden="true"></i>Prize</span>
             {% endif %}
         </div>
     </div>
 
     <!-- Tags on one line. card_tags.js hides the ones that do not fit and fills in "+N more". -->
-    <div class="bc-tag-section">
+    <div class="benchmark-card-tag-section">
         {% if benchmark.tags %}
-            <div class="bc-tag-row">
-                <i class="bi bi-tag bc-tag-icon" aria-hidden="true"></i>
+            <div class="benchmark-card-tag-row">
+                <i class="bi bi-tag benchmark-card-tag-icon" aria-hidden="true"></i>
                 {% for tag in benchmark.tags %}
                     {# Matching tags are the ones the visitor filters by. They come first, so they are never hidden. #}
-                    <span class="bc-tag{% if tag.is_match %} bc-tag-match{% endif %}" title="{{ tag.category }}">{{ tag.name }}</span>
+                    <span class="benchmark-card-tag{% if tag.is_match %} benchmark-card-tag-match{% endif %}" title="{{ tag.category }}">{{ tag.name }}</span>
                 {% endfor %}
-                <span class="bc-tag-more" hidden></span>
+                <span class="benchmark-card-tag-more" hidden></span>
             </div>
         {% else %}
-            <span class="bc-tag-empty">No tags</span>
+            <span class="benchmark-card-tag-empty">No tags</span>
         {% endif %}
     </div>
 </div>

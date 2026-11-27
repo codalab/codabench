@@ -40,68 +40,6 @@
 .settings-notice
     margin-bottom 16px
 
-/* Buttons: same look as the home page buttons */
-.settings-button
-    display inline-block
-    padding 8px 16px
-    border 1px solid $cb-blue-500
-    border-radius 6px
-    background-color $cb-blue-500
-    color #fff
-    font-size 14px
-    font-weight 500
-    cursor pointer
-
-    &:hover
-        border-color darken($cb-blue-500, 12%)
-        background-color darken($cb-blue-500, 12%)
-        color #fff
-
-    &:disabled
-        opacity 0.5
-        cursor not-allowed
-
-.settings-button-secondary
-    border-color rgba($cb-navy-900, 0.2)
-    background-color #fff
-    color $cb-navy-700
-
-    &:hover
-        border-color $cb-blue-500
-        background-color $cb-blue-50
-        color $cb-blue-500
-
-// Blue outline, filled on hover. Why: next to the left bar, whose active tab is filled blue, a filled button looks like another tab.
-.settings-button-outline
-    border-color $cb-blue-500
-    background-color #fff
-    color $cb-blue-500
-
-    &:hover
-        border-color $cb-blue-500
-        background-color $cb-blue-500
-        color #fff
-
-    // Keeps the outlined look while the button cannot be clicked
-    &:disabled:hover
-        background-color #fff
-        color $cb-blue-500
-
-.settings-button-danger
-    border-color $cb-danger
-    background-color #fff
-    color $cb-danger
-
-    &:hover
-        border-color $cb-danger
-        background-color $cb-danger
-        color #fff
-
-    // Keeps the outlined look while the button cannot be clicked
-    &:disabled:hover
-        background-color #fff
-        color $cb-danger
-
 .settings-danger-text
     color $cb-danger
 

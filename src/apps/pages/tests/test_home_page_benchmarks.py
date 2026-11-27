@@ -338,7 +338,7 @@ class HomePageBenchmarkSectionsTests(TestCase):
         content = self.get_home().content.decode()
 
         assert "Featured Benchmarks" not in content
-        assert "bc-featured-pill" not in content
+        assert "benchmark-card-featured-pill" not in content
 
     def test_featured_section_shown_with_featured(self):
         """
@@ -350,8 +350,8 @@ class HomePageBenchmarkSectionsTests(TestCase):
         content = self.get_home().content.decode()
 
         assert "Featured Benchmarks" in content
-        assert 'class="bc-card bc-featured"' in content
-        assert '<span class="bc-featured-pill">Featured</span>' in content
+        assert 'class="benchmark-card benchmark-card-featured"' in content
+        assert '<span class="benchmark-card-featured-pill">Featured</span>' in content
 
     def test_three_cards_each_without_repeats(self):
         """
@@ -405,11 +405,11 @@ class HomePageBenchmarkSectionsTests(TestCase):
         content = self.get_home().content.decode()
 
         assert f'href="/competitions/{competition.id}/" target="_blank"' in content
-        assert '<h3 class="bc-title">Card Title</h3>' in content
-        assert '<span class="bc-organizer-name">Org Name</span>' in content
+        assert '<h3 class="benchmark-card-title">Card Title</h3>' in content
+        assert '<span class="benchmark-card-organizer-name">Org Name</span>' in content
         assert re.search(r'title="Participants"><i [^>]*></i>1,234<', content)
         assert re.search(r'title="Submissions"><i [^>]*></i>56<', content)
-        assert 'class="bc-pill bc-prize"' in content
+        assert 'class="benchmark-card-pill benchmark-card-prize"' in content
 
     def test_card_logo_or_initial(self):
         """
@@ -422,8 +422,8 @@ class HomePageBenchmarkSectionsTests(TestCase):
 
         content = self.get_home().content.decode()
 
-        assert re.search(r'class="bc-logo">\s*<img src="[^"]*logos/', content)
-        assert re.search(r'class="bc-logo">\s*<span>N</span>', content)
+        assert re.search(r'class="benchmark-card-logo">\s*<img src="[^"]*logos/', content)
+        assert re.search(r'class="benchmark-card-logo">\s*<span>N</span>', content)
 
     def test_card_organizer_fallbacks(self):
         """
@@ -438,8 +438,8 @@ class HomePageBenchmarkSectionsTests(TestCase):
 
         content = self.get_home().content.decode()
 
-        assert f'<span class="bc-organizer-name">{creator.username}</span>' in content
-        assert content.count('class="bc-organizer"') == 1
+        assert f'<span class="benchmark-card-organizer-name">{creator.username}</span>' in content
+        assert content.count('class="benchmark-card-organizer"') == 1
 
     def test_card_date_is_formatted(self):
         """
@@ -469,7 +469,7 @@ class HomePageBenchmarkSectionsTests(TestCase):
 
         content = self.get_home().content.decode()
 
-        assert '<span class="bc-tag" title="Domain">Computer Vision</span>' in content
+        assert '<span class="benchmark-card-tag" title="Domain">Computer Vision</span>' in content
 
     def test_card_shows_no_tags_text(self):
         """
@@ -480,8 +480,8 @@ class HomePageBenchmarkSectionsTests(TestCase):
 
         content = self.get_home().content.decode()
 
-        assert '<span class="bc-tag-empty">No tags</span>' in content
-        assert 'class="bc-tag-row"' not in content
+        assert '<span class="benchmark-card-tag-empty">No tags</span>' in content
+        assert 'class="benchmark-card-tag-row"' not in content
 
     def test_card_sends_all_tags_sorted(self):
         """
@@ -518,8 +518,8 @@ class HomePageBenchmarkSectionsTests(TestCase):
         content = self.get_home().content.decode()
 
         # Why no closing quote after .png: the storage adds a signature to the address, like ?AWSAccessKeyId=...
-        assert re.search(r'class="bc-avatar">\s*<img src="[^"]*profile_photos/owner\.png', content)
-        assert re.search(r'class="bc-avatar">\s*N\s*</span>', content)
+        assert re.search(r'class="benchmark-card-avatar">\s*<img src="[^"]*profile_photos/owner\.png', content)
+        assert re.search(r'class="benchmark-card-avatar">\s*N\s*</span>', content)
 
     def test_home_page_loads_card_tags_script(self):
         """

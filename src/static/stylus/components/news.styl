@@ -1,35 +1,6 @@
 /* --------------------------------------------------------------------------------------
  News component (templates/components/news.html)
  */
-.news-section
-    width 100%
-    margin 3em 0
-    text-align left
-
-.news-section-header
-    display flex
-    justify-content space-between
-    align-items baseline
-    flex-wrap wrap
-    gap 8px
-    margin-bottom 1em
-
-#page_content .news-section-title
-    margin 0
-    color $cb-navy-900
-    font-size 1.6em
-
-// Same look as .hb-view-all
-.news-view-all
-    color $cb-blue-500
-    font-weight 500
-
-    &:hover
-        color $cb-blue-400
-
-    .icon
-        margin 0 0 0 2px
-
 .news-cards
     display grid
     grid-template-columns repeat(3, 1fr)
@@ -110,9 +81,6 @@
     &:hover
         color $cb-blue-400
 
-    .icon
-        margin 0
-
 // Keeps "Open link" on the right when "Read more" is hidden
 .news-card-link
     margin-left auto
@@ -123,7 +91,7 @@
     &:hover
         color $cb-blue-400
 
-    .icon
+    .bi
         margin 0 0 0 2px
 
 /* Tablets and phones: one per row */
