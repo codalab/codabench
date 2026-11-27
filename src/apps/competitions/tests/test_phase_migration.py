@@ -131,6 +131,14 @@ class PhaseToPhaseMigrationTests(TestCase):
         mock_sub_start = self.mock_migration()
         assert mock_sub_start.call_count == 1
 
+    def test_fact_sheet_answers_are_migrated(self):
+        answers = {'method_name': 'my method', 'uses_external_data': 'false'}
+        self.phase1.submissions.update(fact_sheet_answers=answers)
+        self.mock_migration()
+        assert self.phase2.submissions.exists()
+        for submission in self.phase2.submissions.all():
+            assert submission.fact_sheet_answers == answers
+
 
 class PhaseStatusTests(TestCase):
     def setUp(self):
@@ -167,7 +175,7 @@ class PhaseStatusTests(TestCase):
         do_phase_migrations()
         assert Phase.objects.get(id=self.phase1.id).status == Phase.CURRENT
         assert Phase.objects.get(id=self.phase2.id).status == Phase.NEXT
-        assert Phase.objects.get(id=self.phase3.id).status is None
+        assert Phase.objects.get(id=self.phase3.id).status == Phase.NEXT
 
         self.set_start_end(self.phase1, **self.previous)
         self.set_start_end(self.phase2, **self.current)
@@ -181,7 +189,7 @@ class PhaseStatusTests(TestCase):
         self.set_start_end(self.phase2, **self.previous)
         self.set_start_end(self.phase3, **self.next)
         do_phase_migrations()
-        assert Phase.objects.get(id=self.phase1.id).status is None
+        assert Phase.objects.get(id=self.phase1.id).status == Phase.PREVIOUS
         assert Phase.objects.get(id=self.phase2.id).status == Phase.PREVIOUS
         assert Phase.objects.get(id=self.phase3.id).status == Phase.NEXT
 
@@ -189,7 +197,7 @@ class PhaseStatusTests(TestCase):
         self.set_start_end(self.phase2, **self.previous)
         self.set_start_end(self.phase3, **self.current)
         do_phase_migrations()
-        assert Phase.objects.get(id=self.phase1.id).status is None
+        assert Phase.objects.get(id=self.phase1.id).status == Phase.PREVIOUS
         assert Phase.objects.get(id=self.phase2.id).status == Phase.PREVIOUS
         assert Phase.objects.get(id=self.phase3.id).status == Phase.CURRENT
 
@@ -205,8 +213,19 @@ class PhaseStatusTests(TestCase):
 
         do_phase_migrations()
 
-        assert Phase.objects.get(id=self.phase1.id).status is None
+        assert Phase.objects.get(id=self.phase1.id).status == Phase.PREVIOUS
         assert Phase.objects.get(id=self.phase2.id).status == Phase.PREVIOUS
         assert Phase.objects.get(id=self.phase3.id).status == Phase.CURRENT
         assert Phase.objects.get(id=self.phase4.id).status == Phase.NEXT
-        assert Phase.objects.get(id=self.phase5.id).status is None
+        assert Phase.objects.get(id=self.phase5.id).status == Phase.NEXT
+
+    def test_parallel_phases_can_be_current_simultaneously(self):
+        self.set_start_end(self.phase1, **self.current)
+        self.set_start_end(self.phase2, **self.current)
+        self.phase2.is_parallel = True
+        self.phase2.save()
+        self.set_start_end(self.phase3, start=self.current['start'], end=None)
+        do_phase_migrations()
+        assert Phase.objects.get(id=self.phase1.id).status == Phase.CURRENT
+        assert Phase.objects.get(id=self.phase2.id).status == Phase.CURRENT
+        assert Phase.objects.get(id=self.phase3.id).status == Phase.CURRENT

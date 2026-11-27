@@ -7,6 +7,11 @@
         <label>Show Public Tasks</label>
         <input type="checkbox" ref="public">
     </div>
+    <div class="ui checkbox" onclick="{ filter.bind(this, undefined) }"
+         data-tooltip="Tasks of competitions you co-organize, created by the competition owner" data-inverted="">
+        <label>Show Co-organized Tasks</label>
+        <input type="checkbox" ref="collaborations" checked>
+    </div>
     <div class="ui blue right floated labeled icon button" onclick="{ show_upload_task_modal }"><i class="upload icon"></i>
         Upload Task
     </div>
@@ -34,7 +39,7 @@
         <tr each="{ task in tasks }" class="task-row">
             <td onclick="{show_detail_modal.bind(this, task)}">{ task.name }</td>
             <td onclick="{show_detail_modal.bind(this, task)}">{ task.description }</td>
-            <td><a href="/profiles/user/{task.created_by}/" target=_blank>{task.owner_display_name}</a></td>
+            <td><a href="/user/{task.created_by}/" target=_blank>{task.owner_display_name}</a></td>
             <td>
                 <i class="checkmark box icon green" show="{task.is_used_in_competitions}"></i>
             </td>
@@ -42,11 +47,11 @@
                 <i class="checkmark box icon green" show="{ task.is_public }"></i>
             </td>
             <td>
-                <div if="{ task.created_by == CODALAB.state.user.username }">
-                    <button class="mini ui button blue icon" onclick="{show_edit_modal.bind(this, task)}">
+                <div>
+                    <button if="{ task.can_edit }" class="mini ui button blue icon" onclick="{show_edit_modal.bind(this, task)}">
                         <i class="icon pencil"></i>
                     </button>
-                    <button class="mini ui button red icon" onclick="{ delete_task.bind(this, task) }">
+                    <button if="{ task.created_by == CODALAB.state.user.username }" class="mini ui button red icon" onclick="{ delete_task.bind(this, task) }">
                         <i class="icon trash"></i>
                     </button>
                 </div>
@@ -98,7 +103,7 @@
         <div class="content">
             <h4>{selected_task.description}</h4>
             <div class="ui divider" show="{selected_task.description}"></div>
-            <div><strong>Created By:</strong> <a href="/profiles/user/{selected_task.created_by}/" target=_blank>{selected_task.owner_display_name}</a></div>
+            <div><strong>Created By:</strong> <a href="/user/{selected_task.created_by}/" target=_blank>{selected_task.owner_display_name}</a></div>
             <div><strong>Uploaded:</strong>  {timeSince(Date.parse(selected_task.created_when)) } ago</div>
             <div if="{selected_task.created_by === CODALAB.state.user.username}">
                 <strong>Shared With:</strong> { selected_task.shared_with.join(', ') }
@@ -362,8 +367,8 @@
             </div>
         </div>
         <div class="actions">
-            <div class="ui primary button {disabled: !edit_modal_is_valid}" onclick="{ update_task }">Update</div>
             <div class="ui basic red cancel button">Cancel</div>
+            <div class="ui primary button {disabled: !edit_modal_is_valid}" onclick="{ update_task }">Save</div>
         </div>
     </div>
 
@@ -751,6 +756,9 @@
             let show_public_tasks = $(self.refs.public).prop('checked')
             if (show_public_tasks) {
                 filters.public = true
+            }
+            if ($(self.refs.collaborations).prop('checked')) {
+                filters.collaborations = true
             }
             CODALAB.api.get_tasks(filters)
                 .done(function (data) {

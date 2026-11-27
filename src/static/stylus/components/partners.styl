@@ -1,0 +1,48 @@
+/* --------------------------------------------------------------------------------------
+ Partners component (templates/components/partners.html)
+ */
+.partners
+    width 100%
+    margin 3em 0
+    text-align left
+
+#page_content .partners-title
+    margin 0 0 1em
+    color $cb-navy-900
+    font-size 1.6em
+
+// 7 per row on desktop, fewer on smaller screens
+.partners-grid
+    display grid
+    grid-template-columns repeat(7, 1fr)
+    gap 16px
+
+// White tile so logos with and without a background look the same
+.partner
+    display flex
+    align-items center
+    justify-content center
+    height 110px
+    padding 14px
+    background-color #fff
+    border 1px solid #e3e7ec
+    border-radius 10px
+    transition transform 150ms ease, box-shadow 150ms ease
+
+    &:hover
+        border-color $cb-blue-500
+        transform translateY(-2px)
+        box-shadow 0 6px 16px rgba(27, 47, 64, 0.1)
+
+    img
+        max-width 100%
+        max-height 100%
+        object-fit contain
+
+@media only screen and (max-width 991px)
+    .partners-grid
+        grid-template-columns repeat(4, 1fr)
+
+@media only screen and (max-width 625px)
+    .partners-grid
+        grid-template-columns repeat(2, 1fr)

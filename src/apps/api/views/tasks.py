@@ -4,7 +4,7 @@ import zipfile
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from collections import defaultdict
 
-from django.db.models import Q, Value, BooleanField
+from django.db.models import F, Q, Value, BooleanField
 from django.db import transaction
 
 from rest_framework import status
@@ -24,12 +24,19 @@ from datasets.models import Data
 from utils.data import pretty_bytes, gb_to_bytes
 
 
-# TODO:// TaskViewSimple uses simple serializer from tasks, which exists purely for the use of Select2 on phase modal
+def collaborator_tasks_filter(user):
+    """Tasks the user can edit as a co-organizer: used by a competition created by the task creator, where the user is a collaborator.
+    Being a collaborator of a competition created by someone else is not enough, because a competition owner
+    can add anyone as a collaborator without their consent"""
+    return Q(phases__competition__created_by=F('created_by'), phases__competition__collaborators=user)
+
+
+# TODO: TaskViewSimple uses simple serializer from tasks, which exists purely for the use of Select2 on phase modal
 #   is there a better way to do it using get_serializer_class() method?
 class TaskViewSet(ModelViewSet):
     queryset = Task.objects.all()
     serializer_class = serializers.TaskSerializer
-    filter_fields = ('created_by', 'is_public')
+    filterset_fields = ('created_by', 'is_public')
     filter_backends = (DjangoFilterBackend, SearchFilter)
     search_fields = ('name', 'description',)
     pagination_class = BasicPagination
@@ -53,6 +60,10 @@ class TaskViewSet(ModelViewSet):
             # the public task to the user and hence we check the `retrieve` action
             if self.request.query_params.get('public') or self.action == 'retrieve':
                 task_filter |= Q(is_public=True)
+            # `collaborations` is sent when the user checks Show Co-organized Tasks on the front-end
+            # retrieve is needed to open the edit form of these tasks
+            if self.request.query_params.get('collaborations') or self.action == 'retrieve':
+                task_filter |= collaborator_tasks_filter(self.request.user)
             # Removed the "task validation" process (https://github.com/codalab/codabench/pull/1962)
             # We now always set "validated" to False. The "task validation" was only partly implemented and never used.
             qs = qs.filter(task_filter)
@@ -80,16 +91,26 @@ class TaskViewSet(ModelViewSet):
         for user in users.values('username', 'shared_tasks__pk'):
             context['shared_with'][user['shared_tasks__pk']].append(user['username'])
 
+        # Tasks the user can edit as a co-organizer, for the can_edit field
+        context['editable_task_ids'] = set(qs.filter(collaborator_tasks_filter(self.request.user)).values_list('pk', flat=True))
+
         return context
 
+    # Atomic, so the fields cleared below are not lost if the update then fails validation
+    @transaction.atomic
     def update(self, request, *args, **kwargs):
 
         # Get task
         task = self.get_object()
 
-        # Raise error if user is not the creator of the task or not a super user
-        if request.user != task.created_by and not request.user.is_superuser:
-            raise PermissionDenied("Cannot update a task that is not yours")
+        if not self.can_update(request.user, task):
+            raise PermissionDenied("Cannot update a task that is not yours or not used by a competition you organize")
+
+        # Only the owner can share the task or change its visibility
+        # The edit form always sends is_public, so only a change of value is refused
+        is_owner = request.user == task.created_by or request.user.is_superuser
+        if not is_owner and ('shared_with' in request.data or request.data.get('is_public', task.is_public) != task.is_public):
+            raise PermissionDenied("Only the task owner can change who the task is shared with or whether it is public")
 
         # Check if 'is_public' is sent in the data
         # This means that from the front end the update is_public api is calle
@@ -236,15 +257,15 @@ class TaskViewSet(ModelViewSet):
 
                     # Check if task has a name
                     if "name" not in task_data:
-                        return Response({"error": f"Missing: name, task must have a name"}, status=status.HTTP_400_BAD_REQUEST)
+                        return Response({"error": "Missing: name, task must have a name"}, status=status.HTTP_400_BAD_REQUEST)
 
                     # Check if task has a description
                     if "description" not in task_data:
-                        return Response({"error": f"Missing: description, task must have a description"}, status=status.HTTP_400_BAD_REQUEST)
+                        return Response({"error": "Missing: description, task must have a description"}, status=status.HTTP_400_BAD_REQUEST)
 
                     # Check if task has a scoring program
                     if Data.SCORING_PROGRAM not in task_data:
-                        return Response({"error": f"Missing: scoring_program, task must have a scoring_program"}, status=status.HTTP_400_BAD_REQUEST)
+                        return Response({"error": "Missing: scoring_program, task must have a scoring_program"}, status=status.HTTP_400_BAD_REQUEST)
 
                     # ------------------------------
                     # Process datasets and programs
@@ -338,6 +359,14 @@ class TaskViewSet(ModelViewSet):
         except Exception as e:
             # catch all other unexpected errors here
             return Response({"error": f"An error occurred while creating the task.\n {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def can_update(self, user, task):
+        """Creator, superuser, and co-organizers (see collaborator_tasks_filter).
+        Lets a co-organizer fix a task in place instead of replacing it, which keeps existing scores comparable.
+        Requiring the task creator to have created the competition stops anyone from attaching a task to their own competition to edit it"""
+        if user.is_superuser or user == task.created_by:
+            return True
+        return Task.objects.filter(pk=task.pk).filter(collaborator_tasks_filter(user)).exists()
 
     # This function allows for multiple errors when deleting multiple objects
     def check_delete_permissions(self, request, task):

@@ -1,110 +1,49 @@
-{% extends 'emails/base_email.html' %}
+{% extends 'emails/base_email.txt' %}
 
 {% block content %}
-    <h2>User account deletion notice</h2>
+    User account deletion notice
 
-    <p>You are receiving this notice because your are an administrator of the platform.</p>
+    You are receiving this notice because you are an administrator of the platform.
 
-    <br>
+    The following user has removed their account:
+    - id: {{ deleted_user.id }}
+    - username: {{ deleted_user.username }}
+    - email: {{ deleted_user.email }}
 
-    <p>The following user has removed their account:</p>
-    <ul>
-        <li><strong>id:</strong> {{ deleted_user.id }}</li>
-        <li><strong>username:</strong> {{ deleted_user.username }}</li>
-        <li><strong>email:</strong> {{ deleted_user.email }}</li>
-    </ul>
+    Summary
+    - Organizations: {{ organizations|length }}
+    - Competitions owner: {{ competitions_organizer|length }}
+    - Competitions participation: {{ competitions_participation|length }}
+    - Submissions: {{ submissions|length }}
+    - Data: {{ data|length }}
+    - Tasks: {{ tasks|length }}
+    - Queues: {{ queues|length }}
+    - Posts: {{ posts|length }}
 
-    <br>
+    Details
 
-    <h3>Summary</h3>
-
-    <ul>
-        <li>Organizations: {{ organizations|length }}</li>
-        <li>Competitions owner: {{ competitions_organizer|length }} </li>
-        <li>Competitions participation: {{ competitions_participation|length }}</li>
-        <li>Submissions: {{ submissions|length }}</li>
-        <li>Data: {{ data|length }}</li>
-        <li>Tasks: {{ tasks|length }}</li>
-        <li>Queues: {{ queues|length }}</li>
-        <li>Posts: {{ posts|length }}</li>
-    </ul>
-
-    <h3>Details</h3>
-
-    <h4>Organizations the user is part of:</h4>
-    <ul>
-        {% for organization in organizations.all %}
-            <li>
-                <a class="item" href="{{ domain }}{% url 'profiles:organization_profile' pk=organization.id %}">
-                    {{ organization }}
-                </a>
-            </li>
-        {% endfor %}
-    </ul>
-
-    <h4>Competitions the user is the owner:</h4>
-    <ul>
-        {% for competition in competitions_organizer.all %}
-            <li>
-                <a class="item" href="{{ domain }}{% url 'competitions:detail' pk=competition.pk %}">
-                    {{ competition }}
-                </a>
-            </li>
-        {% endfor %}
-    </ul>
-
-    <h4>Competitions the user participated in:</h4>
-    <ul>
-        {% for competition in competitions_participation.all %}
-        <li>
-            <a class="item" href="{{ domain }}{% url 'competitions:detail' pk=competition.pk %}">
-                {{ competition }}
-            </a>
-        </li>
-        {% endfor %}
-    </ul>
-
-    <h4>Submissions from the user:</h4>
-    <ul>
-        {% for submission in submissions.all %}
-        <li>
-            {{ submission }}
-        </li>
-        {% endfor %}
-    </ul>
-
-    <h4>Data created by the user</h4>
-    <ul>
-        {% for d in data.all %}
-        <li>
-            {{ d }}
-        </li>
-        {% endfor %}
-    </ul>
-
-    <h4>Tasks created by the user</h4>
-    <ul>
-        {% for task in tasks.all %}
-        <li>
-            <a class="item" href="{{ domain }}{% url 'tasks:detail' pk=task.pk %}">
-                {{ task }}
-            </a>
-        </li>
-        {% endfor %}
-    </ul>
-
-    <h4>Queues created by the user</h4>
-    <ul>
-        {% for queue in queues.all %}
-            <li>{{ queue }}</li>
-        {% endfor %}
-    </ul>
-
-    <h4>Posts posted by the user</h4>
-    <ul>
-        {% for post in posts.all %}
-            <li>{{ post }}</li>
-        {% endfor %}
-    </ul>
-
+    Organizations the user is part of:
+    {% for organization in organizations.all %}    - {{ organization }}: {{ protocol }}://{{ domain }}{% url 'profiles:organization_profile' pk=organization.id %}
+    {% endfor %}
+    Competitions the user is the owner:
+    {% for competition in competitions_organizer.all %}    - {{ competition }}: {{ protocol }}://{{ domain }}{% url 'competitions:detail' pk=competition.pk %}
+    {% endfor %}
+    Competitions the user participated in:
+    {% for competition in competitions_participation.all %}    - {{ competition }}: {{ protocol }}://{{ domain }}{% url 'competitions:detail' pk=competition.pk %}
+    {% endfor %}
+    Submissions from the user:
+    {% for submission in submissions.all %}    - {{ submission }}
+    {% endfor %}
+    Data created by the user:
+    {% for d in data.all %}    - {{ d }}
+    {% endfor %}
+    Tasks created by the user:
+    {% for task in tasks.all %}    - {{ task }}: {{ protocol }}://{{ domain }}{% url 'tasks:detail' pk=task.pk %}
+    {% endfor %}
+    Queues created by the user:
+    {% for queue in queues.all %}    - {{ queue }}
+    {% endfor %}
+    Posts posted by the user:
+    {% for post in posts.all %}    - {{ post }}
+    {% endfor %}
 {% endblock %}

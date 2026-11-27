@@ -10,6 +10,7 @@ class V2Unpacker(BaseUnpacker):
         super().__init__(*args, **kwargs)
         self.competition = {
             "title": self.competition_yaml.get('title'),
+            "tags": self.competition_yaml.get('tags'),
             "logo": None,
             "registration_auto_approve": self.competition_yaml.get('registration_auto_approve', False),
             "docker_image": self.competition_yaml.get('docker_image', 'codalab/codalab-legacy:py37'),
@@ -196,6 +197,7 @@ class V2Unpacker(BaseUnpacker):
                 "end": get_datetime(phase_data.get('end')),
                 'max_submissions_per_day': phase_data.get('max_submissions_per_day', 5),
                 'max_submissions_per_person': phase_data.get('max_submissions', 100),
+                'max_submissions_scope': phase_data.get('max_submissions_scope', 'participant'),
                 'auto_migrate_to_this_phase': phase_data.get('auto_migrate_to_this_phase', False),
                 'hide_output': phase_data.get('hide_output', False),
                 'hide_prediction_output': phase_data.get('hide_prediction_output', False),
@@ -204,7 +206,7 @@ class V2Unpacker(BaseUnpacker):
             try:
                 new_phase['tasks'] = phase_data['tasks']
             except KeyError:
-                raise CompetitionUnpackingException(f'Phases must contain at least one task to be valid')
+                raise CompetitionUnpackingException('Phases must contain at least one task to be valid')
 
             execution_time_limit = phase_data.get('execution_time_limit')
             if execution_time_limit:

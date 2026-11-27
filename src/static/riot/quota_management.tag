@@ -54,6 +54,26 @@
                     </button>
                     </td>
                 </tr>
+                <!--  Unused Starting Kits  -->
+                <tr>
+                    <td>Unused Starting Kits <span show="{unused_starting_kits > 0}">(<b>{unused_starting_kits}</b>)</span></td>
+                    <td>
+                        <button class="ui red right floated labeled icon button {disabled: unused_starting_kits === 0}" onclick="{delete_unused_starting_kits}">
+                        <i class="icon trash"></i>
+                        Delete unused starting kits
+                    </button>
+                    </td>
+                </tr>
+                <!--  Unused Competition Bundles  -->
+                <tr>
+                    <td>Unused Competition Bundles/Dumps <span show="{unused_competition_bundles_and_dumps > 0}">(<b>{unused_competition_bundles_and_dumps}</b>)</span></td>
+                    <td>
+                        <button class="ui red right floated labeled icon button {disabled: unused_competition_bundles_and_dumps === 0}" onclick="{delete_unused_competition_bundles_and_dumps}">
+                        <i class="icon trash"></i>
+                        Delete unused competition bundles/dumps
+                    </button>
+                    </td>
+                </tr>
             </tbody>
             
         </table>
@@ -66,6 +86,8 @@
         self.unused_datasets_programs = 0
         self.unused_submissions = 0
         self.failed_submissions = 0
+        self.unused_starting_kits = 0
+        self.unused_competition_bundles_and_dumps = 0
         self.quota = 0
         self.storage_used = 0
 
@@ -84,6 +106,8 @@
                     self.unused_datasets_programs = data.unused_datasets_programs
                     self.unused_submissions = data.unused_submissions
                     self.failed_submissions = data.failed_submissions
+                    self.unused_starting_kits = data.unused_starting_kits
+                    self.unused_competition_bundles_and_dumps = data.unused_competition_bundles_and_dumps
                     self.update()
                 })
                 .fail(function (response) {
@@ -119,7 +143,7 @@
                             self.update()
                             CODALAB.events.trigger('reload_tasks')
                             CODALAB.events.trigger('reload_datasets')
-                            self.get_cleanup()
+                            CODALAB.events.trigger('reload_quota_cleanup')
                         }else{
                             toastr.error(data.message)
                         }
@@ -141,6 +165,7 @@
                             toastr.success(data.message)
                             self.update()
                             CODALAB.events.trigger('reload_datasets')
+                            CODALAB.events.trigger('reload_quota_cleanup')
                         }else{
                             toastr.error(data.message)
                         }
@@ -162,6 +187,7 @@
                             toastr.success(data.message)
                             self.update()
                             CODALAB.events.trigger('reload_submissions')
+                            CODALAB.events.trigger('reload_quota_cleanup')
                         }else{
                             toastr.error(data.message)
                         }
@@ -174,7 +200,7 @@
 
         // Delete failed submissions
         self.delete_failed_submissions = function(){
-            if (confirm(`Are you sure you want to permanently delete all failed submissions?`)) {
+            if (confirm(`Permanently delete all your failed submissions? This cannot be undone.`)) {
 
                 CODALAB.api.delete_failed_submissions()
                     .done(function (data) {
@@ -183,6 +209,7 @@
                             toastr.success(data.message)
                             self.update()
                             CODALAB.events.trigger('reload_submissions')
+                            CODALAB.events.trigger('reload_quota_cleanup')
                         }else{
                             toastr.error(data.message)
                         }
@@ -192,6 +219,51 @@
                     })
             }
         }
+
+        // Delete unused starting kits
+        self.delete_unused_starting_kits = function(){
+            if (confirm(`Are you sure you want to permanently delete all unused starting kits?`)) {
+
+                CODALAB.api.delete_unused_starting_kits()
+                    .done(function (data) {
+                        if(data.success){
+                            self.unused_starting_kits = 0
+                            toastr.success(data.message)
+                            self.update()
+                            CODALAB.events.trigger('reload_datasets')
+                            CODALAB.events.trigger('reload_quota_cleanup')
+                        }else{
+                            toastr.error(data.message)
+                        }
+                    })
+                    .fail(function (response) {
+                        toastr.error("Unused starting kits deletion failed!")
+                    })
+            }
+        }
+
+        // Delete unused competition bundles and dumps
+        self.delete_unused_competition_bundles_and_dumps = function(){
+            if (confirm(`Are you sure you want to permanently delete all unused competition bundles/dumps?`)) {
+
+                CODALAB.api.delete_unused_competition_bundles_and_dumps()
+                    .done(function (data) {
+                        if(data.success){
+                            self.unused_competition_bundles_and_dumps = 0
+                            toastr.success(data.message)
+                            self.update()
+                            CODALAB.events.trigger('reload_competition_bundles')
+                            CODALAB.events.trigger('reload_quota_cleanup')
+                        }else{
+                            toastr.error(data.message)
+                        }
+                    })
+                    .fail(function (response) {
+                        toastr.error("Unused competition bundles/dumps deletion failed!")
+                    })
+            }
+        }
+
 
         CODALAB.events.on('reload_quota_cleanup', self.get_cleanup)
 

@@ -32,7 +32,7 @@ For an online deployment, you'll need to fill in the IP address or domain name i
 
 #### Using an IP address
 
-b) For an online deployment using IP address:
+For an online deployment using an IP address:
 !!! note 
     To get the IP address of the machine. You can use one of the following commands:
 
@@ -47,7 +47,7 @@ Replace the value of IP address in the following environment variables according
 ```ini title=".env"
 SUBMISSIONS_API_URL=https://<IP ADDRESS>/api
 DOMAIN_NAME=<IP ADDRESS>:80
-AWS_S3_ENDPOINT_URL=http://<IP ADDRESS>/
+AWS_S3_ENDPOINT_URL=http://<IP ADDRESS>:9000/
 ```
 
 #### Using a domain name (DNS)
@@ -55,8 +55,11 @@ AWS_S3_ENDPOINT_URL=http://<IP ADDRESS>/
 ```ini title=".env"
 SUBMISSIONS_API_URL=https://yourdomain.com/api
 DOMAIN_NAME=yourdomain.com
-AWS_S3_ENDPOINT_URL=https://yourdomain.com
+AWS_S3_ENDPOINT_URL=http://yourdomain.com:9000/
 ```
+
+!!! note
+    `AWS_S3_ENDPOINT_URL` must point to MinIO, which listens on port `9000` (`MINIO_PORT` in `.env`). To use `https://yourdomain.com` without a port, see [Secure Minio](#securing-codabench-and-minio) or the [port 443 workaround](#workaround-minio-and-django-on-the-same-machine-with-only-the-port-443-opened-to-the-external-network).
 
 !!! tip "If you are deploying on an azure machine, then AWS_S3_ENDPOINT_URL needs to be set to an IP address that is accessible on the external network"
 
@@ -79,11 +82,57 @@ FLOWER_BASIC_AUTH=root:password-you-should-change
 [...]
 MINIO_ACCESS_KEY=testkey
 MINIO_SECRET_KEY=testsecret
-# or
+[...]
 AWS_ACCESS_KEY_ID=testkey
 AWS_SECRET_ACCESS_KEY=testsecret
 ```
-!!! warning "It is very important to set up an SSL certificate for Public deployement"
+
+!!! note "RabbitMQ credentials are only applied the first time RabbitMQ starts. To change them later, see [Change RabbitMQ username or password](Administrative_Procedures/RabbitMQ-Management.md#change-rabbitmq-username-or-password)."
+
+!!! note
+    `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY` are the MinIO credentials, and `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` are the credentials Codabench uses to access the storage. If you use the local MinIO container, both pairs must have the same values. If you use an external storage provider (e.g. AWS S3), only `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` are used.
+
+!!! warning "It is very important to set up an SSL certificate for Public deployment"
+
+### Configure email
+
+By default, Codabench does not send emails: they are only printed in the `django` container logs. To send real emails (account activation, password reset, competition notifications...), uncomment and fill in the email settings in `.env` with your SMTP server details:
+
+```ini title=".env"
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=smtp.yourprovider.com
+EMAIL_HOST_USER=user
+EMAIL_HOST_PASSWORD=pass
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+DEFAULT_FROM_EMAIL="Codabench <noreply@yourdomain.com>"
+SERVER_EMAIL=noreply@yourdomain.com
+
+CONTACT_EMAIL=info@yourdomain.com
+```
+
+- `DEFAULT_FROM_EMAIL`: sender address of all emails sent by Codabench
+- `SERVER_EMAIL`: sender address of error emails sent by Django
+- `CONTACT_EMAIL`: contact address displayed to users on the website
+
+!!! note
+    The sender addresses must be allowed by your SMTP provider, otherwise emails will be rejected.
+
+Restart the services after editing `.env` (`docker compose up -d`). To check that emails are sent, open a Django shell with `docker compose exec django ./manage.py shell` and run:
+
+```python
+from django.conf import settings
+from django.core.mail import send_mail
+
+send_mail(
+    subject="Codabench test email",
+    message="This is a test email from Codabench.",
+    from_email=settings.DEFAULT_FROM_EMAIL,
+    recipient_list=["you@example.com"],
+)
+```
+
+If the email is not received, check the error raised in the shell and the `django` container logs.
 
 ## Open Access Permissions for following port number
 
@@ -95,45 +144,11 @@ If you are deploying on a Linux server, which usually has a firewall, you need t
 
 ## Modify django-related configuration
 
-- Go to the folder where codabench is located
-- Go to the settings directory and modify `base.py` file
-    - `cd src/settings/`
-    - `nano base.py`
-- Change the value of `DEBUG` to `True`
-    - `DEBUG = os.environ.get("DEBUG", True)`
-!!! note "If DEBUG is not set to true, then you will not be able to load to the static resource file"
-- Comment out the following code
-```py
-# =============================================================================
-# Debug
-# =============================================================================
-#if DEBUG:
-#    INSTALLED_APPS += ('debug_toolbar',)
-#    MIDDLEWARE = ('debug_toolbar.middleware.DebugToolbarMiddleware',
-#                  'querycount.middleware.QueryCountMiddleware',
-#                  ) + MIDDLEWARE  # we want Debug Middleware at the top
-#    # tricks to have debug toolbar when developing with docker
-#
-#    INTERNAL_IPS = ['127.0.0.1']
-#
-#    import socket
-#
-#    try:
-#        INTERNAL_IPS.append(socket.gethostbyname(socket.gethostname())[:-1])
-#    except socket.gaierror:
-#        pass
-#
-#    QUERYCOUNT = {
-#        'IGNORE_REQUEST_PATTERNS': [
-#            r'^/admin/',
-#            r'^/static/',
-#        ]
-#    }
-#
-#    DEBUG_TOOLBAR_CONFIG = {
-#        "SHOW_TOOLBAR_CALLBACK": lambda request: True
-#    }
-```
+- In the `.env` file, set `DEBUG` to `True`:
+    - `DEBUG=True`
+
+!!! note "If DEBUG is not set to true, then you will not be able to load the static resource files"
+
 ## Start service
 
 - Execute command `docker compose up -d`
@@ -157,7 +172,7 @@ codabench_redis_1            "docker-entrypoint.s…"   running      0.0.0.0:637
 - Generate the required static resource files: `docker compose exec django ./manage.py collectstatic --noinput`
   
 !!! tip
-    You can generate mock data with `docker compose exec django ./manage.py generate_data` if you want to test the website. However, it is not recomended to do that on an installation that you intend to use for Production
+    You can generate mock data with `docker compose exec django ./manage.py generate_data` if you want to test the website. However, it is not recommended to do that on an installation that you intend to use for Production
 
 ## Set public bucket policy to read/write
 
@@ -204,7 +219,7 @@ services:
 ```
 
 !!! warning
-    This will force the following container from exiting on start:
+    This will force the following containers to exit on start:
 
       - Compute Worker
       - MinIO
@@ -243,12 +258,14 @@ You can update these by:
 1. Replacing the logos in `src/static/img/` folder
 2. Updating the code in `src/templates/pages/home.html` to point to the right websites of your organizations
 
+!!! tip
+    Now that your instance is up and running, consider registering it with `codabench.org` as an [External Competitions](External-Competitions.md) platform. Once registered, your instance's public competitions are also listed on `codabench.org`'s own External Competitions page, giving them more visibility. See the [registration instructions](External-Competitions.md#registering-your-platform) for details.
 
 ## Frequently asked questions (FAQs)
 
 ### Invalid HTTP method
 
-Exception detail (by using `docker logs -f codabench_django_1`)
+Exception detail (by using `docker logs -f django`)
 
 ```java
 Traceback (most recent call last):
@@ -279,23 +296,14 @@ docker compose up -d
 
 ### Missing static resources (css/js)
 
-Solution: Change the value of the `DEBUG` parameter to `True`
-
-- `nano competitions-v2/src/settings/base.py`
-- `DEBUG = os.environ.get("DEBUG", True)`
-
-![image](../_attachments/113236839-44375400-92d8-11eb-9c12-9d8654423662_17528513112593784.png)
-
-- Also comment out the following code in `base.py`
-
-![image](../_attachments/113236871-544f3380-92d8-11eb-86bf-05ffb9fac5d2_17528513120945034.png)
+Solution: Set `DEBUG=True` in the `.env` file, then restart the services with `docker compose up -d`.
 
 ### CORS Error (could not upload bundle)
 
-Exception detail (by checkout google develop tools)
+Exception detail (by checking Google Chrome developer tools)
 
 ```java
-botocore.exceptions.EndpointConnectionError: Could not connect to the endpoint URL: "[http://docker.for.mac.localhost:9000/private/dataset/2021-02-18-1613624215/24533cfc523e/competition.zip](http://docker.for.mac.localhost:9000/private/dataset/2021-02-18-1613624215/24533cfc523e/competition.zip)"
+botocore.exceptions.EndpointConnectionError: Could not connect to the endpoint URL: "http://docker.for.mac.localhost:9000/private/dataset/2021-02-18-1613624215/24533cfc523e/competition.zip"
 ```
 
 Solution: Set AWS_S3_ENDPOINT_URL to an address that is accessible to the external network
@@ -304,15 +312,15 @@ Solution: Set AWS_S3_ENDPOINT_URL to an address that is accessible to the extern
 
 ![image](../_attachments/113236903-66c96d00-92d8-11eb-9186-2fac1b0a6918_17528513113931694.png)
 
-Make sure the IP address and port number is accessible by external network, You can check this by :
+Make sure the IP address and port number are accessible from the external network. You can check this by:
 
 - `telnet {ip-address-filling-in AWS_S3_ENDPOINT_URL} {port-filling-in AWS_S3_ENDPOINT_URL}`
-- Make sure the firewall is closed on port 9000
+- Make sure the firewall is open on port 9000
 
 !!! note "This problem may also be caused by a bug in MinIO, in which case you will need to follow these steps"
 
     - Upgrade the minio docker image to the latest version
-    - Delete the previous minio directory folder in your codabench folder under `/var/minio` directory
+    - Delete the previous minio directory folder in your codabench folder under the `var/minio` directory
     - Stop the current minio container
     - Delete the current minio container and the corresponding image
     - Re-execute `docker compose up -d`
@@ -374,7 +382,7 @@ MINIO_PORT=9000
   # Minio local storage helper
   #-----------------------------------------------
   minio:
-    image: minio/minio:RELEASE.2020-10-03T02-19-42Z
+    image: codalab/minio:RELEASE.2025-04-22T22-12-26Z
     command: server /export --certs-dir /root/.minio/certs
     volumes:
       - ./var/minio:/export
@@ -388,7 +396,7 @@ MINIO_PORT=9000
       interval: 5s
       retries: 5
   createbuckets:
-    image: minio/mc
+    image: codalab/mc:RELEASE.2025-07-21T05-28-08Z
     depends_on:
       minio:
         condition: service_healthy
@@ -400,7 +408,7 @@ MINIO_PORT=9000
       /bin/sh -c "
       set -x;
       if [ -n \"$MINIO_ACCESS_KEY\" ] && [ -n \"$MINIO_SECRET_KEY\" ] && [ -n \"$MINIO_PORT\" ]; then
-        until /usr/bin/mc config host add minio_docker https://minio:$MINIO_PORT $MINIO_ACCESS_KEY $MINIO_SECRET_KEY && break; do
+        until /usr/bin/mc alias set minio_docker https://minio:$MINIO_PORT $MINIO_ACCESS_KEY $MINIO_SECRET_KEY && break; do
           echo '...waiting...' && sleep 5;
         done;
         /usr/bin/mc mb minio_docker/$AWS_STORAGE_BUCKET_NAME || echo 'Bucket $AWS_STORAGE_BUCKET_NAME already exists.';
@@ -440,3 +448,6 @@ Caddyfile :
     }
     reverse_proxy @min_bucket minio:{$MINIO_PORT}
 ```
+
+## Codabench Instance behind a reverse proxy
+If you put your instance behind a reverse proxy and want that proxy to contact the instance via http or https, your `DOMAIN_NAME` might not be reachable from the outside. In this case, you can set `DOMAIN_NAME` as your internal domain name, used by the reverse proxy, and `EXTERNAL_DOMAIN_NAME` as the domain name that is known on external networks (like the internet).

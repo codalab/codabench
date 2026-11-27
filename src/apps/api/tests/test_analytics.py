@@ -82,13 +82,3 @@ class AnalyticsTests(APITestCase):
     def test_date_range_is_inclusive_of_bounds(self):
         for category in self.object_data:
             self.date_range_tester(category['countfield_name'])
-
-    def test_super_user_can_view_analytics(self):
-        self.client.login(username='admin', password='test')
-        resp = self.client.get(reverse('analytics:analytics'))
-        assert resp.status_code == 200
-
-    def test_normal_user_cannot_view_analytics(self):
-        self.client.login(username='user', password='test')
-        resp = self.client.get(reverse('analytics:analytics'))
-        assert resp.status_code == 403

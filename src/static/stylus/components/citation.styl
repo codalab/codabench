@@ -1,0 +1,51 @@
+/* --------------------------------------------------------------------------------------
+ Citation component (templates/components/citation.html)
+ */
+.citation
+    width 100%
+    margin 3em 0
+    text-align left
+
+#page_content .citation-title
+    margin 0 0 0.6em
+    color $cb-navy-900
+    font-size 1.6em
+
+.citation-intro
+    margin 0 0 1em
+    color #4a4a4a
+    font-size 15px
+    line-height 1.6
+
+    a
+        color $cb-blue-500
+
+    a:hover
+        color $cb-blue-400
+
+.citation-box
+    position relative
+    background-color #fff
+    border 1px solid #e3e7ec
+    border-radius 10px
+    box-shadow 0 1px 2px rgba(0, 0, 0, 0.04)
+
+    pre
+        margin 0
+        padding 24px
+        overflow-x auto
+        color $cb-navy-900
+        font-size 13px
+        line-height 1.6
+
+// Only the position. Why: the look comes from the shared button styles in buttons.styl
+.citation-copy
+    position absolute
+    top 12px
+    right 12px
+
+/* Phones: button above the code instead of on top of it */
+@media only screen and (max-width 625px)
+    .citation-copy
+        position static
+        margin 12px 12px 0

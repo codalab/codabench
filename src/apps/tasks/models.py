@@ -21,8 +21,29 @@ class Task(models.Model):
     reference_data = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="task_reference_datas")
     scoring_program = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="task_scoring_programs")
 
+    # Last change of a field that affects how submissions are run (not the name or description).
+    # Submissions that ran before it are flagged as scored on an older version of the task.
+    content_updated_when = models.DateTimeField(null=True, blank=True)
+
+    CONTENT_FIELDS = (
+        'ingestion_program_id',
+        'input_data_id',
+        'reference_data_id',
+        'scoring_program_id',
+        'ingestion_only_during_scoring',
+    )
+
     def __str__(self):
         return f"Task - {self.name} - ({self.id})"
+
+    def save(self, *args, **kwargs):
+        if self.pk:
+            old = Task.objects.filter(pk=self.pk).values(*self.CONTENT_FIELDS).first()
+            if old and any(old[field] != getattr(self, field) for field in self.CONTENT_FIELDS):
+                self.content_updated_when = now()
+                if kwargs.get('update_fields') is not None:
+                    kwargs['update_fields'] = {*kwargs['update_fields'], 'content_updated_when'}
+        super().save(*args, **kwargs)
 
     @property
     def _validated(self):

@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flower
+  labels:
+    app: flower
+spec:
+  replicas: {{ .Values.flower.replicas }}
+  selector:
+    matchLabels:
+      app: flower
+  template:
+    metadata:
+      labels:
+        app: flower
+    spec:
+      containers:
+      - name: flower
+        image: "{{ .Values.flower.image.repository }}:{{ .Values.flower.image.tag }}"
+        imagePullPolicy: {{ .Values.flower.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.flower.service.port }}
+        env:
+        - name: CELERY_BROKER_URL
+          value: "pyamqp://{{ .Values.env.RABBITMQ_DEFAULT_USER }}:{{ .Values.env.RABBITMQ_DEFAULT_PASS }}@{{ .Values.env.RABBITMQ_HOST }}:{{ .Values.env.RABBITMQ_PORT }}//"
+        - name: FLOWER_PORT
+          value: "{{ .Values.flower.service.port }}"

@@ -1,3 +1,5 @@
+import logging
+
 from drf_writable_nested import WritableNestedModelSerializer
 from rest_framework import serializers
 from api.mixins import DefaultUserCreateMixin
@@ -5,7 +7,9 @@ from api.serializers.datasets import DataDetailSerializer, DataSimpleSerializer
 from competitions.models import PhaseTaskInstance, Phase
 from datasets.models import Data
 from tasks.models import Task, Solution
-from competitions.models import Competition
+from competitions.models import Competition, CompetitionCreationTaskStatus, CompetitionDump
+
+logger = logging.getLogger(__name__)
 
 
 class SolutionSerializer(WritableNestedModelSerializer):
@@ -29,7 +33,7 @@ class SolutionSerializer(WritableNestedModelSerializer):
         try:
             return instance.data.file_size
         except AttributeError:
-            print("This solution has no data associated with it...might be a test")
+            logger.info("This solution has no data associated with it...might be a test")
             return None
 
 
@@ -84,6 +88,12 @@ class TaskSerializer(DefaultUserCreateMixin, WritableNestedModelSerializer):
         return getattr(instance, 'validated', False)
 
 
+def can_edit_task(context, task):
+    """Same rule as TaskViewSet.can_update, using the editable task ids computed once by the view"""
+    user = context['request'].user
+    return user.is_superuser or task.created_by_id == user.id or task.pk in context['editable_task_ids']
+
+
 class TaskDetailSerializer(WritableNestedModelSerializer):
     created_by = serializers.CharField(source='created_by.username', read_only=True)
     owner_display_name = serializers.SerializerMethodField()
@@ -95,6 +105,7 @@ class TaskDetailSerializer(WritableNestedModelSerializer):
     validated = serializers.SerializerMethodField(required=False)
     shared_with = serializers.SerializerMethodField()
     competitions = serializers.SerializerMethodField()
+    can_edit = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
@@ -109,6 +120,7 @@ class TaskDetailSerializer(WritableNestedModelSerializer):
             'validated',
             'shared_with',
             'competitions',
+            'can_edit',
 
             # Data pieces
             'input_data',
@@ -137,6 +149,9 @@ class TaskDetailSerializer(WritableNestedModelSerializer):
         shared_users = instance.shared_with.all()
         return [user.username for user in shared_users]
 
+    def get_can_edit(self, instance):
+        return can_edit_task(self.context, instance)
+
     def get_owner_display_name(self, instance):
         # Get the user's display name if not None, otherwise return username
         return instance.created_by.display_name if instance.created_by.display_name else instance.created_by.username
@@ -148,6 +163,7 @@ class TaskListSerializer(serializers.ModelSerializer):
     created_by = serializers.CharField(source='created_by.username', read_only=True)
     owner_display_name = serializers.SerializerMethodField()
     is_used_in_competitions = serializers.SerializerMethodField()
+    can_edit = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
@@ -165,6 +181,7 @@ class TaskListSerializer(serializers.ModelSerializer):
             'value',
             'is_public',
             'is_used_in_competitions',
+            'can_edit',
         )
 
     def get_is_used_in_competitions(self, instance):
@@ -176,6 +193,9 @@ class TaskListSerializer(serializers.ModelSerializer):
 
     def get_shared_with(self, instance):
         return self.context['shared_with'][instance.pk]
+
+    def get_can_edit(self, instance):
+        return can_edit_task(self.context, instance)
 
     def get_owner_display_name(self, instance):
         # Get the user's display name if not None, otherwise return username
@@ -190,6 +210,7 @@ class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):
     value = serializers.CharField(source='task.key', required=False)
     key = serializers.CharField(source='task.key', required=False)
     created_when = serializers.DateTimeField(source='task.created_when', required=False)
+    content_updated_when = serializers.DateTimeField(source='task.content_updated_when', read_only=True)
     name = serializers.CharField(source='task.name', required=False)
     solutions = serializers.SerializerMethodField()
     public_datasets = serializers.SerializerMethodField()
@@ -205,6 +226,7 @@ class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):
             'value',
             'key',
             'created_when',
+            'content_updated_when',
             'name',
             'solutions',
             'public_datasets'
@@ -215,28 +237,46 @@ class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):
         return SolutionSerializer(qs, many=True).data
 
     def get_public_datasets(self, instance):
-
-        input_data = instance.task.input_data
-        reference_data = instance.task.reference_data
-        ingestion_program = instance.task.ingestion_program
-        scoring_program = instance.task.scoring_program
-
-        # Some tasks may not have input data, reference data and ingestion program
-        # Checking all the datasets and programs and adding them to dataset_list_ids
-        dataset_list_ids = []
-        if input_data:
-            dataset_list_ids.append(input_data.id)
-        if reference_data:
-            dataset_list_ids.append(reference_data.id)
-        if ingestion_program:
-            dataset_list_ids.append(ingestion_program.id)
-        if scoring_program:
-            dataset_list_ids.append(scoring_program.id)
-
-        # Serializing the datasets
-        try:
-            qs = Data.objects.filter(id__in=dataset_list_ids)
-            return DataDetailSerializer(qs, many=True).data
-        except Exception:
-            # No datasets or programs to return
+        task = instance.task
+        datasets = {
+            d.pk: d for d in (
+                task.input_data, task.reference_data, task.ingestion_program, task.scoring_program
+            ) if d
+        }
+        if not datasets:
             return []
+        try:
+            orphan_ids = [pk for pk, d in datasets.items() if d.competition_id is None]
+            bundle_competitions, dump_competitions = {}, {}
+            if orphan_ids:
+                bundle_competitions = {
+                    s.dataset_id: s.resulting_competition
+                    for s in CompetitionCreationTaskStatus.objects
+                    .filter(dataset_id__in=orphan_ids).select_related('resulting_competition')
+                }
+                dump_competitions = {
+                    d.dataset_id: d.competition
+                    for d in CompetitionDump.objects
+                    .filter(dataset_id__in=orphan_ids).select_related('competition')
+                }
+            context = {
+                **self.context,
+                'bundle_competitions': bundle_competitions,
+                'dump_competitions': dump_competitions,
+            }
+            return DataDetailSerializer(
+                sorted(datasets.values(), key=lambda d: d.pk), many=True, context=context
+            ).data
+        except Exception:
+            return []
+
+
+class PhaseTaskInstanceSmallSerializer(PhaseTaskInstanceSerializer):
+    solutions = None
+    public_datasets = None
+
+    class Meta(PhaseTaskInstanceSerializer.Meta):
+        fields = (
+            'task', 'order_index', 'phase', 'id',
+            'value', 'key', 'created_when', 'content_updated_when', 'name',
+        )

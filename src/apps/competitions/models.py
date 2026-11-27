@@ -5,15 +5,15 @@ import io
 import botocore.exceptions
 from django.conf import settings
 from django.core.files.base import ContentFile
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Q
 from django.urls import reverse
 from django.utils.timezone import now
 from decimal import Decimal
 
 from celery_config import app, app_for_vhost
-from leaderboards.models import SubmissionScore
-from profiles.models import User, Organization
+from leaderboards.models import SubmissionScore, Column
+from profiles.models import CustomGroup, User, Organization, Membership
 from utils.data import PathWrapper
 from utils.storage import BundleStorage
 from PIL import Image
@@ -22,6 +22,27 @@ from tasks.models import Task
 
 import logging
 logger = logging.getLogger(__name__)
+
+
+class TagCategory(models.Model):
+    name = models.CharField(max_length=256, unique=True, default="Other")
+
+    class Meta:
+        verbose_name_plural = "Tag categories"
+
+    def __str__(self):
+        return self.name
+
+
+class Tag(models.Model):
+    name = models.CharField(max_length=256, default="Other")
+    category = models.ForeignKey(TagCategory, on_delete=models.CASCADE, related_name='tags')
+
+    class Meta:
+        unique_together = ('name', 'category')
+
+    def __str__(self):
+        return f"{self.name} ({self.category.name})"
 
 
 class Competition(models.Model):
@@ -38,6 +59,8 @@ class Competition(models.Model):
     logo_icon = models.ImageField(upload_to=PathWrapper('logos', manual_override=True), null=True, blank=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
                                    related_name="competitions")
+
+    tags = models.ManyToManyField(Tag, blank=True, related_name='competitions')
     created_when = models.DateTimeField(default=now)
     collaborators = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name="collaborations", blank=True)
     published = models.BooleanField(default=False)
@@ -55,10 +78,12 @@ class Competition(models.Model):
     make_programs_available = models.BooleanField(default=False)
     make_input_data_available = models.BooleanField(default=False)
 
+    participant_groups = models.ManyToManyField(CustomGroup, blank=True, related_name='competitions', verbose_name="group of participants",
+                                                help_text="Competition owner being able to create groups of users.")
+
     queue = models.ForeignKey('queues.Queue', on_delete=models.SET_NULL, null=True, blank=True,
                               related_name='competitions')
 
-    allow_robot_submissions = models.BooleanField(default=False)
     # we use filed type to distinguish 'competition' and 'benchmark'
     competition_type = models.CharField(max_length=128, choices=COMPETITION_TYPE, default=COMPETITION)
 
@@ -86,6 +111,7 @@ class Competition(models.Model):
 
     # If true, forum is enabled (default=True)
     forum_enabled = models.BooleanField(default=True)
+    enable_human_in_the_loop = models.BooleanField(default=False)
 
     def __str__(self):
         return f"competition-{self.title}-{self.pk}-{self.competition_type}"
@@ -101,6 +127,13 @@ class Competition(models.Model):
     @property
     def all_organizers(self):
         return [self.created_by] + list(self.collaborators.all())
+
+    @property
+    def first_phase_start(self):
+        first_phase = self.phases.filter(index=0).first()
+        if first_phase and first_phase.start:
+            return first_phase.start
+        return self.created_when
 
     def user_has_admin_permission(self, user):
         if isinstance(user, int):
@@ -121,6 +154,14 @@ class Competition(models.Model):
         :param current_phase: The phase object to transfer submissions from
         :param next_phase: The new phase object we are entering
         """
+
+        if next_phase.competition_id != self.pk or current_phase.pk == next_phase.pk:
+            logger.error(f"Invalid migration request on competition pk={self.pk}: phases pk={current_phase.pk} -> pk={next_phase.pk}")
+            return
+
+        if next_phase.end and next_phase.end < now():
+            logger.warning(f"Migration to phase pk={next_phase.pk} refused: the phase has ended ({next_phase.end})")
+            return
 
         if not force_migration:
             logger.info(f"Checking for submissions that may still be running competition pk={self.pk}")
@@ -149,17 +190,10 @@ class Competition(models.Model):
         )
 
         for submission in submissions:
-            new_submission = Submission(
-                created_by_migration=current_phase,
-                participant=submission.participant,
-                phase=next_phase,
-                task=submission.task,
-                owner=submission.owner,
-                data=submission.data,
-            )
-            new_submission.save(ignore_submission_limit=True)
-            new_submission.start()
-
+            new_submission = submission.migrate_to(next_phase)
+            if new_submission is None:
+                logger.warning(f"Submission pk={submission.pk} not migrated: no Finished child submission to migrate")
+                continue
             submission.is_migrated = True
             submission.save()
 
@@ -293,6 +327,8 @@ class Phase(models.Model):
     index = models.PositiveIntegerField()
     start = models.DateTimeField()
     end = models.DateTimeField(null=True, blank=True)
+    is_parallel = models.BooleanField(default=False)
+    is_locked_phase = models.BooleanField(default=False)
     name = models.CharField(max_length=256)
     description = models.TextField(null=True, blank=True)
     execution_time_limit = models.PositiveIntegerField(default=60 * 10)
@@ -305,6 +341,14 @@ class Phase(models.Model):
     has_max_submissions = models.BooleanField(default=True)
     max_submissions_per_day = models.PositiveIntegerField(default=5, null=True, blank=True)
     max_submissions_per_person = models.PositiveIntegerField(default=100, null=True, blank=True)
+
+    PARTICIPANT_SCOPE = 'participant'
+    ORGANIZATION_SCOPE = 'organization'
+    MAX_SUBMISSIONS_SCOPE_CHOICES = (
+        (PARTICIPANT_SCOPE, 'Participant'),
+        (ORGANIZATION_SCOPE, 'Organization'),
+    )
+    max_submissions_scope = models.CharField(max_length=128, choices=MAX_SUBMISSIONS_SCOPE_CHOICES, default=PARTICIPANT_SCOPE)
 
     tasks = models.ManyToManyField('tasks.Task', blank=True, related_name='phases', through='PhaseTaskInstance')
 
@@ -324,32 +368,63 @@ class Phase(models.Model):
     def published(self):
         return self.competition.published
 
+    def get_quota_submission_querysets(self, user):
+        """Returns the submissions counted against the user's submission limits.
+
+        Returns:
+            [(organization, queryset)], organization is None when counting per participant
+        """
+        # Resubmissions are started by organizers and do not use the participant's quota
+        qs = self.submissions.filter(parent__isnull=True, resubmitted_from__isnull=True).exclude(status='Failed')
+        if self.max_submissions_scope == self.ORGANIZATION_SCOPE:
+            # A team's usage is every submission made by its current (non-invited) members
+            organizations = Organization.objects.filter(
+                membership__user=user,
+                membership__group__in=Membership.ALL_GROUP,
+            ).distinct()
+            querysets = [
+                (organization, qs.filter(owner__in=Membership.objects.filter(
+                    organization=organization,
+                    group__in=Membership.ALL_GROUP,
+                ).values('user')))
+                for organization in organizations
+            ]
+            if querysets:
+                return querysets
+        return [(None, qs.filter(owner=user))]
+
     def can_user_make_submissions(self, user):
-        """Takes a user and checks how many submissions they've made vs the max.
+        """Takes a user and checks how many submissions they (or their teams) have made vs the max.
 
         Returns:
             (can_make_submissions, reason_if_not)
         """
-        if not self.has_max_submissions or (user.is_bot and self.competition.allow_robot_submissions):
+        if self.is_locked_phase:
+            return False, 'This phase is locked: it only accepts migrated submissions'
+        if not self.has_max_submissions:
             return True, None
 
-        qs = self.submissions.filter(owner=user, parent__isnull=True).exclude(status='Failed')
-        total_submission_count = qs.count()
-        daily_submission_count = qs.filter(created_when__date=now().date()).count()
+        for organization, qs in self.get_quota_submission_querysets(user):
+            total_submission_count = qs.count()
+            daily_submission_count = qs.filter(created_when__date=now().date()).count()
 
-        if self.max_submissions_per_day:
-            if daily_submission_count >= self.max_submissions_per_day:
-                return False, 'Reached maximum allowed submissions for today for this phase'
-        if self.max_submissions_per_person:
-            if total_submission_count >= self.max_submissions_per_person:
-                return False, 'Reached maximum allowed submissions for this phase'
+            if self.max_submissions_per_day:
+                if daily_submission_count >= self.max_submissions_per_day:
+                    if organization:
+                        return False, f'Team "{organization.name}" has reached the maximum allowed submissions for today for this phase'
+                    return False, 'Reached maximum allowed submissions for today for this phase'
+            if self.max_submissions_per_person:
+                if total_submission_count >= self.max_submissions_per_person:
+                    if organization:
+                        return False, f'Team "{organization.name}" has reached the maximum allowed submissions for this phase'
+                    return False, 'Reached maximum allowed submissions for this phase'
         return True, None
 
     @property
     def is_active(self):
         """ Returns true when this phase of the competition is on-going. """
         if not self.end:
-            return True
+            return self.start < now()
         else:
             return self.start < now() < self.end
 
@@ -357,21 +432,18 @@ class Phase(models.Model):
         """
         Checks for if we need to migrate current phase submissions to next phase.
         """
-        current_phase = self.competition.phases.get(index=self.index - 1)
         next_phase = self
+        current_phase = self.competition.phases.filter(index=self.index - 1).first()
 
-        # Check for next phase and see if it has auto_migration enabled
-        try:
-            if not next_phase.has_been_migrated:
-                logger.info(
-                    f"Checking for needed migrations on competition pk={self.competition.pk}, "
-                    f"current phase: {current_phase.index}, next phase: {next_phase.index}")
-                self.competition.apply_phase_migration(current_phase, next_phase)
+        if current_phase is None:
+            logger.error("This competition is missing the previous phase to migrate from.")
+            return
 
-        except next_phase.DoesNotExist:
-            logger.error(f"This competition is missing the next phase to migrate to.")
-        except current_phase.DoesNotExist:
-            logger.error(f"This competition is missing the previous phase to migrate from.")
+        if not next_phase.has_been_migrated:
+            logger.info(
+                f"Checking for needed migrations on competition pk={self.competition.pk}, "
+                f"current phase: {current_phase.index}, next phase: {next_phase.index}")
+            self.competition.apply_phase_migration(current_phase, next_phase)
 
 
 class PhaseTaskInstance(models.Model):
@@ -428,6 +500,7 @@ class Submission(models.Model):
     PREPARING = "Preparing"
     RUNNING = "Running"
     SCORING = "Scoring"
+    AWAITING_VALIDATION = "Awaiting validation"
     CANCELLED = "Cancelled"
     FINISHED = "Finished"
     FAILED = "Failed"
@@ -439,10 +512,13 @@ class Submission(models.Model):
         (PREPARING, "Preparing"),
         (RUNNING, "Running"),
         (SCORING, "Scoring"),
+        (AWAITING_VALIDATION, "Awaiting validation"),
         (CANCELLED, "Cancelled"),
         (FINISHED, "Finished"),
         (FAILED, "Failed"),
     )
+
+    RERUNNABLE_STATUSES = (FINISHED, FAILED, CANCELLED)
 
     description = models.CharField(max_length=240, default="", blank=True, null=True)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='submission', on_delete=models.DO_NOTHING)
@@ -485,6 +561,7 @@ class Submission(models.Model):
     scoring_worker_hostname = models.CharField(max_length=255, blank=True, null=True)
     queue = models.ForeignKey('queues.Queue', on_delete=models.SET_NULL, null=True, blank=True,
                               related_name='submissions')
+    selected_groups = models.ManyToManyField('profiles.CustomGroup', blank=True, related_name='submissions_selected_in')
     is_migrated = models.BooleanField(default=False)
     created_by_migration = models.ForeignKey(Phase, related_name='migrated_submissions', on_delete=models.CASCADE,
                                              null=True,
@@ -494,6 +571,8 @@ class Submission(models.Model):
 
     has_children = models.BooleanField(default=False)
     parent = models.ForeignKey('Submission', on_delete=models.CASCADE, blank=True, null=True, related_name='children')
+    # Set when an organizer resubmits a submission on the current phase tasks
+    resubmitted_from = models.ForeignKey('Submission', on_delete=models.SET_NULL, blank=True, null=True, related_name='resubmissions')
 
     fact_sheet_answers = models.JSONField(null=True, blank=True, max_length=4096)
 
@@ -505,63 +584,40 @@ class Submission(models.Model):
     def __str__(self):
         return f"{self.phase.competition.title} submission PK={self.pk} by {self.owner.username}"
 
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=['phase', 'is_soft_deleted', '-id'],
+                name='sub_phase_del_id_idx',
+            ),
+            models.Index(
+                fields=['phase', 'owner', 'created_when'],
+                name='sub_phase_owner_created_idx',
+            ),
+            models.Index(
+                fields=['phase'],
+                condition=models.Q(leaderboard__isnull=False, is_soft_deleted=False),
+                name='sub_phase_on_lb_idx',
+            ),
+        ]
+
     def soft_delete(self):
         """
-        Soft delete the submission: remove files but keep record in DB.
-        Also deletes associated SubmissionDetails and cleans up storage.
-        Also removes organization reference from the submission
+        Soft deletes the submission and its children: their records stay and are marked as soft deleted,
+        everything else is deleted (logs, scores, zip and files). See SubmissionDeleter.
         """
-
-        # Remove related files from storage
-        # 'save=False' prevents a database save, which is handled later after marking the submission as soft-deleted.
-        self.prediction_result.delete(save=False)
-        self.prediction_result_file_size = 0
-        self.scoring_result.delete(save=False)
-        self.scoring_result_file_size = 0
-        self.detailed_result.delete(save=False)
-        self.detailed_result_file_size = 0
-
-        # Delete related SubmissionDetails files and records
-        for detail in self.details.all():
-            detail.data_file.delete(save=False)  # Delete file from storage
-            detail.delete()  # Remove record from DB
-
-        # Clear the data field if no other submissions are using it
-        other_submissions_using_data = Submission.objects.filter(data=self.data).exclude(pk=self.pk).exists()
-        if not other_submissions_using_data:
-            self.data.delete()
-
-        # Clear the data field for this submission
-        self.data = None
-
-        # Clear the organization field for this submission
-        self.organization = None
-
-        # Mark submission as deleted
-        self.is_soft_deleted = True
-        self.soft_deleted_when = now()
-        self.save()
+        # Imported here because submission_deletion imports this module
+        from competitions.submission_deletion import SubmissionDeleter
+        SubmissionDeleter(submissions=[self]).soft_delete()
 
     def delete(self, **kwargs):
-
-        # Check if any other submissions are using the same data
-        other_submissions_using_data = Submission.objects.filter(data=self.data).exclude(pk=self.pk).exists()
-
-        if not other_submissions_using_data:
-            # If no other submissions are using the same data, delete it
-            self.data.delete()
-
-        # Also clean up details on delete
-        self.details.all().delete()
-
-        # Decrement the submissions_count for the competition on submission deletion
-        # Fetching competition from the phase of this submission
-        competition = self.phase.competition
-        super().delete(**kwargs)
-        # Ensure submissions_count stays non-negative
-        if competition.submissions_count > 0:
-            competition.submissions_count -= 1
-            competition.save()
+        """
+        Deletes the submission with its children, logs, scores, zip and their files,
+        and lowers the competition's submission count (see SubmissionDeleter)
+        """
+        # Imported here because submission_deletion imports this module
+        from competitions.submission_deletion import SubmissionDeleter
+        SubmissionDeleter(submissions=[self]).delete()
 
     def save(self, ignore_submission_limit=False, **kwargs):
         is_new = self.pk is None
@@ -600,66 +656,163 @@ class Submission(models.Model):
             self.phase.competition.submissions_count += 1
             self.phase.competition.save()
 
-    def start(self, tasks=None):
+    def start(self, tasks=None, group_ids=None, create_only=False):
         from .tasks import run_submission
-        run_submission(self.pk, tasks=tasks)
+        run_submission(self.pk, tasks=tasks, group_ids=group_ids, create_only=create_only)
 
     def run(self):
         # get tasks from the phase
         tasks = self.phase.tasks.all()
-        # start submission providing the tasks
-        self.start(tasks=tasks)
+        group_ids = list(self.selected_groups.values_list('id', flat=True))
+        # start submission providing the tasks and groups ids
+        self.start(tasks=tasks, group_ids=group_ids)
         return self
 
-    def re_run(self, task=None):
+    def resubmit(self):
+        """New submission with the same upload, run on the current phase tasks as if the participant submitted it again"""
+        # A child only ran on one task, resubmit the whole parent submission instead
+        if self.parent:
+            return self.parent.resubmit()
+        sub = Submission(
+            owner=self.owner,
+            participant=self.participant,
+            phase=self.phase,
+            data=self.data,
+            md5=self.md5,
+            name=self.name,
+            description=self.description,
+            fact_sheet_answers=self.fact_sheet_answers,
+            queue=self.phase.competition.queue,
+            organization=self.organization,
+            resubmitted_from=self,
+        )
+        sub.save(ignore_submission_limit=True)
+        sub.selected_groups.set(self.selected_groups.all())
+        return sub.run()
 
-        # task to use in the new submission
-        new_submission_task = task or self.task
-
-        # set is_specific_task_re_run
-        is_specific_task_re_run = bool(task)
-
-        flag_rerun_specific_task_or_has_no_children = False
-        # Check if this submission needs to rerun on specific children or has no children
-        if not self.has_children or is_specific_task_re_run:
-            flag_rerun_specific_task_or_has_no_children = True
-
-        # Check if task exists in case of specific task rerun or no children
-        if flag_rerun_specific_task_or_has_no_children and new_submission_task is None:
-            logger.error(f"Cannot rerun `{self}` because the task is None (deleted)")
-            return None
-        else:
-            children_tasks = self.children.values_list('task', flat=True)
-            if None in children_tasks:
-                logger.error(f"Cannot rerun `{self}` because one or more children submission tasks are None (deleted)")
+    def migrate_to(self, destination_phase, start=True):
+        pairs = []
+        if self.has_children:
+            finished = self.children.filter(status=Submission.FINISHED, is_soft_deleted=False).order_by('pk')
+            dest_tasks = list(destination_phase.tasks.order_by('pk'))
+            dest_pks = [t.pk for t in dest_tasks]
+            source_pks = list(self.phase.tasks.order_by('pk').values_list('pk', flat=True))
+            for child in finished:
+                if child.task_id in dest_pks:
+                    task = dest_tasks[dest_pks.index(child.task_id)]
+                elif child.task_id in source_pks and source_pks.index(child.task_id) < len(dest_tasks):
+                    task = dest_tasks[source_pks.index(child.task_id)]
+                else:
+                    continue
+                pairs.append((child, task))
+            if not pairs:
                 return None
 
-        # Create a new submission
-        submission_arg_dict = {
-            'owner': self.owner,
-            'task': new_submission_task,
-            'phase': self.phase,
-            'data': self.data,
-            'has_children': self.has_children,
-            'is_specific_task_re_run': is_specific_task_re_run,
-            'fact_sheet_answers': self.fact_sheet_answers,
-            'queue': self.phase.competition.queue
-        }
-        sub = Submission(**submission_arg_dict)
-        sub.save(ignore_submission_limit=True)
+        with transaction.atomic():
+            new_submission = Submission(
+                created_by_migration=self.phase,
+                participant=self.participant,
+                phase=destination_phase,
+                owner=self.owner,
+                data=self.data,
+                organization=self.organization,
+                fact_sheet_answers=self.fact_sheet_answers,
+                has_children=bool(pairs),
+            )
+            new_submission.save(ignore_submission_limit=True)
+            for child, task in pairs:
+                Submission(
+                    owner=self.owner,
+                    phase=destination_phase,
+                    data=self.data,
+                    participant=self.participant,
+                    parent=new_submission,
+                    task=task,
+                    fact_sheet_answers=self.fact_sheet_answers,
+                    queue=child.queue,
+                    organization=self.organization,
+                ).save(ignore_submission_limit=True)
 
-        # set tasks for rerunning
-        if flag_rerun_specific_task_or_has_no_children:
-            # in case of a submission with no children or specific task rerun
-            # submission with no children is same as submission with one task
-            tasks = [sub.task]
+        if start:
+            new_submission.start()
+        return new_submission
+
+    def _reset_for_rerun(self, status=SUBMITTING, shared_with_children=False):
+        """
+        Clears the results of a previous run so that this same row can be run again.
+        """
+        self.prediction_result.delete(save=False)
+        self.scoring_result.delete(save=False)
+        self.detailed_result.delete(save=False)
+        self.prediction_result_file_size = None
+        self.scoring_result_file_size = None
+        self.detailed_result_file_size = None
+
+        for detail in self.details.all():
+            detail.data_file.delete(save=False)
+            detail.delete()
+
+        if shared_with_children:
+            # Keep every score that a child still owns
+            child_score_ids = SubmissionScore.objects.filter(submissions__parent=self).values('pk')
+            self.scores.exclude(pk__in=child_score_ids).delete()
         else:
-            # in case submission has multiple children or multiple task rerun
-            # tasks are gathered from the children submissions
-            tasks = Task.objects.filter(pk__in=self.children.values_list('task', flat=True))
+            own_scores = list(self.scores.all())
+            if own_scores:
+                if self.parent_id:
+                    # Child: scores are shared with the parent, detach them before deleting
+                    self.parent.scores.remove(*own_scores)
+                for score in own_scores:
+                    score.delete()
 
-        sub.start(tasks=tasks)
-        return sub
+        self.leaderboard = None
+        self.status = status
+        self.status_details = None
+        self.started_when = None
+        self.celery_task_id = None
+        self.ingestion_worker_hostname = None
+        self.scoring_worker_hostname = None
+        self.secret = uuid.uuid4()
+        self.save()
+
+    def re_run(self, task=None):
+        """Re-runs this submission IN PLACE: same id, same row, same task(s).
+        - parent: all its children are reset and re-run
+        - child: only this child is re-run, the parent is reset to wait for it
+        - no children: the submission itself is re-run
+        The `task` argument is kept for compatibility and ignored."""
+        root = self.parent if self.parent_id else self
+
+        if self.parent_id:
+            targets = [self]
+        else:
+            targets = list(self.children.all()) or [self]
+
+        if any(t.task_id is None for t in targets):
+            logger.error(f"Cannot rerun `{self}` because a task is None (deleted)")
+            return None
+
+        with transaction.atomic():
+            # The family leaves the leaderboard: its scores are about to change
+            Submission.objects.filter(parent=root).update(leaderboard=None)
+
+            for target in targets:
+                target._reset_for_rerun()
+
+            if self.parent_id:
+                # Child re-run: the parent waits for it, the siblings keep their scores
+                root._reset_for_rerun(status=Submission.SUBMITTED, shared_with_children=True)
+            elif targets != [self]:
+                # Parent re-run: all children are reset above, the parent waits for them
+                self._reset_for_rerun(status=Submission.SUBMITTED)
+
+            if targets == [self]:
+                # no children: run the submission on its own task
+                transaction.on_commit(lambda: self.start(tasks=[self.task]))
+            else:
+                # parent -> sends its children, child -> sends only itself
+                transaction.on_commit(lambda: self.start())
+        return self
 
     def cancel(self, status=CANCELLED):
         if self.status not in [Submission.CANCELLED, Submission.FAILED, Submission.FINISHED]:
@@ -668,25 +821,58 @@ class Submission(models.Model):
                     sub.cancel(status=status)
             celery_app = app
             # If a custom queue is set, we need to fetch the appropriate celery app
-            if self.phase.competition.queue:
-                celery_app = app_for_vhost(str(self.phase.competition.queue.vhost))
-
-            celery_app.control.revoke(self.celery_task_id, terminate=True)
+            # NOTE: We fetch the queue from submission and not from competition to be sure that we are using the correct queue
+            # Originally we were using queue from the competition (self.phase.competition.queue)
+            if self.queue:
+                celery_app = app_for_vhost(str(self.queue.vhost))
+            # We need to convert the UUID given by celery into a byte like object otherwise it won't work
+            celery_app.control.revoke(str(self.celery_task_id), terminate=True)
             self.status = status
             self.save()
             return True
         return False
 
     def check_child_submission_statuses(self):
+        """
+        Sets the status of this parent submission from the statuses of its children.
+
+        A parent has one child per task, in phases with more than one task.
+
+        Nothing changes until every child is done (Finished, Failed or Cancelled).
+        Then the parent gets one status for all its children:
+            - Finished: if at least one child finished.
+            - Failed: if no child finished, but at least one failed.
+            - Cancelled: if all children were cancelled.
+
+        Examples, with 2 or more children:
+            all Finished                    -> Finished
+            all Failed                      -> Failed
+            all Cancelled                   -> Cancelled
+            Finished + Failed               -> Finished
+            Finished + Cancelled            -> Finished
+            Failed + Cancelled              -> Failed
+            Finished + Failed + Cancelled   -> Finished
+            Failed + Running                -> no change (a child is not done yet)
+        """
+        statuses = list(self.children.values_list('status', flat=True))
         done_statuses = [self.FINISHED, self.FAILED, self.CANCELLED]
-        if all([status in done_statuses for status in self.children.values_list('status', flat=True)]):
-            self.status = 'Finished'
-            self.save()
+
+        # Wait until every child is done
+        if not all(status in done_statuses for status in statuses):
+            return
+
+        if self.FINISHED in statuses:
+            self.status = self.FINISHED
+        elif self.FAILED in statuses:
+            self.status = self.FAILED
+        else:
+            self.status = self.CANCELLED
+        self.save()
 
     def calculate_scores(self):
         # leaderboards = self.phase.competition.leaderboards.all()
         # for leaderboard in leaderboards:
-        columns = self.phase.leaderboard.columns.exclude(computation__isnull=True)
+        columns = self.phase.leaderboard.columns.exclude(computation__isnull=True).exclude(computation=Column.AVERAGE_RANK)
         for column in columns:
             scores = self.scores.filter(column__index__in=column.computation_indexes.split(',')).values_list('score',
                                                                                                              flat=True)
@@ -733,6 +919,9 @@ class CompetitionParticipant(models.Model):
 
     class Meta:
         unique_together = ('user', 'competition')
+        indexes = [
+            models.Index(fields=['competition', 'status'], name='participant_comp_status_idx'),
+        ]
 
     def __str__(self):
         return f"({self.id}) - User: {self.user.username} in Competition: {self.competition.title}"

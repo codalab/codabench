@@ -24,9 +24,9 @@ This will open two windows:
 - A window containing the generated code
 - A browser that is used by playwright to generate the code. Every action you take there will generate new lines of the code.
 
-Once you are done, close the browser and open the file that playwright created containing the code it generated. Make sure to test it to make it sure it works.
+Once you are done, close the browser and open the file that playwright created containing the code it generated. Make sure to test it to make sure it works.
 
-Since we are passing custom commands to pytest, we need to remove some of the generated lines. Spawning a new browser and/or context will make them not take into the commands we have added in the `pytest.ini` file :
+Since we are passing custom commands to pytest, we need to remove some of the generated lines. Spawning a new browser and/or context will make them not take into account the commands we have added in the `pytest.ini` file :
 ```python title="Original file created by codegen"
 from playwright.sync_api import Playwright, sync_playwright, expect
 

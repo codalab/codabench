@@ -5,6 +5,8 @@ from celery.schedules import crontab
 from celery import signals
 import dj_database_url
 from .logs_loguru import configure_logging
+from django.core.management.utils import get_random_secret_key
+import configobj
 
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -19,15 +21,21 @@ USE_X_FORWARDED_HOST = True
 csrf_https_domain = "https://" + os.environ.get("DOMAIN_NAME").split(':')[0]
 csrf_http_domain = "http://" + os.environ.get("DOMAIN_NAME").split(':')[0]
 
-CSRF_TRUSTED_ORIGINS = [csrf_https_domain, csrf_http_domain]
-CSRF_ALLOWED_ORIGINS = [csrf_https_domain, csrf_http_domain]
+if os.environ.get("EXTERNAL_DOMAIN_NAME", "") != "":
+    csrf_https_external_domain = "https://" + os.environ.get("EXTERNAL_DOMAIN_NAME", "").split(':')[0]
+    csrf_http_external_domain = "http://" + os.environ.get("EXTERNAL_DOMAIN_NAME", "").split(':')[0]
+    CSRF_TRUSTED_ORIGINS = [csrf_https_domain, csrf_http_domain, csrf_https_external_domain, csrf_http_external_domain]
+    CSRF_ALLOWED_ORIGINS = [csrf_https_domain, csrf_http_domain, csrf_https_external_domain, csrf_http_external_domain]
 
-SITE_ID = 1
+    DOMAIN_NAME = os.environ.get('EXTERNAL_DOMAIN_NAME').split(':')[0]
+else:
+    CSRF_TRUSTED_ORIGINS = [csrf_https_domain, csrf_http_domain]
+    CSRF_ALLOWED_ORIGINS = [csrf_https_domain, csrf_http_domain]
+
+    DOMAIN_NAME = os.environ.get('DOMAIN_NAME', 'localhost').split(':')[0]
 
 SITE_DOMAIN = os.environ.get('SITE_DOMAIN', 'http://localhost')
-DOMAIN_NAME = os.environ.get('DOMAIN_NAME', 'localhost').split(':')[0]
-
-SELENIUM_HOSTNAME = os.environ.get("SELENIUM_HOSTNAME", "localhost")
+SITE_ID = 1
 
 
 THIRD_PARTY_APPS = (
@@ -59,6 +67,7 @@ THIRD_PARTY_APPS = (
 OUR_APPS = (
     'profiles',
     'analytics',
+    'dashboard',
     'competitions',
     'datasets',
     'pages',
@@ -70,6 +79,8 @@ OUR_APPS = (
     'forums',
     'announcements',
     'oidc_configurations',
+    'external_competitions',
+    'papers',
 )
 INSTALLED_APPS = THIRD_PARTY_APPS + OUR_APPS
 
@@ -84,7 +95,6 @@ MIDDLEWARE = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # 'corsheaders.middleware.CorsMiddleware', # BB
-    'django.middleware.common.CommonMiddleware',
     'middleware.BlockBannedUsersMiddleware'
 )
 
@@ -119,7 +129,24 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
-SECRET_KEY = os.environ.get("SECRET_KEY", '(*0&74%ihg0ui+400+@%2pe92_c)x@w2m%6s(jhs^)dc$&&g93')
+
+# =============================================================================
+# Secret key (generate one if none is given, otherwise use given key)
+# =============================================================================
+# This is needed when the secret key is generated for the first time as it won't be loaded as an environment variable
+config = configobj.ConfigObj('.env')
+with open(".env", "a+") as f:
+    secret_key_count = 0
+    f.seek(0)
+    for x in f:
+        if x.strip().startswith("SECRET_KEY="):
+            secret_key_count = 1
+            SECRET_KEY = os.environ.get("SECRET_KEY", config['SECRET_KEY'])
+            break
+    if secret_key_count == 0:
+        SECRET_KEY = get_random_secret_key()
+        f.write(f"\nSECRET_KEY='{SECRET_KEY}'\n")
+
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
@@ -251,6 +278,10 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'profiles.tasks.clean_non_activated_users',
         'schedule': timedelta(days=1),  # Run every 24 hours
     },
+    'sync_citing_papers': {
+        'task': 'papers.tasks.sync_citing_papers',
+        'schedule': timedelta(days=1),  # Run every 24 hours
+    },
 }
 CELERY_TIMEZONE = 'UTC'
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
@@ -310,6 +341,9 @@ SPECTACULAR_SETTINGS = {
     # Use static schema serving for better performance
     'COMPONENT_SPLIT_REQUEST': True,
     'COMPONENT_NO_READ_ONLY_REQUIRED': True,
+    # Show the query parameters in the order the code declares them, not A to Z.
+    # Why: related parameters stay together, for example start_date before end_date.
+    'SORT_OPERATION_PARAMETERS': False,
 }
 
 # OAuth Toolkit
@@ -346,7 +380,7 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [os.environ.get("REDIS_URL", "redis://redis:6379")],
+            "hosts": [{"address": os.environ.get("REDIS_URL", "redis://redis:6379"), "socket_timeout": None}],
 
             # To hold large submission outputs
             "capacity": 1500,  # default 100
@@ -386,6 +420,7 @@ if STORAGE_IS_S3:
                 "use_ssl": os.environ.get('S3_USE_SIGV4', 'true').lower() == 'true',
                 "querystring_auth": os.environ.get('AWS_QUERYSTRING_AUTH'),
                 "default_acl": os.environ.get('AWS_DEFAULT_ACL'),
+                "custom_domain": os.environ.get("AWS_S3_PUBLIC_CUSTOM_DOMAIN", ""),
             },
         },
         "bundle": {
@@ -473,6 +508,7 @@ AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME')
 AWS_STORAGE_PRIVATE_BUCKET_NAME = os.environ.get('AWS_STORAGE_PRIVATE_BUCKET_NAME')
 AWS_S3_CALLING_FORMAT = os.environ.get('AWS_S3_CALLING_FORMAT', 'boto.s3.connection.OrdinaryCallingFormat')
 AWS_S3_ENDPOINT_URL = os.environ.get('AWS_S3_ENDPOINT_URL', '')
+AWS_S3_PUBLIC_CUSTOM_DOMAIN = os.environ.get('AWS_S3_PUBLIC_CUSTOM_DOMAIN', '')
 AWS_DEFAULT_ACL = None  # Uses buckets security access policies
 AWS_QUERYSTRING_AUTH = os.environ.get(
     # This stops signature/auths from appearing in saved URLs
@@ -540,6 +576,7 @@ EMAIL_PORT = os.environ.get('EMAIL_PORT', 587)
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', True)
 AWS_DEFAULT_REGION = os.environ.get('AWS_DEFAULT_REGION')
 AWS_SES_REGION_NAME = os.environ.get('AWS_SES_REGION_NAME', AWS_DEFAULT_REGION)
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'Codabench <noreply@codabench.org>')
 SERVER_EMAIL = os.environ.get('SERVER_EMAIL', 'noreply@codabench.org')
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@codabench.org')
 
@@ -562,3 +599,16 @@ RERUN_SUBMISSION_LIMIT = os.environ.get('RERUN_SUBMISSION_LIMIT', 30)
 # =============================================================================
 ENABLE_SIGN_UP = os.environ.get('ENABLE_SIGN_UP', 'True').lower() == 'true'
 ENABLE_SIGN_IN = os.environ.get('ENABLE_SIGN_IN', 'True').lower() == 'true'
+
+
+# =============================================================================
+# Enable or disable the External Competitions feature (button, page, API,
+# and the daily fetch task). Off by default - intended for the main instance only.
+# =============================================================================
+EXTERNAL_COMPETITIONS_ENABLED = os.environ.get('EXTERNAL_COMPETITIONS_ENABLED', 'False').lower() == 'true'
+
+if EXTERNAL_COMPETITIONS_ENABLED:
+    CELERY_BEAT_SCHEDULE['fetch_external_competitions'] = {
+        'task': 'external_competitions.tasks.fetch_external_competitions',
+        'schedule': timedelta(days=1),
+    }

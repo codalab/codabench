@@ -4,6 +4,23 @@
     <competition-form competition_id="{{ object.pk }}">
     </competition-form>
 
+    <script id="available-groups" type="application/json">
+        {{ available_groups_json|default:"[]"|safe }}
+    </script>
+
+    <script id="selected-group-ids" type="application/json">
+        {{ selected_group_ids_json|default:"[]"|safe }}
+    </script>
+
+    <script id="available-queues" type="application/json">
+        {{ available_queues_json|default:"[]"|safe }}
+    </script>
+
+    <script id="available-users" type="application/json">
+        {{ available_users_json|default:"[]"|safe }}
+    </script>
+
+
     {# NOTE: First added for phase task sorting, SemanticUI does not come with sorting..! #}
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 {% endblock %}

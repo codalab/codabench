@@ -7,6 +7,7 @@ app_name = "tasks"
 
 urlpatterns = [
     path('', views.TaskManagement.as_view(), name='task_management'),
+    path('quota/', views.QuotaView.as_view(), name='quota'),
     path('<int:pk>/', views.TaskDetailView.as_view(), name='detail'),
     path('upload_task/', TaskViewSet.as_view({'post': 'upload_task'}), name='upload_task'),
 ]

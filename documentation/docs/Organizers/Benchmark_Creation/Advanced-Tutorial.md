@@ -1,5 +1,5 @@
 
-Here is an advanced tutorial. If you are new to CodaBench, please refer to [get started tutorial](Getting-started-with-Codabench.md) first.
+Here is an advanced tutorial. If you are new to Codabench, please refer to [get started tutorial](Getting-started-with-Codabench.md) first.
 In this article, you'll learn how to use more advanced features and how to create benchmarks using either the editor or bundles.
 Before proceeding to our tutorial, make sure you have registered for an account on the [Codabench](https://www.codabench.org/) website.
 
@@ -42,7 +42,7 @@ Click the Add Dataset button in the diagram to upload the resource files needed 
 
 ![image](../../_attachments/102432435-4d185880-404e-11eb-967f-1735f6a9f145_17528513094839308.png)
 
-Creating a phase will require a bundle of the following types (.zip format), I'll give you more details on how to write these bundle later.
+Creating a phase will require a bundle of the following types (.zip format), I'll give you more details on how to write these bundles later.
 
 Now you just need to have this concept in your mind
 
@@ -110,26 +110,7 @@ After the bundle has been uploaded, you will see the screenshot shown below.
 ![image](../../_attachments/102434028-e182bb00-404e-11eb-9de8-002e4589db66_17528513099222646.png)
 
 
-
-## Benchmark Examples
-
-Example bundles for code & dataset competition can be found here:
-
-https://github.com/codalab/competition-examples/tree/master/codabench
-
-### Iris
-
-[Iris Codabench Bundle](https://github.com/codalab/competition-examples/tree/master/codabench/iris) is a simple benchmark involving two phases, code submission and results submission.
-
-### AutoWSL
-
-Two versions of the [Automated Weakly Supervised Learning Benchmark](https://github.com/codalab/competition-examples/tree/master/codabench/autowsl):
-- [Code submission benchmark](https://github.com/codalab/competition-examples/tree/master/codabench/autowsl/code_submission)
-- [Dataset submission benchmark](https://github.com/codalab/competition-examples/tree/master/codabench/autowsl/dataset_submission)
-
-### Mini-AutoML
-
-[Mini-AutoML Bundle](https://github.com/codalab/competition-examples/tree/master/codabench/mini-automl) is a benchmark template for Codabench, featuring code submission to multiple datasets (tasks).
+!!! tip "You can find benchmark templates to start your own project in [Benchmark Examples](Benchmark-Examples.md) page."
 
 
 ## How do I set up submission comments for multiple submissions?

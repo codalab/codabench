@@ -1,3 +1,4 @@
+import datetime
 import random
 
 import factory
@@ -7,9 +8,11 @@ from factory import post_generation
 from factory.django import DjangoModelFactory
 from pytz import UTC
 
-from competitions.models import Competition, Phase, Submission, CompetitionParticipant, PhaseTaskInstance
+from competitions.models import Competition, Phase, Submission, CompetitionParticipant, PhaseTaskInstance, Tag, TagCategory
 from datasets.models import Data
+from external_competitions.models import ExternalPlatform, ExternalCompetition
 from leaderboards.models import Leaderboard, Column, SubmissionScore
+from papers.models import Paper
 from profiles.models import User, Organization
 from tasks.models import Task, Solution
 from queues.models import Queue
@@ -23,6 +26,7 @@ class UserFactory(DjangoModelFactory):
             '_username',
             '_i',
         )
+        skip_postgeneration_save = True
 
     _username = factory.Faker('user_name')
     _i = factory.Sequence(lambda n: n)
@@ -49,11 +53,31 @@ class UserFactory(DjangoModelFactory):
         if extracted:
             self.is_superuser = True
             self.is_staff = True
+            if created:
+                self.save()
+
+
+class TagCategoryFactory(DjangoModelFactory):
+    class Meta:
+        model = TagCategory
+        django_get_or_create = ('name',)
+
+    name = factory.Sequence(lambda n: f'Category {n}')
+
+
+class TagFactory(DjangoModelFactory):
+    class Meta:
+        model = Tag
+        django_get_or_create = ('name', 'category')
+
+    name = factory.Sequence(lambda n: f'Tag {n}')
+    category = factory.SubFactory(TagCategoryFactory)
 
 
 class CompetitionFactory(DjangoModelFactory):
     class Meta:
         model = Competition
+        skip_postgeneration_save = True
 
     title = factory.Sequence(lambda n: f'Competition {n}')
     created_by = factory.SubFactory(UserFactory)
@@ -70,6 +94,16 @@ class CompetitionFactory(DjangoModelFactory):
         if extracted:
             for user in extracted:
                 self.collaborators.add(user)
+            # Competition.save() adds the collaborators as approved participants
+            self.save()
+
+    @post_generation
+    def tags(self, created, extracted, **kwargs):
+        if not created:
+            return
+        if extracted:
+            for tag in extracted:
+                self.tags.add(tag)
 
 
 class DataFactory(DjangoModelFactory):
@@ -94,6 +128,7 @@ class DataFactory(DjangoModelFactory):
 class TaskFactory(DjangoModelFactory):
     class Meta:
         model = Task
+        skip_postgeneration_save = True
 
     name = factory.Sequence(lambda n: f'Task {n}')
     created_by = factory.SubFactory(UserFactory)
@@ -127,6 +162,7 @@ class QueueFactory(DjangoModelFactory):
 class PhaseFactory(DjangoModelFactory):
     class Meta:
         model = Phase
+        skip_postgeneration_save = True
 
     competition = factory.SubFactory(CompetitionFactory)
     start = factory.LazyFunction(now)
@@ -205,6 +241,7 @@ class ColumnFactory(DjangoModelFactory):
 class SubmissionScoreFactory(DjangoModelFactory):
     class Meta:
         model = SubmissionScore
+        skip_postgeneration_save = True
 
     column = factory.SubFactory(ColumnFactory)
     score = factory.LazyAttribute(lambda n: random.choice(range(1, 11)) / 10)
@@ -227,3 +264,36 @@ class OrganizationFactory(DjangoModelFactory):
 
     name = factory.Faker('word')
     email = factory.Faker('email')
+
+
+class ExternalPlatformFactory(DjangoModelFactory):
+    class Meta:
+        model = ExternalPlatform
+
+    name = factory.Sequence(lambda n: f'External Platform {n}')
+    platform_type = ExternalPlatform.PLATFORM_TYPE_CODABENCH
+    competitions_fetch_url = factory.Faker('url')
+    competition_base_url = factory.Faker('url')
+
+
+class ExternalCompetitionFactory(DjangoModelFactory):
+    class Meta:
+        model = ExternalCompetition
+
+    platform = factory.SubFactory(ExternalPlatformFactory)
+    name = factory.Sequence(lambda n: f'External Competition {n}')
+    competition_url = factory.Sequence(lambda n: f'https://example.org/competitions/{n}/')
+
+
+class PaperFactory(DjangoModelFactory):
+    class Meta:
+        model = Paper
+
+    doi = factory.Sequence(lambda n: f'10.1000/paper.{n}')
+    title = factory.Sequence(lambda n: f'Paper {n}')
+    authors = 'Alice Smith, Bob Jones'
+    venue = 'NeurIPS'
+    publication_date = factory.LazyFunction(lambda: datetime.date(2025, 1, 1))
+    citation_count = 0
+    url = factory.Sequence(lambda n: f'https://example.org/papers/{n}')
+    pdf_url = ''

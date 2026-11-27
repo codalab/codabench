@@ -1,0 +1,14 @@
+{% extends "profiles/settings_base.html" %}
+
+{% block title %}Delete Account - Codabench{% endblock %}
+
+{% block settings_title %}Delete Account{% endblock %}
+
+{% block settings_content %}
+    <delete-account></delete-account>
+    <script>
+        {# Only the username: the form checks that the user typed it correctly #}
+        const username = "{{ request.user.username | escapejs }}"
+        const contact_email = "{{ CONTACT_EMAIL }}"
+    </script>
+{% endblock %}

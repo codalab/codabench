@@ -2,13 +2,24 @@
 Codabench has a custom command that uploads a database backup, and copies it to the storage you are using under `/backups`. We'll see how to execute and automate that command, and how to restore from one of these backups in the event of a failure.
 
 ## Creating Backups
+
+From the `codabench` folder, run:
+
+```bash
+./bin/pg_dump.py
+```
+
+This script creates a dump named after the current date and time (e.g. `2026-11-17_14-30-00.dump`) and uploads it to your storage under `backups/`. The local copy in `codabench/backups/` is then deleted, so the backup only exists in your storage.
+
+The script performs the two steps below, which you can also run manually.
+
 ### Create
 ```bash
 DB_NAME=
 DB_USERNAME=
 DB_PASSWORD=
 DUMP_NAME=
-docker exec codabench-db-1 bash -c "PGPASSWORD=$DB_PASSWORD pg_dump -Fc -U $DB_USERNAME $DB_NAME > /app/backups/$DUMP_NAME.dump"
+docker exec db bash -c "PGPASSWORD=$DB_PASSWORD pg_dump -Fc -U $DB_USERNAME $DB_NAME > /app/backups/$DUMP_NAME.dump"
 ```
 
 ### Upload

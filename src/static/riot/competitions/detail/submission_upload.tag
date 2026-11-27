@@ -1,6 +1,7 @@
 <submission-upload>
     <div class="ui sixteen wide column submission-container">
 
+        <!-- Submission upload button -->
         <div class="submission-form">
             <h1>Submission upload</h1>
             <div if="{_.get(selected_phase, 'status') === 'Previous'}" class="ui red message">This phase has ended and no longer accepts submissions!</div>
@@ -8,23 +9,25 @@
             <form class="ui form coda-animated {error: errors}" ref="form" enctype="multipart/form-data">
                 <div class="submission-form" ref="fact_sheet_form" if="{ opts.fact_sheet !== null}">
                     <h2>Metadata or Fact Sheet</h2>
-                    <div class="submission-form-question" each="{ question in opts.fact_sheet }">
-                        <span if="{ question.type === 'text' }">
-                            <label if="{question.is_required == 'true'}" class="required-answer" for="{ question.key }">{ question.title }:</label>
-                            <label if="{question.is_required == 'false'}" for="{ question.key }">{ question.title }:</label>
-                            <input type="text" name="{ question.key }">
-                        </span>
-                        <span if="{ question.type === 'checkbox' }">
-                            <label for="{ question.key }">{ question.title }:</label>
-                            <input type="hidden" name="{ question.key }" value="false">
-                            <input type="checkbox" name="{ question.key }" value="true">
-                        </span>
-                        <span if="{ question.type == 'select' }">
-                            <label for="{ question.key }">{ question.title }:</label>
-                            <select name="{ question.key }">
-                                <option each="{ selection_opt in question.selection }" value="{ selection_opt }">{ selection_opt }</option>
-                            </select>
-                        </span>
+                    <div class="fact-sheet-scroll">
+                        <div class="submission-form-question" each="{ question in opts.fact_sheet }">
+                            <span if="{ question.type === 'text' }">
+                                <label if="{question.is_required == 'true'}" class="required-answer" for="{ question.key }">{ question.title }:</label>
+                                <label if="{question.is_required == 'false'}" for="{ question.key }">{ question.title }:</label>
+                                <input type="text" name="{ question.key }">
+                            </span>
+                            <span if="{ question.type === 'checkbox' }">
+                                <label for="{ question.key }">{ question.title }:</label>
+                                <input type="hidden" name="{ question.key }" value="false">
+                                <input type="checkbox" name="{ question.key }" value="true">
+                            </span>
+                            <span if="{ question.type == 'select' }">
+                                <label for="{ question.key }">{ question.title }:</label>
+                                <select name="{ question.key }">
+                                    <option each="{ selection_opt in question.selection }" value="{ selection_opt }">{ selection_opt }</option>
+                                </select>
+                            </span>
+                        </div>
                     </div>
                 </div>
 
@@ -41,6 +44,27 @@
                                         <div class="ui checkbox">
                                             <input type="checkbox" name="task-{task.id}" id="task-{task.id}" checked>
                                             <label for="task-{task.id}" >{task.name}</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ui vertical accordion menu" style="width: 36%;" id="select_groups_accordion" if="{available_groups}" hide="{!available_groups || available_groups.length === 0}">
+                    <div class="item">
+                        <a class="title">
+                            <i class="dropdown icon"></i>
+                            Submit to Group
+                        </a>
+                        <div class="content">
+                            <div class="ui form">
+                                <div class="grouped fields">
+                                    <div each="{group in available_groups}" class="field">
+                                        <div class="ui checkbox">
+                                            <input type="checkbox" name="group-{group.id}" id="group-{group.id}" checked="{group._checked !== false}" onclick="{toggle_group_checkbox.bind(this, group)}">
+                                            <label for="group-{group.id}">{group.name}</label>
                                         </div>
                                     </div>
                                 </div>
@@ -70,12 +94,14 @@
             </form>
         </div>
 
+        <!-- Upload progress bar -->
         <div class="ui indicating progress" ref="progress">
             <div class="bar">
                 <div class="progress">{ upload_progress }%</div>
             </div>
         </div>
 
+        <!-- Submission Output-->
         <div class="ui styled fluid accordion submission-output-container {hidden: _.isEmpty(selected_submission) || selected_phase.hide_output || _.isEmpty(selected_submission.filename)}"
              ref="accordion">
             <div class="title">
@@ -85,7 +111,15 @@
             <div class="ui basic segment">
                 <div class="content">
                     <div id="submission-output" class="ui" ref="submission-output">
-                        <div class="header">Output</div>
+                        <!-- Header : Output + Autoscroll toggle -->
+                        <div class="header output-header">
+                            <span class="output-title">Output</span>
+                            <div class="ui checkbox autoscroll-toggle" ref="autoscroll_checkbox">
+                                <input type="checkbox" checked/>
+                                <label>Autoscroll Output</label>
+                            </div>
+                        </div>
+                        <!-- Output logs -->
                         <div class="content">
                             <div if="{!ingestion_during_scoring}">
                                 <div if="{_.isEmpty(children)}">
@@ -94,10 +128,6 @@
                                                 ref="submission_output"
                                                 detailed_result_url="{detailed_result_urls[selected_submission.id]}"
                                                 show_graph="{opts.competition.enable_detailed_results}"></log_window>
-                                    <div class="ui checkbox" ref="autoscroll_checkbox">
-                                        <input type="checkbox" checked/>
-                                        <label>Autoscroll Output</label>
-                                    </div>
                                 </div>
                                 <div if="{children}">
                                     <div class="ui secondary menu submission-tabs">
@@ -147,11 +177,11 @@
             </div>
         </div>
     </div>
+
     <script>
         var self = this
 
         self.mixin(ProgressBarMixin)
-
         self.chart = undefined
         self.errors = {}
         self.lines = {}
@@ -167,6 +197,8 @@
         self.children_statuses = {}
         self.datasets = {}
         self.organizations = []
+
+        self.available_groups = []
 
         self.one('mount', function () {
             CODALAB.api.get_user_participant_organizations()
@@ -184,12 +216,21 @@
                 onClose: () => segment.hide(),
             })
 
-            // File upload handler
+            CODALAB.api.get_user_participant_groups(self.opts.competition.id)
+                .done((data) => {
+                    self.available_groups = (data || []).map(g => Object.assign({}, g, { _checked: true }))
+                    self.update()
+                })
+
+            self.toggle_group_checkbox = function (group, e) {
+                group._checked = e.target.checked
+            }
+
             $(self.refs.data_file.refs.file_input).on('change', self.check_can_upload)
             self.setup_autoscroll()
             self.setup_websocket()
-        }) 
-        
+        })
+
         // Function to capture change of `submit as` dropdown
         // Redirect to Add organization if selected option is Add Organizaiton
         $(document).on('change','#organization_dropdown',function(){
@@ -243,7 +284,6 @@
                 const msg_signature = `${event_data.type}-${event_data.submission_id}-${JSON.stringify(event_data.data)}`;
                 // Skip if we've already processed this exact message
                 if (self.processed_messages.has(msg_signature)) {
-                    console.log("Skipping duplicate message:", msg_signature);
                     return;
                 }
                 
@@ -260,7 +300,7 @@
                                 self.handle_websocket(event_data.submission_id, data)
                             }
                         })
-                        self.detailed_result_urls[submission_id] = detailed_result_url
+                        self.detailed_result_urls[event_data.submission_id] = detailed_result_url
                         self.update()
                         break
                     case 'message':
@@ -269,13 +309,9 @@
                 }
             })
             self.ws.addEventListener("open", function(event){
-                console.log("WebSocket connected");
                 // we're connected, so now try to pull logs (otherwise we may hit a race condition,
                 // maybe we don't have submissions yet?)
                 self.pull_logs()
-            })
-            self.ws.addEventListener("close", function(event) {
-                console.log("WebSocket disconnected, reconnecting...");
             })
             self.ws.addEventListener("error", function(event) {
                 console.error("WebSocket error:", event);
@@ -423,7 +459,7 @@
             let form_array = $(self.refs.form).serializeArray()
             let form_json = {}
             for (answer of form_array) {
-                if(!answer['name'].startsWith('task-')){
+                if(!answer['name'].startsWith('task-') && !answer['name'].startsWith('group-')){
                     if(answer['value'] === 'true'){
                         form_json[answer['name']] = true
                     }
@@ -434,7 +470,7 @@
                     }
                 }
             }
-            return form_json === {} ? null : form_json
+            return _.isEmpty(form_json) ? null : form_json
         }
 
         self.upload = function () {
@@ -451,6 +487,11 @@
             } else if(self.selected_tasks.length === 1){
                 task_ids_to_run = [self.selected_tasks[0].id]
             }
+
+            let selected_group_ids = self.available_groups
+                .filter(g => g._checked !== false)
+                .map(g => g.id)
+
             var data_file_metadata = {
                 type: 'submission',
                 competition: self.opts.competition.id
@@ -463,11 +504,10 @@
                     self.lines = {}
                     let dropdown = $('#organization_dropdown')
                     let organization = dropdown.dropdown('get value')
-                    if(organization === 'add_organization' | organization === 'None'){
+                    if(organization === 'add_organization' || organization === 'None'){
                         organization = null
                     }
                     dropdown.attr('disabled', 'disabled')
-
 
                     // Call start_submission with dataset key
                     // start_submission returns submission key
@@ -477,7 +517,8 @@
                         "fact_sheet_answers": self.get_fact_sheet_answers(),
                         "tasks": task_ids_to_run,
                         "organization": organization,
-                        "queue": self.opts.competition.queue ? self.opts.competition.queue.id : null
+                        "queue": self.opts.competition.queue ? self.opts.competition.queue.id : null,
+                        "selected_groups": selected_group_ids
                     })
                         .done(function (data) {
                             CODALAB.events.trigger('new_submission_created', data)
@@ -525,33 +566,39 @@
         })
 
         CODALAB.events.on('submissions_loaded', submissions => {
-            let latest_submission = _.head(_.filter(submissions, {parent: null}))
+            let latest_submission = _.head(_.filter(submissions, { parent: null }))
+
             if (latest_submission && !_.includes(['Finished', 'Cancelled', 'Failed', 'Unknown'], latest_submission.status)) {
                 self.selected_submission = latest_submission
                 self.children = _.sortBy(latest_submission.children)
+
                 if (self.children) {
                     self.update()
                     $('.menu .item', self.root).tab()
                 }
-                // Commented this out as it seems to hit a race condition some times with websocket
-                // not being connected yet. moved running after websocket open
-                // self.pull_logs()
             }
         })
 
         CODALAB.events.on('submission_selected', function (selected_submission) {
             self.selected_submission = selected_submission
-            self.autoscroll_output()
+            self.update()
+
+            setTimeout(function () {
+                self.autoscroll_output()
+            }, 0)
         })
 
         self.autoscroll_output = function () {
-            if (!self.refs.autoscroll_checkbox) {
+            if (!self.refs.autoscroll_checkbox || !self.autoscroll_selected) {
                 return
             }
-            if (self.autoscroll_selected) {
-                var output = self.refs.submission_output
-                output.scrollTop = output.scrollHeight
+
+            var output = self.refs.submission_output
+            if (!output) {
+                return
             }
+
+            output.scrollTop = output.scrollHeight
         }
     </script>
 
@@ -582,6 +629,23 @@
                 font-weight 600
 
         #submission-output
+
+            .output-header
+                display flex
+                align-items center
+                justify-content space-between
+                gap 12px
+
+            .output-title
+                font-weight 700
+
+            .autoscroll-toggle
+                margin 0
+                white-space nowrap
+
+                label
+                    font-weight normal
+
             .submission-tabs
                 overflow-x scroll
                 padding-bottom 10px
@@ -614,6 +678,11 @@
         .graph-container
             display block
             height 250px
+
+        .fact-sheet-scroll
+            max-height: min(50vh, 520px)
+            overflow-y: auto
+            padding-right: 8px
 
     </style>
 </submission-upload>

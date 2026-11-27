@@ -2,11 +2,12 @@ In this page, you'll learn how to update critical elements of your benchmark lik
 
 For a general overview of resources management, [click here](Resource-Management.md).
 
-If order to update your programs or data, you have two approaches:
+In order to update your programs or data, you have two approaches:
+
 - **A.** Edit an existing Task (simpler and straightforward)
 - **B.** Create a new Task
 
-Let's see both approach in detail.
+Let's see both approaches in detail.
 
 ## A. Edit an existing Task
 

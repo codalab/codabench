@@ -1,0 +1,91 @@
+/* --------------------------------------------------------------------------------------
+ Organizations list (templates/profiles/organization_list.html)
+ */
+.org-table-card
+    overflow hidden
+    background-color #fff
+    border 1px solid rgba($cb-navy-900, 0.1)
+    border-radius 10px
+    box-shadow 0 1px 2px rgba(0, 0, 0, 0.04)
+
+.org-table
+    width 100%
+    border-collapse collapse
+    text-align left
+
+    th
+        padding 12px 20px
+        background-color $cb-page-bg
+        color $cb-navy-700
+        font-size 11px
+        font-weight 600
+        letter-spacing 0.05em
+        text-transform uppercase
+
+    td
+        padding 14px 20px
+        border-top 1px solid rgba($cb-navy-900, 0.1)
+        color $cb-navy-700
+        font-size 14px
+        vertical-align middle
+
+    // Why relative: the link inside the row is stretched over this row
+    tbody tr
+        position relative
+        transition background-color 150ms ease
+
+        &:hover
+            background-color $cb-blue-50
+
+.org-table-name
+    display flex
+    align-items center
+    gap 12px
+
+// Why bc-logo too: it must come after the home page logo size to replace it
+.bc-logo.org-table-logo
+    width 36px
+    height 36px
+    border-radius 8px
+    font-size 15px
+
+.org-table-link
+    color $cb-navy-900
+    font-weight 600
+
+    // Makes the whole row clickable
+    &:after
+        content ''
+        position absolute
+        inset 0
+
+    tr:hover &
+        color $cb-blue-500
+
+// One line, longer text ends with "..."
+.org-table-description
+    max-width 320px
+    overflow hidden
+    text-overflow ellipsis
+    white-space nowrap
+
+.org-table-date
+    white-space nowrap
+
+// Amber pill. Why: a pending invite needs an answer from the user
+.bc-type.org-table-invited
+    background-color $cb-warning-bg
+    color $cb-warning
+
+.org-table-identity
+    min-width 0
+
+.org-table-email
+    margin-top 2px
+    color $cb-navy-700
+    font-size 13px
+
+/* Phones: only the name and the role */
+@media only screen and (max-width 767px)
+    .org-table-optional
+        display none

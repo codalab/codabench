@@ -1,5 +1,4 @@
 import json
-
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
@@ -15,12 +14,13 @@ from rest_framework import status
 from django.urls import reverse
 from django.db import IntegrityError
 
-from api.permissions import IsUserAdminOrIsSelf, IsOrganizationEditor
+from api.permissions import IsSelf, IsOrganizationEditor
 from api.serializers.profiles import MyProfileSerializer, UserSerializer, \
     OrganizationSerializer, MembershipSerializer, SimpleOrganizationSerializer, DeleteMembershipSerializer
 from profiles.helpers import send_mail
 from profiles.models import Organization, Membership
 from profiles.views import send_delete_account_confirmation_mail
+from utils.email import get_link_context
 
 User = get_user_model()
 
@@ -32,7 +32,7 @@ class UserViewSet(mixins.UpdateModelMixin,
 
     def get_permissions(self):
         if self.action in ['update', 'partial_update']:
-            self.permission_classes = [IsUserAdminOrIsSelf]
+            self.permission_classes = [IsSelf]
         return [permission() for permission in self.permission_classes]
 
     def update(self, request, *args, **kwargs):
@@ -42,8 +42,7 @@ class UserViewSet(mixins.UpdateModelMixin,
         serializer = self.get_serializer(instance, data=data, partial=partial)
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
-        resp = self.get_serializer(instance)
-        return Response(reverse('profiles:user_profile', args=[resp.data['username']]))
+        return Response(reverse('users:my_profile'))
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def participant_organizations(self, request):
@@ -64,14 +63,21 @@ class GetMyProfile(RetrieveAPIView, GenericAPIView):
 @login_required
 def user_lookup(request):
     search = request.GET.get('q', '')
-    filters = Q()
     is_admin = request.user.is_superuser or request.user.is_staff
 
-    if search:
-        filters |= Q(username__icontains=search)
-        filters |= Q(email__icontains=search) if is_admin else Q(email__iexact=search)
+    # Start with base query strictly excluding deleted & current user
+    queryset = User.objects.filter(is_deleted=False).exclude(id=request.user.id)
 
-    users = User.objects.exclude(id=request.user.id).filter(filters)[:5]
+    if search:
+        search_filter = Q(username__icontains=search)
+        if is_admin:
+            search_filter |= Q(email__icontains=search)
+        else:
+            search_filter |= Q(email__iexact=search)
+
+        queryset = queryset.filter(search_filter)
+
+    users = queryset[:5]
 
     # Helper to print username with email for admins
     def _get_data(user):
@@ -101,9 +107,10 @@ def delete_account(request):
             "message": "A confirmation link has been sent to your email. Follow the instruction to finish the process"
         })
     else:
+        # Why two messages: the user is already logged in, so saying which field is wrong reveals nothing.
         return Response({
             "success": False,
-            "error": "Wrong username or password"
+            "error": "Wrong password" if is_username_valid else "Wrong username"
         })
 
 
@@ -166,7 +173,7 @@ class OrganizationViewSet(mixins.CreateModelMixin,
     @action(detail=True, methods=['post'], permission_classes=[IsOrganizationEditor])
     def invite_users(self, request, pk=None):
         org = self.get_object()
-        if type(request.data['users']) != list:
+        if type(request.data['users']) is not list:
             raise ValidationError(f'Required data is an Array of User ID\'s not a {type(request.data["users"])} ')
         # Getting users, but filtering out any that are already in the organization
         users = User.objects.filter(id__in=request.data['users']).exclude(organizations=pk)
@@ -180,6 +187,7 @@ class OrganizationViewSet(mixins.CreateModelMixin,
                         'user': member.user,
                         'invite_url': f'{reverse("profiles:organization_accept_invite")}?token={member.token}',
                         'organization': org.name,
+                        **get_link_context(request),
                     },
                     subject=f'You have been invited to join {org.name}',
                     html_file="profiles/emails/invite.html",
@@ -252,6 +260,18 @@ class OrganizationViewSet(mixins.CreateModelMixin,
 
         mem_ser = MembershipSerializer(membership)
         return Response(mem_ser.data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['delete'], permission_classes=[IsAuthenticated])
+    def leave_organization(self, request, pk=None):
+        organization = self.get_object()
+        try:
+            member = organization.membership_set.get(user=request.user)
+        except Membership.DoesNotExist:
+            raise ValidationError('You are not a member of this organization')
+        if member.group == Membership.OWNER:
+            raise PermissionDenied('The owner cannot leave the organization')
+        organization.users.remove(request.user)
+        return Response({'success': True, 'message': 'You have left the organization'}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['delete'])
     def delete_organization(self, request, pk=None):

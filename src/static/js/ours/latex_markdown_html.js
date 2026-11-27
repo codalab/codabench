@@ -58,7 +58,7 @@ function renderMarkdownWithLatex(content) {
   // ---------------------------------------------------------
 
   // Run the Markdown parser on the content (now safe with all code and LaTeX replaced by tokens)
-  let html = marked(contentWithLatexPlaceholders)
+  let html = DOMPurify.sanitize(marked.parse(contentWithLatexPlaceholders))
 
   // ---------------------------------------------------------
   // Step 4: Restore rendered LaTeX blocks into the HTML

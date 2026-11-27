@@ -1,7 +1,11 @@
 {% extends "base.html" %}
 
-{% block title %}{{ competition.title }} - Codabench{% endblock %}
+{% block title %}{{ competition.title }} – Codabench{% endblock %}
 
 {% block content %}
-    <competition-detail competition_pk="{{ object.pk }}" secret_key="{{ secret_key }}"></competition-detail>
+<competition-detail
+    competition_pk="{{ object.pk }}"
+    secret_key="{{ secret_key }}"
+    can_view_workers_panel="{% if request.user.is_authenticated and request.user == competition.created_by or request.user in competition.collaborators.all or request.user.is_superuser %}true{% else %}false{% endif %}">
+</competition-detail>
 {% endblock %}

@@ -1,6 +1,7 @@
+from queues.models import Queue
 import uuid
 
-from django.contrib.auth.models import PermissionsMixin, AbstractBaseUser, UserManager
+from django.contrib.auth.models import Group, PermissionsMixin, AbstractBaseUser, UserManager
 from django.db import models
 from django.utils.timezone import now
 from django.utils.text import slugify
@@ -92,12 +93,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     allow_organization_invite_emails = models.BooleanField(default=True)
 
     # Queues
-    rabbitmq_queue_limit = models.PositiveIntegerField(default=5, blank=True)
+    rabbitmq_queue_limit = models.PositiveIntegerField(default=10, blank=True)
     rabbitmq_username = models.CharField(max_length=36, null=True, blank=True)
     rabbitmq_password = models.CharField(max_length=36, null=True, blank=True)
-
-    # Robot submissions
-    is_bot = models.BooleanField(default=False)
 
     # Required for social auth and such to create users
     objects = CodabenchUserManager()
@@ -124,7 +122,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     @property
     def slug_url(self):
-        return reverse('profiles:user_profile', args=[self.slug])
+        return reverse('users:profile', args=[self.slug])
 
     def get_used_storage_space(self, binary=False):
         """
@@ -228,7 +226,6 @@ class User(AbstractBaseUser, PermissionsMixin):
 
         # Any user attribute
         self.username = f"deleted_user_{self.id}"
-        self.slug = f"deleted_slug_{self.id}"
         self.photo = None
         self.email = None
         self.display_name = None
@@ -343,3 +340,19 @@ class Membership(models.Model):
 
     class Meta:
         ordering = ["date_joined"]
+
+
+class CustomGroup(Group):
+
+    queue = models.ForeignKey(Queue, null=True, blank=True, on_delete=models.SET_NULL, related_name='custom_groups', verbose_name="Groups_for_queue",
+                              help_text="Queue Foreign Key on group model for multiple submissions routing.")
+
+    is_selectable_by_participant = models.BooleanField(default=False, verbose_name="Show group selection for participant",
+                                                       help_text="If checked, participants can choose whether to submit to this group's queue. If unchecked, the group is always active.")
+
+    class Meta:
+        verbose_name = "Group"
+        verbose_name_plural = "Groups"
+
+    def __str__(self):
+        return self.name

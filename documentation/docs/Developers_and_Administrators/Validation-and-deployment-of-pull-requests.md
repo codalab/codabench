@@ -19,7 +19,7 @@ docker compose up -d
 If necessary, migrate and collect static files (see this [page](Codabench-Installation.md)).
 
 !!! note 
-    If the branch with the changes is from an external repository, you can create a branch in Codabench's repository and make a first merging into this new branch. Then, you'll be able to merge the new branch into master. This way, the automatic tests will be triggered.
+    If the branch with the changes is from an external repository, you can create a branch in Codabench's repository and make a first merging into this new branch. Then, you'll be able to merge the new branch into develop. This way, the automatic tests will be triggered.
 
     _EDIT: It may be possible to trigger the tests even if the branch is external. To be confirmed._
 
@@ -47,7 +47,7 @@ You can then safely click on `Delete branch`. It is a good practice to keep the 
 
 ## Update the test server
 
-Here are the necessary steps to update the Codabench server to reflect the last changes. We prodive here general guidelines that work for both the test server and the production server.
+Here are the necessary steps to update the Codabench server to reflect the last changes. We provide here general guidelines that work for both the test server and the production server.
 
 ### Log into the server
 ```bash
@@ -63,7 +63,7 @@ Replace `codabench-server` by your own SSH host setting, or the IP address of th
 ### Pull the last change
 !!! tip
     - If you are deploying on a test server, you can use the `develop` branch.
-    - If you are deploying on a Production server, we strongly adivse on using the `master` branch.
+    - If you are deploying on a Production server, we strongly advise using the `master` branch.
 
 ```bash
 docker compose down
@@ -100,7 +100,7 @@ docker compose exec django ./manage.py collectstatic --noinput
 ### Final testing
 
 - Access the platform from your browser
-- You may need a hard refresh (Maj + R) so the changes take effect.
+- You may need a hard refresh (Ctrl + Shift + R) so the changes take effect.
 - Check that everything is working fine, the new changes, and the basic functionalities of the platform
 
 
@@ -129,7 +129,7 @@ For this, you will need to go to the [release page](https://github.com/codalab/c
 
 ![image](../_attachments/88c04254-7333-4aea-8351-95ab83e02eaa_1752851311028784.jpg)
 
-Afterwards, you click on `Choose a tag` and enter the tag you want to create (in this exemple, 1.17.0 which doesn't exist yet)
+Afterwards, you click on `Choose a tag` and enter the tag you want to create (in this example, 1.17.0 which doesn't exist yet)
 
 ![image](../_attachments/bfeb57be-c926-4da2-bb0e-7ff00193872f_17528513112279325.jpg)
 
@@ -148,16 +148,16 @@ When you are done, you publish the release.
 One of the workflows of this repository creates a docker image and uploads it automatically to Dockerhub with the tag of the branch that launched the workflow.
 
 !!! note
-    If you fork the repository, you will need to link a Dockerhub account by adding the username and a docker token in the repository variables. We use [this Github Action](https://github.com/docker/login-action?tab=readme-ov-file#docker-hub) to automatically login with these variables.
+    If you fork the repository, you will need to link a Dockerhub account by adding the username and a docker token in the repository variables. We use [this Github Action](https://github.com/docker/login-action?tab=readme-ov-file#docker-hub) to automatically log in with these variables.
 
 
-These workflows launches when one of the following conditions are met :
+These workflows launch when one of the following conditions are met :
 
 - A change in the `Containerfile.compute_worker` file
 - A change of any file within the `compute_worker/` directory
 
-The tag is decided by three different criterias :
+The tag is decided by three different criteria:
 
-- Changes on the `develop` branch creates a tag with the `test` tag
-- Changes on the `master` branch creates a tag with the release tag (ex: `v1.22`)
+- Changes on the `develop` branch create a tag with the `test` tag
+- Changes on the `master` branch create a tag with the release tag (ex: `v1.22`)
 - Changes on any other branches will create a tag with the branch name as the tag.

@@ -26,6 +26,15 @@
       status 503
     }
   }
+  # When maintenance ends, redirect stale /maintenance.html requests back to home
+  @staleMaintenancePage {
+    path /maintenance.html
+    not file {
+      root /srv
+      try_files maintenance.on
+    }
+  }
+  redir @staleMaintenancePage / 302
 
   # Serves static files, should be the same as `STATIC_ROOT` setting:
   root * /var/www/django

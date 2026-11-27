@@ -6,7 +6,7 @@ This page describes all the attributes in the Codabench competition definition l
 
 A version for the YAML is required as this platform can support multiple versions of a `competition.yaml` file. For examples of v1.5 bundles, look [here](https://github.com/codalab/codalab-competitions/wiki/Organizer_Codalab-competition-YAML-definition-language).
 
-For all v2 style competition bundles, be sure to add `version: 2` to the top of the competition.yml file.
+For all v2 style competition bundles, be sure to add `version: 2` to the top of the `competition.yaml` file.
 
 **Note:** Not all features of v1.5 competitions are currently supported in v2.
 
@@ -19,7 +19,7 @@ For all v2 style competition bundles, be sure to add `version: 2` to the top of 
 ### Optional
 - **description:** A brief description of the competition.
 - **registration_auto_approve:** True/False. If True, participation requests will not require manual approval by competition administrators. Defaults to False
-- **docker_image:** Can specify a specific docker image for the competition to use. Defaults to `codalab/codalab-legacy:py3`. [More information here](Competition-docker-image.md).
+- **docker_image:** Can specify a specific docker image for the competition to use. Defaults to `codalab/codalab-legacy:py37`. [More information here](Competition-docker-image.md).
 - **make_programs_available:** Can specify whether to share the ingestion and scoring program with participants or not. Always available to competition organizer.
 - **make_input_data_available:** Can specify whether to share the input data with participants or not. Always available to competition organizer.
 - **queue:** Queue submissions are sent to. Can be used to specify competition specific compute workers. Defaults to the standard queue shared by all competitions. The queue should be referenced by its **Vhost**, not by its name. You can find the Vhost in `Queue Management` by clicking the eye button `View Queue Detail`.
@@ -31,9 +31,11 @@ For all v2 style competition bundles, be sure to add `version: 2` to the top of 
 - **auto_run_submissions:** a boolean (default: `True`) if set to `False`, organizers have to manually run the submissions of each participant
 - **can_participants_make_submissions_public:** a boolean (default: `True`) if set to `False`, participants cannot make their submissions public from submissions panel.
 - **forum_enabled:** a boolean (default: `True`) if set to `False`, organizers and participants cannot see or interact with competition forum.
- 
-
-
+- <a id="tags"></a>**tags:** Taxonomy tags associated with the competition grouped by category (dictionary mapping category names to lists of tag names). Category names and tag names must match existing entries in the platform taxonomy.
+    - Default categories and tags:
+        - **Machine Learning Domain:** *Algorithms*, *Audio*, *AutoML*, *Computer Vision*, *Generative AI*, *Graphs*, *LLM*, *Multimodal*, *NLP*, *Other*, *Reinforcement Learning*, *Tabular*, *Time Series*
+        - **Fields of Application:** *Agriculture*, *Astronomy*, *Biology*, *Climate*, *Cybersecurity*, *Earth Observation*, *Education*, *Energy*, *Finance*, *E-commerce*, *Healthcare*, *Legal*, *Other*, *Robotics*, *Social Media*, *Sports*, *Transportation*
+        - **Conference:** *ACL*, *CVPR*, *ECCV*, *ECML PKDD*, *ICCV*, *ICLR*, *ICML*, *MICCAI*, *NAACL*, *NeurIPS*, *SemEval*, *WSDM*
 
 ```yaml
 # Required
@@ -56,7 +58,14 @@ reward: $1000 prize pool
 auto_run_submissions: True
 can_participants_make_submissions_public: False
 forum_enabled: True
+tags:
+  Machine Learning Domain:
+    - Reinforcement Learning
+    - Computer Vision
+  Fields of Application:
+    - Robotics
 ```
+
 
 ## Pages
 ### Required
@@ -74,7 +83,7 @@ pages:
 ## Phases
 ### Required
 - **name:** Name of the phase
-- **start:** Datetime string for the start of the competition. ISO format strings are recommended. Use `YYYY-MM-DD HH:MM:SS` date-time format. (Example date-time: 2024-12-31 14:30:00)
+- **start:** Datetime string for the start of the phase. ISO format strings are recommended. Use `YYYY-MM-DD HH:MM:SS` date-time format. (Example date-time: 2024-12-31 14:30:00)
 - **end:** Datetime string for the end of the phase (optional for _last phase only._ If not supplied for the final phase, that phase continues indefinitely). Use `YYYY-MM-DD HH:MM:SS` date-time format. (Example date-time: 2024-12-31 14:30:00)
 - **tasks:** An array of numbers pointing to the index of any defined tasks relevant to this phase (see tasks for more information)
 
@@ -83,6 +92,12 @@ pages:
 - **index:** Integer for noting the order of phases, Phases _must_ be sequential, without any overlap. If indexes are not supplied, ordering will be assumed by declaration order.
 - **max_submissions:** Total submissions allowed per participant for the entire phase
 - **max_submissions_per_day:** Submission limit for each participant for a given day
+- **max_submissions_scope**(default=participant): Who the `max_submissions` and `max_submissions_per_day` limits apply to. `participant` limits each participant individually. `organization` shares both limits between all members of a participant's organization (team):
+    - A team's usage counts every submission made in the phase by its members, whether or not the submission was made on behalf of the organization.
+    - Membership is evaluated at the time of each submission: all current members (owners, managers, participants and members, but not pending invites) count, including their submissions made before joining the team. A member who leaves the team takes their submissions with them.
+    - A participant belonging to several organizations is blocked as soon as any of these organizations reaches a limit.
+    - Participants who don't belong to any organization keep individual limits.
+    - As with individual limits, failed submissions and submissions re-submitted by organizers do not count.
 - **auto_migrate_to_this_phase:** Cannot be set on the first phase of the competition. This will re-submit all successful submissions from the previous phase to this phase at the time the phase starts.
 - **execution_time_limit:** Execution time limit for submissions, given in seconds. Default is 600.
 - **hide_output:** True/False. If True, stdout/stderr for all submissions to this phase will be hidden from users who are not competition administrators or collaborators.
@@ -109,6 +124,8 @@ phases:
     name: Final Phase
     description: Final testing of your models
     start: 2020-02-02 00:00:00 # Time in UTC+0 and 24-hour format
+    max_submissions: 5
+    max_submissions_scope: organization  # The 5 submissions are shared by each team
     auto_migrate_to_this_phase: True
     accepts_only_result_submissions: False
     tasks:
@@ -135,7 +152,7 @@ OR
 ```yaml
 tasks:
   - index: 0
-    name: Compute Pi Developement Task
+    name: Compute Pi Development Task
     description: Compute Pi, focusing on accuracy
     input_data: dev_phase/input_data/
     reference_data: dev_phase/reference_data/
@@ -172,16 +189,17 @@ solutions:
 ## Fact Sheet
 ### Optional
 JSON for asking metadata questions about each submission when they are submitted
+
 - **KEY:** Programmatic name for a response. Should not contain any whitespace.
 - **QUESTION TYPE:**
-   - **"checkbox":** Prompts the user with a checkbox for a yes/no or true/false type question
-      - **_Required_ SELECTION**: [true, false]
-    - **"text":**: Prompts the user with a text box to write a response.
-      - **_Required_ SELECTION**: ""
-      - `"is_required": "false"` will allow the user not to submit a response. Otherwise, the user will have to type something.
+    - **"checkbox":** Prompts the user with a checkbox for a yes/no or true/false type question
+        - **_Required_ SELECTION**: [true, false]
+    - **"text":** Prompts the user with a text box to write a response.
+        - **_Required_ SELECTION**: ""
+        - `"is_required": "false"` will allow the user not to submit a response. Otherwise, the user will have to type something.
     - **"select":** Gives the user a dropdown to select a value from.
-      - **SELECTION**: Give an array of comma separated values that the user can select from: ["Value1","Value2","Value3",...,"ValueN"]
-      - TIP: If you want this selection to be optional you can add "" as an option. ex. ["", "Value1", ...] and set `"is_required": "false"`
+        - **SELECTION**: Give an array of comma separated values that the user can select from: ["Value1","Value2","Value3",...,"ValueN"]
+        - TIP: If you want this selection to be optional you can add "" as an option. ex. ["", "Value1", ...] and set `"is_required": "false"`
 - `is_on_leaderboard:` setting this to "true" will show this response on the leaderboard along with their submission.
 
 ### Structure
@@ -194,6 +212,7 @@ fact_sheet: {
         "selection": [SELECTION],
         "is_required": ["true" OR "false"],
         "is_on_leaderboard": ["true" OR "false"]
+    }
 }
 ```
 
@@ -256,10 +275,10 @@ fact_sheet: {
 
 ### Optional
 - **sorting:** sorting order for the column: Descending (desc) or Ascending (asc)
-  - Ascending: smaller scores are better
-  - Descending: larger scores are better
+    - Ascending: smaller scores are better
+    - Descending: larger scores are better
 - **computation:** computation to be applied *must be accompanied by computation indexes*
-  - computation options: sum, avg, min, max
+    - computation options: sum, avg, min, max, avg_rank
 - **computation_indexes:** an array of indexes of the columns the computation should be applied to
 - **precision:** (*integer, default=2*) to round the score to *precision* number of digits
 - **hidden:** (*boolean, default=False*) to hide/unhide a column on leaderboard

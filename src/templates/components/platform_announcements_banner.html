@@ -1,0 +1,24 @@
+{# Banner of active platform announcements, shown above the header on every page. #}
+{# This template is not included directly. It is rendered by the tag {% platform_announcements_banner %} in base.html. #}
+{# Why: the tag queries the announcements and passes them here as `platform_announcements`. #}
+{# `platform_announcements` is a variable (the list of announcements), not a tag. #}
+
+{# Render nothing when there are no announcements, so no empty strip shows above the header #}
+{% if platform_announcements %}
+<div class="platform-announcements-banner">
+    {# One thin row per announcement. The level class sets the row color (critical, warning, info, plain) #}
+    {% for a in platform_announcements %}
+    <div class="platform-announcement platform-announcement-{{ a.level }}">
+        {# Plain announcements have no icon. Other levels get a matching Semantic UI icon #}
+        {% if a.level != 'plain' %}
+            <i class="platform-announcement-icon {% if a.level == 'critical' %}exclamation circle{% elif a.level == 'warning' %}exclamation triangle{% else %}info circle{% endif %} icon"></i>
+        {% endif %}
+        <div class="platform-announcement-content">
+            {# Title and text sit on the same line. The text may contain HTML (links, paragraphs) written by admins #}
+            {% if a.title %}<span class="platform-announcement-title">{{ a.title }}</span>{% endif %}
+            {% if a.text %}<span class="platform-announcement-body">{{ a.text|safe }}</span>{% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}

@@ -1,0 +1,33 @@
+{# Logged-in user menu items, shared by the header dropdown and the mobile menu. #}
+{# Logout submits the #logout-form in components/header.html #}
+{# Why request.user and not user: profile pages set user to the person being viewed. #}
+
+{% if request.user.is_staff %}
+    <!-- Admin (staff only) -->
+    <div class="menu-admin">
+        <div class="menu-heading">Admin</div>
+        <a class="menu-item" href="{% url "admin:index" %}"><i class="bi bi-shield-lock"></i>Django Admin</a>
+        <a class="menu-item" href="{% url "su_login" %}"><i class="bi bi-person-gear"></i>Change User</a>
+        <a class="menu-item" href="{% url "pages:monitor_queues" %}"><i class="bi bi-speedometer2"></i>Monitor Queues</a>
+        <a class="menu-item" href="{% url "analytics:analytics" %}"><i class="bi bi-bar-chart"></i>Analytics</a>
+        <a class="menu-item" href="{% url "dashboard:dashboard" %}"><i class="bi bi-graph-up"></i>Dashboard</a>
+    </div>
+{% endif %}
+
+<!-- The user and the things they work with -->
+<a class="menu-item" href="{% url 'users:my_profile' %}"><i class="bi bi-person"></i>Profile</a>
+<a class="menu-item" href="{% url 'competitions:management' %}"><i class="bi bi-trophy"></i>Competitions</a>
+<a selenium="resources" class="menu-item" href="{% url 'tasks:task_management' %}"><i class="bi bi-folder"></i>Resources</a>
+<a class="menu-item" href="{% url 'queues:management' %}"><i class="bi bi-hourglass"></i>Queues</a>
+<a class="menu-item" href="{% url 'profiles:organization_list' %}"><i class="bi bi-people"></i>Organizations</a>
+<div class="menu-divider"></div>
+
+<!-- Activity -->
+<a class="menu-item" href="{% url "pages:server_status" %}"><i class="bi bi-activity"></i>Submission Status</a>
+<div class="menu-divider"></div>
+
+<!-- Settings -->
+<a class="menu-item" href="{% url 'settings:notifications' %}"><i class="bi bi-gear"></i>Settings</a>
+<div class="menu-divider"></div>
+
+<a class="menu-item" href="{% url 'accounts:logout' %}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();"><i class="bi bi-door-open"></i>Logout</a>

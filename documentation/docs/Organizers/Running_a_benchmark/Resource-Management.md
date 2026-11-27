@@ -24,12 +24,12 @@ By clicking the `Add Dataset/Program` button you can fill a form and attach a da
 
 ![](_attachments/b7aba5b0-1eab-4b8c-8f0e-7d463aa20c3b_1753436707984425.jpg)
 
-You can click on a dataset/program and make it public or private. This is useful when you want to share a dataset with participants so that hey can use it to prepare a submission for a competition.
+You can click on a dataset/program and make it public or private. This is useful when you want to share a dataset with participants so that they can use it to prepare a submission for a competition.
 
 ![](_attachments/99ec6090-86bd-4425-8f12-46115e09409d_1753436708048147.jpg)
 
 
-For a general breakdown of the roles of different types of datasets, see this link: [Competition Bundle Structure: Data types and their role](https://docs.codabench.org/latest/Organizers/Benchmark_Creation/Competition-Bundle-Structure/#data-types-and-their-role).
+For a general breakdown of the roles of different types of datasets, see this link: [Competition Bundle Structure: Data types and their role](../Benchmark_Creation/Competition-Bundle-Structure.md#data-types-and-their-role).
 
 
 
@@ -64,7 +64,7 @@ You can create a new task by uploading a task zip that has the required files in
 ![](_attachments/1ffc7805-950e-46ad-adfe-bca8a4b85c70_1753436708942981.jpg)
 
 
-Create a zip file that consists of a `task.yaml` file and zips of datasets/programs if required. You can use already existing datasets/prograsm by using their keys in the yaml, or upload new datasets/programs or use a mix of keys and files e.g. you choose to use already existing input data and reference data but use zip files for ingestion and scoring program. In the last case, codabench will create two programs and then use them in your task and will use existing datasets in the same task.
+Create a zip file that consists of a `task.yaml` file and zips of datasets/programs if required. You can use already existing datasets/programs by using their keys in the yaml, or upload new datasets/programs or use a mix of keys and files e.g. you choose to use already existing input data and reference data but use zip files for ingestion and scoring program. In the last case, Codabench will create two programs and then use them in your task and will use existing datasets in the same task.
 
 Check the files below for examples of task upload zips.
 
@@ -97,7 +97,7 @@ In the task details, you can view all the task details e.g. title, description, 
 
 
 ## Competition Bundles
-In this tab, you can mange your competition bundles. These bundles are stored when you create your competitions using a zip. 
+In this tab, you can manage your competition bundles. These bundles are stored when you create your competitions using a zip. 
 ![](_attachments/b6c7f500-f531-4b1c-9b08-86609c197126_17534367096771557.jpg)
 
 

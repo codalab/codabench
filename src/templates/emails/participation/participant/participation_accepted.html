@@ -3,7 +3,7 @@
 {% block content %}
     <p>
         Your application for the
-        <a href="http://{{ site.domain }}{{ participant.competition.get_absolute_url }}">{{ participant.competition.title }}</a>
+        <a href="{{ protocol }}://{{ domain }}{{ participant.competition.get_absolute_url }}">{{ participant.competition.title }}</a>
         competition has been <b>accepted</b>. Get ready to showcase your skills and compete with other talented individuals.
     </p>
 {% endblock %}

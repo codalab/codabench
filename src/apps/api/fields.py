@@ -3,7 +3,6 @@ import base64
 import binascii
 import json
 
-import six
 from django.core.files.base import ContentFile
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework.exceptions import ValidationError
@@ -36,7 +35,7 @@ class NamedBase64ImageField(Base64ImageField):
         file_name = data["file_name"]
         base64_data = data["data"]
 
-        if isinstance(base64_data, six.string_types):
+        if isinstance(base64_data, str):
             # Strip base64 header.
             if ';base64,' in base64_data:
                 header, base64_data = base64_data.split(';base64,')

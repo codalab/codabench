@@ -1,0 +1,290 @@
+// Banner on the external competitions list (riot/external_competitions/external_competition_list.tag).
+// The public competitions page has its own banner, see components/public_competitions.styl.
+.external-competitions-banner
+  display flex
+  align-items center
+  justify-content space-between
+  padding 10px 15px
+  margin-bottom 20px
+  background #e9f0f8
+  border 1px solid #c8daee
+  border-radius 4px
+  font-size 16px
+  color #2c5a82
+
+.external-btn
+  font-size 14px
+  padding 0.5em 1em
+  background-color #4684c7
+  color #fff
+  text-decoration none
+  border-radius 4px
+  display inline-block
+  cursor pointer
+  transition background-color 0.2s ease
+
+  &:hover
+    background-color #396ca3
+    color #fff
+    text-decoration none
+
+// External competitions list page (riot/external_competitions/external_competition_list.tag).
+// Nested under the tag name so these generic class names don't leak to other pages.
+external-competition-list
+  display block
+  width 100%
+  margin-bottom 5px
+  background #e3ecf7
+  padding 20px
+  border-radius 6px
+
+  .page-header
+    display flex
+    align-items center
+    justify-content space-between
+    margin-bottom 10px
+
+  .page-title
+    margin 0
+    font-size 24px
+    font-weight bold
+    color #2c5a82
+
+  .external-blurb
+    font-size 15px
+    color #5c5c5c
+    margin-bottom 20px
+    max-width 900px
+
+  // Only the background is overridden here, so the banner stays readable on the blue page
+  .external-competitions-banner
+    background #fafcff
+
+  .content-container
+    display flex
+    width 100%
+
+  .filters-panel.ui.segments
+    width 270px
+    flex-shrink 0
+    align-self flex-start
+    margin-right 15px
+    margin-left 0 !important
+    margin-top 0 !important
+    background #fff
+    border 1px solid #e3e7ec !important
+    border-radius 10px !important
+    box-shadow 0 1px 2px rgba(0, 0, 0, 0.04) !important
+    overflow hidden
+
+    > .ui.segment
+      background #fff !important
+      border-top 1px solid #f1f4f7 !important
+      padding 12px 14px !important
+      margin 0 !important
+
+      &:first-child
+        border-top none !important
+
+    .ui.header
+      color var(--cb-navy-900, #1b2f40) !important
+      font-weight 700 !important
+      font-size 13px !important
+      letter-spacing -0.01em
+      margin 0 0 8px 0
+
+    // Search input
+    .ui.input input
+      border 1px solid #e3e7ec !important
+      border-radius 6px !important
+      font-size 13px
+      color var(--cb-navy-900, #1b2f40)
+      background #fff
+      padding 8px 10px 8px 34px !important
+      transition border-color 0.15s ease, box-shadow 0.15s ease
+
+      &:focus
+        border-color var(--cb-blue-500, #3b6e9b) !important
+        box-shadow 0 0 0 2px rgba(59, 110, 155, 0.15) !important
+        outline none
+
+    .ui.icon.input > i.icon
+      color var(--cb-blue-500, #3b6e9b) !important
+      opacity 0.75
+
+    .filter-item
+      display block !important
+      margin-bottom 6px !important
+      font-size 13px
+      color var(--cb-navy-700, #36536d)
+
+      label
+        cursor pointer
+        color var(--cb-navy-700, #36536d)
+        font-size 13px
+
+        &:hover
+          color var(--cb-navy-900, #1b2f40)
+
+    .clear-filters-btn
+      border 1px solid #e3e7ec !important
+      border-radius 4px !important
+      background-color #f8fafc !important
+      color var(--cb-navy-700, #36536d) !important
+      font-weight 500 !important
+      font-size 13px !important
+      padding 9px 12px !important
+      box-shadow none !important
+      outline none !important
+      transition all 0.15s ease-in-out !important
+
+      i.icon
+        color var(--cb-blue-500, #3b6e9b) !important
+        opacity 0.85
+
+      &:hover
+        background-color var(--cb-blue-50, #eef4fa) !important
+        border-color var(--cb-blue-500, #3b6e9b) !important
+        color var(--cb-blue-500, #3b6e9b) !important
+        box-shadow none !important
+        outline none !important
+
+      &:focus,
+      &:active
+        background-color #f8fafc !important
+        border-color #e3e7ec !important
+        color var(--cb-navy-700, #36536d) !important
+        box-shadow none !important
+        outline none !important
+
+    input[type="checkbox"]
+      margin-right 6px
+      accent-color var(--cb-blue-500, #3b6e9b)
+
+  .list-panel
+    flex-grow 1
+
+  .pagination-nav
+    padding 10px 0
+    width 100%
+    text-align center
+    margin-bottom 20px
+
+  // Blue buttons matching .external-btn; chained with .ui.button to beat Semantic UI's gray defaults
+  .ui.button.theme-btn
+    background-color #4684c7
+    color #fff
+    transition background-color 0.2s ease
+
+    &:hover, &:focus
+      background-color #396ca3
+      color #fff
+
+    // Semantic UI forces opacity .45 on disabled buttons; use explicit light blue colors instead
+    &.disabled, &:disabled
+      background-color #c8daee
+      color #7a9cc0
+      opacity 1 !important
+
+  .float-left
+    float left
+
+  .float-right
+    float right
+
+  .link-no-deco
+    all unset
+    text-decoration none
+    cursor pointer
+    width 100%
+
+  .full-width
+    width 100%
+
+  .tile-wrapper
+    border solid 1px gainsboro
+    display flex
+    background-color #fff
+    transition all 75ms ease-in-out
+    width 100%
+    margin-bottom 6px
+    padding 1em
+    border-radius 5px
+
+  .tile-wrapper:hover
+    box-shadow 0 3px 8px -1px rgba(44, 90, 130, 0.3)
+    transition all 75ms ease-in-out
+    background-color #f7faff
+    border solid 1px #4684c7
+
+  .img-wrapper
+    padding 5px
+    align-self center
+
+    img
+      max-height 60px !important
+      max-width 60px !important
+      margin 0 auto
+
+  .comp-info
+    width 100%
+
+  .comp-info .heading
+    text-align left
+    padding 5px
+    color #1b1b1b
+    margin-bottom 0.3em
+
+  .comp-info .comp-description
+    text-align left
+    font-size 13px
+    line-height 1.15em
+    margin 0.35em
+    color #555
+
+  .comp-stats
+    display flex
+    flex-wrap wrap
+    gap 1em
+    font-size 0.9em
+    align-items center
+    margin-top 0.5em
+    padding 0 0.35em
+    color #555
+
+  .comp-stats > div
+    display flex
+    align-items center
+    gap 0.4em
+    background #eef4fb
+    border-radius 12px
+    padding 0.3em 0.7em
+
+  .stat-label
+    color #888
+
+  .stat-value
+    color #333
+    font-weight normal
+
+  .loading-indicator
+    display flex
+    align-items center
+    padding 20px
+    width 100%
+    margin 0 auto
+
+  .spinner
+    border 4px solid rgba(0,0,0,.1)
+    width 36px
+    height 36px
+    border-radius 50%
+    border-top-color #3498db
+    animation spin 1s ease-in-out infinite
+
+// Same definition as the spin keyframes in the other riot tags (keyframes are global either way)
+@keyframes spin
+  0%
+    transform rotate(0deg)
+  100%
+    transform rotate(360deg)

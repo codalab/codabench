@@ -1,0 +1,40 @@
+{# Mobile menu, opened by #hamburger_button in components/header.html #}
+{# Opened and closed in static/js/ours/init.js #}
+
+<div id="mobile_menu_backdrop" class="mobile-menu-backdrop"></div>
+
+<aside id="mobile_menu" class="mobile-menu" aria-label="Menu">
+    <!-- Top part: the links shown in the header on larger screens -->
+    <div class="mobile-menu-top">
+        <a class="mobile-menu-link" href="{% url "competitions:public" %}">
+            <i class="trophy icon"></i>
+            Benchmarks/Competitions
+        </a>
+        <a class="mobile-menu-link" href="{% url "datasets:public" %}">
+            <i class="database icon"></i>
+            Datasets
+        </a>
+        <a class="mobile-menu-link" href="{% url "papers:list" %}">
+            <i class="file alternate outline icon"></i>
+            Papers
+        </a>
+        {% if user.is_authenticated %}
+            <div class="mobile-menu-link mobile-menu-user">
+                <i class="user icon"></i>
+                {{ request.user.username }}
+            </div>
+        {% else %}
+            <a class="mobile-menu-link" href="{% url 'accounts:login' %}">Login</a>
+            {% if ENABLE_SIGN_UP %}
+                <a class="mobile-menu-link" href="{% url 'accounts:signup' %}">Sign-up</a>
+            {% endif %}
+        {% endif %}
+    </div>
+
+    <!-- Bottom part: the same items as the header dropdown -->
+    {% if user.is_authenticated %}
+        <div class="mobile-menu-items">
+            {% include "components/user_menu_items.html" %}
+        </div>
+    {% endif %}
+</aside>

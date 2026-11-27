@@ -30,8 +30,8 @@ class DatasetAPITests(APITestCase):
         resp = self.client.post(reverse("data-list"), {
             'name': 'Test!',
             'type': Data.COMPETITION_BUNDLE,
-            'request_sassy_file_name': faker.file_name(),
-            'file_name': faker.file_name(),
+            'request_sassy_file_name': faker.file_name(extension='.zip'),
+            'file_name': faker.file_name(extension='.zip'),
             'file_size': 1000,
         })
 
@@ -42,7 +42,7 @@ class DatasetAPITests(APITestCase):
         resp = self.client.put(reverse("data-detail", args=(self.existing_dataset.pk,)), {
             'name': 'Test!',
             'type': Data.COMPETITION_BUNDLE,
-            'request_sassy_file_name': faker.file_name(),
+            'request_sassy_file_name': faker.file_name(extension='.zip'),
             'file_size': 1000,
         })
         assert resp.status_code == 200
@@ -77,8 +77,8 @@ class DatasetAPITests(APITestCase):
         resp = self.client.post(reverse("data-list"), {
             'name': 'new-file-test',
             'type': Data.COMPETITION_BUNDLE,
-            'request_sassy_file_name': faker.file_name(),
-            'file_name': faker.file_name(),
+            'request_sassy_file_name': faker.file_name(extension='.zip'),
+            'file_name': faker.file_name(extension='.zip'),
             'file_size': file_size,
         })
 
@@ -90,11 +90,27 @@ class DatasetAPITests(APITestCase):
         resp = self.client.post(reverse("data-list"), {
             'name': 'new-file-test',
             'type': Data.COMPETITION_BUNDLE,
-            'request_sassy_file_name': faker.file_name(),
+            'request_sassy_file_name': faker.file_name(extension='.zip'),
             'file_name': faker.file_name(),
             'file_size': file_size,
         })
         assert resp.status_code == 201
+
+    def test_dataset_api_rejects_non_zip_files(self):
+        self.client.login(username='creator', password='creator')
+
+        # Attempt to upload a non-zip file
+        resp = self.client.post(reverse("data-list"), {
+            'name': 'non-zip-test',
+            'type': Data.COMPETITION_BUNDLE,
+            'request_sassy_file_name': faker.file_name(extension='.py'),
+            'file_name': faker.file_name(extension='.py'),
+            'file_size': 1000,
+        })
+
+        assert resp.status_code == 400
+        assert "non_field_errors" in resp.data
+        assert resp.data["non_field_errors"][0] == "Only zip files are allowed!"
 
 
 class DatasetDetailTests(TestCase):
@@ -159,7 +175,6 @@ class DatasetDownloadTests(TestCase):
             created_by=self.owner,
             downloads=5
         )
-
         self.private_dataset = DataFactory(
             is_public=False,
             created_by=self.owner,
@@ -171,13 +186,10 @@ class DatasetDownloadTests(TestCase):
         # Mock the URL that would normally be generated for the file
         # This avoids depending on actual file storage or signature logic
         mock_make_url_sassy.return_value = "http://codebench-storage/public_dataset.zip"
-
         response = self.client.get(reverse("datasets:download_by_pk", args=[self.public_dataset.pk]))
-
         # Should redirect to the URL
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response["Location"], "http://codebench-storage/public_dataset.zip")
-
         # Should increment download count
         self.public_dataset.refresh_from_db()
         self.assertEqual(self.public_dataset.downloads, 6)
@@ -187,27 +199,21 @@ class DatasetDownloadTests(TestCase):
         # Mock the URL that would normally be generated for the file
         # This avoids depending on actual file storage or signature logic
         mock_make_url_sassy.return_value = "http://codebench-storage/private_dataset.zip"
-
         response = self.client.get(reverse("datasets:download_by_pk", args=[self.private_dataset.pk]))
-
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response["Location"], "http://codebench-storage/private_dataset.zip")
-
         self.private_dataset.refresh_from_db()
         self.assertEqual(self.private_dataset.downloads, 3)
 
     def test_download_private_dataset_as_other_user(self):
         # Authenticate as a different user who is not the owner
         self.client.force_login(self.other_user)
-
         response = self.client.get(reverse("datasets:download_by_pk", args=[self.private_dataset.pk]))
-
         # Should return 404 (access denied)
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 403)
 
     def test_download_nonexistent_dataset(self):
         response = self.client.get(reverse("datasets:download_by_pk", args=[99999]))
-
         # Should return 404 (access denied)
         self.assertEqual(response.status_code, 404)
 
@@ -378,6 +384,45 @@ class DatasetDeleteTests(APITestCase):
         # None should be deleted since the operation failed
         self.assertTrue(Data.objects.filter(pk=self.dataset1.pk).exists())
         self.assertTrue(Data.objects.filter(pk=self.other_dataset.pk).exists())
+
+    def test_delete_single_dataset_removes_file_from_storage(self):
+        """
+        Gives a dataset a file, then deletes it with the delete button of its row.
+        Expected: the dataset is deleted, and its file is deleted from storage.
+        """
+        # update() instead of save().
+        # Why: save() reads the file size from storage, and this test file doesn't exist there.
+        Data.objects.filter(pk=self.dataset1.pk).update(data_file='dataset/test/dataset1.zip')
+
+        storage = Data._meta.get_field('data_file').storage
+        # The file is deleted after the delete is saved, so we run that step here
+        with patch.object(storage, 'delete') as delete_file, self.captureOnCommitCallbacks(execute=True):
+            resp = self.client.delete(reverse("data-detail", args=[self.dataset1.pk]))
+
+        self.assertEqual(resp.status_code, 204)
+        self.assertFalse(Data.objects.filter(pk=self.dataset1.pk).exists())
+        delete_file.assert_called_once_with('dataset/test/dataset1.zip')
+
+    def test_delete_many_removes_files_from_storage(self):
+        """
+        Gives two datasets a file, then deletes both with "Delete Selected".
+        Expected: both datasets are deleted, and both files are deleted from storage.
+        """
+        # update() instead of save().
+        # Why: save() reads the file size from storage, and these test files don't exist there.
+        Data.objects.filter(pk=self.dataset1.pk).update(data_file='dataset/test/dataset1.zip')
+        Data.objects.filter(pk=self.dataset2.pk).update(data_file='dataset/test/dataset2.zip')
+
+        storage = Data._meta.get_field('data_file').storage
+        ids = [self.dataset1.pk, self.dataset2.pk]
+        # The files are deleted after the delete is saved, so we run that step here
+        with patch.object(storage, 'delete') as delete_file, self.captureOnCommitCallbacks(execute=True):
+            resp = self.client.post(reverse("data-delete-many"), ids, format="json")
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(Data.objects.filter(pk__in=ids).exists())
+        deleted_file_names = [call.args[0] for call in delete_file.call_args_list]
+        self.assertEqual(sorted(deleted_file_names), ['dataset/test/dataset1.zip', 'dataset/test/dataset2.zip'])
 
     def test_cannot_delete_dataset_associated_with_a_submission_in_competition(self):
         """If a dataset is a submission linked to a competition phase, it cannot be deleted."""

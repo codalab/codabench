@@ -27,7 +27,7 @@ docker compose up -d
 ```
 
 ## Restore the backup settings
-Connect to the instance by ssh and upload your json file at 1st step, execute :
+Connect to the instance by ssh and upload the JSON file saved at the 1st step, then execute:
 
 ```bash
 curl -u <login>:<password> -H "Content-Type: application/json" -X POST -T <your definitions file>.json http://localhost:<rabbit_admin_port>/api/definitions

@@ -10,6 +10,7 @@ The details tab covers all basic competition info, such as title, logo, descript
 - Logo: The logo corresponding to your competition
 - Description: The description of your competition
 - Queue: If you've previously created a queue through queue management, you can assign it to your competition here.
+- Tags: Select one or multiple tags categorized by domain (e.g., Machine Learning Domain, Fields of Application, Conference) to classify your competition and make it easily discoverable on the platform.
 
 
 ## Participation
@@ -31,6 +32,15 @@ Clicking `Add page` should present you a modal with the following layout:
 
 - Title: The title of the page you are adding
 - Content: The content of your page formatted as Markdown.
+
+!!! Tip "Linking to another page"
+    You can link from one page's content to another page (or to the Terms page) by adding an anchor tag that triggers a click on the target tab:
+
+    ```html
+    <a onclick="javascript:$('.item[data-tab=_tab_page1]').trigger('click');">Go to Evaluation</a>
+    ```
+
+    Pages are numbered in the order they appear, starting from `_tab_page0`, `_tab_page1`, `_tab_page2`, and so on. The Terms page is the one exception and is always targeted with `_tab_page_term`, regardless of its position.
 
 ## Phases
 The phases section allows you to define your phases and their attached tasks.

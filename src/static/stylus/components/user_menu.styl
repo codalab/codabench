@@ -1,0 +1,42 @@
+/* --------------------------------------------------------------------------------------
+ User menu items (templates/components/user_menu_items.html)
+ Used by the header dropdown and the bottom part of the mobile menu, so both look the same.
+ */
+.menu-item
+    display flex
+    align-items center
+    gap 8px
+    padding 6px 10px
+    border-radius 4px
+    color $cb-navy-700
+    font-size 13px
+    white-space nowrap
+
+    &:hover
+        background-color $cb-blue-50
+        color $cb-blue-500
+
+.menu-heading
+    margin 4px 0
+    padding 0 10px
+    color $cb-navy-700
+    font-size 11px
+    font-weight 600
+    letter-spacing 0.05em
+    text-transform uppercase
+
+.menu-divider
+    height 1px
+    margin 6px 0
+    background-color rgba($cb-navy-900, 0.1)
+
+// Admin block: slightly darker panel. Why: it marks these links as staff tools
+.menu-admin
+    margin-bottom 6px
+    padding 8px 6px 6px
+    border-radius 4px
+    background-color rgba($cb-navy-900, 0.08)
+
+    // Why not the normal hover: the light blue would barely show on this panel
+    .menu-item:hover
+        background-color rgba($cb-blue-500, 0.16)

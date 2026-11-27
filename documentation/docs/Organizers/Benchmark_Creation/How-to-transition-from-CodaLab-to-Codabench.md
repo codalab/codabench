@@ -10,7 +10,7 @@
 - Storage quotas 
 - [Computation servers management](../Running_a_benchmark/Server-status-page.md) for all users. 
 
-It also emphasizes on benchmarking, allowing dataset submissions and multiple leaderboard rows per user. Finally, future project development and maintenance will be focused on Codabench.
+It also emphasizes benchmarking, allowing dataset submissions and multiple leaderboard rows per user. Finally, future project development and maintenance will be focused on Codabench.
 
 ## Do I need to create a new account?
 
@@ -38,7 +38,7 @@ That’s it! Your competition is ready to receive submissions.
 
 ## How to move a competition from CodaLab to Codabench?
 
-If you competitition is already live on CodaLab, that is fine too. You simply need to create a dump, download it and re-upload it on Codabench.
+If your competition is already live on CodaLab, that is fine too. You simply need to create a dump, download it and re-upload it on Codabench.
 
 ![](_attachments/947b149d-ebc7-4f78-bed7-d0a16b195065_17534366794768937.jpg)
 
@@ -56,5 +56,5 @@ If you don’t have any previous competition, and want to learn how to create on
 
 ## Concluding remarks
 
-Codabench, the new version of the competition and benchmark platform CodaLab, was launched on August 2023 and is already receiving great attention. For users accustomed to CodaLab, the transition to Codabench is quick and easy. Indeed, competition bundles are back-compatible, and all that is required is to create an account on Codabench. To go further, you can refer to [Codabench’s Docs](https://docs.codabench.org).
+Codabench, the new version of the competition and benchmark platform CodaLab, was launched in August 2023 and is already receiving great attention. For users accustomed to CodaLab, the transition to Codabench is quick and easy. Indeed, competition bundles are back-compatible, and all that is required is to create an account on Codabench. To go further, you can refer to [Codabench’s Docs](https://docs.codabench.org).
 

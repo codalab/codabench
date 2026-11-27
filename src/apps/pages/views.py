@@ -1,12 +1,14 @@
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.views.generic import TemplateView
 from django.db.models import Q
 
 from competitions.models import Submission
 from announcements.models import Announcement, NewsPost
+from papers.models import Paper
+from pages.home_page import get_featured_benchmarks, get_popular_benchmarks, get_recent_benchmarks
+from pages.serializers import HomePageAnnouncementSerializer, HomePageNewsPostSerializer, HomePageBenchmarkSerializer
 
-from django.conf import settings
-from django.shortcuts import render
 from utils.data import pretty_bytes
 
 
@@ -16,25 +18,53 @@ class HomeView(TemplateView):
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
 
-        announcement = Announcement.objects.all().first()
-        context['announcement'] = announcement.text if announcement else None
+        # Home page announcements, plus the ones meant for the home page and all pages.
+        # Platform only announcements are shown in the banner above the header, not here.
+        announcements = Announcement.objects.filter(
+            is_active=True,
+            placement__in=[Announcement.PLACEMENT_HOME_PAGE, Announcement.PLACEMENT_HOME_PAGE_AND_PLATFORM],
+        ).order_by("priority", "-created_when")
+        context['announcements'] = HomePageAnnouncementSerializer(announcements, many=True).data
 
-        news_posts = NewsPost.objects.all().order_by('-id')
-        context['news_posts'] = news_posts
-        context['CONTACT_EMAIL'] = settings.CONTACT_EMAIL
+        # Only the latest posts are shown on the home page, the rest are on the news page
+        news_posts = NewsPost.objects.all().order_by('-id')[:3]
+        context['news_posts'] = HomePageNewsPostSerializer(news_posts, many=True).data
+
+        # Only the 3 latest citing papers are shown on the home page
+        context['latest_papers'] = Paper.objects.filter(is_visible=True)[:3]
+
+        # Recent leaves out the popular benchmarks so none is shown twice
+        popular = get_popular_benchmarks()
+        recent = get_recent_benchmarks(exclude_ids=[competition.id for competition in popular])
+        context['featured_benchmarks'] = HomePageBenchmarkSerializer(get_featured_benchmarks(), many=True).data
+        context['popular_benchmarks'] = HomePageBenchmarkSerializer(popular, many=True).data
+        context['recent_benchmarks'] = HomePageBenchmarkSerializer(recent, many=True).data
 
         return context
 
 
-class OrganizeView(TemplateView):
-    template_name = 'pages/organize.html'
+class NewsView(TemplateView):
+    template_name = 'pages/news.html'
+    # Why: 12 fills 4 full rows of 3 cards
+    posts_per_page = 12
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+
+        # All posts, in the same order as the home page
+        news_posts = NewsPost.objects.all().order_by('-id')
+        paginator = Paginator(object_list=news_posts, per_page=self.posts_per_page)
+
+        # get_page shows the first page for an invalid number and the last page for a number that is too high
+        page = paginator.get_page(self.request.GET.get('page'))
+
+        context['news_posts'] = HomePageNewsPostSerializer(page.object_list, many=True).data
+        context['page'] = page
+
+        return context
 
 
-class SearchView(TemplateView):
-    template_name = 'search/form.html'
-
-
-class ServerStatusView(TemplateView):
+class ServerStatusView(LoginRequiredMixin, TemplateView):
     template_name = 'pages/server_status.html'
 
     def get_context_data(self, *args, **kwargs):
@@ -96,13 +126,7 @@ class ServerStatusView(TemplateView):
                 submission.file_size = pretty_bytes(0)
 
             # Get queue from each submission
-            queue_name = ""
-            # if submission has parent get queue from parent otherwise from the submission iteset
-            if submission.parent:
-                queue_name = "*" if submission.parent.queue is None else submission.parent.queue.name
-            else:
-                queue_name = "*" if submission.queue is None else submission.queue.name
-            submission.competition_queue = queue_name
+            submission.competition_queue = "*" if submission.queue is None else submission.queue.name
 
             # Add submission owner display name
             submission.owner_display_name = submission.owner.display_name if submission.owner.display_name else submission.owner.username
@@ -113,10 +137,6 @@ class ServerStatusView(TemplateView):
         return context
 
 
-class MonitorQueuesView(TemplateView):
+class MonitorQueuesView(PermissionRequiredMixin, TemplateView):
+    permission_required = ('is_superuser',)
     template_name = 'pages/monitor_queues.html'
-
-
-def page_not_found_view(request, exception):
-    print(request)
-    return render(request, '404.html', status=404)

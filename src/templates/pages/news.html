@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="news-section">
+        <div class="news-section-header">
+            <h2 class="news-section-title">News</h2>
+        </div>
+        {% if news_posts %}
+            {% include "components/news.html" %}
+
+            {% include "components/pagination.html" %}
+        {% else %}
+            {% include "components/empty_state.html" with title="There's no news to share right now." description="Check back soon for updates on Codabench." %}
+        {% endif %}
+    </div>
+{% endblock %}

@@ -16394,7 +16394,7 @@ var Legend = Element.extend({
 	 * Handle an event
 	 * @private
 	 * @param {IEvent} event - The event to handle
-	 * @return {Boolean} true if a change occured
+	 * @return {Boolean} true if a change occurred
 	 */
 	handleEvent: function(e) {
 		var me = this;

@@ -9,6 +9,6 @@ wheels/
 # Virtual environments
 .venv
 
-uv.lock
 
 site/*
+.python-version

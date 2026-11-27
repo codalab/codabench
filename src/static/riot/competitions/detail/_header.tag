@@ -13,6 +13,9 @@
                             <div class="competition-name underline">
                                 {competition.title}
                             </div>
+                            <div if="{ resolved_tags && resolved_tags.length > 0 }" class="comp-tags" style="margin-top: 8px; margin-bottom: 0;">
+                                <tag-badge each="{ tag in resolved_tags }" tag="{ tag }" size="normal"></tag-badge>
+                            </div>
                         </div>
                     </div>
                     <div class="row">
@@ -35,13 +38,20 @@
                         <button class="ui small button" onclick="{show_modal.bind(this, '.migration.modal')}">
                             Migrate
                         </button>
+
+                        <worker-monitor-toggle
+                            if="{competition.admin}"
+                            can_view_workers_panel="true"
+                            competition_id="{ competition.id }">
+                        </worker-monitor-toggle>
+
                     </div>
                     <div class="row">
                         <div class="column">
                             <!-- Main information -->
                             <div>
                                 <span class="detail-label">Organized by:</span>
-                                <span class="detail-item"><a href="/profiles/user/{competition.created_by}" target="_BLANK">{competition.owner_display_name}</a></span>
+                                <span class="detail-item"><a href="/user/{competition.created_by}/" target="_BLANK">{competition.owner_display_name}</a></span>
                                 <span if="{competition.contact_email}">(<span class="contact-email">{competition.contact_email}</span>)</span>
                             </div>
                             <div>
@@ -179,16 +189,27 @@
                 <thead>
                 <tr>
                     <th colspan="100%">
-                        Please Choose a phase to migrate
+                        Choose a source phase and its destination phase
                     </th>
                 </tr>
                 </thead>
                 <tbody>
                 <tr each="{phase, index in competition.phases}">
-                    <td>{phase.name}</td>
+                    <td>
+                        {phase.name}
+                        <span if="{ phase.is_parallel }" class="ui tiny teal label">Parallel</span>
+                        <span if="{ phase.is_locked_phase }" class="ui tiny orange label"><i class="lock icon"></i>Locked</span>
+                    </td>
                     <td class="collapsing">
-                        <button if="{index !== competition.phases.length - 1}"
-                                class="ui button"
+                        <select class="ui dropdown migration-destination" id="migration_destination_{phase.id}">
+                            <option each="{dest in destinations_for(phase)}" value="{dest.id}">
+                                → {dest.name}
+                            </option>
+                        </select>
+                    </td>
+                    <td class="collapsing">
+                        <button class="ui button"
+                                disabled="{ destinations_for(phase).length === 0 }"
                                 onclick="{migrate_phase.bind(this, phase.id)}">
                             Migrate
                         </button>
@@ -198,10 +219,12 @@
             </table>
         </div>
     </div>
+
     <script>
         let self = this
 
         self.competition = {}
+
         self.files = []
 
         self.tr_show = false
@@ -210,6 +233,15 @@
             competition.admin = CODALAB.state.user.has_competition_admin_privileges(competition)
             self.competition = competition
             self.update()
+            
+            if (competition.tags && competition.tags.length > 0) {
+                CODALAB.api.request('GET', URLS.API + 'tags/')
+                    .done(function (tags) {
+                        const tagMap = _.keyBy(tags, 'id');
+                        self.resolved_tags = competition.tags.map(id => tagMap[id]).filter(Boolean);
+                        self.update();
+                    });
+            }
             if (self.competition.admin) {
                 self.update_files()
             }
@@ -289,14 +321,34 @@
             
         }
 
+        self.destinations_for = function (source_phase) {
+            var now = new Date()
+            return _.filter(self.competition.phases, function (p) {
+                if (p.id === source_phase.id) return false
+                if (p.end && new Date(p.end) < now) return false
+                return true
+            })
+        }
+
         self.migrate_phase = function (phase_id) {
-            CODALAB.api.manual_migration(phase_id)
+            var destination_id = parseInt($('#migration_destination_' + phase_id).val())
+            if (!destination_id) {
+                toastr.error('Please choose a destination phase.')
+                return
+            }
+            var destination = _.find(self.competition.phases, {id: destination_id})
+            var source = _.find(self.competition.phases, {id: phase_id})
+            if (!confirm(`Migrate submissions from "${source.name}" to "${destination.name}"?`)) {
+                return
+            }
+            CODALAB.api.manual_migration(phase_id, destination_id)
                 .done(data => {
-                    toastr.success("Migration of this phase to the next should begin soon.")
+                    toastr.success("The migration should begin soon.")
                     self.close_modal(self.refs.migration_modal)
                 })
                 .fail(error => {
-                    toastr.error('Something went wrong trying to migrate this phase.')
+                    var detail = _.get(error, 'responseJSON.detail')
+                    toastr.error(detail || 'Something went wrong trying to migrate this phase.')
                 })
         }
 

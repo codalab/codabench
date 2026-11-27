@@ -51,10 +51,25 @@ class QueueCreationSerializer(QueueOwnerMixin, DefaultUserCreateMixin, serialize
         )
 
     def validate(self, attrs):
-        request = self.context.get('request')
-        if request.user.queues.count() == request.user.rabbitmq_queue_limit and not request.user.is_superuser:
-            raise PermissionDenied("User has reached queue limit!")
+        # Only check the limit on creation (when self.instance is None)
+        if self.instance is None:
+            request = self.context.get('request')
+            if (
+                request
+                and not request.user.is_superuser
+                and request.user.queues.count() >= request.user.rabbitmq_queue_limit
+            ):
+                raise PermissionDenied("User has reached queue limit!")
+
         return super().validate(attrs)
+
+
+class QueuePublicSerializer(serializers.ModelSerializer):
+    """Minimal queue info safe to expose on public endpoints (no broker credentials)."""
+    class Meta:
+        model = Queue
+        fields = ('id', 'name')
+        read_only_fields = fields
 
 
 class QueueSerializer(QueueOwnerMixin, serializers.ModelSerializer):

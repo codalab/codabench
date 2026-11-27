@@ -1,8 +1,27 @@
+import json
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import Http404
+from django.core.paginator import Paginator
+from django.http import Http404, JsonResponse, HttpResponseForbidden, HttpResponseBadRequest, HttpResponseRedirect
 from django.views.generic import TemplateView, DetailView
+from django.core.serializers.json import DjangoJSONEncoder
+from django.db.models import Q
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_GET, require_POST
+from django.shortcuts import get_object_or_404
+
+from profiles.models import CustomGroup, User
 
 from .models import Competition, CompetitionParticipant
+from .public_competitions import DEFAULT_ORDERING, DEFAULT_FILTER_MODE, get_public_competitions, read_filters, query_string_without, \
+    get_sort_options, get_filter_pills, get_tag_categories, get_filter_mode_options, put_matching_tags_first, \
+    count_active_filters
+from pages.serializers import HomePageBenchmarkSerializer
+from django.db import transaction
+from django.urls import reverse
+from django.contrib import messages
+
+from queues.models import Queue
+from django.core.exceptions import PermissionDenied
 
 
 class CompetitionManagement(LoginRequiredMixin, TemplateView):
@@ -11,15 +30,111 @@ class CompetitionManagement(LoginRequiredMixin, TemplateView):
 
 class CompetitionPublic(TemplateView):
     template_name = 'competitions/public.html'
+    # Why: 12 fills 4 full rows of 3 cards
+    competitions_per_page = 12
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        params = self.request.GET
+
+        filters = read_filters(params=params, user=self.request.user)
+        competitions = get_public_competitions(user=self.request.user, **filters)
+
+        # get_page shows the first page for an invalid number and the last page for a number that is too high
+        paginator = Paginator(object_list=competitions, per_page=self.competitions_per_page)
+        page = paginator.get_page(params.get('page'))
+
+        cards = HomePageBenchmarkSerializer(page.object_list, many=True).data
+        context['competitions'] = put_matching_tags_first(competitions=cards, selected_tag_ids=filters['tag_ids'])
+        context['page'] = page
+        # Why: the page links keep the search, filters and sort
+        context['page_query'] = query_string_without(params, 'page')
+
+        # Current values for the search box, the checkboxes, the dates, the Match buttons and the sort menu
+        context['filters'] = filters
+        context['default_ordering'] = DEFAULT_ORDERING
+        context['filter_mode_options'] = get_filter_mode_options(filter_mode=filters['filter_mode'])
+        # Why: the page script leaves the default mode out of the URL
+        context['default_filter_mode'] = DEFAULT_FILTER_MODE
+        context['active_filter_count'] = count_active_filters(filters=filters)
+
+        # The tag dropdowns of the Filters panel
+        context['tag_categories'] = get_tag_categories(selected_tag_ids=filters['tag_ids'])
+
+        context['sort_options'] = get_sort_options(params=params, ordering=filters['ordering'])
+        context['selected_sort_label'] = next(option['label'] for option in context['sort_options'] if option['is_selected'])
+
+        context['filter_pills'] = get_filter_pills(params=params, filters=filters, tag_categories=context['tag_categories'])
+        # Clear all keeps the sort. Why: the sort is not a filter.
+        context['clear_filters_url'] = f"?ordering={filters['ordering']}" if filters['ordering'] != DEFAULT_ORDERING else "?"
+
+        return context
 
 
 class CompetitionCreateForm(LoginRequiredMixin, TemplateView):
     template_name = 'competitions/form.html'
 
 
+def _allowed_queues_for_user(user):
+    if user.is_superuser:
+        return Queue.objects.all()
+
+    return Queue.objects.filter(
+        Q(owner=user) |
+        Q(organizers=user) |
+        Q(is_public=True)
+    ).distinct()
+
+
 class CompetitionUpdateForm(LoginRequiredMixin, DetailView):
     template_name = 'competitions/form.html'
     queryset = Competition.objects.all()
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        comp = self.object
+        user = self.request.user
+
+        participant_user_ids = set(
+            CompetitionParticipant.objects.filter(competition=comp)
+            .values_list('user_id', flat=True)
+        )
+
+        groups_qs = comp.participant_groups.select_related('queue').prefetch_related('user_set')
+
+        ctx['available_groups_json'] = json.dumps([
+            {
+                'id': g.id,
+                'name': _group_display_name(g.name, comp.pk),
+                'queue': g.queue.name if g.queue else None,
+                'queue_id': g.queue.pk if g.queue else None,
+                'members': [u.username for u in g.user_set.all() if u.pk in participant_user_ids],
+                'is_selectable_by_participant': g.is_selectable_by_participant,
+            }
+            for g in groups_qs
+        ], cls=DjangoJSONEncoder)
+
+        ctx['selected_group_ids_json'] = json.dumps(
+            list(comp.participant_groups.values_list('id', flat=True)),
+            cls=DjangoJSONEncoder
+        )
+
+        allowed_queues_qs = _allowed_queues_for_user(user)
+
+        ctx['available_queues_json'] = json.dumps(
+            list(allowed_queues_qs.values('id', 'name')),
+            cls=DjangoJSONEncoder
+        )
+
+        ctx['available_users_json'] = json.dumps(
+            list(
+                User.objects
+                    .filter(pk__in=participant_user_ids, is_active=True)
+                    .values('id', 'username', 'email')
+            ),
+            cls=DjangoJSONEncoder
+        )
+        return ctx
 
     def get_object(self, *args, **kwargs):
         competition = super().get_object(*args, **kwargs)
@@ -104,3 +219,277 @@ class CompetitionDetail(DetailView):
 
 class CompetitionDetailedResults(TemplateView):
     template_name = 'competitions/detailed_results.html'
+
+
+#   Group feature  ----------------------
+@login_required
+@require_POST
+def competition_create_group(request, pk):
+    competition = get_object_or_404(Competition, pk=pk)
+
+    user = request.user
+    if not (user.is_superuser or user == competition.created_by or user in competition.collaborators.all()):
+        return HttpResponseForbidden("Not allowed")
+
+    if request.content_type == 'application/json':
+        try:
+            payload = json.loads(request.body.decode())
+        except Exception:
+            return HttpResponseBadRequest("Invalid JSON")
+        name = (payload.get('name') or '').strip()
+        queue_id = payload.get('queue_id')
+        user_ids = payload.get('user_ids') or []
+        is_selectable_by_participant = bool(payload.get('is_selectable_by_participant'))
+    else:
+        name = (request.POST.get('name') or '').strip()
+        queue_id = request.POST.get('queue_id') or None
+        user_ids = request.POST.getlist('user_ids[]') or []
+        if not user_ids and request.POST.get('user_ids'):
+            user_ids = [u.strip() for u in request.POST.get('user_ids').split(',') if u.strip()]
+        is_selectable_by_participant = request.POST.get('is_selectable_by_participant') in ('true', 'on', '1')
+
+    if not name:
+        return HttpResponseBadRequest("Missing name")
+
+    stored_name = _group_stored_name(competition.pk, name)
+
+    allowed_user_ids = set(
+        CompetitionParticipant.objects.filter(competition=competition)
+        .values_list('user_id', flat=True)
+    )
+
+    allowed_queue_ids = set(
+        _allowed_queues_for_user(user).values_list('id', flat=True)
+    )
+
+    try:
+        with transaction.atomic():
+            group = CustomGroup(name=stored_name, is_selectable_by_participant=is_selectable_by_participant)
+
+            if queue_id:
+                try:
+                    queue_id_int = int(queue_id)
+                except (TypeError, ValueError):
+                    return HttpResponseBadRequest("Invalid queue_id")
+
+                if queue_id_int not in allowed_queue_ids:
+                    return HttpResponseForbidden("You are not allowed to use this queue")
+
+                group.queue = get_object_or_404(Queue, pk=queue_id_int)
+
+            group.save()
+
+            try:
+                user_ids_int = [int(u) for u in user_ids]
+            except Exception:
+                user_ids_int = []
+
+            if user_ids_int:
+                invalid = [uid for uid in user_ids_int if uid not in allowed_user_ids]
+                if invalid:
+                    raise ValueError(f"Some users are not participants of this competition: {invalid}")
+
+                users_qs = User.objects.filter(pk__in=user_ids_int)
+                group.user_set.set(users_qs)
+
+            competition.participant_groups.add(group)
+
+            members = list(group.user_set.values_list('username', flat=True))
+
+            group_data = {
+                'id': group.id,
+                'name': name,
+                'queue': group.queue.name if group.queue else None,
+                'queue_id': group.queue.pk if group.queue else None,
+                'members': members,
+                'is_selectable_by_participant': group.is_selectable_by_participant,
+            }
+
+    except ValueError as e:
+        return HttpResponseBadRequest(str(e))
+    except Exception as e:
+        return HttpResponseBadRequest("Error creating group: %s" % str(e))
+
+    if (
+        request.content_type.startswith('application/json')
+        or request.headers.get('x-requested-with') == 'XMLHttpRequest'
+        or 'application/json' in request.headers.get('accept', '')
+    ):
+        return JsonResponse({'status': 'ok', 'group': group_data})
+
+    messages.success(request, "Groupe créé")
+    return HttpResponseRedirect(reverse('competitions:edit', kwargs={'pk': competition.pk}))
+
+
+@login_required
+@require_POST
+def competition_update_group(request, pk, group_id):
+    competition = get_object_or_404(Competition, pk=pk)
+    group = get_object_or_404(CustomGroup, pk=group_id)
+
+    user = request.user
+    if not (user.is_superuser or user == competition.created_by or user in competition.collaborators.all()):
+        return HttpResponseForbidden("Not allowed")
+
+    if not competition.participant_groups.filter(pk=group.pk).exists():
+        return HttpResponseBadRequest("Group does not belong to this competition")
+
+    if request.content_type == 'application/json':
+        try:
+            payload = json.loads(request.body.decode())
+        except Exception:
+            return HttpResponseBadRequest("Invalid JSON")
+        name = (payload.get('name') or '').strip()
+        queue_id = payload.get('queue_id')
+        user_ids = payload.get('user_ids', []) or []
+        is_selectable_by_participant = bool(payload.get('is_selectable_by_participant'))
+    else:
+        name = (request.POST.get('name') or '').strip()
+        queue_id = request.POST.get('queue_id') or None
+        user_ids = request.POST.getlist('user_ids[]') or []
+        if not user_ids and request.POST.get('user_ids'):
+            user_ids = [u.strip() for u in request.POST.get('user_ids').split(',') if u.strip()]
+        is_selectable_by_participant = request.POST.get('is_selectable_by_participant') in ('true', 'on', '1')
+
+    if not name:
+        return HttpResponseBadRequest("Missing name")
+
+    stored_name = _group_stored_name(competition.pk, name)
+
+    allowed_user_ids = set(
+        CompetitionParticipant.objects.filter(competition=competition)
+        .values_list('user_id', flat=True)
+    )
+
+    allowed_queue_ids = set(
+        _allowed_queues_for_user(user).values_list('id', flat=True)
+    )
+
+    try:
+        with transaction.atomic():
+            group.name = stored_name
+            group.is_selectable_by_participant = is_selectable_by_participant
+
+            if queue_id:
+                try:
+                    queue_id_int = int(queue_id)
+                except (TypeError, ValueError):
+                    return HttpResponseBadRequest("Invalid queue_id")
+
+                if queue_id_int not in allowed_queue_ids:
+                    return HttpResponseForbidden("You are not allowed to use this queue")
+
+                group.queue = get_object_or_404(Queue, pk=queue_id_int)
+            else:
+                group.queue = None
+
+            group.save()
+
+            try:
+                user_ids_int = [int(u) for u in user_ids]
+            except Exception:
+                user_ids_int = []
+
+            if user_ids_int:
+                invalid = [uid for uid in user_ids_int if uid not in allowed_user_ids]
+                if invalid:
+                    raise ValueError(f"Some users are not participants of this competition: {invalid}")
+
+            group.user_set.set(User.objects.filter(pk__in=user_ids_int))
+
+    except ValueError as e:
+        return HttpResponseBadRequest(str(e))
+    except Exception as e:
+        return HttpResponseBadRequest("Error updating group: %s" % str(e))
+
+    resp = {
+        'status': 'ok',
+        'group': {
+            'id': group.id,
+            'name': name,
+            'queue': group.queue.name if group.queue else None,
+            'queue_id': group.queue.pk if group.queue else None,
+            'members': list(group.user_set.values_list('username', flat=True)),
+            'is_selectable_by_participant': group.is_selectable_by_participant,
+        }
+    }
+
+    if (
+        request.content_type.startswith('application/json')
+        or request.headers.get('x-requested-with') == 'XMLHttpRequest'
+        or 'application/json' in request.headers.get('accept', '')
+    ):
+        return JsonResponse(resp)
+
+    messages.success(request, "Groupe modifié")
+    return HttpResponseRedirect(reverse('competitions:edit', kwargs={'pk': competition.pk}))
+
+
+@login_required
+@require_POST
+def competition_delete_group(request, pk, group_id):
+    competition = get_object_or_404(Competition, pk=pk)
+
+    user = request.user
+    if not (
+        user.is_superuser
+        or user == competition.created_by
+        or user in competition.collaborators.all()
+    ):
+        raise PermissionDenied("Not allowed")
+
+    group = get_object_or_404(
+        CustomGroup,
+        pk=group_id,
+        competitions=competition
+    )
+
+    try:
+        with transaction.atomic():
+            competition.participant_groups.remove(group)
+            group.delete()
+
+    except Exception as e:
+        return HttpResponseBadRequest(f"Error deleting group: {str(e)}")
+
+    if (
+        request.content_type.startswith("application/json")
+        or request.headers.get("x-requested-with") == "XMLHttpRequest"
+        or "application/json" in request.headers.get("accept", "")
+    ):
+        return JsonResponse({"status": "ok", "group_id": group_id})
+
+    messages.success(request, "Groupe supprimé")
+    return HttpResponseRedirect(
+        reverse("competitions:edit", kwargs={"pk": competition.pk})
+    )
+
+
+def _group_stored_name(competition_pk, user_name):
+    return f"comp{competition_pk}__{user_name}"
+
+
+def _group_display_name(stored_name, competition_pk):
+    prefix = f"comp{competition_pk}__"
+    if stored_name.startswith(prefix):
+        return stored_name[len(prefix):]
+    return stored_name
+
+
+@login_required
+@require_GET
+def competition_user_groups(request, pk):
+    competition = get_object_or_404(Competition, pk=pk)
+    user = request.user
+    groups = competition.participant_groups.filter(
+        user=user, is_selectable_by_participant=True
+    ).distinct()
+    data = [
+        {
+            'id': g.id,
+            'name': _group_display_name(g.name, competition.pk),
+            'queue': g.queue.pk if g.queue else None,
+        }
+        for g in groups
+    ]
+    return JsonResponse(data, safe=False)

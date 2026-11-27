@@ -7,7 +7,7 @@ from .models import User
 class SignUpForm(UserCreationForm):
 
     email = forms.EmailField(
-        max_length=254, help_text="Required. Inform a valid email address."
+        max_length=200, help_text="Required. Inform a valid email address."
     )
 
     def clean_username(self):
@@ -19,16 +19,19 @@ class SignUpForm(UserCreationForm):
             raise forms.ValidationError("Username can only contain lowercase letters, numbers, hyphens, and underscores.")
 
         # Check username length
-        if (len(data) > 15) or (len(data) < 5):
+        if (len(data) > 50) or (len(data) < 5):
             raise forms.ValidationError(
-                "Username must have at least 5 characters and at most 15 characters"
+                "Username must have at least 5 characters and at most 50 characters"
             )
         return data
 
     def clean_email(self):
-        email = self.cleaned_data["email"]
+        email = self.cleaned_data["email"].lower()
         if "*" in email:
             raise forms.ValidationError("Email address cannot contain the '*' character.")
+        # Emails are stored in lowercase, so check for an existing account case-insensitively
+        if User.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError("An account with this email already exists.")
         return email
 
     class Meta:
@@ -39,7 +42,7 @@ class SignUpForm(UserCreationForm):
 
 class LoginForm(forms.Form):
 
-    username = forms.CharField(max_length=150)
+    username = forms.CharField(max_length=50)
     password = forms.CharField(max_length=150, widget=forms.PasswordInput)
 
 

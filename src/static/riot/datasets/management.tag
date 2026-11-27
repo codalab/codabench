@@ -116,7 +116,7 @@
                 <tbody>
                 <tr>
                     <td>{selected_row.key}</td>
-                    <td><a href="/profiles/user/{selected_row.created_by}/" target=_blank>{selected_row.owner_display_name}</a></td>
+                    <td><a href="/user/{selected_row.created_by}/" target=_blank>{selected_row.owner_display_name}</a></td>
                     <td>{pretty_date(selected_row.created_when)}</td>
                     <td>{_.startCase(selected_row.type)}</td>
                     <td>{_.startCase(selected_row.is_public)}</td>
@@ -177,6 +177,15 @@
                         <option each="{type in types}" value="{type}">{_.startCase(type)}</option>
                     </select>
                 </div>
+
+                <p class="ui small info message">
+                    The zip file must contain the files directly at its root, not nested inside a
+                    subfolder. A scoring or ingestion program needs <code>metadata.yaml</code> plus the
+                    program file(s) (e.g. <code>score.py</code>) at the root. See
+                    <a href="https://docs.codabench.org/latest/Organizers/Benchmark_Creation/Competition-Bundle-Structure/#data-types-and-their-role"
+                       target="_blank" rel="noopener">Competition Bundle Structure, Data Types And Their Role</a>
+                    for what each type means and how it is used.
+                </p>
 
                 <input-file selenium="file" name="data_file" ref="data_file" error="{errors.data_file}"
                             accept=".zip"></input-file>

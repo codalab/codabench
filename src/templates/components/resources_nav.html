@@ -1,0 +1,30 @@
+{# Links between the Competitions, Resources, Queues, Organizations, Quota and Submission Status pages. #}
+{# Used by pages/resources_base.html. #}
+{# Why view_name: several of these pages have the same url name (management), so the app name is needed too. #}
+
+{% with current=request.resolver_match.view_name %}
+<nav class="side-nav">
+    <a class="side-nav-link{% if current == 'competitions:management' %} side-nav-link-active{% endif %}" href="{% url 'competitions:management' %}">
+        <i class="bi bi-trophy"></i>Competitions
+    </a>
+    {# Why two names: /tasks/ and /datasets/ show the same Resources page #}
+    <a class="side-nav-link{% if current == 'tasks:task_management' or current == 'datasets:management' %} side-nav-link-active{% endif %}" href="{% url 'tasks:task_management' %}">
+        <i class="bi bi-folder"></i>Resources
+    </a>
+    <a class="side-nav-link{% if current == 'queues:management' %} side-nav-link-active{% endif %}" href="{% url 'queues:management' %}">
+        <i class="bi bi-hourglass"></i>Queues
+    </a>
+    <a class="side-nav-link{% if current == 'profiles:organization_list' %} side-nav-link-active{% endif %}" href="{% url 'profiles:organization_list' %}">
+        <i class="bi bi-people"></i>Organizations
+    </a>
+    <a class="side-nav-link{% if current == 'tasks:quota' %} side-nav-link-active{% endif %}" href="{% url 'tasks:quota' %}">
+        <i class="bi bi-hdd"></i>Quota
+    </a>
+
+    <!-- Own section. Why: this page shows activity, not things the user manages -->
+    <div class="side-nav-divider"></div>
+    <a class="side-nav-link{% if current == 'pages:server_status' %} side-nav-link-active{% endif %}" href="{% url 'pages:server_status' %}">
+        <i class="bi bi-activity"></i>Submission Status
+    </a>
+</nav>
+{% endwith %}

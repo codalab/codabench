@@ -26,6 +26,7 @@ class TaskExpansion(admin.ModelAdmin):
         "name",
         "created_by__username",
     ]
+    ordering = ('-id',)
 
 
 class SolutionExpansion(admin.ModelAdmin):
@@ -35,6 +36,7 @@ class SolutionExpansion(admin.ModelAdmin):
     search_fields = [
         "id",
     ]
+    ordering = ('-id',)
 
 
 admin.site.register(models.Task, TaskExpansion)

@@ -19,7 +19,11 @@
                     </thead>
                     <tbody>
                     <tr each="{phase, index in phases}">
-                        <td>{ phase.name }</td>
+                        <td>
+                            { phase.name }
+                            <span if="{ phase.is_parallel }" class="ui tiny teal label">Parallel</span>
+                            <span if="{ phase.is_locked_phase }" class="ui tiny orange label">Locked Phase</span>
+                        </td>
                         <td class="right aligned">
                             <a class="chevron">
                                 <sorting-chevrons data="{ phases }"
@@ -115,7 +119,7 @@
 
                 <div class="fluid field required" ref="tasks_select_container" id="tasks_select_container">
                     <label for="tasks">
-                        Tasks (Order will be saved) Note: Adding a new task will cause all submissions to be run against it.
+                        Tasks (Order will be saved)
                         <span data-tooltip="Use Resources section to create new tasks" data-inverted=""
                               data-position="bottom center"><i class="help icon circle"></i></span>
                     </label>
@@ -150,83 +154,108 @@
                     <textarea class="markdown-editor" ref="description" name="description"></textarea>
                 </div>
 
-                <div class="ui accordion" ref="advanced_settings">
-                    <div class="title">
-                        <i class="dropdown icon"></i>
-                        Advanced
-                        <i class="cogs icon"></i>
+                <div class="three fields">
+                    <div class="field">
+                        <label>
+                            Execution Time Limit (seconds)<span data-tooltip="600s if unset, { CODALAB.state.public_env_variables.MAX_EXECUTION_TIME_LIMIT }s max with default queue."
+                                                       data-inverted=""
+                                                       data-position="bottom center">
+                            <i class="help icon circle"></i></span>
+                        </label>
+                        <input type="number" name="execution_time_limit">
                     </div>
-                    <div class="content">
-                        <div class="three fields">
-                            <div class="field">
-                                <label>
-                                    Execution Time Limit (seconds)<span data-tooltip="600s if unset, { CODALAB.state.public_env_variables.MAX_EXECUTION_TIME_LIMIT }s max with default queue."
-                                                               data-inverted=""
-                                                               data-position="bottom center">
-                                    <i class="help icon circle"></i></span>
-                                </label>
-                                <input type="number" name="execution_time_limit">
-                            </div>
-                            <div class="field">
-                                <label>
-                                    Max Submissions Per Day <span
-                                        data-tooltip="The maximum number of submissions a user can be made per day"
-                                        data-inverted=""
-                                        data-position="bottom center">
-                                    <i class="help icon circle"></i></span>
-                                </label>
-                                <input type="number" name="max_submissions_per_day">
-                            </div>
-                            <div class="field">
-                                <label>
-                                    Max Submissions Per Person <span
-                                        data-tooltip="The maximum number of submissions any single user can make to the phase"
-                                        data-inverted=""
-                                        data-position="bottom center">
-                                    <i class="help icon circle"></i></span>
-                                </label>
-                                <input type="number" name="max_submissions_per_person">
-                            </div>
-                        </div>
-                        <div class="field">
-                            <div class="ui checkbox">
-                                <label>Hide Submission Output
-                                    <span data-tooltip="Hide all submission output" data-inverted=""
-                              data-position="bottom center"><i class="help icon circle"></i></span>
-                                </label>
-                                <input type="checkbox" ref="hide_output">
-                            </div>
-                        </div>
-                        <div class="field">
-                            <div class="ui checkbox">
-                                <label>Hide Prediction Output 
-                                    <span data-tooltip="Prevent participants from downloading 'Output from prediction step'" data-inverted=""
-                              data-position="bottom center"><i class="help icon circle"></i></span>
-                                </label>
-                                <input type="checkbox" ref="hide_prediction_output">
-                            </div>
-                        </div>
-                        <div class="field">
-                            <div class="ui checkbox">
-                                <label>Hide Score Output 
-                                    <span data-tooltip="Prevent participants from downloading 'Output from scoring step'" data-inverted=""
-                              data-position="bottom center"><i class="help icon circle"></i></span>
-                                </label>
-                                <input type="checkbox" ref="hide_score_output">
-                            </div>
-                        </div>
+                    <div class="field">
+                        <label>
+                            Max Submissions Per Day <span
+                                data-tooltip="The maximum number of submissions a user can be made per day"
+                                data-inverted=""
+                                data-position="bottom center">
+                            <i class="help icon circle"></i></span>
+                        </label>
+                        <input type="number" name="max_submissions_per_day">
+                    </div>
+                    <div class="field">
+                        <label>
+                            Max Submissions Per Person <span
+                                data-tooltip="The maximum number of submissions any single user can make to the phase"
+                                data-inverted=""
+                                data-position="bottom center">
+                            <i class="help icon circle"></i></span>
+                        </label>
+                        <input type="number" name="max_submissions_per_person">
+                    </div>
+                </div>
+                <div class="field">
+                    <label>
+                        Max Submissions Scope <span
+                            data-tooltip="Whether the submission limits apply to each participant or are shared by all members of a participant's organization (team)"
+                            data-inverted=""
+                            data-position="bottom center">
+                        <i class="help icon circle"></i></span>
+                    </label>
+                    <select name="max_submissions_scope" ref="max_submissions_scope">
+                        <option value="participant">Per participant</option>
+                        <option value="organization">Per organization (team)</option>
+                    </select>
+                </div>
+                <div class="field"><b>Advanced</b></div>
+                <div class="field">
+                    <div class="ui checkbox">
+                        <label>Hide Submission Output
+                            <span data-tooltip="Hide all submission output" data-inverted=""
+                      data-position="bottom center"><i class="help icon circle"></i></span>
+                        </label>
+                        <input type="checkbox" ref="hide_output">
+                    </div>
+                </div>
+                <div class="field">
+                    <div class="ui checkbox">
+                        <label>Hide Prediction Output 
+                            <span data-tooltip="Prevent participants from downloading 'Output from prediction step'" data-inverted=""
+                      data-position="bottom center"><i class="help icon circle"></i></span>
+                        </label>
+                        <input type="checkbox" ref="hide_prediction_output">
+                    </div>
+                </div>
+                <div class="field">
+                    <div class="ui checkbox">
+                        <label>Hide Score Output 
+                            <span data-tooltip="Prevent participants from downloading 'Output from scoring step'" data-inverted=""
+                      data-position="bottom center"><i class="help icon circle"></i></span>
+                        </label>
+                        <input type="checkbox" ref="hide_score_output">
+                    </div>
+                </div>
 
-                        <div class="inline field" if="{phases.length > 0 && ![null, undefined, 0].includes(selected_phase_index)}">
-                            <div class="ui checkbox">
-                                <input type="checkbox" name="auto_migrate_to_this_phase" ref="auto_migrate">
-                                <label>
-                                    Auto migrate to this phase <span data-tooltip="Re-submit all leaderboard submissions automatically when the phase starts."
-                                                               data-inverted=""
-                                                               data-position="bottom center">
-                                    <i class="help icon circle"></i></span>
-                                </label>
-                            </div>
-                        </div>
+                <div class="field">
+                    <div class="ui checkbox">
+                        <label>Parallel phase
+                            <span data-tooltip="A parallel phase can run at the same time as other phases" data-inverted=""
+                                data-position="bottom center"><i class="help icon circle"></i></span>
+                        </label>
+                        <input type="checkbox" ref="is_parallel">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="ui checkbox">
+                        <label>Locked phase
+                            <span data-tooltip="Participants cannot submit to this phase. Only submission migrations are allowed."
+                                data-inverted="" data-position="bottom center"><i class="help icon circle"></i></span>
+                        </label>
+                        <input type="checkbox" ref="is_locked_phase">
+                    </div>
+                </div>
+
+                <div class="inline field" if="{phases.length > 0 && ![null, undefined, 0].includes(selected_phase_index)}">
+                    <div class="ui checkbox">
+                        <input type="checkbox" name="auto_migrate_to_this_phase" ref="auto_migrate">
+                        <label>
+                            Auto migrate to this phase <span data-tooltip="Re-submit all leaderboard submissions automatically when the phase starts."
+                                                       data-inverted=""
+                                                       data-position="bottom center">
+                            <i class="help icon circle"></i></span>
+                        </label>
                     </div>
                 </div>
             </form>
@@ -261,6 +290,24 @@
             // awesome markdown editor
             self.simple_markdown_editor = create_easyMDE(self.refs.description)
 
+            // Custom menu template that renders description under the item name
+            // data-text is set to name-only so that selected labels show only the title
+            var dropdown_menu_template = function(response) {
+                var html = ''
+                $.each(response.values, function(index, item) {
+                    let name = item.name || ''
+                    let value = item.value || ''
+                    let description = item.description
+                    html += '<div class="item" data-value="' + value + '" data-text="' + name + '">'
+                    html += '<strong>' + name + '</strong>'
+                    if (description) {
+                        html += '<div class="dropdown-item-description">' + description + '</div>'
+                    }
+                    html += '</div>'
+                })
+                return html
+            }
+
             // semantic multiselect
             $(self.refs.multiselect).dropdown({
                 apiSettings: {
@@ -270,6 +317,7 @@
                         return {success: true, results: _.values(data.results)}
                     },
                 },
+                templates: {menu: dropdown_menu_template},
                 onAdd: self.task_added,
                 onRemove: self.task_removed,
             })
@@ -282,10 +330,11 @@
                         return {success: true, results: _.values(data.results)}
                     },
                 },
+                templates: {menu: dropdown_menu_template},
                 onAdd: self.public_data_added,
                 onRemove: self.public_data_removed,
             })
-            
+
             $(self.refs.starting_kit_multiselect).dropdown({
                 apiSettings: {
                     url: `${URLS.API}datasets/?search={query}&type=starting_kit`,
@@ -294,6 +343,7 @@
                         return {success: true, results: _.values(data.results)}
                     },
                 },
+                templates: {menu: dropdown_menu_template},
                 onAdd: self.starting_kit_added,
                 onRemove: self.starting_kit_removed,
             })
@@ -315,7 +365,6 @@
                     self.clear_form()
                 }
             })
-            $(self.refs.advanced_settings).accordion()
         })
 
         /*---------------------------------------------------------------------
@@ -560,20 +609,21 @@
                         is_valid = false
                     }
                 })
-                _.forEach(_.range(self.phases.length), i => {
-                    if (i !== 0) {
-                        let end = Date.parse(self.formatDateToYYYYMMDD(self.phases[i - 1].end))
-                        let start = Date.parse(self.formatDateToYYYYMMDD(self.phases[i].start))
-                        if (end > start || !end) {
-                            let message = `Phase "${_.get(self.phases[i], 'name', i + 1)}" must start after phase "${_.get(self.phases[i - 1], 'name', i)}" ends`
-                            if (!self.warnings.includes(message)) {
-                                self.warnings.push(message)
-                                self.update()
-                            }
-                            is_valid = false
+                var sequential_phases = self.phases.filter(p => p && !p.is_parallel)
+                for (var i = 1; i < sequential_phases.length; i++) {
+                    var prev = sequential_phases[i - 1]
+                    var curr = sequential_phases[i]
+                    var end = Date.parse(self.formatDateToYYYYMMDD(prev.end))
+                    var start = Date.parse(self.formatDateToYYYYMMDD(curr.start))
+                    if (end > start || !end) {
+                        var message = `Phase "${_.get(curr, 'name', i + 1)}" must start after phase "${_.get(prev, 'name', i)}" ends`
+                        if (!self.warnings.includes(message)) {
+                            self.warnings.push(message)
+                            self.update()
                         }
+                        is_valid = false
                     }
-                })
+                }
             }
 
             CODALAB.events.trigger('competition_is_valid_update', 'phases', is_valid)
@@ -618,6 +668,9 @@
                 $(field).val('')
             })
             $(self.refs.auto_migrate).prop('checked', false)
+            self.refs.is_parallel.checked = false
+            self.refs.is_locked_phase.checked = false
+            $(self.refs.max_submissions_scope).val('participant')
 
             // Clear date and time fields values
             $(self.refs.calendar_start_date).find('input[name="start_date"]').val('')
@@ -663,6 +716,8 @@
             self.refs.hide_output.checked = phase.hide_output
             self.refs.hide_prediction_output.checked = phase.hide_prediction_output
             self.refs.hide_score_output.checked = phase.hide_score_output
+            self.refs.is_parallel.checked = !!phase.is_parallel
+            self.refs.is_locked_phase.checked = !!phase.is_locked_phase
 
             // Setting description in markdown editor
             self.simple_markdown_editor.value(self.phases[index].description || '')
@@ -829,6 +884,8 @@
             data.hide_output = self.refs.hide_output.checked
             data.hide_prediction_output = self.refs.hide_prediction_output.checked
             data.hide_score_output = self.refs.hide_score_output.checked
+            data.is_parallel = self.refs.is_parallel.checked
+            data.is_locked_phase = self.refs.is_locked_phase.checked
             _.forEach(number_fields, field => {
                 let str = _.get(data, field)
                 if (str) {
@@ -858,5 +915,11 @@
     <style type="text/stylus">
         .chevron, .icon-button
             cursor pointer
+        .dropdown-item-description
+            font-size 0.85em
+            color rgba(0,0,0,0.5)
+            margin-top 2px
+            white-space normal
+            line-height 1.3
     </style>
 </competition-phases>

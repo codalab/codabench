@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.conf.urls import include
 from django.urls import path
 
@@ -12,7 +13,9 @@ from rest_framework.urlpatterns import format_suffix_patterns
 from .views import (
     analytics,
     competitions,
+    dashboard,
     datasets,
+    external_competitions,
     profiles,
     leaderboards,
     submissions,
@@ -25,6 +28,7 @@ from .views import (
 router = SimpleRouter()
 router.register('competitions', competitions.CompetitionViewSet)
 router.register('phases', competitions.PhaseViewSet, 'phases')
+router.register('tags', competitions.TagViewSet, 'tags')
 router.register('submissions', submissions.SubmissionViewSet)
 router.register('datasets', datasets.DataViewSet)
 router.register('leaderboards', leaderboards.LeaderboardViewSet)
@@ -43,6 +47,7 @@ urlpatterns = [
     path('can_make_submission/<phase_id>/', submissions.can_make_submission, name="can_make_submission"),
     path('user_lookup/', profiles.user_lookup),
     path('analytics/', analytics.AnalyticsView.as_view(), name='analytics_api'),
+    path('dashboard/', dashboard.DashboardCompetitionsView.as_view(), name='dashboard_api'),
 
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('api-token-auth/', obtain_auth_token),
@@ -54,6 +59,8 @@ urlpatterns = [
     path('delete_unused_datasets/', quota.delete_unused_datasets, name="delete_unused_datasets"),
     path('delete_unused_submissions/', quota.delete_unused_submissions, name="delete_unused_submissions"),
     path('delete_failed_submissions/', quota.delete_failed_submissions, name="delete_failed_submissions"),
+    path('delete_unused_starting_kits/', quota.delete_unused_starting_kits, name="delete_unused_starting_kits"),
+    path('delete_unused_competition_bundles_and_dumps/', quota.delete_unused_competition_bundles_and_dumps, name="delete_unused_competition_bundles_and_dumps"),
 
     # User account
     path('delete_account/', profiles.delete_account, name="delete_account"),
@@ -74,3 +81,9 @@ urlpatterns = [
     # Include this at the end so our URLs above run first, like /datasets/completed/<pk>/ before /datasets/<pk>/
     path('', include(format_suffix_patterns(router.urls, allowed=['html', 'json', 'csv', 'zip']))),
 ]
+
+if settings.EXTERNAL_COMPETITIONS_ENABLED:
+    urlpatterns += [
+        path('external_competitions/', external_competitions.ExternalCompetitionListView.as_view(), name='external_competition_list'),
+        path('external_competitions/platforms/', external_competitions.ExternalPlatformListView.as_view(), name='external_platform_list'),
+    ]
